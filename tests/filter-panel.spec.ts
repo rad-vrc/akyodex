@@ -45,11 +45,27 @@ test.describe("Search input focus styling", () => {
           const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data;
           return `${r},${g},${b},${a}`;
         };
+        const normalizeBoxShadow = (value: string) =>
+          value
+            .split(/,(?![^()]*\))/)
+            .map((shadow) => shadow.trim())
+            .map((shadow) => {
+              const colorMatch = shadow.match(/(rgba?\([^)]+\)|oklab\([^)]+\)|lab\([^)]+\))/);
+              const colorToken = colorMatch?.[0] ?? "";
+              return {
+                geometry: shadow.replace(colorToken, "").replace(/\s+/g, " ").trim(),
+              };
+            })
+            .filter(
+              ({ geometry }) => geometry !== "0px 0px 0px 0px",
+            )
+            .map(({ geometry }) => geometry);
 
         return {
           outlineStyle: styles.outlineStyle,
           outlineWidth: styles.outlineWidth,
           borderColor: normalizeColor(styles.borderTopColor),
+          boxShadow: normalizeBoxShadow(styles.boxShadow),
         };
       });
     };
