@@ -107,7 +107,7 @@ test.describe("Issue #320 accessibility regressions", () => {
   }) => {
     await page.goto("/zukan");
 
-    await expect(page.getByRole("button", { name: /グリッド|Grid|격자/i })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: /カード|Card|카드/i })).toHaveAttribute(
       "aria-pressed",
       "true",
     );

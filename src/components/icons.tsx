@@ -55,13 +55,32 @@ function Icon({
 // ═══════════════════════════════════════
 
 /**
- * Grid view icon (th-large equivalent)
+ * Card view icon
+ * Renders a two-card filled stack while preserving currentColor styling.
+ * The back card uses reduced opacity so both cards remain distinguishable.
  * @param props - Icon properties
  */
 export function IconGrid({ size, className, ...props }: IconProps) {
   return (
-    <Icon size={size} className={className} viewBox="0 0 512 512" {...props}>
-      <path d="M47.5 104H432.5C440.8 104 448 96.84 448 88.5V23.5C448 15.16 440.8 8 432.5 8H47.5C39.16 8 32 15.16 32 23.5V88.5C32 96.84 39.16 104 47.5 104zM47.5 264H432.5C440.8 264 448 256.8 448 248.5V183.5C448 175.2 440.8 168 432.5 168H47.5C39.16 168 32 175.2 32 183.5V248.5C32 256.8 39.16 264 47.5 264zM47.5 424H432.5C440.8 424 448 416.8 448 408.5V343.5C448 335.2 440.8 328 432.5 328H47.5C39.16 328 32 335.2 32 343.5V408.5C32 416.8 39.16 424 47.5 424z" />
+    <Icon size={size} className={className} viewBox="40 32 348 304" {...props}>
+      <rect
+        x="216"
+        y="116"
+        width="160"
+        height="216"
+        rx="28"
+        fill="currentColor"
+        opacity="0.35"
+      />
+      <rect
+        x="96"
+        y="76"
+        width="160"
+        height="216"
+        rx="28"
+        fill="currentColor"
+        transform="rotate(-13 176 184)"
+      />
     </Icon>
   );
 }
@@ -91,13 +110,26 @@ export function IconCog({ size, className, ...props }: IconProps) {
 }
 
 /**
- * Heart icon for favorites
+ * Heart icon for favorites (solid / filled)
  * @param props - Icon properties
  */
 export function IconHeart({ size, className, ...props }: IconProps) {
   return (
     <Icon size={size} className={className} viewBox="0 0 512 512" {...props}>
       <path d="M47.6 300.4L228.3 469.1c7.5 7 17.4 10.9 27.7 10.9s20.2-3.9 27.7-10.9L464.4 300.4c30.4-28.3 47.6-68 47.6-109.5v-5.8c0-69.9-50.5-129.5-119.4-141C347 36.5 300.6 51.4 268 84L256 96 244 84c-32.6-32.6-79-47.5-124.6-39.9C50.5 55.6 0 115.2 0 185.1v5.8c0 41.5 17.2 81.2 47.6 109.5z" />
+    </Icon>
+  );
+}
+
+/**
+ * Heart outline icon for unfavorited state (regular / outline)
+ * FontAwesome 6 Free – Regular (fa-heart)
+ * @param props - Icon properties
+ */
+export function IconHeartOutline({ size, className, ...props }: IconProps) {
+  return (
+    <Icon size={size} className={className} viewBox="0 0 512 512" {...props}>
+      <path d="M225.8 468.2l-2.5-2.3L48.1 303.2C17.4 274.7 0 234.7 0 192.8v-3.3c0-70.4 50-130.8 119.2-144C158.6 37.9 198.9 47 231 69.6c9 6.4 17.4 13.8 25 22.1c4.2-4.6 8.7-8.9 13.5-12.7c6.3-5.1 13.3-9.5 20.7-13.2C315.5 53.2 343.1 44.8 372.2 45.5c67 1.6 123.7 55.6 131.4 122.5c.9 7.5 1.4 15.2 1.4 23v1.8c0 41.9-17.4 81.9-48.1 110.4L282.7 465.9l-2.5 2.3c-8.2 7.6-19 11.9-30.2 11.9s-22-4.2-30.2-11.9zM239.1 145c-.4-.3-.7-.7-1-1.1l-17.8-20c0 0 0 0 0 0c-23.1-25.9-58-37.7-92-31.2C81.6 101.5 48 142.1 48 189.5v3.3c0 28.5 11.9 55.8 32.8 75.2L256 430.7 431.2 268c20.9-19.4 32.8-46.7 32.8-75.2v-1.8c0-6-.4-11.9-1.2-17.7C457 125.2 414.6 93.4 372.8 93.5c-24.8 0-47.3 8.9-64.6 21.8c-11.4 8.5-21.1 19.5-28.4 32.3l-8.7 15.3-8.7-15.3c-5.7-10-12.8-18.8-21.3-26.5z" />
     </Icon>
   );
 }

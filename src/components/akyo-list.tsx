@@ -1,6 +1,6 @@
 'use client';
 
-import { IconInfoCircle, IconVRChat } from '@/components/icons';
+import { IconHeart, IconHeartOutline, IconInfoCircle, IconVRChat } from '@/components/icons';
 import { ensureContrastOnWhite, getCategoryColor, parseAndSortCategories } from '@/lib/akyo-data-helpers';
 import { formatDisplayId, getAkyoSourceUrl, resolveEntryType } from '@/lib/akyo-entry';
 import { generateBlurDataURL } from '@/lib/blur-data-url';
@@ -238,9 +238,11 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                             : t('card.favorite.add', lang)
                         }
                       >
-                        <span className="list-favorite-icon" aria-hidden="true">
-                          {akyo.isFavorite ? '❤️' : '🤍'}
-                        </span>
+                        {akyo.isFavorite ? (
+                          <IconHeart size="w-5 h-5" className="list-favorite-icon text-pink-400" />
+                        ) : (
+                          <IconHeartOutline size="w-5 h-5" className="list-favorite-icon text-pink-300" />
+                        )}
                       </button>
 
                       {/* 詳細ボタン */}

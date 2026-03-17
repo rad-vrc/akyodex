@@ -18,6 +18,7 @@ import {
   IconExternalLink,
   IconGift,
   IconHeart,
+  IconHeartOutline,
   IconSparkles,
   IconTag,
   IconUser,
@@ -752,7 +753,9 @@ export function AkyoDetailModal({
                         : t('modal.favorite.add', lang)
                     }
                   >
-                    <IconHeart size="w-4 h-4" />
+                    {localAkyo.isFavorite
+                      ? <IconHeart size="w-4 h-4" />
+                      : <IconHeartOutline size="w-4 h-4" />}
                     {localAkyo.isFavorite
                       ? t('modal.favorite.remove', lang)
                       : t('modal.favorite.add', lang)}

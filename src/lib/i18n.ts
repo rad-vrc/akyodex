@@ -263,10 +263,10 @@ export const UI_TEXTS = {
     en: "AI chat assistant",
     ko: "AI 채팅 도우미",
   },
-  "view.grid": {
-    ja: "グリッド表示",
-    en: "Grid view",
-    ko: "그리드 보기",
+  "view.card": {
+    ja: "カード表示",
+    en: "Card view",
+    ko: "카드 보기",
   },
   "view.list": {
     ja: "リスト表示",
