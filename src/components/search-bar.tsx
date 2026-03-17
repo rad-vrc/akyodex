@@ -95,7 +95,7 @@ export function SearchBar({
         value={query}
         onChange={handleChange}
         placeholder={placeholder}
-        className="search-input w-full"
+        className="search-input w-full rounded-[25px] border-[3px] border-[var(--primary-blue)] bg-white px-5 py-3 pl-[60px] text-[18px] focus:outline-none focus:!border-[#2b7fff] focus:ring-2 focus:ring-blue-300/50 focus-visible:outline-none focus-visible:!border-[#2b7fff] focus-visible:ring-2 focus-visible:ring-blue-300/50"
         aria-label={ariaLabel}
         autoComplete="off"
         spellCheck="false"
