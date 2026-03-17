@@ -653,6 +653,12 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
 
 ## ✨ Features
 
+### Recent behavior updates (2026-03)
+
+- **Mobile filter panel default**: On first render, mobile keeps the filter panel closed by default (`isMobile === true`), while desktop keeps it open.
+- **Catalog card image request width**: Card image width is tuned per entry type (`avatar: 512`, `world: 384`) to reduce world-card transfer size.
+- **Accessibility fixes (WCAG 2.1)**: Recent updates include contrast and keyboard/semantic improvements across filter controls and related UI.
+
 ### 1. Avatar Gallery
 
 - **Avatars**: Complete database with 4-digit IDs, JP/EN/KO data
