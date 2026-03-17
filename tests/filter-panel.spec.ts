@@ -73,6 +73,8 @@ test.describe("Search input focus styling", () => {
     const authorFocusStyles = await readFocusStyles(authorSearch);
     const globalFocusStyles = await readFocusStyles(globalSearch);
 
+    expect(authorFocusStyles.boxShadow).toContain("0px 0px 0px 2px");
+    expect(globalFocusStyles.boxShadow).toContain("0px 0px 0px 2px");
     expect(globalFocusStyles).toEqual(authorFocusStyles);
   });
 });

@@ -223,15 +223,6 @@ a:focus-visible,
   }
 }
 
-/* 全体検索のフォーカスは作者フィルター入力と同系統に揃える */
-.search-input:focus,
-.search-input:focus-visible {
-  outline: none !important;
-  outline-offset: 0 !important;
-  border-color: rgb(43, 127, 255) !important;
-  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.5) !important;
-}
-
 /* ドロップダウン（属性・作者フィルター） */
 select {
   border-radius: 15px !important;
