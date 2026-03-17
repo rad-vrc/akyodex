@@ -223,27 +223,6 @@ a:focus-visible,
   }
 }
 
-/* 検索バー */
-#searchInput,
-.search-input {
-  border-radius: 25px !important;
-  border: 3px solid var(--primary-blue) !important;
-  font-size: 18px !important;
-  padding: 12px 20px 12px 60px !important;
-  background: white !important;
-  transition: all 0.3s ease !important;
-}
-
-#searchInput:focus,
-#searchInput:focus-visible,
-.search-input:focus,
-.search-input:focus-visible {
-  border-color: #2563eb !important;
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.75) !important;
-  outline: 3px solid #1d4ed8 !important;
-  outline-offset: 3px !important;
-}
-
 /* ドロップダウン（属性・作者フィルター） */
 select {
   border-radius: 15px !important;
