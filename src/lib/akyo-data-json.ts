@@ -228,5 +228,6 @@ function normalizeAkyoItem(item: unknown): AkyoData {
     displaySerial,
     sourceUrl: String(raw.sourceUrl || raw.avatarUrl || ""),
     avatarUrl: String(raw.avatarUrl || raw.sourceUrl || ""),
+    boothUrl: raw.boothUrl ? String(raw.boothUrl) : undefined,
   };
 }

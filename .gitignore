@@ -20,6 +20,9 @@
 /playwright/.cache/
 /tests/screenshots/
 
+# local development data
+/public/data/
+
 # next.js
 /.next/
 /out/
