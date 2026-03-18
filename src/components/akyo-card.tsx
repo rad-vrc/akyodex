@@ -1,6 +1,6 @@
 "use client";
 
-import { IconDownload, IconVRChat } from "@/components/icons";
+import { IconDownload, IconHeart, IconHeartOutline, IconVRChat } from "@/components/icons";
 import {
   ensureContrastOnWhite,
   getCategoryColor,
@@ -188,14 +188,18 @@ export function AkyoCard({
         <button
           type="button"
           onClick={handleFavoriteClick}
-          className="favorite-btn absolute top-2 right-2 z-20"
+          className={`favorite-btn absolute top-2 right-2 z-20${akyo.isFavorite ? " is-active" : ""}`}
           aria-label={
             akyo.isFavorite
               ? t("card.favorite.remove", lang)
               : t("card.favorite.add", lang)
           }
         >
-          <span aria-hidden="true">{akyo.isFavorite ? "❤️" : "🤍"}</span>
+          {akyo.isFavorite ? (
+            <IconHeart size="w-5 h-5" className="text-pink-400" />
+          ) : (
+            <IconHeartOutline size="w-5 h-5" className="text-pink-300" />
+          )}
         </button>
       </div>
 

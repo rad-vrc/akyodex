@@ -727,7 +727,7 @@ export function ZukanClient({
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="akyo-card p-8 text-center space-y-4">
+        <div className="akyo-card-static p-8 text-center space-y-4">
           <div className="text-6xl" aria-hidden="true">😢</div>
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">
             {t("error.title", lang)}
@@ -742,7 +742,7 @@ export function ZukanClient({
   if (loading && needsRefetch && data.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="akyo-card p-8 text-center space-y-4 animate-pulse">
+        <div className="akyo-card-static p-8 text-center space-y-4 animate-pulse">
           <div className="text-6xl" aria-hidden="true">🔄</div>
           <h2 className="text-2xl font-bold text-[var(--text-primary)]">
             {t("loading.text", lang)}
@@ -843,7 +843,7 @@ export function ZukanClient({
         </div>
 
         {/* 検索バー */}
-        <div className="akyo-card p-4 sm:p-6">
+        <div className="akyo-card-static p-4 sm:p-6">
           <SearchBar
             onSearch={setSearchQuery}
             value={searchQuery}
@@ -854,7 +854,7 @@ export function ZukanClient({
         </div>
 
         {/* フィルターとビュー切替 */}
-        <div className="akyo-card p-4 sm:p-6 space-y-4">
+        <div className="akyo-card-static p-4 sm:p-6 space-y-4">
           <div className="space-y-2">
             <button
               type="button"
@@ -921,7 +921,7 @@ export function ZukanClient({
               type="button"
               onClick={() => setViewMode("grid")}
               className={`view-toggle-btn ${viewMode === "grid" ? "active" : ""}`}
-              aria-label={t("view.grid", lang)}
+              aria-label={t("view.card", lang)}
               aria-pressed={viewMode === "grid"}
             >
               <IconGrid size="w-5 h-5 md:w-6 md:h-6" />
@@ -965,7 +965,7 @@ export function ZukanClient({
 
         {/* Akyoカード/リスト表示 */}
         {filteredData.length === 0 ? (
-          <div className="akyo-card p-12 text-center space-y-4">
+          <div className="akyo-card-static p-12 text-center space-y-4">
             <div className="text-6xl" aria-hidden="true">🔍</div>
             <h3 className="text-2xl font-bold text-[var(--text-primary)]">
               {t("notfound.title", lang)}
