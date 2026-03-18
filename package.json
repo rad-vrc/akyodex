@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "next dev --turbopack",
@@ -28,16 +28,19 @@
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.17.1",
-    "@sentry/nextjs": "^10.39.0",
+    "@sentry/nextjs": "^10.44.0",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.6.0",
-    "next": "16.1.6",
+    "next": "16.1.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sanitize-html": "^2.17.0"
   },
   "overrides": {
-    "minimatch": "10.2.2",
+    "minimatch": "10.2.4",
+    "@aws-sdk/xml-builder": {
+      "fast-xml-parser": "5.5.6"
+    },
     "eslint": {
       "ajv": "6.14.0"
     },
@@ -53,13 +56,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.1.7",
     "knip": "^5.66.4",
     "postcss": "^8.4.49",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
-    "wrangler": "^4.64.0"
+    "wrangler": "^4.75.0"
   }
 }
