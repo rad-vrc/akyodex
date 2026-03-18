@@ -22,6 +22,7 @@ interface AkyoData {
   author: string;
   sourceUrl?: string;
   avatarUrl: string;
+  boothUrl?: string;
 }
 
 interface AkyoJsonOutput {
@@ -127,6 +128,7 @@ function parseCsvToAkyoData(csvText: string): AkyoData[] {
       author: rawRow['Author'] ?? '',
       sourceUrl: rawRow['SourceURL'] || rawRow['AvatarURL'] || '',
       avatarUrl: rawRow['AvatarURL'] || rawRow['SourceURL'] || '',
+      boothUrl: rawRow['BoothURL'] || undefined,
     });
   }
 

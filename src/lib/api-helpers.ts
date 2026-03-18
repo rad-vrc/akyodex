@@ -326,6 +326,7 @@ export interface AkyoFormData {
   entryType: AkyoEntryType;
   displaySerial?: string;
   sourceUrl: string;
+  boothUrl?: string;
 
   // 新フィールド
   category: string;
@@ -437,6 +438,8 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
     };
   }
 
+  const boothUrl = readField("boothUrl") || undefined;
+
   const imageValue = formData.get("imageData");
   const imageData =
     typeof imageValue === "string" && imageValue.trim().length > 0
@@ -456,6 +459,7 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
       avatarName,
       nickname,
       sourceUrl,
+      boothUrl,
       avatarUrl: readField("avatarUrl") || sourceUrl,
       imageData,
 

@@ -102,7 +102,8 @@ export async function processAkyoCRUD(
         entryType,
         displaySerial,
         sourceUrl,
-        avatarUrl, 
+        boothUrl,
+        avatarUrl,
         imageData,
         category,
         author,
@@ -110,22 +111,23 @@ export async function processAkyoCRUD(
         attributes,
         creator,
         notes
-    } = 'nickname' in formData 
-        ? formData 
-        : { 
-            nickname: '', 
-            avatarName: '', 
+    } = 'nickname' in formData
+        ? formData
+        : {
+            nickname: '',
+            avatarName: '',
             entryType: 'avatar',
             displaySerial: undefined,
             sourceUrl: '',
-            avatarUrl: '', 
+            boothUrl: undefined,
+            avatarUrl: '',
             imageData: undefined,
             category: '',
             author: '',
             comment: '',
             attributes: '',
             creator: '',
-            notes: '' 
+            notes: ''
         };
 
     try {
@@ -158,6 +160,7 @@ export async function processAkyoCRUD(
             creator: author || creator,
             notes: comment || notes,
             avatarUrl: sourceUrl || avatarUrl,
+            boothUrl,
         };
 
         switch (operation) {

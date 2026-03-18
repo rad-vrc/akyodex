@@ -30,6 +30,7 @@ interface AddTabDraft {
   nickname: string;
   categories: string[];
   sourceUrl: string;
+  boothUrl: string;
   author: string;
   comment: string;
   customCategories: string[];
@@ -42,6 +43,7 @@ function createDefaultFormData() {
     categories: [] as string[],
     author: '',
     sourceUrl: '',
+    boothUrl: '',
     comment: '',
   };
 }
@@ -132,6 +134,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             : typeof (parsed as { avatarUrl?: unknown }).avatarUrl === 'string'
             ? ((parsed as { avatarUrl: string }).avatarUrl)
             : prev.sourceUrl,
+        boothUrl: typeof parsed.boothUrl === 'string' ? parsed.boothUrl : prev.boothUrl,
         author: typeof parsed.author === 'string' ? parsed.author : prev.author,
         comment: typeof parsed.comment === 'string' ? parsed.comment : prev.comment,
       }));
@@ -150,6 +153,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
       nickname: formData.nickname,
       categories: normalizeStringList(formData.categories),
       sourceUrl: formData.sourceUrl,
+      boothUrl: formData.boothUrl,
       author: formData.author,
       comment: formData.comment,
       customCategories: normalizeStringList(customCategories),
@@ -158,6 +162,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
   }, [
     customCategories,
     formData.sourceUrl,
+    formData.boothUrl,
     formData.author,
     formData.categories,
     formData.comment,
@@ -462,6 +467,9 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         submitData.append('avatarName', entryType === 'world' ? '' : resolvedAvatarName);
         submitData.append('sourceUrl', url);
         submitData.append('avatarUrl', url);
+        if (formData.boothUrl.trim()) {
+          submitData.append('boothUrl', formData.boothUrl.trim());
+        }
         submitData.append('author', resolvedAuthor);
         submitData.append('category', resolvedCategories.join(','));
         submitData.append('comment', formData.comment);
@@ -953,6 +961,24 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 : '登録ボタンを押すと、このURLから名称・作者名・画像が自動的に取得されます。'}
             </p>
           </div>
+        </div>
+
+        {/* BOOTH URL */}
+        <div>
+          <label htmlFor="add-tab-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
+            BOOTH URL（任意）
+          </label>
+          <input
+            id="add-tab-booth-url"
+            type="url"
+            value={formData.boothUrl}
+            onChange={(e) => handleInputChange('boothUrl', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            placeholder="https://booth.pm/ja/items/..."
+          />
+          <p className="mt-2 text-xs text-gray-500 leading-snug">
+            BOOTHの販売ページURLを入力すると、図鑑のカード・リスト表示にBOOTHリンクボタンが表示されます。
+          </p>
         </div>
 
         {/* おまけ情報（comment） */}

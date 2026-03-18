@@ -12,6 +12,7 @@ export interface AkyoData {
   nickname: string; // 通称
   avatarName: string; // アバター名
   sourceUrl?: string; // エントリの元URL（avatar/world共通、未指定時は avatarUrl を使用）
+  boothUrl?: string; // BOOTH販売ページURL（任意）
 
   // 新スキーマ
   category: string; // 属性（旧 attribute）

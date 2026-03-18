@@ -17,7 +17,8 @@ const BASE_AKYO_CSV_COLUMNS = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comm
 const SOURCE_URL_COLUMN = 'SourceURL';
 const ENTRY_TYPE_COLUMN = 'EntryType';
 const DISPLAY_SERIAL_COLUMN = 'DisplaySerial';
-const AKYO_EXTENDED_COLUMNS = [SOURCE_URL_COLUMN, ENTRY_TYPE_COLUMN, DISPLAY_SERIAL_COLUMN];
+const BOOTH_URL_COLUMN = 'BoothURL';
+const AKYO_EXTENDED_COLUMNS = [SOURCE_URL_COLUMN, ENTRY_TYPE_COLUMN, DISPLAY_SERIAL_COLUMN, BOOTH_URL_COLUMN];
 const WORLD_ENTRY_TYPE = 'world';
 
 interface CsvRowLengthMismatch {
@@ -272,6 +273,7 @@ export function parseCsvToAkyoData(csvText: string): AkyoData[] {
       displaySerial: normalizedDisplaySerial || undefined,
       sourceUrl: normalizedSourceUrl,
       avatarUrl: normalizedAvatarUrl,
+      boothUrl: (rawRow['BoothURL'] ?? '').trim() || undefined,
     });
   }
 
@@ -357,6 +359,7 @@ export function createAkyoRecord(data: {
   comment?: string;
   sourceUrl?: string;
   avatarUrl?: string;
+  boothUrl?: string;
   /** backward compat */
   attributes?: string;
   creator?: string;
@@ -392,6 +395,8 @@ export function createAkyoRecord(data: {
         return sanitizeCsvCell(normalizedEntryType);
       case DISPLAY_SERIAL_COLUMN:
         return sanitizeCsvCell(normalizedDisplaySerial);
+      case BOOTH_URL_COLUMN:
+        return sanitizeCsvCell(data.boothUrl || '');
       default:
         return '';
     }

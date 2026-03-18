@@ -227,6 +227,27 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                         </button>
                       )}
 
+                      {/* BOOTHリンク */}
+                      {akyo.boothUrl && (
+                        <a
+                          href={akyo.boothUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-shrink-0 p-1 transition-all hover:scale-110 active:scale-95"
+                          title="BOOTH"
+                          aria-label="BOOTH"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="https://asset.booth.pm/static-images/banner/200x40_01.png"
+                            alt="BOOTH"
+                            className="h-[22px] w-auto"
+                            loading="lazy"
+                          />
+                        </a>
+                      )}
+
                       {/* お気に入りボタン */}
                       <button
                         type="button"

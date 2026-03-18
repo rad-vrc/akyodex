@@ -62,6 +62,7 @@ export function EditModal({
     author: '',
     sourceUrl: '',
     avatarUrl: '',
+    boothUrl: '',
     comment: '',
   });
 
@@ -119,6 +120,7 @@ export function EditModal({
         author: authorStr,
         sourceUrl: getAkyoSourceUrl(akyo),
         avatarUrl: akyo.avatarUrl || getAkyoSourceUrl(akyo),
+        boothUrl: akyo.boothUrl || '',
         comment: commentStr,
       });
       setShowImagePreview(false);
@@ -600,6 +602,9 @@ export function EditModal({
       submitData.append('avatarName', isWorldEntry ? '' : formData.avatarName);
       submitData.append('sourceUrl', formData.sourceUrl);
       submitData.append('avatarUrl', formData.avatarUrl || formData.sourceUrl);
+      if (formData.boothUrl.trim()) {
+        submitData.append('boothUrl', formData.boothUrl.trim());
+      }
 
       // 新フィールド
       submitData.append('author', formData.author);
@@ -938,6 +943,24 @@ export function EditModal({
                     placeholder="https://vrchat.com/..."
                   />
                 </div>
+              </div>
+
+              {/* BOOTH URL */}
+              <div>
+                <label htmlFor="edit-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
+                  BOOTH URL（任意）
+                </label>
+                <input
+                  id="edit-booth-url"
+                  type="url"
+                  value={formData.boothUrl}
+                  onChange={(e) => handleInputChange('boothUrl', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://booth.pm/ja/items/..."
+                />
+                <p className="text-xs text-gray-500 mt-2 leading-snug">
+                  BOOTHの販売ページURLを入力すると、図鑑にBOOTHリンクボタンが表示されます。
+                </p>
               </div>
 
               {/* おまけ情報（comment） */}
