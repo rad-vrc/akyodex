@@ -21,7 +21,7 @@
       "boothUrl": "https://booth.pm/ja/items/1738151",
       "nickname": "チョコミントAkyo",
       "avatarName": "Akyo alt",
-      "category": "チョコミント類",
+      "category": "チョコミント類,Booth",
       "comment": "Quest対応〇",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
@@ -197,22 +197,24 @@
       "entryType": "avatar",
       "nickname": "ヒューマノイドAkyo",
       "avatarName": "Humanoid Akyo v1․71 Multi Clothes",
-      "category": "動物,動物/人間・人類",
+      "category": "動物,動物/人間・人類,Booth",
       "comment": "",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4ddbe005-72e1-478d-848a-25bf5e4972c0",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4ddbe005-72e1-478d-848a-25bf5e4972c0"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4ddbe005-72e1-478d-848a-25bf5e4972c0",
+      "boothUrl": "https://booth.pm/ja/items/1738171"
     },
     {
       "id": "0019",
       "entryType": "avatar",
       "nickname": "キツネツキ式狐Akyo",
       "avatarName": "KTNTK_Akyo",
-      "category": "動物,動物/きつね",
+      "category": "動物,動物/きつね,Booth",
       "comment": "",
       "author": "kitsune_tsuki",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_84179c75-7975-4f15-955b-c1f94a211bbe",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_84179c75-7975-4f15-955b-c1f94a211bbe"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_84179c75-7975-4f15-955b-c1f94a211bbe",
+      "boothUrl": "https://booth.pm/ja/items/5615337"
     },
     {
       "id": "0020",
@@ -305,9 +307,10 @@
     {
       "id": "0028",
       "entryType": "avatar",
+      "boothUrl": "https://booth.pm/ja/items/5535632",
       "nickname": "ロボットAkyo（サンプル）",
       "avatarName": "AkyoRobotSample",
-      "category": "武器・機械,電子",
+      "category": "武器・機械,電子,Booth",
       "comment": "",
       "author": "n777",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6",
@@ -472,22 +475,24 @@
       "entryType": "avatar",
       "nickname": "ミナミコアリクイAkyo",
       "avatarName": "ミナミコアリクイAkyo",
-      "category": "動物,動物/アリクイ",
+      "category": "動物,動物/アリクイ,Booth",
       "comment": "",
       "author": "teramo",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_03c93715-e49f-4992-969a-aec9f3d7682d",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_03c93715-e49f-4992-969a-aec9f3d7682d"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_03c93715-e49f-4992-969a-aec9f3d7682d",
+      "boothUrl": "https://booth.pm/ja/items/5982000"
     },
     {
       "id": "0044",
       "entryType": "avatar",
       "nickname": "苔Akyo",
       "avatarName": "Moss",
-      "category": "植物,植物/苔",
+      "category": "植物,植物/苔,Booth",
       "comment": "",
       "author": "カヤ（kaya）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7e4418e8-a734-4072-99c3-8653c755aaa8",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7e4418e8-a734-4072-99c3-8653c755aaa8"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7e4418e8-a734-4072-99c3-8653c755aaa8",
+      "boothUrl": "https://booth.pm/ja/items/6812160"
     },
     {
       "id": "0045",
@@ -571,11 +576,12 @@
       "entryType": "avatar",
       "nickname": "ヤギAkyo",
       "avatarName": "％＆＠＄＃ヤギAkyo",
-      "category": "動物,動物/ヤギ",
+      "category": "動物,動物/ヤギ,Booth",
       "comment": "",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_82097fe1-f3fd-4755-b45b-a86c01ad6a49",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_82097fe1-f3fd-4755-b45b-a86c01ad6a49"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_82097fe1-f3fd-4755-b45b-a86c01ad6a49",
+      "boothUrl": "https://booth.pm/ja/items/6420432"
     },
     {
       "id": "0053",
@@ -890,11 +896,12 @@
       "entryType": "avatar",
       "nickname": "カーバンクルAkyo",
       "avatarName": "カーバンクルAkyo",
-      "category": "架空の存在,架空の存在/幻獣・精霊",
+      "category": "架空の存在,架空の存在/幻獣・精霊,Booth",
       "comment": "",
       "author": "幻遊童子",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_386955dc-f23f-47e6-aefd-5a51871b64d2",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_386955dc-f23f-47e6-aefd-5a51871b64d2"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_386955dc-f23f-47e6-aefd-5a51871b64d2",
+      "boothUrl": "https://booth.pm/ja/items/5958204"
     },
     {
       "id": "0082",
@@ -912,33 +919,36 @@
       "entryType": "avatar",
       "nickname": "もぐらAkyo",
       "avatarName": "もぐらAkyo",
-      "category": "動物,動物/もぐら",
+      "category": "動物,動物/もぐら,Booth",
       "comment": "",
       "author": "スケタ_",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f7f10558-f0d3-43c2-996a-027264644d10",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f7f10558-f0d3-43c2-996a-027264644d10"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f7f10558-f0d3-43c2-996a-027264644d10",
+      "boothUrl": "https://suketa.booth.pm/items/5696318"
     },
     {
       "id": "0084",
       "entryType": "avatar",
       "nickname": "ゾウクラゲAkyo",
       "avatarName": "ゾウクラゲAkyo",
-      "category": "動物,動物/クラゲ,動物/海の生き物",
+      "category": "動物,動物/クラゲ,動物/海の生き物,Booth",
       "comment": "",
       "author": "スケタ_",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d44f6860-c79f-41ab-b7a8-cb7cc9b4ee89",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d44f6860-c79f-41ab-b7a8-cb7cc9b4ee89"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d44f6860-c79f-41ab-b7a8-cb7cc9b4ee89",
+      "boothUrl": "https://suketa.booth.pm/items/5929142"
     },
     {
       "id": "0085",
       "entryType": "avatar",
       "nickname": "タコスAkyo",
       "avatarName": "タコスAkyo",
-      "category": "食べ物,食べ物/料理",
+      "category": "食べ物,食べ物/料理,Booth",
       "comment": "",
       "author": "スケタ_",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7deaf4fd-fb4d-4e53-8471-b84d2ce584a4",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7deaf4fd-fb4d-4e53-8471-b84d2ce584a4"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7deaf4fd-fb4d-4e53-8471-b84d2ce584a4",
+      "boothUrl": "https://booth.pm/ja/items/6014245"
     },
     {
       "id": "0086",
@@ -1671,11 +1681,12 @@
       "entryType": "avatar",
       "nickname": "ポンチョAkyo",
       "avatarName": "akyo___________雨",
-      "category": "ファッション,環境・天候,環境・天候/雨",
+      "category": "ファッション,環境・天候,環境・天候/雨,Booth",
       "comment": "初期は_が長い",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ea0397b8-c8e1-4c9a-a1e7-c5ca48c090de",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ea0397b8-c8e1-4c9a-a1e7-c5ca48c090de"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ea0397b8-c8e1-4c9a-a1e7-c5ca48c090de",
+      "boothUrl": "https://sasanoki.booth.pm/items/2171888"
     },
     {
       "id": "0153",
@@ -1748,22 +1759,24 @@
       "entryType": "avatar",
       "nickname": "きつねAkyo",
       "avatarName": "akyo__fox",
-      "category": "動物,動物/きつね",
+      "category": "動物,動物/きつね,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_fc558b6d-0f92-4288-a712-13c6b2e95de9",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fc558b6d-0f92-4288-a712-13c6b2e95de9"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fc558b6d-0f92-4288-a712-13c6b2e95de9",
+      "boothUrl": "https://sasanoki.booth.pm/items/2171903"
     },
     {
       "id": "0160",
       "entryType": "avatar",
       "nickname": "オコジョAkyo",
       "avatarName": "akyo__fox2",
-      "category": "動物,動物/オコジョ",
+      "category": "動物,動物/オコジョ,Booth",
       "comment": "なぜかfox2",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4413eeb4-2b37-43f7-b3c4-0b4ff781f8c2",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4413eeb4-2b37-43f7-b3c4-0b4ff781f8c2"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4413eeb4-2b37-43f7-b3c4-0b4ff781f8c2",
+      "boothUrl": "https://sasanoki.booth.pm/items/2174666"
     },
     {
       "id": "0161",
@@ -1858,11 +1871,12 @@
       "entryType": "avatar",
       "nickname": "どらごんAkyo",
       "avatarName": "akyo_どらごん 1․52",
-      "category": "架空の存在,技能・特性,技能・特性/ひこう,動物,架空の存在/りゅう・ドラゴン",
+      "category": "架空の存在,技能・特性,技能・特性/ひこう,動物,架空の存在/りゅう・ドラゴン,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a197978a-19f3-4282-95f9-884320ef57c7",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a197978a-19f3-4282-95f9-884320ef57c7"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a197978a-19f3-4282-95f9-884320ef57c7",
+      "boothUrl": "https://sasanoki.booth.pm/items/2171907"
     },
     {
       "id": "0170",
@@ -1891,22 +1905,24 @@
       "entryType": "avatar",
       "nickname": "かっぱAkyo",
       "avatarName": "akyo_kappa",
-      "category": "架空の存在,架空の存在/妖怪・おばけ",
+      "category": "架空の存在,架空の存在/妖怪・おばけ,Booth",
       "comment": "会えたらラッキー",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_21c11fa6-1ecd-49c8-95f0-c1d8719f6d77",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_21c11fa6-1ecd-49c8-95f0-c1d8719f6d77"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_21c11fa6-1ecd-49c8-95f0-c1d8719f6d77",
+      "boothUrl": "https://sasanoki.booth.pm/items/2174676"
     },
     {
       "id": "0173",
       "entryType": "avatar",
       "nickname": "たぬきAkyo",
       "avatarName": "akyo_tanuki",
-      "category": "動物,動物/たぬき",
+      "category": "動物,動物/たぬき,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0d78a816-74ea-4255-a886-1fe78bd578f9",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0d78a816-74ea-4255-a886-1fe78bd578f9"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0d78a816-74ea-4255-a886-1fe78bd578f9",
+      "boothUrl": "https://sasanoki.booth.pm/items/2174671"
     },
     {
       "id": "0174",
@@ -1924,22 +1940,24 @@
       "entryType": "avatar",
       "nickname": "ちくわAkyo",
       "avatarName": "akyo_ちくわ",
-      "category": "食べ物,食べ物/料理",
+      "category": "食べ物,食べ物/料理,Booth",
       "comment": "内側が気になる",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ca614f53-b7cc-47f1-b10d-577e150fdbd3",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ca614f53-b7cc-47f1-b10d-577e150fdbd3"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ca614f53-b7cc-47f1-b10d-577e150fdbd3",
+      "boothUrl": "https://sasanoki.booth.pm/items/2318362"
     },
     {
       "id": "0176",
       "entryType": "avatar",
       "nickname": "ナースAkyo",
       "avatarName": "akyo_ナース",
-      "category": "身分・役割,身分・役割/医療従事者",
+      "category": "身分・役割,身分・役割/医療従事者,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_90058d68-5c07-4632-a4e0-ee53b0344a55",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_90058d68-5c07-4632-a4e0-ee53b0344a55"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_90058d68-5c07-4632-a4e0-ee53b0344a55",
+      "boothUrl": "https://sasanoki.booth.pm/items/2174659"
     },
     {
       "id": "0177",
@@ -2001,11 +2019,12 @@
       "entryType": "avatar",
       "nickname": "シスターAkyo",
       "avatarName": "akyo_シスター",
-      "category": "身分・役割",
+      "category": "身分・役割,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3b3feea7-e6ec-414b-b4b3-83152f02954a",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b3feea7-e6ec-414b-b4b3-83152f02954a"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b3feea7-e6ec-414b-b4b3-83152f02954a",
+      "boothUrl": "https://sasanoki.booth.pm/items/2294795"
     },
     {
       "id": "0183",
@@ -2034,44 +2053,48 @@
       "entryType": "avatar",
       "nickname": "プリンAkyo",
       "avatarName": "akyo_プリン",
-      "category": "食べ物,食べ物/スイーツ",
+      "category": "食べ物,食べ物/スイーツ,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_46df5292-f719-4f01-be76-516650891c1e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_46df5292-f719-4f01-be76-516650891c1e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_46df5292-f719-4f01-be76-516650891c1e",
+      "boothUrl": "https://sasanoki.booth.pm/items/2318374"
     },
     {
       "id": "0186",
       "entryType": "avatar",
       "nickname": "だいこんAkyo",
       "avatarName": "akyo_だいこん",
-      "category": "食べ物,食べ物/野菜",
+      "category": "食べ物,食べ物/野菜,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1c1e05e3-8a9d-40d6-a606-e6d86b0b7931",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1c1e05e3-8a9d-40d6-a606-e6d86b0b7931"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1c1e05e3-8a9d-40d6-a606-e6d86b0b7931",
+      "boothUrl": "https://sasanoki.booth.pm/items/2318357"
     },
     {
       "id": "0187",
       "entryType": "avatar",
       "nickname": "うしAkyo",
       "avatarName": "akyo_うし",
-      "category": "動物,動物/うし",
+      "category": "動物,動物/うし,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0fe1984c-8c4d-457f-a58a-86fff3b8209e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0fe1984c-8c4d-457f-a58a-86fff3b8209e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0fe1984c-8c4d-457f-a58a-86fff3b8209e",
+      "boothUrl": "https://sasanoki.booth.pm/items/2318348"
     },
     {
       "id": "0188",
       "entryType": "avatar",
       "nickname": "コーヒーAkyo",
       "avatarName": "akyo_coffee",
-      "category": "飲み物",
+      "category": "飲み物,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_916dee71-17e0-438b-b474-a0ff0341c209",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_916dee71-17e0-438b-b474-a0ff0341c209"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_916dee71-17e0-438b-b474-a0ff0341c209",
+      "boothUrl": "https://sasanoki.booth.pm/items/2318370"
     },
     {
       "id": "0189",
@@ -2133,11 +2156,12 @@
       "entryType": "avatar",
       "nickname": "ばななAkyo",
       "avatarName": "akyo_banana",
-      "category": "食べ物,食べ物/フルーツ",
+      "category": "食べ物,食べ物/フルーツ,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a2b96174-dfc2-4125-93bd-9f153f1f6ca0",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a2b96174-dfc2-4125-93bd-9f153f1f6ca0"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a2b96174-dfc2-4125-93bd-9f153f1f6ca0",
+      "boothUrl": "https://sasanoki.booth.pm/items/2318367"
     },
     {
       "id": "0195",
@@ -2188,11 +2212,12 @@
       "entryType": "avatar",
       "nickname": "アルパカAkyo",
       "avatarName": "akyo_アルパカ",
-      "category": "動物,動物/アルパカ,四足歩行",
+      "category": "akyo",
       "comment": "チョコミント類ではない",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_36b0ccac-72c6-4f68-9474-4898a7355329",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_36b0ccac-72c6-4f68-9474-4898a7355329"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_36b0ccac-72c6-4f68-9474-4898a7355329",
+      "boothUrl": "https://booth.pm/ja/items/2499808"
     },
     {
       "id": "0200",
@@ -2276,11 +2301,12 @@
       "entryType": "avatar",
       "nickname": "あしがるAkyo",
       "avatarName": "akyo_asigaru2",
-      "category": "身分・役割,身分・役割/兵士,武器・機械,国,国/日本",
+      "category": "akyo",
       "comment": "asigaru1は没案",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_711b3c52-9f3d-479b-abdc-6c1b3f639cbd",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_711b3c52-9f3d-479b-abdc-6c1b3f639cbd"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_711b3c52-9f3d-479b-abdc-6c1b3f639cbd",
+      "boothUrl": "https://booth.pm/ja/items/2401546"
     },
     {
       "id": "0208",
@@ -2320,33 +2346,36 @@
       "entryType": "avatar",
       "nickname": "さつまいもAkyo",
       "avatarName": "akyo_サツマイモ",
-      "category": "食べ物,食べ物/野菜",
+      "category": "akyo",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6e236506-58d9-410e-99d6-344527f6b7dd",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6e236506-58d9-410e-99d6-344527f6b7dd"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6e236506-58d9-410e-99d6-344527f6b7dd",
+      "boothUrl": "https://booth.pm/ja/items/3109079"
     },
     {
       "id": "0212",
       "entryType": "avatar",
       "nickname": "コートきつねAkyo",
       "avatarName": "akyo_coat",
-      "category": "動物,動物/きつね",
+      "category": "akyo",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_20553520-5c47-41cf-9815-1c160e1a8cfd",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_20553520-5c47-41cf-9815-1c160e1a8cfd"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_20553520-5c47-41cf-9815-1c160e1a8cfd",
+      "boothUrl": "https://booth.pm/ja/items/2573111"
     },
     {
       "id": "0213",
       "entryType": "avatar",
       "nickname": "ししまいAkyo",
       "avatarName": "akyo_sisimai",
-      "category": "季節・行事",
+      "category": "akyo",
       "comment": "わるいキッズAkyoを襲う",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3f41cb57-4272-4f6a-8091-e4c5c9dfcedf",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3f41cb57-4272-4f6a-8091-e4c5c9dfcedf"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3f41cb57-4272-4f6a-8091-e4c5c9dfcedf",
+      "boothUrl": "https://booth.pm/ja/items/2610875"
     },
     {
       "id": "0214",
@@ -2430,11 +2459,12 @@
       "entryType": "avatar",
       "nickname": "とうもろこしAkyo",
       "avatarName": "akyo_Corn",
-      "category": "食べ物,食べ物/野菜",
+      "category": "akyo&畑",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_18a4a48c-eb45-4023-bc8c-c9f708f5997e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_18a4a48c-eb45-4023-bc8c-c9f708f5997e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_18a4a48c-eb45-4023-bc8c-c9f708f5997e",
+      "boothUrl": "https://booth.pm/ja/items/3145248"
     },
     {
       "id": "0222",
@@ -2463,11 +2493,12 @@
       "entryType": "avatar",
       "nickname": "にんじんAkyo",
       "avatarName": "akyo_にんじん",
-      "category": "食べ物,食べ物/野菜",
+      "category": "食べ物,食べ物/野菜,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0375af58-540b-4fe5-bfab-6d7b5212350b",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0375af58-540b-4fe5-bfab-6d7b5212350b"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0375af58-540b-4fe5-bfab-6d7b5212350b",
+      "boothUrl": "https://sasanoki.booth.pm/items/2318357"
     },
     {
       "id": "0225",
@@ -2551,11 +2582,12 @@
       "entryType": "avatar",
       "nickname": "歩兵Akyo",
       "avatarName": "akyo__歩兵",
-      "category": "身分・役割,身分・役割/兵士",
+      "category": "身分・役割,身分・役割/兵士,Booth",
       "comment": "緑はチョコミント類？",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_44db453a-6048-4c21-b993-4dd3717bfc1d",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_44db453a-6048-4c21-b993-4dd3717bfc1d"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_44db453a-6048-4c21-b993-4dd3717bfc1d",
+      "boothUrl": "https://sasanoki.booth.pm/items/2294731"
     },
     {
       "id": "0233",
@@ -5477,11 +5509,12 @@
       "entryType": "avatar",
       "nickname": "ラテアートAkyo",
       "avatarName": "LatteArtAkyo",
-      "category": "芸術・アート,飲み物",
+      "category": "芸術・アート,飲み物,Booth",
       "comment": "",
       "author": "oyoso_5_oku",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_66231018-1fb9-45f8-a584-1327fb329303",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66231018-1fb9-45f8-a584-1327fb329303"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66231018-1fb9-45f8-a584-1327fb329303",
+      "boothUrl": "https://booth.pm/ja/items/6572777"
     },
     {
       "id": "0499",
@@ -6313,11 +6346,12 @@
       "entryType": "avatar",
       "nickname": "たこAkyo",
       "avatarName": "たこAkyo",
-      "category": "動物,動物/タコ,動物/海の生き物",
+      "category": "動物,動物/タコ,動物/海の生き物,Booth",
       "comment": "かわいい",
       "author": "ふらっと（flat）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a32c423c-45ee-416d-aad4-fcaf17e5d18e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a32c423c-45ee-416d-aad4-fcaf17e5d18e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a32c423c-45ee-416d-aad4-fcaf17e5d18e",
+      "boothUrl": "https://booth.pm/ja/items/6780828"
     },
     {
       "id": "0575",
@@ -7028,11 +7062,12 @@
       "entryType": "avatar",
       "nickname": "自由のAkyo",
       "avatarName": "FreedomAkyo",
-      "category": "像・埴輪,芸術・アート",
+      "category": "像・埴輪,芸術・アート,Booth",
       "comment": "",
       "author": "すいしょー",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7ec41427-1e99-4d5c-87c1-20d7e1d68b88",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7ec41427-1e99-4d5c-87c1-20d7e1d68b88"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7ec41427-1e99-4d5c-87c1-20d7e1d68b88",
+      "boothUrl": "https://booth.pm/ja/items/7214398"
     },
     {
       "id": "0640",
@@ -7048,9 +7083,10 @@
     {
       "id": "0641",
       "entryType": "avatar",
+      "boothUrl": "https://booth.pm/ja/items/7385278",
       "nickname": "まめAkyo",
       "avatarName": "Bean Akyo",
-      "category": "まめ,まめAkyo",
+      "category": "まめ,まめAkyo,Booth",
       "comment": "",
       "author": "bosa_bosa",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c65daaf6-30ec-456f-90cf-68f60ecbeec5",
@@ -7501,11 +7537,12 @@
       "entryType": "avatar",
       "nickname": "ジンジャーブレッドAkyo",
       "avatarName": "GingerbreadAkyo",
-      "category": "食べ物,素材・原材料,形状・触り心地,形状・触り心地/薄い,食べ物/スイーツ",
+      "category": "食べ物,素材・原材料,形状・触り心地,形状・触り心地/薄い,食べ物/スイーツ,Booth",
       "comment": "動くと横に揺れるよ！",
       "author": "oyoso_5_oku",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_04d93765-939b-46dc-9837-3f5f7af5d0b0",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_04d93765-939b-46dc-9837-3f5f7af5d0b0"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_04d93765-939b-46dc-9837-3f5f7af5d0b0",
+      "boothUrl": "https://booth.pm/ja/items/7757120"
     },
     {
       "id": "0683",
@@ -8161,11 +8198,12 @@
       "entryType": "avatar",
       "nickname": "カラフル回転Akyo",
       "avatarName": "カラフル回転Akyo",
-      "category": "ギミック・特殊,ギミック・特殊/ダンス,チョコミント類",
+      "category": "ギミック・特殊,ギミック・特殊/ダンス,チョコミント類,Booth",
       "comment": "なんて洗練された腰の動き！",
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7577b5fa-56c3-43f7-8771-dfdfb3a7b05b",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7577b5fa-56c3-43f7-8771-dfdfb3a7b05b"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7577b5fa-56c3-43f7-8771-dfdfb3a7b05b",
+      "boothUrl": "https://booth.pm/ja/items/8008741"
     },
     {
       "id": "0743",

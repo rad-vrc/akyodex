@@ -721,12 +721,12 @@ export function AkyoDetailModal({
                     <h3 className="text-sm font-semibold text-gray-500 mb-2">
                       BOOTH URL
                     </h3>
-                    <div className="bg-orange-50 rounded-lg p-4">
+                    <div className="bg-blue-50 rounded-lg p-4">
                       <a
                         href={localAkyo.boothUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-orange-600 hover:text-orange-800 text-sm break-all cursor-pointer"
+                        className="text-blue-600 hover:text-blue-800 text-sm break-all cursor-pointer"
                       >
                         <IconExternalLink size="w-3.5 h-3.5" className="mr-1" />
                         {localAkyo.boothUrl}
