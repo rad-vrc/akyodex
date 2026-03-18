@@ -27,7 +27,7 @@
     "hooks:install": "git config --local core.hooksPath .githooks"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.16.5",
+    "@opennextjs/cloudflare": "^1.17.1",
     "@sentry/nextjs": "^10.39.0",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.6.0",
