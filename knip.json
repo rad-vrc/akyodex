@@ -21,6 +21,8 @@
     "scripts/generate-ko-data.js",
     "scripts/generate-ko-data.test.js",
     "scripts/push-pr-state.test.js",
+    "scripts/auto-push-after-commit.js",
+    "scripts/auto-push-after-commit.test.js",
     "scripts/nickname-map-ko.js",
     "scripts/tmp/register-verified-worlds.js",
     "scripts/tmp/register-verified-worlds.test.js",
