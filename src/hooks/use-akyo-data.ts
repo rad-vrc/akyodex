@@ -56,7 +56,6 @@ function buildSearchIndex(akyo: AkyoData): string[] {
   return searchTargets.flatMap((value) => normalizeSearchValue(value));
 }
 
-
 /**
  * Akyoデータを管理するカスタムフック (SSR対応版)
  *
@@ -462,10 +461,6 @@ function saveFavorites(ids: string[]): boolean {
  * データ配列にお気に入り情報を付与する共通ヘルパー
  * Set を使用して O(1) ルックアップを実現 (React Best Practices 7.11)
  */
-function applyFavorites(items: AkyoData[]): AkyoData[] {
-  return applyFavoritesFromIds(items, getFavorites());
-}
-
 function applyFavoritesFromIds(
   items: AkyoData[],
   favoriteIds: readonly string[],
