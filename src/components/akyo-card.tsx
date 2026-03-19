@@ -252,7 +252,7 @@ export function AkyoCard({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/booth-banner.svg"
+                src="/images/booth-banner.svg"
                 alt="BOOTH"
                 className="h-[18px] w-auto"
                 loading="lazy"
