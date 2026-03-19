@@ -7,10 +7,14 @@
  *
  * Returns the canonicalized URL string on success, or undefined on failure.
  */
+// All localized forms of the Booth/avatar sub-category
+const BOOTH_AVATAR_VARIANTS = ["Booth/アバター", "Booth/Avatar", "Booth/아바타"];
+
 /**
  * Ensure Booth categories are present when boothUrl exists.
  * - "Booth" is added to all entries with a boothUrl
- * - "Booth/アバター" is added only when entryType is "avatar"
+ * - A Booth/avatar sub-category is added only when entryType is "avatar"
+ *   and none of the localized variants already exist.
  * Categories are not duplicated if already present.
  */
 export function ensureBoothCategories(
@@ -28,7 +32,10 @@ export function ensureBoothCategories(
     cats.push("Booth");
   }
 
-  if (entryType === "avatar" && !cats.includes("Booth/アバター")) {
+  if (
+    entryType === "avatar" &&
+    !cats.some((c) => BOOTH_AVATAR_VARIANTS.includes(c))
+  ) {
     cats.push("Booth/アバター");
   }
 
