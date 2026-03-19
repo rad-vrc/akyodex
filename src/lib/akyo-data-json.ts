@@ -22,7 +22,7 @@ import type { SupportedLanguage } from "@/lib/i18n";
 import type { AkyoData } from "@/types/akyo";
 import { cache } from "react";
 import { hydrateAkyoDataset } from "./akyo-entry";
-import { validateBoothUrl } from "./booth-url";
+import { ensureBoothCategories, validateBoothUrl } from "./booth-url";
 
 /**
  * Get the JSON data URL based on language and data source
@@ -235,30 +235,3 @@ function normalizeAkyoItem(item: unknown): AkyoData {
   };
 }
 
-/**
- * Ensure Booth categories are present when boothUrl exists.
- * - "Booth" is added to all entries with a boothUrl
- * - "Booth/アバター" is added only when entryType is "avatar"
- * Categories are not duplicated if already present.
- */
-function ensureBoothCategories(
-  category: string,
-  boothUrl: string | undefined,
-  entryType: string | undefined,
-): string {
-  if (!boothUrl) return category;
-
-  const cats = category
-    ? category.split(",").map((c) => c.trim()).filter(Boolean)
-    : [];
-
-  if (!cats.includes("Booth")) {
-    cats.push("Booth");
-  }
-
-  if (entryType === "avatar" && !cats.includes("Booth/アバター")) {
-    cats.push("Booth/アバター");
-  }
-
-  return cats.join(",");
-}

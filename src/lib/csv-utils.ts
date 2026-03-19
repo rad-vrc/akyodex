@@ -10,7 +10,7 @@ import type { AkyoData } from '@/types/akyo';
 import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
 import { hydrateAkyoDataset, WORLD_CATEGORY_MARKERS } from './akyo-entry';
-import { validateBoothUrl } from './booth-url';
+import { ensureBoothCategories, validateBoothUrl } from './booth-url';
 import type { GitHubCommitResponse, GitHubConfig } from './github-utils';
 import { commitCSVToGitHub, fetchCSVFromGitHub } from './github-utils';
 
@@ -250,31 +250,34 @@ export function parseCsvToAkyoData(csvText: string): AkyoData[] {
     const normalizedDisplaySerial = (rawRow[DISPLAY_SERIAL_COLUMN] ?? '').trim();
     const normalizedSourceUrl = (rawRow['SourceURL'] || rawRow['AvatarURL'] || '').trim();
     const normalizedAvatarUrl = (rawRow['AvatarURL'] || rawRow['SourceURL'] || '').trim();
+    const boothUrl = validateBoothUrl(rawRow['BoothURL']);
+    const entryType =
+      normalizedEntryType === 'avatar' || normalizedEntryType === 'world'
+        ? normalizedEntryType
+        : undefined;
+    const category = ensureBoothCategories(attribute, boothUrl, entryType);
 
     data.push({
       id: rawRow['ID'] ?? '',
       appearance: '', // Removed field
       nickname: rawRow['Nickname'] ?? '',
       avatarName: rawRow['AvatarName'] ?? '',
-      
+
       // Standardized fields
-      category: attribute,
+      category,
       comment: notes,
       author: creator,
       
       // Backward compatibility fields
-      attribute: attribute,
+      attribute: category,
       notes: notes,
       creator: creator,
 
-      entryType:
-        normalizedEntryType === 'avatar' || normalizedEntryType === 'world'
-          ? normalizedEntryType
-          : undefined,
+      entryType,
       displaySerial: normalizedDisplaySerial || undefined,
       sourceUrl: normalizedSourceUrl,
       avatarUrl: normalizedAvatarUrl,
-      boothUrl: validateBoothUrl(rawRow['BoothURL']),
+      boothUrl,
     });
   }
 
