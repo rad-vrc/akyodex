@@ -876,8 +876,33 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             />
           </div>
 
-          {/* カテゴリ (旧: 属性) */}
+          {/* 作者 */}
           <div>
+            <label htmlFor="add-tab-author" className="block text-gray-700 text-sm font-medium mb-1">
+              作者（自動取得 / 必要時は手動入力）
+            </label>
+            {detectedEntryType === 'world' ? (
+              <input
+                id="add-tab-author"
+                type="text"
+                value={formData.author}
+                onChange={(e) => handleInputChange('author', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder="取得失敗時はここで補完できます"
+              />
+            ) : (
+              <input
+                id="add-tab-author"
+                type="text"
+                value="登録時にVRChat URLから自動取得"
+                disabled
+                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
+              />
+            )}
+          </div>
+
+          {/* カテゴリ (旧: 属性) - 全幅 */}
+          <div className="md:col-span-2">
             <label className="block text-gray-700 text-sm font-medium mb-1">カテゴリ</label>
             <div className="space-y-2">
               <button
@@ -907,33 +932,27 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
               </div>
               <p className="text-xs text-gray-500 leading-snug">
                 ワールドならワールドカテゴリは自動追加されますが、階層型カテゴリを設定する場合は手動で設定してください。
+                BOOTH URLが入力されている場合、Boothカテゴリは登録時に自動追加されます。
               </p>
             </div>
           </div>
 
-          {/* 作者 */}
+          {/* BOOTH URL */}
           <div>
-            <label htmlFor="add-tab-author" className="block text-gray-700 text-sm font-medium mb-1">
-              作者（自動取得 / 必要時は手動入力）
+            <label htmlFor="add-tab-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
+              BOOTH URL（任意）
             </label>
-            {detectedEntryType === 'world' ? (
-              <input
-                id="add-tab-author"
-                type="text"
-                value={formData.author}
-                onChange={(e) => handleInputChange('author', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="取得失敗時はここで補完できます"
-              />
-            ) : (
-              <input
-                id="add-tab-author"
-                type="text"
-                value="登録時にVRChat URLから自動取得"
-                disabled
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
-              />
-            )}
+            <input
+              id="add-tab-booth-url"
+              type="url"
+              value={formData.boothUrl}
+              onChange={(e) => handleInputChange('boothUrl', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="https://booth.pm/ja/items/..."
+            />
+            <p className="mt-2 text-xs text-gray-500 leading-snug">
+              BOOTHの販売ページURLを入力すると、図鑑のカード・リスト表示にBOOTHリンクボタンが表示されます。
+            </p>
           </div>
 
           {/* VRChat URL */}
@@ -961,24 +980,6 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 : '登録ボタンを押すと、このURLから名称・作者名・画像が自動的に取得されます。'}
             </p>
           </div>
-        </div>
-
-        {/* BOOTH URL */}
-        <div>
-          <label htmlFor="add-tab-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
-            BOOTH URL（任意）
-          </label>
-          <input
-            id="add-tab-booth-url"
-            type="url"
-            value={formData.boothUrl}
-            onChange={(e) => handleInputChange('boothUrl', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-            placeholder="https://booth.pm/ja/items/..."
-          />
-          <p className="mt-2 text-xs text-gray-500 leading-snug">
-            BOOTHの販売ページURLを入力すると、図鑑のカード・リスト表示にBOOTHリンクボタンが表示されます。
-          </p>
         </div>
 
         {/* おまけ情報（comment） */}
