@@ -20,6 +20,7 @@ import {
   IconGlobe,
   IconGrid,
   IconList,
+  IconShoppingBag,
 } from "@/components/icons";
 import { LanguageToggle } from "@/components/language-toggle";
 import { SearchBar } from "@/components/search-bar";
@@ -987,13 +988,7 @@ export function ZukanClient({
               aria-label={t("view.boothOnly", lang)}
               aria-pressed={isBoothFilterActive}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/booth-banner.svg"
-                alt=""
-                className="h-4 md:h-5 w-auto"
-                loading="lazy"
-              />
+              <IconShoppingBag size="w-5 h-5 md:w-6 md:h-6" />
             </button>
           </div>
         </div>
