@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
     return {
         name: 'Akyoずかん - VRChat Avatar Encyclopedia',
         short_name: 'Akyoずかん',
-        description: 'VRChatに潜むなぞ生物アバター「Akyo」を639体以上収録した図鑑サイト',
+        description: 'VRChatに潜むなぞ生物アバター「Akyo」を700体以上、そしてAkyo要素のあるワールドを50種類以上収録したAkyoコンテンツの図鑑サイト',
         start_url: '/',
         display: 'standalone',
         background_color: '#ffffff',

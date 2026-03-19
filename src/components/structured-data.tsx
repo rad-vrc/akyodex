@@ -21,8 +21,8 @@ export function StructuredData({ nonce }: StructuredDataProps) {
     name: 'Akyoずかん',
     alternateName: 'Akyodex',
     url: 'https://akyodex.com',
-    description: 'VRChatに潜むなぞ生物アバター「Akyo」を500体以上収録した図鑑サイト',
-    inLanguage: ['ja-JP', 'en-US'],
+    description: 'VRChatに潜むなぞ生物アバター「Akyo」を700体以上、そしてAkyo要素のあるワールドを50種類以上収録したAkyoコンテンツの図鑑サイト',
+    inLanguage: ['ja-JP', 'en-US', 'ko-KR'],
     author: {
       '@type': 'Person',
       name: 'らど',
