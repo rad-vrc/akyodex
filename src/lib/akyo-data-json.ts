@@ -195,7 +195,7 @@ function normalizeAkyoItem(item: unknown): AkyoData {
   const raw = item as Record<string, unknown>;
 
   const id = String(raw.id || "");
-  const boothUrl = validateBoothUrl(raw.boothUrl as string | undefined);
+  const boothUrl = validateBoothUrl(typeof raw.boothUrl === "string" ? raw.boothUrl : undefined);
   const rawCategory = String(raw.category || raw.attribute || "");
   const category = ensureBoothCategories(rawCategory, boothUrl, raw.entryType as string | undefined);
   const comment = String(raw.comment || raw.notes || "");
