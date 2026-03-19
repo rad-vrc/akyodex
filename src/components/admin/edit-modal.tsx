@@ -158,6 +158,7 @@ export function EditModal({
   };
 
   const isWorldEntry = formData.entryType === 'world';
+  const isBoothEntry = formData.entryType === 'booth';
 
   const zoomImage = (factor: number) => {
     setImageScale(prev => {
@@ -535,7 +536,7 @@ export function EditModal({
     if (!akyo) return;
 
     // Validate required fields
-    if (!isWorldEntry && !formData.avatarName.trim()) {
+    if (!isWorldEntry && !isBoothEntry && !formData.avatarName.trim()) {
       alert('アバター名は必須です');
       return;
     }
@@ -543,11 +544,15 @@ export function EditModal({
       alert('ワールド名（名前）は必須です');
       return;
     }
+    if (isBoothEntry && !formData.nickname.trim()) {
+      alert('名前は必須です');
+      return;
+    }
     if (!formData.author.trim()) {
       alert('作者は必須です');
       return;
     }
-    if (formData.categories.length === 0) {
+    if (!isBoothEntry && formData.categories.length === 0) {
       alert('カテゴリを1つ以上選択してください');
       return;
     }
@@ -599,7 +604,7 @@ export function EditModal({
       submitData.append('entryType', formData.entryType);
       submitData.append('displaySerial', displaySerialForSubmit);
       submitData.append('nickname', formData.nickname);
-      submitData.append('avatarName', isWorldEntry ? '' : formData.avatarName);
+      submitData.append('avatarName', (isWorldEntry || isBoothEntry) ? '' : formData.avatarName);
       submitData.append('sourceUrl', formData.sourceUrl);
       submitData.append('avatarUrl', formData.avatarUrl || formData.sourceUrl);
       if (formData.boothUrl.trim()) {
@@ -634,7 +639,7 @@ export function EditModal({
       alert(
         `✅ ${result.message}\n\n` +
         `ID: #${akyo.id}\n` +
-        `${isWorldEntry ? '名称' : 'アバター名'}: ${isWorldEntry ? formData.nickname : formData.avatarName}\n` +
+        `${isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}: ${(isWorldEntry || isBoothEntry) ? formData.nickname : formData.avatarName}\n` +
         `作者: ${formData.author}\n\n` +
         (result.commitUrl ? `コミット: ${result.commitUrl}` : '')
       );
@@ -748,16 +753,16 @@ export function EditModal({
                 {/* アバター名 */}
                 <div>
                   <label
-                    htmlFor={isWorldEntry ? 'edit-world-name-note' : 'edit-avatar-name'}
+                    htmlFor={(isWorldEntry || isBoothEntry) ? 'edit-world-name-note' : 'edit-avatar-name'}
                     className="block text-gray-700 text-sm font-medium mb-1"
                   >
-                    {isWorldEntry ? '名称' : 'アバター名'}
+                    {isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}
                   </label>
-                  {isWorldEntry ? (
+                  {(isWorldEntry || isBoothEntry) ? (
                     <input
                       id="edit-world-name-note"
                       type="text"
-                      value="ワールドは「通称」欄を名称として使用します"
+                      value={isBoothEntry ? 'BOOTH専用エントリは「名前」欄を使用します' : 'ワールドは「名前」欄を名称として使用します'}
                       disabled
                       className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
                     />

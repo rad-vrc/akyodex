@@ -392,11 +392,14 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
   if (entryTypeRaw) {
     if (entryTypeRaw === "avatar" || entryTypeRaw === "world") {
       entryType = entryTypeRaw;
+    } else if (entryTypeRaw === "booth") {
+      // BOOTH専用エントリの編集時: entryTypeは空にしてisBoothOnlyで処理
+      entryType = '';
     } else {
       return {
         success: false,
         status: 400,
-        error: "entryType は avatar または world である必要があります",
+        error: "entryType は avatar, world, booth のいずれかである必要があります",
       };
     }
   }
