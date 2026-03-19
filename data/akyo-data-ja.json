@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-07T03:55:17.004Z",
+  "updatedAt": "2026-03-19T03:20:37.995Z",
   "count": 816,
   "data": [
     {
@@ -18,14 +18,14 @@
     {
       "id": "0002",
       "entryType": "avatar",
-      "boothUrl": "https://booth.pm/ja/items/1738151",
       "nickname": "チョコミントAkyo",
       "avatarName": "Akyo alt",
       "category": "チョコミント類,Booth,Booth/アバター",
       "comment": "Quest対応〇",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
+      "boothUrl": "https://booth.pm/ja/items/1738151"
     },
     {
       "id": "0003",
@@ -307,14 +307,14 @@
     {
       "id": "0028",
       "entryType": "avatar",
-      "boothUrl": "https://booth.pm/ja/items/5535632",
       "nickname": "ロボットAkyo（サンプル）",
       "avatarName": "AkyoRobotSample",
       "category": "武器・機械,電子,Booth,Booth/アバター",
       "comment": "",
       "author": "n777",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6",
+      "boothUrl": "https://booth.pm/ja/items/5535632"
     },
     {
       "id": "0029",
@@ -7221,14 +7221,14 @@
     {
       "id": "0641",
       "entryType": "avatar",
-      "boothUrl": "https://booth.pm/ja/items/7385278",
       "nickname": "まめAkyo",
       "avatarName": "Bean Akyo",
       "category": "まめ,まめAkyo,Booth,Booth/アバター",
       "comment": "",
       "author": "bosa_bosa",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c65daaf6-30ec-456f-90cf-68f60ecbeec5",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c65daaf6-30ec-456f-90cf-68f60ecbeec5"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c65daaf6-30ec-456f-90cf-68f60ecbeec5",
+      "boothUrl": "https://booth.pm/ja/items/7385278"
     },
     {
       "id": "0642",

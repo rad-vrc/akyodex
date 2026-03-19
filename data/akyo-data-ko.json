@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-03-07T03:55:17.055Z",
+  "updatedAt": "2026-03-19T03:20:38.079Z",
   "count": 816,
   "data": [
     {
@@ -20,14 +20,14 @@
       "id": "0002",
       "entryType": "avatar",
       "displaySerial": "0002",
-      "boothUrl": "https://booth.pm/ja/items/1738151",
       "nickname": "초코민트 Akyo",
       "avatarName": "Akyo alt",
       "category": "초코민트류,Booth,Booth/아바타",
       "comment": "Quest 지원〇",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
+      "boothUrl": "https://booth.pm/ja/items/1738151"
     },
     {
       "id": "0003",

@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-03-07T03:55:17.037Z",
+  "updatedAt": "2026-03-19T03:20:38.052Z",
   "count": 816,
   "data": [
     {
@@ -18,14 +18,14 @@
     {
       "id": "0002",
       "entryType": "avatar",
-      "boothUrl": "https://booth.pm/ja/items/1738151",
       "nickname": "Mint Chocolate Akyo",
       "avatarName": "Akyo alt",
       "category": "Mint Chocolate,Booth,Booth/Avatar",
       "comment": "Compatible with Quest",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
+      "boothUrl": "https://booth.pm/ja/items/1738151"
     },
     {
       "id": "0003",
