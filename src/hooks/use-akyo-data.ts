@@ -6,7 +6,7 @@ import {
   getDisplaySerialNumber,
   resolveEntryType,
 } from "@/lib/akyo-entry";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /** localStorage のキー名 */
 const FAVORITES_STORAGE_KEY = "akyoFavorites";
@@ -36,6 +36,41 @@ function normalizeSearchValue(value: string | undefined): string[] {
 
   const variants = new Set([base, toHiragana(base), toKatakana(base)]);
   return Array.from(variants);
+}
+
+/**
+ * データ項目の検索用正規化テキストを事前計算する。
+ * filterData() で毎回 normalizeSearchValue() を呼ぶ代わりに、
+ * データ読み込み時に一度だけ計算してキャッシュする。
+ */
+function buildSearchIndex(akyo: AkyoData): string[] {
+  const searchTargets = [
+    akyo.id || "",
+    formatDisplayId(akyo),
+    akyo.nickname || "",
+    akyo.avatarName || "",
+    akyo.category || akyo.attribute || "",
+    akyo.author || akyo.creator || "",
+    akyo.comment || akyo.notes || "",
+  ];
+  return searchTargets.flatMap((value) => normalizeSearchValue(value));
+}
+
+/**
+ * データ配列に parsedCategory / parsedAuthor / _searchIndex を事前計算して付与する。
+ */
+function enrichDataForSearch(items: AkyoData[]): AkyoData[] {
+  if (items.length === 0) return items;
+  return items.map((akyo) => ({
+    ...akyo,
+    parsedCategory:
+      akyo.parsedCategory ??
+      parseMultiValueField(akyo.category || akyo.attribute || ""),
+    parsedAuthor:
+      akyo.parsedAuthor ??
+      parseMultiValueField(akyo.author || akyo.creator || ""),
+    _searchIndex: akyo._searchIndex ?? buildSearchIndex(akyo),
+  }));
 }
 
 /**
@@ -219,7 +254,7 @@ export function useAkyoData(initialData: AkyoData[] = []) {
       favoriteOverridesRef.current,
     );
     const dataWithFavorites = applyFavoritesFromIds(
-      newData,
+      enrichDataForSearch(newData),
       applyFavoriteOverrides(persistedFavorites, favoriteOverridesRef.current),
     );
     lastPersistedFavoritesRef.current = JSON.stringify(persistedFavorites);
@@ -302,22 +337,10 @@ export function useAkyoData(initialData: AkyoData[] = []) {
         filtered = filtered.filter((akyo) => akyo.isFavorite);
       }
 
-      // Filter by search query
+      // Filter by search query (using pre-computed _searchIndex for performance)
       if (normalizedQueryVariants.length > 0) {
         filtered = filtered.filter((akyo) => {
-          const searchTargets = [
-            akyo.id || "",
-            formatDisplayId(akyo),
-            akyo.nickname || "",
-            akyo.avatarName || "",
-            akyo.category || akyo.attribute || "",
-            akyo.author || akyo.creator || "",
-            akyo.comment || akyo.notes || "",
-          ];
-
-          const normalizedTargets = searchTargets.flatMap((value) =>
-            normalizeSearchValue(value),
-          );
+          const normalizedTargets = akyo._searchIndex ?? buildSearchIndex(akyo);
 
           return normalizedQueryVariants.some((query) =>
             normalizedTargets.some((target) => target.includes(query)),
@@ -473,6 +496,7 @@ function applyFavoritesFromIds(
     parsedAuthor:
       akyo.parsedAuthor ??
       parseMultiValueField(akyo.author || akyo.creator || ""),
+    _searchIndex: akyo._searchIndex ?? buildSearchIndex(akyo),
     isFavorite: favoritesSet.has(akyo.id),
   }));
 }

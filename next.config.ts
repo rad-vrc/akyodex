@@ -117,7 +117,47 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Cache-Control',
+            value: 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000',
+          },
+        ],
+      },
+      // Static image assets (local files in /public/images/)
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, s-maxage=2592000, immutable',
+          },
+        ],
+      },
+      // Avatar image API proxy — cache aggressively since R2 images rarely change
+      {
+        source: '/api/avatar-image',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000',
+          },
+        ],
+      },
+      // World image API proxy
+      {
+        source: '/api/vrc-world-image',
+        headers: [
+          {
+            key: 'Cache-Control',
             value: 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+      // Next.js static assets (JS/CSS chunks)
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },

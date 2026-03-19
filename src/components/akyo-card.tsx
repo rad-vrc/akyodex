@@ -43,7 +43,9 @@ export function shouldBypassImageOptimization(src: string): boolean {
 }
 
 export function getCatalogCardImageRequestWidth(entryType: string): number {
-  return entryType === "world" ? 384 : 512;
+  // モバイル画面 (320-414px) を考慮して幅を適正化
+  // ワールドは横長のため 384、アバターは 384 で十分（旧 512 は過剰）
+  return entryType === "world" ? 384 : 384;
 }
 
 /**
