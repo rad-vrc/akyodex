@@ -22,6 +22,7 @@ import type { SupportedLanguage } from "@/lib/i18n";
 import type { AkyoData } from "@/types/akyo";
 import { cache } from "react";
 import { hydrateAkyoDataset } from "./akyo-entry";
+import { ensureBoothCategories, validateBoothUrl } from "./booth-url";
 
 /**
  * Get the JSON data URL based on language and data source
@@ -194,7 +195,9 @@ function normalizeAkyoItem(item: unknown): AkyoData {
   const raw = item as Record<string, unknown>;
 
   const id = String(raw.id || "");
-  const category = String(raw.category || raw.attribute || "");
+  const boothUrl = validateBoothUrl(typeof raw.boothUrl === "string" ? raw.boothUrl : undefined);
+  const rawCategory = String(raw.category || raw.attribute || "");
+  const category = ensureBoothCategories(rawCategory, boothUrl, raw.entryType as string | undefined);
   const comment = String(raw.comment || raw.notes || "");
   const author = String(raw.author || raw.creator || "");
   const entryType =
@@ -228,5 +231,7 @@ function normalizeAkyoItem(item: unknown): AkyoData {
     displaySerial,
     sourceUrl: String(raw.sourceUrl || raw.avatarUrl || ""),
     avatarUrl: String(raw.avatarUrl || raw.sourceUrl || ""),
+    boothUrl,
   };
 }
+

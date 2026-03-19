@@ -20,6 +20,9 @@
 /playwright/.cache/
 /tests/screenshots/
 
+# local development data (auto-synced JSON copies for dev server)
+/public/data/akyo-data-*.json
+
 # next.js
 /.next/
 /out/
@@ -52,3 +55,9 @@ next-env.d.ts
 # Test screenshots
 tests/screenshots/*.png
 .wrangler/
+
+# firecrawl scrape cache
+.firecrawl/
+
+# claude local settings
+.claude/settings.local.json

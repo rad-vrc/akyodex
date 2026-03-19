@@ -116,7 +116,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-            placeholder="ID、通称、アバター名、作者で検索"
+            placeholder="ID、名前、アバター名、作者で検索"
           />
         </div>
       </div>
@@ -139,7 +139,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
                   ID
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  通称
+                  名前
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   アバター名

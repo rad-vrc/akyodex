@@ -11,7 +11,7 @@ import {
   resolveDisplaySerialForSourceUrlChange,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
-import type { AkyoData } from '@/types/akyo';
+import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { AttributeModal } from './attribute-modal';
 
@@ -29,7 +29,7 @@ interface EditModalProps {
 
 function normalizeCategoriesForSubmit(
   categories: string[],
-  entryType: 'avatar' | 'world'
+  entryType: AkyoEntryType
 ): string[] {
   const normalized = categories
     .map((category) => category.trim())
@@ -53,7 +53,7 @@ export function EditModal({
   onSuccess,
 }: EditModalProps) {
   const [formData, setFormData] = useState({
-    entryType: 'avatar' as 'avatar' | 'world',
+    entryType: 'avatar' as AkyoEntryType,
     displaySerial: '',
     nickname: '',
     avatarName: '',
@@ -62,6 +62,7 @@ export function EditModal({
     author: '',
     sourceUrl: '',
     avatarUrl: '',
+    boothUrl: '',
     comment: '',
   });
 
@@ -119,6 +120,7 @@ export function EditModal({
         author: authorStr,
         sourceUrl: getAkyoSourceUrl(akyo),
         avatarUrl: akyo.avatarUrl || getAkyoSourceUrl(akyo),
+        boothUrl: akyo.boothUrl || '',
         comment: commentStr,
       });
       setShowImagePreview(false);
@@ -156,6 +158,7 @@ export function EditModal({
   };
 
   const isWorldEntry = formData.entryType === 'world';
+  const isBoothEntry = formData.entryType === 'booth';
 
   const zoomImage = (factor: number) => {
     setImageScale(prev => {
@@ -336,7 +339,7 @@ export function EditModal({
 
     if (!value) {
       setNicknameStatus({
-        message: '通称を入力してください',
+        message: '名前を入力してください',
         tone: 'neutral',
       });
       return;
@@ -533,26 +536,30 @@ export function EditModal({
     if (!akyo) return;
 
     // Validate required fields
-    if (!isWorldEntry && !formData.avatarName.trim()) {
+    if (!isWorldEntry && !isBoothEntry && !formData.avatarName.trim()) {
       alert('アバター名は必須です');
       return;
     }
     if (isWorldEntry && !formData.nickname.trim()) {
-      alert('ワールド名（通称）は必須です');
+      alert('ワールド名（名前）は必須です');
+      return;
+    }
+    if (isBoothEntry && !formData.nickname.trim()) {
+      alert('名前は必須です');
       return;
     }
     if (!formData.author.trim()) {
       alert('作者は必須です');
       return;
     }
-    if (formData.categories.length === 0) {
+    if (!isBoothEntry && formData.categories.length === 0) {
       alert('カテゴリを1つ以上選択してください');
       return;
     }
 
     // Check for duplicates (excluding current akyo)
     if (nicknameStatus.tone === 'error' || avatarNameStatus.tone === 'error') {
-      if (!confirm('重複する通称またはアバター名が検出されました。\n更新を続行しますか？')) {
+      if (!confirm('重複する名前またはアバター名が検出されました。\n更新を続行しますか？')) {
         return;
       }
     }
@@ -597,9 +604,12 @@ export function EditModal({
       submitData.append('entryType', formData.entryType);
       submitData.append('displaySerial', displaySerialForSubmit);
       submitData.append('nickname', formData.nickname);
-      submitData.append('avatarName', isWorldEntry ? '' : formData.avatarName);
+      submitData.append('avatarName', (isWorldEntry || isBoothEntry) ? '' : formData.avatarName);
       submitData.append('sourceUrl', formData.sourceUrl);
       submitData.append('avatarUrl', formData.avatarUrl || formData.sourceUrl);
+      if (formData.boothUrl.trim()) {
+        submitData.append('boothUrl', formData.boothUrl.trim());
+      }
 
       // 新フィールド
       submitData.append('author', formData.author);
@@ -629,7 +639,7 @@ export function EditModal({
       alert(
         `✅ ${result.message}\n\n` +
         `ID: #${akyo.id}\n` +
-        `${isWorldEntry ? '名称' : 'アバター名'}: ${isWorldEntry ? formData.nickname : formData.avatarName}\n` +
+        `${isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}: ${(isWorldEntry || isBoothEntry) ? formData.nickname : formData.avatarName}\n` +
         `作者: ${formData.author}\n\n` +
         (result.commitUrl ? `コミット: ${result.commitUrl}` : '')
       );
@@ -690,7 +700,7 @@ export function EditModal({
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <label htmlFor="edit-nickname" className="block text-gray-700 text-sm font-medium">
-                      通称
+                      名前
                     </label>
                     <button
                       type="button"
@@ -709,7 +719,7 @@ export function EditModal({
                       ) : (
                         <>
                           <IconSearch size="w-4 h-4" />
-                          同じ通称が既に登録されているか確認
+                          同じ名前が既に登録されているか確認
                         </>
                       )}
                     </button>
@@ -743,16 +753,16 @@ export function EditModal({
                 {/* アバター名 */}
                 <div>
                   <label
-                    htmlFor={isWorldEntry ? 'edit-world-name-note' : 'edit-avatar-name'}
+                    htmlFor={(isWorldEntry || isBoothEntry) ? 'edit-world-name-note' : 'edit-avatar-name'}
                     className="block text-gray-700 text-sm font-medium mb-1"
                   >
-                    {isWorldEntry ? '名称' : 'アバター名'}
+                    {isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}
                   </label>
-                  {isWorldEntry ? (
+                  {(isWorldEntry || isBoothEntry) ? (
                     <input
                       id="edit-world-name-note"
                       type="text"
-                      value="ワールドは「通称」欄を名称として使用します"
+                      value={isBoothEntry ? 'BOOTH専用エントリは「名前」欄を使用します' : 'ワールドは「名前」欄を名称として使用します'}
                       disabled
                       className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
                     />
@@ -938,6 +948,24 @@ export function EditModal({
                     placeholder="https://vrchat.com/..."
                   />
                 </div>
+              </div>
+
+              {/* BOOTH URL */}
+              <div>
+                <label htmlFor="edit-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
+                  BOOTH URL（任意）
+                </label>
+                <input
+                  id="edit-booth-url"
+                  type="url"
+                  value={formData.boothUrl}
+                  onChange={(e) => handleInputChange('boothUrl', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://booth.pm/ja/items/..."
+                />
+                <p className="text-xs text-gray-500 mt-2 leading-snug">
+                  BOOTHの販売ページURLを入力すると、図鑑にBOOTHリンクボタンが表示されます。
+                </p>
               </div>
 
               {/* おまけ情報（comment） */}

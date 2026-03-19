@@ -16,6 +16,7 @@ import {
   SessionData,
   validateSession as validateSessionToken,
 } from "./session";
+import { validateBoothUrl } from "./booth-url";
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional input validation for control chars
 export const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F-\u009F]/u;
@@ -323,9 +324,10 @@ export interface AkyoFormData {
   id: string;
   nickname: string;
   avatarName: string;
-  entryType: AkyoEntryType;
+  entryType: AkyoEntryType | '';
   displaySerial?: string;
   sourceUrl: string;
+  boothUrl?: string;
 
   // 新フィールド
   category: string;
@@ -386,15 +388,18 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
 
   const id = readField("id");
   const entryTypeRaw = readField("entryType");
-  let entryType: AkyoEntryType = "avatar";
+  let entryType: AkyoEntryType | '' = "avatar";
   if (entryTypeRaw) {
     if (entryTypeRaw === "avatar" || entryTypeRaw === "world") {
       entryType = entryTypeRaw;
+    } else if (entryTypeRaw === "booth") {
+      // BOOTH専用エントリの編集時: entryTypeは空にしてisBoothOnlyで処理
+      entryType = '';
     } else {
       return {
         success: false,
         status: 400,
-        error: "entryType は avatar または world である必要があります",
+        error: "entryType は avatar, world, booth のいずれかである必要があります",
       };
     }
   }
@@ -407,18 +412,44 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
   // 優先順位: author (新) > creator (旧)
   const author = readField("author") || readField("creator");
 
-  if (
-    !id ||
-    !author ||
-    !sourceUrl ||
-    (entryType === "avatar" && !avatarName) ||
-    (entryType === "world" && !nickname)
-  ) {
+  const rawBoothUrl = readField("boothUrl");
+  const boothUrl = rawBoothUrl ? validateBoothUrl(rawBoothUrl) : undefined;
+  if (rawBoothUrl && !boothUrl) {
     return {
       success: false,
       status: 400,
-      error: "必須フィールドが不足しています",
+      error: "boothUrl は https://booth.pm または https://*.booth.pm のURLである必要があります",
     };
+  }
+
+  // BOOTH専用モード: sourceUrlなし && boothUrlあり
+  const isBoothOnly = !sourceUrl && !!boothUrl;
+
+  if (isBoothOnly) {
+    // BOOTH専用: nickname（名前）が必須
+    if (!id || !nickname || !author) {
+      return {
+        success: false,
+        status: 400,
+        error: "BOOTH専用登録には名前、作者、BOOTH URLが必要です",
+      };
+    }
+    entryType = '';
+  } else {
+    // 通常モード
+    if (
+      !id ||
+      !author ||
+      !sourceUrl ||
+      (entryType === "avatar" && !avatarName) ||
+      (entryType === "world" && !nickname)
+    ) {
+      return {
+        success: false,
+        status: 400,
+        error: "必須フィールドが不足しています",
+      };
+    }
   }
 
   if (!validateAkyoId(id)) {
@@ -429,7 +460,8 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
     };
   }
 
-  if (detectVrcEntryTypeFromUrl(sourceUrl) !== entryType) {
+  // BOOTH専用時はsourceUrl/entryType整合性チェックをスキップ
+  if (!isBoothOnly && detectVrcEntryTypeFromUrl(sourceUrl) !== entryType) {
     return {
       success: false,
       status: 400,
@@ -456,6 +488,7 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
       avatarName,
       nickname,
       sourceUrl,
+      boothUrl,
       avatarUrl: readField("avatarUrl") || sourceUrl,
       imageData,
 

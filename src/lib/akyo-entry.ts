@@ -5,6 +5,7 @@ export const DEFAULT_WORLD_CATEGORY = "ワールド";
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 const WORLD_DISPLAY_SERIAL_PREFIX = "World";
 const AVATAR_DISPLAY_SERIAL_PREFIX = "Avatar";
+export const BOOTH_DISPLAY_SERIAL_PREFIX = "Booth";
 export const VRCHAT_AVATAR_ID_PATTERN = /^avtr_[A-Za-z0-9-]{1,64}$/;
 export const VRCHAT_WORLD_ID_PATTERN = /^wrld_[A-Za-z0-9-]{1,64}$/;
 
@@ -21,8 +22,13 @@ function getCategoryTokens(akyo: AkyoData): string[] {
 }
 
 export function resolveEntryType(akyo: AkyoData): AkyoEntryType {
-  if (akyo.entryType === "avatar" || akyo.entryType === "world") {
+  if (akyo.entryType === "avatar" || akyo.entryType === "world" || akyo.entryType === "booth") {
     return akyo.entryType;
+  }
+
+  // displaySerialが"Booth"で始まるならBOOTH専用エントリ
+  if ((akyo.displaySerial ?? "").startsWith(BOOTH_DISPLAY_SERIAL_PREFIX)) {
+    return "booth";
   }
 
   const hasWorldCategory = getCategoryTokens(akyo).some((token) =>
@@ -69,6 +75,9 @@ export function getNextWorldDisplaySerial(
 
 export function getPublicDisplayId(akyo: AkyoData): string {
   const serial = getDisplaySerial(akyo);
+  if (serial.startsWith(BOOTH_DISPLAY_SERIAL_PREFIX)) {
+    return serial;
+  }
   return resolveEntryType(akyo) === "world"
     ? `${WORLD_DISPLAY_SERIAL_PREFIX}${serial}`
     : `${AVATAR_DISPLAY_SERIAL_PREFIX}${serial}`;
@@ -207,6 +216,10 @@ export function hydrateAkyoDataset(entries: AkyoData[]): AkyoData[] {
       entryType,
       sourceUrl,
       displaySerial: (() => {
+        if (rawDisplaySerial.startsWith(BOOTH_DISPLAY_SERIAL_PREFIX)) {
+          return rawDisplaySerial;
+        }
+
         if (entryType !== "world") {
           return rawDisplaySerial || entry.id;
         }

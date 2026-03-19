@@ -10,6 +10,7 @@
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { ensureBoothCategories, validateBoothUrl } from '../src/lib/booth-url';
 
 interface AkyoData {
   id: string;
@@ -22,6 +23,7 @@ interface AkyoData {
   author: string;
   sourceUrl?: string;
   avatarUrl: string;
+  boothUrl?: string;
 }
 
 interface AkyoJsonOutput {
@@ -116,17 +118,26 @@ function parseCsvToAkyoData(csvText: string): AkyoData[] {
       rawRow[safeHeader] = record[index] || '';
     });
 
+    const boothUrl = validateBoothUrl(rawRow['BoothURL']);
+    const entryType = normalizeEntryType(rawRow['EntryType']);
+    const category = ensureBoothCategories(
+      normalizeHierarchicalCategories(rawRow['Category'] ?? ''),
+      boothUrl,
+      entryType,
+    );
+
     data.push({
       id: rawRow['ID'] ?? '',
-      entryType: normalizeEntryType(rawRow['EntryType']),
+      entryType,
       displaySerial: rawRow['DisplaySerial'] || undefined,
       nickname: rawRow['Nickname'] ?? '',
       avatarName: rawRow['AvatarName'] ?? '',
-      category: normalizeHierarchicalCategories(rawRow['Category'] ?? ''),
+      category,
       comment: normalizeLineEndings(rawRow['Comment'] ?? ''),
       author: rawRow['Author'] ?? '',
       sourceUrl: rawRow['SourceURL'] || rawRow['AvatarURL'] || '',
       avatarUrl: rawRow['AvatarURL'] || rawRow['SourceURL'] || '',
+      boothUrl,
     });
   }
 

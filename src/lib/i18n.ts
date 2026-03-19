@@ -229,14 +229,14 @@ export const UI_TEXTS = {
     ko: "현재 표시 항목",
   },
   "stats.totalBreakdown": {
-    ja: "全{avatars}体 / {worlds}ワールド",
-    en: "Total {avatars} avatars / {worlds} worlds",
-    ko: "전체 {avatars}개 아바타 / {worlds}개 월드",
+    ja: "全{avatars}アバター / {worlds}ワールド / {products}商品",
+    en: "Total {avatars} avatars / {worlds} worlds / {products} products",
+    ko: "전체 {avatars}개 아바타 / {worlds}개 월드 / {products}개 상품",
   },
   "stats.displayedBreakdown": {
-    ja: "表示{avatars}体 / {worlds}ワールド",
-    en: "Showing {avatars} avatars / {worlds} worlds",
-    ko: "{avatars}개 아바타 / {worlds}개 월드 표시",
+    ja: "表示{avatars}アバター / {worlds}ワールド / {products}商品",
+    en: "Showing {avatars} avatars / {worlds} worlds / {products} products",
+    ko: "{avatars}개 아바타 / {worlds}개 월드 / {products}개 상품 표시",
   },
   "stats.favoritesLabel": {
     ja: "お気に入り",
@@ -282,6 +282,11 @@ export const UI_TEXTS = {
     ja: "ワールドのみ表示",
     en: "Show worlds only",
     ko: "월드만 표시",
+  },
+  "view.boothOnly": {
+    ja: "BOOTH商品のみ表示",
+    en: "Show BOOTH products only",
+    ko: "BOOTH 상품만 표시",
   },
   "notfound.title": {
     ja: "見つかりません",
@@ -520,6 +525,11 @@ export const UI_TEXTS = {
     ja: "VRChat アバターURL",
     en: "VRChat Avatar URL",
     ko: "VRChat 아바타 URL",
+  },
+  "modal.boothUrl": {
+    ja: "BOOTH URL",
+    en: "BOOTH URL",
+    ko: "BOOTH URL",
   },
   "modal.bonus": {
     ja: "おまけじょうほう",

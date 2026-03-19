@@ -715,6 +715,26 @@ export function AkyoDetailModal({
                   </div>
                 )}
 
+                {/* BOOTH URL Section */}
+                {localAkyo.boothUrl && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                      {t('modal.boothUrl', lang)}
+                    </h3>
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <a
+                        href={localAkyo.boothUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm break-all cursor-pointer"
+                      >
+                        <IconExternalLink size="w-3.5 h-3.5" className="mr-1" />
+                        {localAkyo.boothUrl}
+                      </a>
+                    </div>
+                  </div>
+                )}
+
                 {/* Notes/Comment Section */}
                 {commentStr && (
                   <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-3xl p-5">

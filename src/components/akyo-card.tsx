@@ -42,7 +42,7 @@ export function shouldBypassImageOptimization(src: string): boolean {
   return src.startsWith("/api/") || src.startsWith("/images/");
 }
 
-export function getCatalogCardImageRequestWidth(entryType: "avatar" | "world"): number {
+export function getCatalogCardImageRequestWidth(entryType: string): number {
   return entryType === "world" ? 384 : 512;
 }
 
@@ -237,10 +237,28 @@ export function AkyoCard({
         </div>
 
         {/* ID（通称の直上） */}
-        <div className="mb-1">
+        <div className="mb-1 w-full flex items-center gap-1.5">
           <span className="text-sm font-bold text-gray-500">
             {formatDisplayId(akyo)}
           </span>
+          {akyo.boothUrl && (
+            <a
+              href={akyo.boothUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative z-20 ml-auto flex-shrink-0 transition-transform hover:scale-105 active:scale-95 -translate-y-px"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="BOOTH"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/booth-banner.svg"
+                alt="BOOTH"
+                className="h-[18px] w-auto"
+                loading="lazy"
+              />
+            </a>
+          )}
         </div>
 
         {/* タイトル - 元の実装と同じフォント */}

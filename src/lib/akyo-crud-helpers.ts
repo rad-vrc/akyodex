@@ -12,6 +12,7 @@ import {
     resolveDisplaySerialForEntryUpdate,
     WORLD_CATEGORY_MARKERS,
 } from './akyo-entry';
+import { ensureBoothCategories } from './booth-url';
 import {
     commitAkyoCsv,
     createAkyoRecord,
@@ -19,6 +20,7 @@ import {
     findRecordById,
     formatAkyoCommitMessage,
     getDisplaySerialForWorldRecord,
+    getNextBoothDisplaySerialFromCsv,
     getNextDisplaySerial,
     loadAkyoCsv,
     replaceRecordById,
@@ -102,7 +104,8 @@ export async function processAkyoCRUD(
         entryType,
         displaySerial,
         sourceUrl,
-        avatarUrl, 
+        boothUrl,
+        avatarUrl,
         imageData,
         category,
         author,
@@ -110,22 +113,23 @@ export async function processAkyoCRUD(
         attributes,
         creator,
         notes
-    } = 'nickname' in formData 
-        ? formData 
-        : { 
-            nickname: '', 
-            avatarName: '', 
+    } = 'nickname' in formData
+        ? formData
+        : {
+            nickname: '',
+            avatarName: '',
             entryType: 'avatar',
             displaySerial: undefined,
             sourceUrl: '',
-            avatarUrl: '', 
+            boothUrl: undefined,
+            avatarUrl: '',
             imageData: undefined,
             category: '',
             author: '',
             comment: '',
             attributes: '',
             creator: '',
-            notes: '' 
+            notes: ''
         };
 
     try {
@@ -136,28 +140,35 @@ export async function processAkyoCRUD(
         let updatedRecords: string[][];
         let commitMessageAction: string;
         let successMessage: string;
-        const normalizedEntryType = entryType === 'world' ? 'world' : 'avatar';
-        const normalizedCategory = normalizeCategoryFieldForEntryType(
-            category || attributes,
-            normalizedEntryType
+        // BOOTH専用検出: sourceUrlなし && boothUrlあり
+        const isBoothOnly = !sourceUrl && !!boothUrl;
+        const normalizedEntryType: 'avatar' | 'world' | '' = isBoothOnly ? '' : (entryType === 'world' ? 'world' : 'avatar');
+        const normalizedCategory = normalizedEntryType
+            ? normalizeCategoryFieldForEntryType(
+                category || attributes,
+                normalizedEntryType,
+            )
+            : (category || attributes);
+
+        const categoryWithBooth = ensureBoothCategories(
+            normalizedCategory,
+            boothUrl,
+            isBoothOnly ? undefined : normalizedEntryType || undefined,
         );
-        
-        // createAkyoRecordに渡すデータ
-        // 将来的にcreateAkyoRecordの引数も更新する必要があるが、
-        // 現時点ではcsv-utils.ts側の変更を最小限にするため、
-        // 新旧フィールドをマッピングして渡す（またはcreateAkyoRecord側で処理する）
+
         const recordData: Parameters<typeof createAkyoRecord>[0] = {
             id,
             nickname,
             avatarName,
-            entryType: normalizedEntryType,
+            entryType: normalizedEntryType || undefined,
             displaySerial,
             sourceUrl,
             // 新フィールドを優先
-            attributes: normalizedCategory,
+            attributes: categoryWithBooth,
             creator: author || creator,
             notes: comment || notes,
             avatarUrl: sourceUrl || avatarUrl,
+            boothUrl,
         };
 
         switch (operation) {
@@ -168,7 +179,9 @@ export async function processAkyoCRUD(
                     return jsonError(`ID ${id} は既に使用されています`, 409);
                 }
 
-                if (recordData.entryType === 'world') {
+                if (isBoothOnly) {
+                    recordData.displaySerial = getNextBoothDisplaySerialFromCsv(dataRecords, header);
+                } else if (recordData.entryType === 'world') {
                     recordData.displaySerial = getNextDisplaySerial(dataRecords, header, 'world');
                 } else {
                     recordData.displaySerial = recordData.displaySerial || id;
@@ -190,7 +203,16 @@ export async function processAkyoCRUD(
                 }
                 const originalEntryType = resolveEntryTypeFromRecord(existingRecord, header);
 
-                if (recordData.entryType === 'world') {
+                if (isBoothOnly) {
+                    // BOOTH専用: 既存のBooth連番を維持、なければ新規割り当て
+                    const displaySerialIndex = header.indexOf('DisplaySerial');
+                    const existingSerial = displaySerialIndex >= 0
+                        ? String(existingRecord[displaySerialIndex] || '').trim()
+                        : '';
+                    recordData.displaySerial = existingSerial.startsWith('Booth')
+                        ? existingSerial
+                        : getNextBoothDisplaySerialFromCsv(dataRecords, header);
+                } else if (recordData.entryType === 'world') {
                     const displaySerialIndex = header.indexOf('DisplaySerial');
                     const originalDisplaySerial =
                         originalEntryType === 'world'

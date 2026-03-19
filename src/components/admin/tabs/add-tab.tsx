@@ -14,7 +14,7 @@ import { assertWorldRegistrationAssets } from '@/lib/world-registration';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { AttributeModal } from '../attribute-modal';
 import { ADD_TAB_DRAFT_KEY } from '../draft-keys';
-import type { AdminRole } from '@/types/akyo';
+import type { AdminRole, AkyoEntryType } from '@/types/akyo';
 
 interface AddTabProps {
   userRole: AdminRole;
@@ -30,6 +30,7 @@ interface AddTabDraft {
   nickname: string;
   categories: string[];
   sourceUrl: string;
+  boothUrl: string;
   author: string;
   comment: string;
   customCategories: string[];
@@ -42,6 +43,7 @@ function createDefaultFormData() {
     categories: [] as string[],
     author: '',
     sourceUrl: '',
+    boothUrl: '',
     comment: '',
   };
 }
@@ -84,7 +86,7 @@ function normalizeStringList(value: unknown): string[] {
 
 function normalizeCategoriesForSubmit(
   categories: string[],
-  entryType: 'avatar' | 'world'
+  entryType: AkyoEntryType
 ): string[] {
   const normalized = categories
     .map((category) => category.trim())
@@ -132,6 +134,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             : typeof (parsed as { avatarUrl?: unknown }).avatarUrl === 'string'
             ? ((parsed as { avatarUrl: string }).avatarUrl)
             : prev.sourceUrl,
+        boothUrl: typeof parsed.boothUrl === 'string' ? parsed.boothUrl : prev.boothUrl,
         author: typeof parsed.author === 'string' ? parsed.author : prev.author,
         comment: typeof parsed.comment === 'string' ? parsed.comment : prev.comment,
       }));
@@ -150,6 +153,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
       nickname: formData.nickname,
       categories: normalizeStringList(formData.categories),
       sourceUrl: formData.sourceUrl,
+      boothUrl: formData.boothUrl,
       author: formData.author,
       comment: formData.comment,
       customCategories: normalizeStringList(customCategories),
@@ -158,6 +162,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
   }, [
     customCategories,
     formData.sourceUrl,
+    formData.boothUrl,
     formData.author,
     formData.categories,
     formData.comment,
@@ -213,6 +218,8 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
   });
   const [checkingNickname, setCheckingNickname] = useState(false);
   const detectedEntryType = detectVrcEntryTypeFromUrl(formData.sourceUrl);
+  // BOOTH専用モード: VRChat URLなし && BOOTH URLあり
+  const isBoothOnly = !formData.sourceUrl.trim() && !!formData.boothUrl.trim();
 
   // Update image transform when position or scale changes
   useEffect(() => {
@@ -226,27 +233,48 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
     e.preventDefault();
 
     const url = formData.sourceUrl.trim();
-    if (!url) {
-      alert('VRChat URLは必須です');
+    const boothUrlTrimmed = formData.boothUrl.trim();
+    const boothOnly = !url && !!boothUrlTrimmed;
+
+    if (!url && !boothUrlTrimmed) {
+      alert('VRChat URLまたはBOOTH URLのいずれかを入力してください');
       return;
     }
 
-    const entryType = detectVrcEntryTypeFromUrl(url);
-    if (!entryType) {
-      alert(
-        '有効なVRChatアバター/ワールドURLを入力してください\n例: https://vrchat.com/home/avatar/avtr_xxx...\nまたは: https://vrchat.com/home/world/wrld_xxx...'
-      );
-      return;
+    if (boothOnly) {
+      // BOOTH専用バリデーション
+      if (!formData.nickname.trim()) {
+        alert('BOOTH専用登録では名前は必須です');
+        return;
+      }
+      if (!formData.author.trim()) {
+        alert('BOOTH専用登録では作者は必須です');
+        return;
+      }
     }
 
-    const resolvedCategories = normalizeCategoriesForSubmit(formData.categories, entryType);
-    if (resolvedCategories.length === 0) {
+    let entryType: AkyoEntryType | null = null;
+    if (!boothOnly) {
+      entryType = detectVrcEntryTypeFromUrl(url);
+      if (!entryType) {
+        alert(
+          '有効なVRChatアバター/ワールドURLを入力してください\n例: https://vrchat.com/home/avatar/avtr_xxx...\nまたは: https://vrchat.com/home/world/wrld_xxx...'
+        );
+        return;
+      }
+    }
+
+    const resolvedCategories = boothOnly
+      ? formData.categories
+      : normalizeCategoriesForSubmit(formData.categories, entryType!);
+
+    if (!boothOnly && resolvedCategories.length === 0) {
       alert('カテゴリを1つ以上選択してください');
       return;
     }
 
     if (nicknameStatus.tone === 'error') {
-      if (!confirm('重複する通称が検出されました。\n登録を続行しますか？')) {
+      if (!confirm('重複する名前が検出されました。\n登録を続行しますか？')) {
         return;
       }
     }
@@ -268,17 +296,20 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
 
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = '💾 VRChat情報取得中...';
+      submitBtn.textContent = boothOnly ? '💾 登録中...' : '💾 VRChat情報取得中...';
     }
 
     const nextIdRefreshPromise = fetchNextId();
     let resolvedNickname = formData.nickname.trim();
     let resolvedAvatarName = '';
-    let resolvedAuthor = '';
+    let resolvedAuthor = formData.author.trim();
     let imageFile: File | null = null;
 
     try {
-      if (entryType === 'avatar') {
+      if (boothOnly) {
+        // BOOTH専用: VRChat APIコールをスキップ
+        // 名前・作者は手動入力済み、画像なし
+      } else if (entryType === 'avatar') {
         const avtrId = extractVRChatAvatarIdFromUrl(url);
         if (!avtrId) {
           throw new Error('有効なVRChatアバターURLを入力してください。');
@@ -452,16 +483,21 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
       const refreshedId = await nextIdRefreshPromise;
       submitId = pickLatestId(submitId, refreshedId);
 
-      const displayName = entryType === 'world' ? resolvedNickname : resolvedAvatarName;
+      const displayName = boothOnly ? resolvedNickname : (entryType === 'world' ? resolvedNickname : resolvedAvatarName);
 
       const buildSubmitData = (id: string) => {
         const submitData = new FormData();
         submitData.append('id', id);
-        submitData.append('entryType', entryType);
+        if (!boothOnly && entryType) {
+          submitData.append('entryType', entryType);
+        }
         submitData.append('nickname', resolvedNickname);
-        submitData.append('avatarName', entryType === 'world' ? '' : resolvedAvatarName);
+        submitData.append('avatarName', boothOnly ? '' : (entryType === 'world' ? '' : resolvedAvatarName));
         submitData.append('sourceUrl', url);
         submitData.append('avatarUrl', url);
+        if (boothUrlTrimmed) {
+          submitData.append('boothUrl', boothUrlTrimmed);
+        }
         submitData.append('author', resolvedAuthor);
         submitData.append('category', resolvedCategories.join(','));
         submitData.append('comment', formData.comment);
@@ -528,7 +564,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
       alert(
         `✅ ${result.message}\n\n` +
           `ID: #${submitId}\n` +
-          `${entryType === 'world' ? '名称' : 'アバター名'}: ${displayName}\n` +
+          `${boothOnly ? '名前' : entryType === 'world' ? '名称' : 'アバター名'}: ${displayName}\n` +
           `作者: ${resolvedAuthor}\n\n` +
           (result.commitUrl ? `コミット: ${result.commitUrl}` : '')
       );
@@ -590,7 +626,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
 
     if (!trimmedValue) {
       setNicknameStatus({
-        message: '通称を入力してください',
+        message: '名前を入力してください',
         tone: 'neutral',
       });
       return;
@@ -779,11 +815,11 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             </p>
           </div>
 
-          {/* 通称 */}
+          {/* 名前 */}
           <div>
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="add-tab-nickname" className="block text-gray-700 text-sm font-medium">
-                通称
+                名前
               </label>
               <button
                 type="button"
@@ -818,7 +854,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 ) : (
                   <>
                     <IconSearch size="w-4 h-4" />
-                    同じ通称が既に登録されているか確認
+                    同じ名前が既に登録されているか確認
                   </>
                 )}
               </button>
@@ -850,10 +886,10 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             )}
           </div>
 
-          {/* 名称 */}
+          {/* アバター名 */}
           <div>
             <label htmlFor="add-tab-name" className="block text-gray-700 text-sm font-medium mb-1">
-              名称
+              アバター名
             </label>
             <input
               id="add-tab-name"
@@ -868,8 +904,33 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             />
           </div>
 
-          {/* カテゴリ (旧: 属性) */}
+          {/* 作者 */}
           <div>
+            <label htmlFor="add-tab-author" className="block text-gray-700 text-sm font-medium mb-1">
+              作者（アバター/ワールドは自動取得、BOOTH商品のみの場合は手動入力）
+            </label>
+            {isBoothOnly || detectedEntryType === 'world' ? (
+              <input
+                id="add-tab-author"
+                type="text"
+                value={formData.author}
+                onChange={(e) => handleInputChange('author', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                placeholder={isBoothOnly ? '作者名を入力してください' : '取得失敗時はここで補完できます'}
+              />
+            ) : (
+              <input
+                id="add-tab-author"
+                type="text"
+                value="登録時にVRChat URLから自動取得"
+                disabled
+                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
+              />
+            )}
+          </div>
+
+          {/* カテゴリ (旧: 属性) - 全幅 */}
+          <div className="md:col-span-2">
             <label className="block text-gray-700 text-sm font-medium mb-1">カテゴリ</label>
             <div className="space-y-2">
               <button
@@ -899,46 +960,40 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
               </div>
               <p className="text-xs text-gray-500 leading-snug">
                 ワールドならワールドカテゴリは自動追加されますが、階層型カテゴリを設定する場合は手動で設定してください。
+                BOOTH URLが入力されている場合、Boothカテゴリは登録時に自動追加されます。
+                BOOTH商品のみの登録ではカテゴリ選択は任意です。
               </p>
             </div>
           </div>
 
-          {/* 作者 */}
+          {/* BOOTH URL */}
           <div>
-            <label htmlFor="add-tab-author" className="block text-gray-700 text-sm font-medium mb-1">
-              作者（自動取得 / 必要時は手動入力）
+            <label htmlFor="add-tab-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
+              BOOTH URL（任意）
             </label>
-            {detectedEntryType === 'world' ? (
-              <input
-                id="add-tab-author"
-                type="text"
-                value={formData.author}
-                onChange={(e) => handleInputChange('author', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="取得失敗時はここで補完できます"
-              />
-            ) : (
-              <input
-                id="add-tab-author"
-                type="text"
-                value="登録時にVRChat URLから自動取得"
-                disabled
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
-              />
-            )}
+            <input
+              id="add-tab-booth-url"
+              type="url"
+              value={formData.boothUrl}
+              onChange={(e) => handleInputChange('boothUrl', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="https://booth.pm/ja/items/..."
+            />
+            <p className="mt-2 text-xs text-gray-500 leading-snug">
+              BOOTHの販売ページURLを入力すると、図鑑のカード・リスト表示にBOOTHリンクボタンが表示されます。
+            </p>
           </div>
 
           {/* VRChat URL */}
           <div>
             <label htmlFor="add-tab-source-url" className="block text-gray-700 text-sm font-medium mb-1">
-              VRChat URL（アバターまたはワールド） <span className="text-red-500">*</span>
+              VRChat URL（アバターまたはワールド）
             </label>
             <input
               id="add-tab-source-url"
               type="url"
               value={formData.sourceUrl}
               onChange={(e) => handleInputChange('sourceUrl', e.target.value)}
-              required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="https://vrchat.com/home/avatar/avtr_... または https://vrchat.com/home/world/wrld_..."
             />
@@ -948,9 +1003,11 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
               </p>
             )}
             <p className="mt-2 text-xs text-gray-500 leading-snug">
-              {detectedEntryType === 'world'
+              {isBoothOnly
+                ? 'BOOTH URLのみで登録します。名前・作者は手動入力が必要です。'
+                : detectedEntryType === 'world'
                 ? 'ワールドURLとして検出しました。登録時に名称・作者・画像を取得し、足りない項目だけ手動で補完できます。'
-                : '登録ボタンを押すと、このURLから名称・作者名・画像が自動的に取得されます。'}
+                : '登録ボタンを押すと、このURLから名称・作者名・画像が自動的に取得されます。BOOTH URLのみの登録も可能です。'}
             </p>
           </div>
         </div>
@@ -976,13 +1033,25 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             画像（登録時に自動取得）
           </label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
-            <IconCloudDownload size="w-10 h-10" className="text-blue-400 mb-2 mx-auto" />
-            <p className="text-gray-600 font-medium">VRChat URLから自動取得</p>
-            <p className="text-sm text-gray-500 mt-1">
-              {detectedEntryType === 'world'
-                ? 'ワールドURLでもサムネイル取得を試み、失敗時は画像なしで登録できます'
-                : '登録ボタンを押すと、URL種別に応じてVRChatから画像を自動的に取得します'}
-            </p>
+            {isBoothOnly ? (
+              <>
+                <IconCloudDownload size="w-10 h-10" className="text-gray-300 mb-2 mx-auto" />
+                <p className="text-gray-500 font-medium">BOOTH専用登録のため画像なし</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  登録後に編集画面から手動で画像をアップロードできます
+                </p>
+              </>
+            ) : (
+              <>
+                <IconCloudDownload size="w-10 h-10" className="text-blue-400 mb-2 mx-auto" />
+                <p className="text-gray-600 font-medium">VRChat URLから自動取得</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {detectedEntryType === 'world'
+                    ? 'ワールドURLでもサムネイル取得を試み、失敗時は画像なしで登録できます'
+                    : '登録ボタンを押すと、URL種別に応じてVRChatから画像を自動的に取得します'}
+                </p>
+              </>
+            )}
           </div>
 
           {/* Image Cropping Preview (自動取得後に表示) */}

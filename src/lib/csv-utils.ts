@@ -9,7 +9,8 @@
 import type { AkyoData } from '@/types/akyo';
 import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
-import { hydrateAkyoDataset, WORLD_CATEGORY_MARKERS } from './akyo-entry';
+import { BOOTH_DISPLAY_SERIAL_PREFIX, hydrateAkyoDataset, WORLD_CATEGORY_MARKERS } from './akyo-entry';
+import { ensureBoothCategories, validateBoothUrl } from './booth-url';
 import type { GitHubCommitResponse, GitHubConfig } from './github-utils';
 import { commitCSVToGitHub, fetchCSVFromGitHub } from './github-utils';
 
@@ -17,7 +18,8 @@ const BASE_AKYO_CSV_COLUMNS = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comm
 const SOURCE_URL_COLUMN = 'SourceURL';
 const ENTRY_TYPE_COLUMN = 'EntryType';
 const DISPLAY_SERIAL_COLUMN = 'DisplaySerial';
-const AKYO_EXTENDED_COLUMNS = [SOURCE_URL_COLUMN, ENTRY_TYPE_COLUMN, DISPLAY_SERIAL_COLUMN];
+const BOOTH_URL_COLUMN = 'BoothURL';
+const AKYO_EXTENDED_COLUMNS = [SOURCE_URL_COLUMN, ENTRY_TYPE_COLUMN, DISPLAY_SERIAL_COLUMN, BOOTH_URL_COLUMN];
 const WORLD_ENTRY_TYPE = 'world';
 
 interface CsvRowLengthMismatch {
@@ -248,30 +250,34 @@ export function parseCsvToAkyoData(csvText: string): AkyoData[] {
     const normalizedDisplaySerial = (rawRow[DISPLAY_SERIAL_COLUMN] ?? '').trim();
     const normalizedSourceUrl = (rawRow['SourceURL'] || rawRow['AvatarURL'] || '').trim();
     const normalizedAvatarUrl = (rawRow['AvatarURL'] || rawRow['SourceURL'] || '').trim();
+    const boothUrl = validateBoothUrl(rawRow['BoothURL']);
+    const entryType =
+      normalizedEntryType === 'avatar' || normalizedEntryType === 'world'
+        ? normalizedEntryType
+        : undefined;
+    const category = ensureBoothCategories(attribute, boothUrl, entryType);
 
     data.push({
       id: rawRow['ID'] ?? '',
       appearance: '', // Removed field
       nickname: rawRow['Nickname'] ?? '',
       avatarName: rawRow['AvatarName'] ?? '',
-      
+
       // Standardized fields
-      category: attribute,
+      category,
       comment: notes,
       author: creator,
       
       // Backward compatibility fields
-      attribute: attribute,
+      attribute: category,
       notes: notes,
       creator: creator,
 
-      entryType:
-        normalizedEntryType === 'avatar' || normalizedEntryType === 'world'
-          ? normalizedEntryType
-          : undefined,
+      entryType,
       displaySerial: normalizedDisplaySerial || undefined,
       sourceUrl: normalizedSourceUrl,
       avatarUrl: normalizedAvatarUrl,
+      boothUrl,
     });
   }
 
@@ -350,13 +356,14 @@ export function createAkyoRecord(data: {
   id: string;
   nickname?: string;
   avatarName: string;
-  entryType?: 'avatar' | 'world';
+  entryType?: 'avatar' | 'world' | '';
   displaySerial?: string;
   category?: string;
   author?: string;
   comment?: string;
   sourceUrl?: string;
   avatarUrl?: string;
+  boothUrl?: string;
   /** backward compat */
   attributes?: string;
   creator?: string;
@@ -365,7 +372,7 @@ export function createAkyoRecord(data: {
   const category = data.category ?? data.attributes ?? '';
   const author = data.author ?? data.creator ?? '';
   const comment = data.comment ?? data.notes ?? '';
-  const normalizedEntryType = data.entryType === 'world' ? 'world' : 'avatar';
+  const normalizedEntryType = data.entryType === 'world' ? 'world' : (data.entryType === 'avatar' ? 'avatar' : '');
   const normalizedAvatarUrl = data.avatarUrl || data.sourceUrl || '';
   const normalizedSourceUrl = data.sourceUrl || data.avatarUrl || '';
   const normalizedDisplaySerial = data.displaySerial || '';
@@ -392,6 +399,8 @@ export function createAkyoRecord(data: {
         return sanitizeCsvCell(normalizedEntryType);
       case DISPLAY_SERIAL_COLUMN:
         return sanitizeCsvCell(normalizedDisplaySerial);
+      case BOOTH_URL_COLUMN:
+        return sanitizeCsvCell(data.boothUrl || '');
       default:
         return '';
     }
@@ -474,4 +483,26 @@ export function getNextDisplaySerial(
   }
 
   return String(buildWorldDisplaySerialState(records, header).maxSerial + 1).padStart(4, '0');
+}
+
+export function getNextBoothDisplaySerialFromCsv(
+  records: string[][],
+  header: string[],
+): string {
+  const displaySerialIndex = header.indexOf(DISPLAY_SERIAL_COLUMN);
+  let maxSerial = 0;
+
+  for (const record of records) {
+    const serial = displaySerialIndex >= 0 ? String(record[displaySerialIndex] || '').trim() : '';
+    if (!serial.startsWith(BOOTH_DISPLAY_SERIAL_PREFIX)) {
+      continue;
+    }
+    const numPart = serial.slice(BOOTH_DISPLAY_SERIAL_PREFIX.length);
+    const parsed = Number.parseInt(numPart, 10);
+    if (!Number.isNaN(parsed) && parsed > maxSerial) {
+      maxSerial = parsed;
+    }
+  }
+
+  return `${BOOTH_DISPLAY_SERIAL_PREFIX}${String(maxSerial + 1).padStart(4, '0')}`;
 }
