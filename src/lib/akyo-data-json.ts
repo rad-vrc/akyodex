@@ -194,7 +194,9 @@ function normalizeAkyoItem(item: unknown): AkyoData {
   const raw = item as Record<string, unknown>;
 
   const id = String(raw.id || "");
-  const category = String(raw.category || raw.attribute || "");
+  const boothUrl = raw.boothUrl ? String(raw.boothUrl) : undefined;
+  const rawCategory = String(raw.category || raw.attribute || "");
+  const category = ensureBoothCategories(rawCategory, boothUrl, raw.entryType as string | undefined);
   const comment = String(raw.comment || raw.notes || "");
   const author = String(raw.author || raw.creator || "");
   const entryType =
@@ -228,6 +230,32 @@ function normalizeAkyoItem(item: unknown): AkyoData {
     displaySerial,
     sourceUrl: String(raw.sourceUrl || raw.avatarUrl || ""),
     avatarUrl: String(raw.avatarUrl || raw.sourceUrl || ""),
-    boothUrl: raw.boothUrl ? String(raw.boothUrl) : undefined,
+    boothUrl,
   };
+}
+
+/**
+ * Ensure Booth categories are present when boothUrl exists.
+ * - "Booth" is added to all entries with a boothUrl
+ * - "Booth/アバター" is added only when entryType is "avatar"
+ * Categories are not duplicated if already present.
+ */
+function ensureBoothCategories(
+  category: string,
+  boothUrl: string | undefined,
+  entryType: string | undefined,
+): string {
+  if (!boothUrl) return category;
+
+  const cats = category ? category.split(",") : [];
+
+  if (!cats.includes("Booth")) {
+    cats.push("Booth");
+  }
+
+  if (entryType === "avatar" && !cats.includes("Booth/アバター")) {
+    cats.push("Booth/アバター");
+  }
+
+  return cats.join(",");
 }
