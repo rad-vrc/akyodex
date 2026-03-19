@@ -791,7 +791,7 @@ export function ZukanClient({
       <header className="sticky top-0 z-50 p-4 sm:p-6">
         <nav
           aria-label={t("nav.primary", lang)}
-          className="max-w-7xl mx-auto flex items-center justify-between gap-4"
+          className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4"
         >
           {/* ロゴ */}
           <Link href="/" className="flex-shrink-0">
@@ -809,8 +809,8 @@ export function ZukanClient({
           </Link>
 
           {/* 統計情報 */}
-          <dl className="flex flex-wrap gap-2 sm:gap-4 text-sm sm:text-base font-bold text-white">
-            <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-1 sm:gap-2">
+          <dl className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-4 text-sm sm:text-base font-bold text-white w-full sm:w-auto">
+            <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.totalLabel", lang)}：</dt>
               <dd className="whitespace-nowrap">
                 {t("stats.totalBreakdown", lang)
@@ -819,7 +819,7 @@ export function ZukanClient({
                   .replace("{products}", String(stats.totalProducts))}
               </dd>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-1 sm:gap-2">
+            <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.displayedLabel", lang)}：</dt>
               <dd className="whitespace-nowrap">
                 {t("stats.displayedBreakdown", lang)
@@ -828,7 +828,7 @@ export function ZukanClient({
                   .replace("{products}", String(stats.displayedProducts))}
               </dd>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-1 sm:gap-2">
+            <div className="bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-full flex items-center gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.favoritesLabel", lang)}：</dt>
               <dd className="whitespace-nowrap flex items-center gap-1">
                 <span aria-hidden="true">❤️</span>
@@ -907,7 +907,11 @@ export function ZukanClient({
 
           <div
             id="zukan-filter-panel"
-            className={resolvedIsFilterPanelOpen ? "block" : "hidden"}
+            className={
+              isMobile === undefined
+                ? "hidden md:block" // SSR: CSS media query prevents CLS on mobile
+                : resolvedIsFilterPanelOpen ? "block" : "hidden"
+            }
           >
             <FilterPanel
               // 動的に更新されるカテゴリ/作者を使用

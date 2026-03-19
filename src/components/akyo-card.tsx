@@ -42,8 +42,9 @@ export function shouldBypassImageOptimization(src: string): boolean {
   return src.startsWith("/api/") || src.startsWith("/images/");
 }
 
-export function getCatalogCardImageRequestWidth(entryType: string): number {
-  return entryType === "world" ? 384 : 512;
+export function getCatalogCardImageRequestWidth(_entryType: string): number {
+  // モバイル画面 (320-414px) を考慮して384pxに統一（旧: アバター512px）
+  return 384;
 }
 
 /**
@@ -254,6 +255,8 @@ export function AkyoCard({
               <img
                 src="/images/booth-banner.png"
                 alt="BOOTH"
+                width={51}
+                height={18}
                 className="h-[18px] w-auto"
                 loading="lazy"
               />

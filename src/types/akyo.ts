@@ -31,6 +31,7 @@ export interface AkyoData {
   isFavorite?: boolean; // お気に入りフラグ（クライアント側）
   parsedCategory?: string[]; // 事前パース済みカテゴリ（クライアント最適化）
   parsedAuthor?: string[]; // 事前パース済み作者（クライアント最適化）
+  _searchIndex?: string[]; // 事前計算済み検索用正規化テキスト（フィルタ高速化）
 }
 
 /**

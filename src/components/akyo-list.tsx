@@ -242,6 +242,8 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                           <img
                             src="/images/booth-banner.png"
                             alt="BOOTH"
+                            width={63}
+                            height={22}
                             className="h-[22px] w-auto"
                             loading="lazy"
                           />

@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         headers: {
           "Content-Type":
             imageResponse.headers.get("Content-Type") || "image/webp",
-          "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+          "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
           "X-Image-Source": "vrchat-world-ogp",
         },
       });

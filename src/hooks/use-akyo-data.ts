@@ -39,6 +39,24 @@ function normalizeSearchValue(value: string | undefined): string[] {
 }
 
 /**
+ * データ項目の検索用正規化テキストを事前計算する。
+ * filterData() で毎回 normalizeSearchValue() を呼ぶ代わりに、
+ * データ読み込み時に一度だけ計算してキャッシュする。
+ */
+function buildSearchIndex(akyo: AkyoData): string[] {
+  const searchTargets = [
+    akyo.id || "",
+    formatDisplayId(akyo),
+    akyo.nickname || "",
+    akyo.avatarName || "",
+    akyo.category || akyo.attribute || "",
+    akyo.author || akyo.creator || "",
+    akyo.comment || akyo.notes || "",
+  ];
+  return searchTargets.flatMap((value) => normalizeSearchValue(value));
+}
+
+/**
  * Akyoデータを管理するカスタムフック (SSR対応版)
  *
  * @param initialData - サーバーサイドで取得した初期データ
@@ -302,22 +320,10 @@ export function useAkyoData(initialData: AkyoData[] = []) {
         filtered = filtered.filter((akyo) => akyo.isFavorite);
       }
 
-      // Filter by search query
+      // Filter by search query (using pre-computed _searchIndex for performance)
       if (normalizedQueryVariants.length > 0) {
         filtered = filtered.filter((akyo) => {
-          const searchTargets = [
-            akyo.id || "",
-            formatDisplayId(akyo),
-            akyo.nickname || "",
-            akyo.avatarName || "",
-            akyo.category || akyo.attribute || "",
-            akyo.author || akyo.creator || "",
-            akyo.comment || akyo.notes || "",
-          ];
-
-          const normalizedTargets = searchTargets.flatMap((value) =>
-            normalizeSearchValue(value),
-          );
+          const normalizedTargets = akyo._searchIndex ?? buildSearchIndex(akyo);
 
           return normalizedQueryVariants.some((query) =>
             normalizedTargets.some((target) => target.includes(query)),
@@ -455,10 +461,6 @@ function saveFavorites(ids: string[]): boolean {
  * データ配列にお気に入り情報を付与する共通ヘルパー
  * Set を使用して O(1) ルックアップを実現 (React Best Practices 7.11)
  */
-function applyFavorites(items: AkyoData[]): AkyoData[] {
-  return applyFavoritesFromIds(items, getFavorites());
-}
-
 function applyFavoritesFromIds(
   items: AkyoData[],
   favoriteIds: readonly string[],
@@ -473,6 +475,7 @@ function applyFavoritesFromIds(
     parsedAuthor:
       akyo.parsedAuthor ??
       parseMultiValueField(akyo.author || akyo.creator || ""),
+    _searchIndex: akyo._searchIndex ?? buildSearchIndex(akyo),
     isFavorite: favoritesSet.has(akyo.id),
   }));
 }

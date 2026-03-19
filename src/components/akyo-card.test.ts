@@ -13,7 +13,7 @@ test("shouldBypassImageOptimization bypasses local API and placeholder paths", (
   assert.equal(shouldBypassImageOptimization("https://images.akyodex.com/0001.webp"), false);
 });
 
-test("getCatalogCardImageRequestWidth uses a smaller proxy width for world cards", () => {
-  assert.equal(getCatalogCardImageRequestWidth("avatar"), 512);
+test("getCatalogCardImageRequestWidth returns 384 for all entry types", () => {
+  assert.equal(getCatalogCardImageRequestWidth("avatar"), 384);
   assert.equal(getCatalogCardImageRequestWidth("world"), 384);
 });

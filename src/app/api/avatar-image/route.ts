@@ -142,7 +142,7 @@ export async function GET(request: Request) {
               status: 200,
               headers: {
                 'Content-Type': r2Response.headers.get('Content-Type') || 'image/webp',
-                'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+                'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000',
                 'X-Image-Source': 'r2',
               },
             });
@@ -290,7 +290,7 @@ export async function GET(request: Request) {
                 status: 200,
                 headers: {
                   'Content-Type': imageResponse.headers.get('Content-Type') || 'image/webp',
-                  'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+                  'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000',
                   'X-Image-Source': 'vrchat',
                 },
               });
