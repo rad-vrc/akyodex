@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
     // 2. Set NEXT_PUBLIC_CLOUDFLARE_IMAGES_ACCOUNT_HASH=your_account_hash
     // Keep Next.js optimization enabled by default so responsive srcset works
     // for R2/remote images even when Cloudflare Images is disabled.
-    unoptimized: process.env.NODE_ENV === 'development' ? true : false,
+    unoptimized: process.env.NODE_ENV === 'development',
 
     // Use custom loader when Cloudflare Images is enabled
     ...(process.env.NEXT_PUBLIC_ENABLE_CLOUDFLARE_IMAGES === 'true' && {
@@ -25,11 +25,13 @@ const nextConfig: NextConfig = {
 
     // Remote patterns for image sources
     remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'localhost', // Local development
+      // localhost only in development
+      ...(process.env.NODE_ENV === 'development' ? [{
+        protocol: 'http' as const,
+        hostname: 'localhost',
+        port: '3000',
         pathname: '/**',
-      },
+      }] : []),
       {
         protocol: 'https',
         hostname: 'imagedelivery.net', // Cloudflare Images CDN

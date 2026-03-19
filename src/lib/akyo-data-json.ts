@@ -248,7 +248,9 @@ function ensureBoothCategories(
 ): string {
   if (!boothUrl) return category;
 
-  const cats = category ? category.split(",") : [];
+  const cats = category
+    ? category.split(",").map((c) => c.trim()).filter(Boolean)
+    : [];
 
   if (!cats.includes("Booth")) {
     cats.push("Booth");
