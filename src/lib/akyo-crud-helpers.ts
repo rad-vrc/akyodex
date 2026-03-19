@@ -12,6 +12,7 @@ import {
     resolveDisplaySerialForEntryUpdate,
     WORLD_CATEGORY_MARKERS,
 } from './akyo-entry';
+import { ensureBoothCategories } from './booth-url';
 import {
     commitAkyoCsv,
     createAkyoRecord,
@@ -148,6 +149,12 @@ export async function processAkyoCRUD(
         // 将来的にcreateAkyoRecordの引数も更新する必要があるが、
         // 現時点ではcsv-utils.ts側の変更を最小限にするため、
         // 新旧フィールドをマッピングして渡す（またはcreateAkyoRecord側で処理する）
+        const categoryWithBooth = ensureBoothCategories(
+            normalizedCategory,
+            boothUrl,
+            normalizedEntryType,
+        );
+
         const recordData: Parameters<typeof createAkyoRecord>[0] = {
             id,
             nickname,
@@ -156,7 +163,7 @@ export async function processAkyoCRUD(
             displaySerial,
             sourceUrl,
             // 新フィールドを優先
-            attributes: normalizedCategory,
+            attributes: categoryWithBooth,
             creator: author || creator,
             notes: comment || notes,
             avatarUrl: sourceUrl || avatarUrl,
