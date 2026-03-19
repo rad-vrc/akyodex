@@ -240,7 +240,7 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src="/booth-banner.svg"
+                            src="/images/booth-banner.svg"
                             alt="BOOTH"
                             className="h-[22px] w-auto"
                             loading="lazy"
