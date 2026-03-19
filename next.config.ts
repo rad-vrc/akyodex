@@ -131,36 +131,6 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Avatar image API proxy — cache aggressively since R2 images rarely change
-      {
-        source: '/api/avatar-image',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000',
-          },
-        ],
-      },
-      // World image API proxy
-      {
-        source: '/api/vrc-world-image',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800',
-          },
-        ],
-      },
-      // Next.js static assets (JS/CSS chunks)
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
       {
         source: '/:path*',
         headers: [

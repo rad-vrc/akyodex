@@ -6,7 +6,7 @@ import {
   getDisplaySerialNumber,
   resolveEntryType,
 } from "@/lib/akyo-entry";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /** localStorage のキー名 */
 const FAVORITES_STORAGE_KEY = "akyoFavorites";
@@ -56,22 +56,6 @@ function buildSearchIndex(akyo: AkyoData): string[] {
   return searchTargets.flatMap((value) => normalizeSearchValue(value));
 }
 
-/**
- * データ配列に parsedCategory / parsedAuthor / _searchIndex を事前計算して付与する。
- */
-function enrichDataForSearch(items: AkyoData[]): AkyoData[] {
-  if (items.length === 0) return items;
-  return items.map((akyo) => ({
-    ...akyo,
-    parsedCategory:
-      akyo.parsedCategory ??
-      parseMultiValueField(akyo.category || akyo.attribute || ""),
-    parsedAuthor:
-      akyo.parsedAuthor ??
-      parseMultiValueField(akyo.author || akyo.creator || ""),
-    _searchIndex: akyo._searchIndex ?? buildSearchIndex(akyo),
-  }));
-}
 
 /**
  * Akyoデータを管理するカスタムフック (SSR対応版)
@@ -254,7 +238,7 @@ export function useAkyoData(initialData: AkyoData[] = []) {
       favoriteOverridesRef.current,
     );
     const dataWithFavorites = applyFavoritesFromIds(
-      enrichDataForSearch(newData),
+      newData,
       applyFavoriteOverrides(persistedFavorites, favoriteOverridesRef.current),
     );
     lastPersistedFavoritesRef.current = JSON.stringify(persistedFavorites);
