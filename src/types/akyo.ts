@@ -2,7 +2,7 @@
  * Akyoデータの型定義
  */
 
-export type AkyoEntryType = "avatar" | "world";
+export type AkyoEntryType = "avatar" | "world" | "booth";
 
 export interface AkyoData {
   id: string; // 4桁のID番号 (例: "0001")

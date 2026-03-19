@@ -42,7 +42,7 @@ export function shouldBypassImageOptimization(src: string): boolean {
   return src.startsWith("/api/") || src.startsWith("/images/");
 }
 
-export function getCatalogCardImageRequestWidth(entryType: "avatar" | "world"): number {
+export function getCatalogCardImageRequestWidth(entryType: string): number {
   return entryType === "world" ? 384 : 512;
 }
 

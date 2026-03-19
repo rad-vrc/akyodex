@@ -326,13 +326,19 @@ export function ZukanClient({
 
   // — Derived values —
   const stats = useMemo(() => {
-    const summarizeByEntryType = (items: AkyoData[]) =>
+    const summarize = (items: AkyoData[]) =>
       items.reduce(
         (acc, item) => {
-          if (resolveEntryType(item) === "world") {
+          const type = resolveEntryType(item);
+          if (type === "world") {
             acc.worlds += 1;
-          } else {
+          } else if (type !== "booth") {
             acc.avatars += 1;
+          }
+
+          // boothUrlを持つ全エントリ（アバター・ワールド・BOOTH専用すべて）
+          if (item.boothUrl) {
+            acc.products += 1;
           }
 
           if (item.isFavorite) {
@@ -341,17 +347,19 @@ export function ZukanClient({
 
           return acc;
         },
-        { avatars: 0, worlds: 0, favorites: 0 },
+        { avatars: 0, worlds: 0, products: 0, favorites: 0 },
       );
 
-    const totalSummary = summarizeByEntryType(data);
-    const displayedSummary = summarizeByEntryType(filteredData);
+    const totalSummary = summarize(data);
+    const displayedSummary = summarize(filteredData);
 
     return {
       totalAvatars: totalSummary.avatars,
       totalWorlds: totalSummary.worlds,
+      totalProducts: totalSummary.products,
       displayedAvatars: displayedSummary.avatars,
       displayedWorlds: displayedSummary.worlds,
+      displayedProducts: displayedSummary.products,
       favorites: totalSummary.favorites,
     };
   }, [data, filteredData]);
@@ -796,7 +804,8 @@ export function ZukanClient({
               <dd className="whitespace-nowrap">
                 {t("stats.totalBreakdown", lang)
                   .replace("{avatars}", String(stats.totalAvatars))
-                  .replace("{worlds}", String(stats.totalWorlds))}
+                  .replace("{worlds}", String(stats.totalWorlds))
+                  .replace("{products}", String(stats.totalProducts))}
               </dd>
             </div>
             <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-1 sm:gap-2">
@@ -804,7 +813,8 @@ export function ZukanClient({
               <dd className="whitespace-nowrap">
                 {t("stats.displayedBreakdown", lang)
                   .replace("{avatars}", String(stats.displayedAvatars))
-                  .replace("{worlds}", String(stats.displayedWorlds))}
+                  .replace("{worlds}", String(stats.displayedWorlds))
+                  .replace("{products}", String(stats.displayedProducts))}
               </dd>
             </div>
             <div className="bg-white/20 backdrop-blur-sm px-3 py-2 rounded-full flex items-center gap-1 sm:gap-2">

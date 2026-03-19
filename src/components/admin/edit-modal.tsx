@@ -11,7 +11,7 @@ import {
   resolveDisplaySerialForSourceUrlChange,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
-import type { AkyoData } from '@/types/akyo';
+import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { AttributeModal } from './attribute-modal';
 
@@ -29,7 +29,7 @@ interface EditModalProps {
 
 function normalizeCategoriesForSubmit(
   categories: string[],
-  entryType: 'avatar' | 'world'
+  entryType: AkyoEntryType
 ): string[] {
   const normalized = categories
     .map((category) => category.trim())
@@ -53,7 +53,7 @@ export function EditModal({
   onSuccess,
 }: EditModalProps) {
   const [formData, setFormData] = useState({
-    entryType: 'avatar' as 'avatar' | 'world',
+    entryType: 'avatar' as AkyoEntryType,
     displaySerial: '',
     nickname: '',
     avatarName: '',
@@ -338,7 +338,7 @@ export function EditModal({
 
     if (!value) {
       setNicknameStatus({
-        message: '通称を入力してください',
+        message: '名前を入力してください',
         tone: 'neutral',
       });
       return;
@@ -540,7 +540,7 @@ export function EditModal({
       return;
     }
     if (isWorldEntry && !formData.nickname.trim()) {
-      alert('ワールド名（通称）は必須です');
+      alert('ワールド名（名前）は必須です');
       return;
     }
     if (!formData.author.trim()) {
@@ -554,7 +554,7 @@ export function EditModal({
 
     // Check for duplicates (excluding current akyo)
     if (nicknameStatus.tone === 'error' || avatarNameStatus.tone === 'error') {
-      if (!confirm('重複する通称またはアバター名が検出されました。\n更新を続行しますか？')) {
+      if (!confirm('重複する名前またはアバター名が検出されました。\n更新を続行しますか？')) {
         return;
       }
     }
@@ -695,7 +695,7 @@ export function EditModal({
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <label htmlFor="edit-nickname" className="block text-gray-700 text-sm font-medium">
-                      通称
+                      名前
                     </label>
                     <button
                       type="button"
@@ -714,7 +714,7 @@ export function EditModal({
                       ) : (
                         <>
                           <IconSearch size="w-4 h-4" />
-                          同じ通称が既に登録されているか確認
+                          同じ名前が既に登録されているか確認
                         </>
                       )}
                     </button>

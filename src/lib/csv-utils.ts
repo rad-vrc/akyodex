@@ -9,7 +9,7 @@
 import type { AkyoData } from '@/types/akyo';
 import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
-import { hydrateAkyoDataset, WORLD_CATEGORY_MARKERS } from './akyo-entry';
+import { BOOTH_DISPLAY_SERIAL_PREFIX, hydrateAkyoDataset, WORLD_CATEGORY_MARKERS } from './akyo-entry';
 import { ensureBoothCategories, validateBoothUrl } from './booth-url';
 import type { GitHubCommitResponse, GitHubConfig } from './github-utils';
 import { commitCSVToGitHub, fetchCSVFromGitHub } from './github-utils';
@@ -356,7 +356,7 @@ export function createAkyoRecord(data: {
   id: string;
   nickname?: string;
   avatarName: string;
-  entryType?: 'avatar' | 'world';
+  entryType?: 'avatar' | 'world' | '';
   displaySerial?: string;
   category?: string;
   author?: string;
@@ -372,7 +372,7 @@ export function createAkyoRecord(data: {
   const category = data.category ?? data.attributes ?? '';
   const author = data.author ?? data.creator ?? '';
   const comment = data.comment ?? data.notes ?? '';
-  const normalizedEntryType = data.entryType === 'world' ? 'world' : 'avatar';
+  const normalizedEntryType = data.entryType === 'world' ? 'world' : (data.entryType === 'avatar' ? 'avatar' : '');
   const normalizedAvatarUrl = data.avatarUrl || data.sourceUrl || '';
   const normalizedSourceUrl = data.sourceUrl || data.avatarUrl || '';
   const normalizedDisplaySerial = data.displaySerial || '';
@@ -483,4 +483,26 @@ export function getNextDisplaySerial(
   }
 
   return String(buildWorldDisplaySerialState(records, header).maxSerial + 1).padStart(4, '0');
+}
+
+export function getNextBoothDisplaySerialFromCsv(
+  records: string[][],
+  header: string[],
+): string {
+  const displaySerialIndex = header.indexOf(DISPLAY_SERIAL_COLUMN);
+  let maxSerial = 0;
+
+  for (const record of records) {
+    const serial = displaySerialIndex >= 0 ? String(record[displaySerialIndex] || '').trim() : '';
+    if (!serial.startsWith(BOOTH_DISPLAY_SERIAL_PREFIX)) {
+      continue;
+    }
+    const numPart = serial.slice(BOOTH_DISPLAY_SERIAL_PREFIX.length);
+    const parsed = Number.parseInt(numPart, 10);
+    if (!Number.isNaN(parsed) && parsed > maxSerial) {
+      maxSerial = parsed;
+    }
+  }
+
+  return `${BOOTH_DISPLAY_SERIAL_PREFIX}${String(maxSerial + 1).padStart(4, '0')}`;
 }

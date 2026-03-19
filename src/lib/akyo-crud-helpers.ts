@@ -20,6 +20,7 @@ import {
     findRecordById,
     formatAkyoCommitMessage,
     getDisplaySerialForWorldRecord,
+    getNextBoothDisplaySerialFromCsv,
     getNextDisplaySerial,
     loadAkyoCsv,
     replaceRecordById,
@@ -139,27 +140,27 @@ export async function processAkyoCRUD(
         let updatedRecords: string[][];
         let commitMessageAction: string;
         let successMessage: string;
-        const normalizedEntryType = entryType === 'world' ? 'world' : 'avatar';
-        const normalizedCategory = normalizeCategoryFieldForEntryType(
-            category || attributes,
-            normalizedEntryType
-        );
-        
-        // createAkyoRecordに渡すデータ
-        // 将来的にcreateAkyoRecordの引数も更新する必要があるが、
-        // 現時点ではcsv-utils.ts側の変更を最小限にするため、
-        // 新旧フィールドをマッピングして渡す（またはcreateAkyoRecord側で処理する）
+        // BOOTH専用検出: sourceUrlなし && boothUrlあり
+        const isBoothOnly = !sourceUrl && !!boothUrl;
+        const normalizedEntryType: 'avatar' | 'world' | '' = isBoothOnly ? '' : (entryType === 'world' ? 'world' : 'avatar');
+        const normalizedCategory = normalizedEntryType
+            ? normalizeCategoryFieldForEntryType(
+                category || attributes,
+                normalizedEntryType,
+            )
+            : (category || attributes);
+
         const categoryWithBooth = ensureBoothCategories(
             normalizedCategory,
             boothUrl,
-            normalizedEntryType,
+            isBoothOnly ? undefined : normalizedEntryType || undefined,
         );
 
         const recordData: Parameters<typeof createAkyoRecord>[0] = {
             id,
             nickname,
             avatarName,
-            entryType: normalizedEntryType,
+            entryType: normalizedEntryType || undefined,
             displaySerial,
             sourceUrl,
             // 新フィールドを優先
@@ -178,7 +179,9 @@ export async function processAkyoCRUD(
                     return jsonError(`ID ${id} は既に使用されています`, 409);
                 }
 
-                if (recordData.entryType === 'world') {
+                if (isBoothOnly) {
+                    recordData.displaySerial = getNextBoothDisplaySerialFromCsv(dataRecords, header);
+                } else if (recordData.entryType === 'world') {
                     recordData.displaySerial = getNextDisplaySerial(dataRecords, header, 'world');
                 } else {
                     recordData.displaySerial = recordData.displaySerial || id;
@@ -200,7 +203,16 @@ export async function processAkyoCRUD(
                 }
                 const originalEntryType = resolveEntryTypeFromRecord(existingRecord, header);
 
-                if (recordData.entryType === 'world') {
+                if (isBoothOnly) {
+                    // BOOTH専用: 既存のBooth連番を維持、なければ新規割り当て
+                    const displaySerialIndex = header.indexOf('DisplaySerial');
+                    const existingSerial = displaySerialIndex >= 0
+                        ? String(existingRecord[displaySerialIndex] || '').trim()
+                        : '';
+                    recordData.displaySerial = existingSerial.startsWith('Booth')
+                        ? existingSerial
+                        : getNextBoothDisplaySerialFromCsv(dataRecords, header);
+                } else if (recordData.entryType === 'world') {
                     const displaySerialIndex = header.indexOf('DisplaySerial');
                     const originalDisplaySerial =
                         originalEntryType === 'world'
