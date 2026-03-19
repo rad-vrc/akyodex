@@ -283,6 +283,11 @@ export const UI_TEXTS = {
     en: "Show worlds only",
     ko: "월드만 표시",
   },
+  "view.boothOnly": {
+    ja: "BOOTH商品のみ表示",
+    en: "Show BOOTH products only",
+    ko: "BOOTH 상품만 표시",
+  },
   "notfound.title": {
     ja: "見つかりません",
     en: "No results found",

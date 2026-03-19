@@ -717,6 +717,16 @@ export function ZukanClient({
     setEntryTypeFilter((prev) => (prev === type ? undefined : type));
   };
 
+  // BOOTH商品フィルター切替（Boothカテゴリのトグル）
+  const isBoothFilterActive = selectedAttributes.includes("Booth");
+  const handleBoothFilterClick = () => {
+    setSelectedAttributes((prev) =>
+      prev.includes("Booth")
+        ? prev.filter((a) => a !== "Booth")
+        : [...prev, "Booth"],
+    );
+  };
+
   // お気に入りフィルター切替
   const handleFavoritesClick = () => {
     setFavoritesOnly((prev) => !prev);
@@ -969,6 +979,21 @@ export function ZukanClient({
               aria-pressed={entryTypeFilter === "world"}
             >
               <IconGlobe size="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+            <button
+              type="button"
+              onClick={handleBoothFilterClick}
+              className={`view-toggle-btn ${isBoothFilterActive ? "active" : ""}`}
+              aria-label={t("view.boothOnly", lang)}
+              aria-pressed={isBoothFilterActive}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/booth-banner.svg"
+                alt=""
+                className="h-4 md:h-5 w-auto"
+                loading="lazy"
+              />
             </button>
           </div>
         </div>
