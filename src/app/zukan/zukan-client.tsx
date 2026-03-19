@@ -907,7 +907,11 @@ export function ZukanClient({
 
           <div
             id="zukan-filter-panel"
-            className={resolvedIsFilterPanelOpen ? "block" : "hidden"}
+            className={
+              isMobile === undefined
+                ? "hidden md:block" // SSR: CSS media query prevents CLS on mobile
+                : resolvedIsFilterPanelOpen ? "block" : "hidden"
+            }
           >
             <FilterPanel
               // 動的に更新されるカテゴリ/作者を使用

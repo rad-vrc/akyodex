@@ -255,6 +255,8 @@ export function AkyoCard({
               <img
                 src="/images/booth-banner.png"
                 alt="BOOTH"
+                width={51}
+                height={18}
                 className="h-[18px] w-auto"
                 loading="lazy"
               />
