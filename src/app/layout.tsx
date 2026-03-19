@@ -15,11 +15,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://akyodex.com'),
   title: {
-    default: 'Akyoずかん-VRChat Akyo コンテンツ図鑑- | Akyodex-VRChat Akyo Content Index',
+    default: 'Akyoずかん - VRChatアバター Akyoコンテンツ図鑑 | Akyodex-VRChat Akyo Content Index',
     template: '%s | Akyoずかん',
   },
   description: 'VRChatに潜むなぞ生物アバター「Akyo」を700体以上、そしてAkyo要素のあるワールドを50種類以上収録したAkyoコンテンツの図鑑サイト。名前・作者・カテゴリで探せる日本語/英語/韓国語対応の共有データベースで、今日からキミもAkyoファインダーの仲間入り!',
-  keywords: ['Akyo', 'Akyodex', 'VRChat', 'Avatar', 'World', 'VRChatアバター図鑑', 'VRChatワールド', 'Akyoずかん', 'BOOTH'],
+  keywords: ['Akyo', 'Akyodex', 'VRChat', 'Avatar', 'World', 'VRChatアバター図鑑', 'VRChatワールド', 'Akyoずかん'],
   authors: [{ name: 'らど', url: 'https://akyodex.com' }],
   creator: 'らど',
   publisher: 'Akyodex',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ja_JP',
-    title: 'Akyoずかん-VRChat Akyo コンテンツ図鑑-',
+    title: 'Akyoずかん - VRChatアバター Akyoコンテンツ図鑑',
     description: 'VRChatに潜むなぞ生物アバター「Akyo」を700体以上、そしてAkyo要素のあるワールドを50種類以上収録したAkyoコンテンツの図鑑サイト。名前・作者・カテゴリで探せる日本語/英語/韓国語対応の共有データベースで、今日からキミもAkyoファインダーの仲間入り!',
     url: 'https://akyodex.com/zukan',
     siteName: 'Akyoずかん',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Akyoずかん-VRChat Akyo コンテンツ図鑑-',
+    title: 'Akyoずかん - VRChatアバター Akyoコンテンツ図鑑',
     description: 'VRChatに潜むなぞ生物アバター「Akyo」を700体以上、そしてAkyo要素のあるワールドを50種類以上収録したAkyoコンテンツの図鑑サイト。名前・作者・カテゴリで探せる日本語/英語/韓国語対応の共有データベースで、今日からキミもAkyoファインダーの仲間入り!',
     images: ['/twitter-image'],
     creator: '@akyodex',
