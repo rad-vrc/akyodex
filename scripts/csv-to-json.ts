@@ -10,6 +10,7 @@
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { validateBoothUrl } from '../src/lib/booth-url';
 
 interface AkyoData {
   id: string;
@@ -128,7 +129,7 @@ function parseCsvToAkyoData(csvText: string): AkyoData[] {
       author: rawRow['Author'] ?? '',
       sourceUrl: rawRow['SourceURL'] || rawRow['AvatarURL'] || '',
       avatarUrl: rawRow['AvatarURL'] || rawRow['SourceURL'] || '',
-      boothUrl: rawRow['BoothURL'] || undefined,
+      boothUrl: validateBoothUrl(rawRow['BoothURL']),
     });
   }
 

@@ -521,6 +521,11 @@ export const UI_TEXTS = {
     en: "VRChat Avatar URL",
     ko: "VRChat 아바타 URL",
   },
+  "modal.boothUrl": {
+    ja: "BOOTH URL",
+    en: "BOOTH URL",
+    ko: "BOOTH URL",
+  },
   "modal.bonus": {
     ja: "おまけじょうほう",
     en: "Bonus Info",

@@ -10,6 +10,7 @@ import type { AkyoData } from '@/types/akyo';
 import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
 import { hydrateAkyoDataset, WORLD_CATEGORY_MARKERS } from './akyo-entry';
+import { validateBoothUrl } from './booth-url';
 import type { GitHubCommitResponse, GitHubConfig } from './github-utils';
 import { commitCSVToGitHub, fetchCSVFromGitHub } from './github-utils';
 
@@ -273,7 +274,7 @@ export function parseCsvToAkyoData(csvText: string): AkyoData[] {
       displaySerial: normalizedDisplaySerial || undefined,
       sourceUrl: normalizedSourceUrl,
       avatarUrl: normalizedAvatarUrl,
-      boothUrl: (rawRow['BoothURL'] ?? '').trim() || undefined,
+      boothUrl: validateBoothUrl(rawRow['BoothURL']),
     });
   }
 

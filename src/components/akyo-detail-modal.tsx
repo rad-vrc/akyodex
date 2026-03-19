@@ -719,7 +719,7 @@ export function AkyoDetailModal({
                 {localAkyo.boothUrl && (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-500 mb-2">
-                      BOOTH URL
+                      {t('modal.boothUrl', lang)}
                     </h3>
                     <div className="bg-blue-50 rounded-lg p-4">
                       <a

@@ -16,6 +16,7 @@ import {
   SessionData,
   validateSession as validateSessionToken,
 } from "./session";
+import { validateBoothUrl } from "./booth-url";
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional input validation for control chars
 export const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F-\u009F]/u;
@@ -438,7 +439,15 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
     };
   }
 
-  const boothUrl = readField("boothUrl") || undefined;
+  const rawBoothUrl = readField("boothUrl");
+  const boothUrl = rawBoothUrl ? validateBoothUrl(rawBoothUrl) : undefined;
+  if (rawBoothUrl && !boothUrl) {
+    return {
+      success: false,
+      status: 400,
+      error: "boothUrl は https://booth.pm または https://*.booth.pm のURLである必要があります",
+    };
+  }
 
   const imageValue = formData.get("imageData");
   const imageData =
