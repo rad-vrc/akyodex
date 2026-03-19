@@ -858,10 +858,10 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
             )}
           </div>
 
-          {/* 名称 */}
+          {/* アバター名 */}
           <div>
             <label htmlFor="add-tab-name" className="block text-gray-700 text-sm font-medium mb-1">
-              名称
+              アバター名
             </label>
             <input
               id="add-tab-name"
@@ -879,7 +879,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           {/* 作者 */}
           <div>
             <label htmlFor="add-tab-author" className="block text-gray-700 text-sm font-medium mb-1">
-              作者（自動取得 / 必要時は手動入力）
+              作者
             </label>
             {detectedEntryType === 'world' ? (
               <input
