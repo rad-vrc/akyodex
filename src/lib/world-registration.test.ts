@@ -3,15 +3,13 @@ import test from "node:test";
 
 import { assertWorldRegistrationAssets } from "./world-registration";
 
-test("assertWorldRegistrationAssets rejects registrations without world image", () => {
-  assert.throws(
-    () =>
-      assertWorldRegistrationAssets({
-        imageFile: null,
-        resolvedAuthor: "Author",
-        resolvedNickname: "World Name",
-      }),
-    /ワールド画像を取得できませんでした/,
+test("assertWorldRegistrationAssets allows registrations without world image (warns only)", () => {
+  assert.doesNotThrow(() =>
+    assertWorldRegistrationAssets({
+      imageFile: null,
+      resolvedAuthor: "Author",
+      resolvedNickname: "World Name",
+    }),
   );
 });
 

@@ -408,22 +408,27 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           }));
         }
 
-        const imageResponse = await fetch(
-          `/api/vrc-world-image?wrld=${encodeURIComponent(wrldId)}&w=1024`
-        );
-        if (!imageResponse.ok) {
-          const errorText = await imageResponse.text().catch(() => '');
-          throw new Error(
-            `ワールド画像取得に失敗しました (${imageResponse.status})${
-              errorText ? `: ${errorText}` : ''
-            }`
+        // ワールド画像取得（失敗時は画像なしで続行）
+        const imageController = new AbortController();
+        const imageTimeoutId = window.setTimeout(() => imageController.abort(), 30_000);
+        try {
+          const imageResponse = await fetch(
+            `/api/vrc-world-image?wrld=${encodeURIComponent(wrldId)}&w=1024`,
+            { signal: imageController.signal }
           );
+          if (imageResponse.ok) {
+            const blob = await imageResponse.blob();
+            imageFile = new File([blob], `${wrldId}.webp`, {
+              type: blob.type || 'image/webp',
+            });
+          } else {
+            console.warn(`[add-tab] ワールド画像取得スキップ (${imageResponse.status})`);
+          }
+        } catch (imageError) {
+          console.warn('[add-tab] ワールド画像取得失敗、画像なしで続行:', imageError);
+        } finally {
+          clearTimeout(imageTimeoutId);
         }
-
-        const blob = await imageResponse.blob();
-        imageFile = new File([blob], `${wrldId}.webp`, {
-          type: blob.type || 'image/webp',
-        });
         assertWorldRegistrationAssets({
           imageFile,
           resolvedAuthor,
@@ -454,12 +459,16 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           const imgSrc = readerEvent.target?.result as string;
           setOriginalImageSrc(imgSrc);
           setShowImagePreview(true);
-          setTimeout(resolve, 100);
+          // React状態更新とDOM反映を待つ（rAF + setTimeout で確実に待機）
+          requestAnimationFrame(() => setTimeout(resolve, 150));
         };
         reader.readAsDataURL(imageFile);
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      // cropRef が有効になるまで待機してからクロップ処理
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => setTimeout(resolve, 150))
+      );
       croppedImageData = await generateCroppedImage();
 
       if (!croppedImageData) {
@@ -727,6 +736,11 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         return;
       }
 
+      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+        resolve(null);
+        return;
+      }
+
       const canvasW = 300;
       const canvasH = 200;
       const canvas = document.createElement('canvas');
@@ -744,6 +758,10 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         const ch = container.offsetHeight;
         const iw = image.naturalWidth;
         const ih = image.naturalHeight;
+        if (ch === 0 || ih === 0) {
+          resolve(null);
+          return;
+        }
         const containerAspect = cw / ch;
         const imageAspect = iw / ih;
 
@@ -1047,7 +1065,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 <p className="text-gray-600 font-medium">VRChat URLから自動取得</p>
                 <p className="text-sm text-gray-500 mt-1">
                   {detectedEntryType === 'world'
-                    ? 'ワールドURLでもサムネイル取得を試み、失敗時は画像なしで登録できます'
+                    ? 'ワールドURLからサムネイル取得を試みます。取得失敗時は画像なしで登録されます'
                     : '登録ボタンを押すと、URL種別に応じてVRChatから画像を自動的に取得します'}
                 </p>
               </>

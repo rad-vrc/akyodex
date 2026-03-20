@@ -16,8 +16,8 @@ export function assertWorldRegistrationAssets(
   }
 
   if (!imageFile) {
-    throw new Error(
-      "ワールド画像を取得できませんでした。URLが正しいか、ワールドが公開設定か確認してください。",
+    console.warn(
+      "[world-registration] ワールド画像を取得できませんでした。画像なしで登録を続行します。",
     );
   }
 }
