@@ -459,15 +459,15 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           const imgSrc = readerEvent.target?.result as string;
           setOriginalImageSrc(imgSrc);
           setShowImagePreview(true);
-          // React状態更新の反映を待つ（2フレーム分）
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          // React状態更新とDOM反映を待つ（rAF + setTimeout で確実に待機）
+          requestAnimationFrame(() => setTimeout(resolve, 150));
         };
         reader.readAsDataURL(imageFile);
       });
 
-      // DOMへの反映を待ってからクロップ処理
+      // cropRef が有効になるまで待機してからクロップ処理
       await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        requestAnimationFrame(() => setTimeout(resolve, 150))
       );
       croppedImageData = await generateCroppedImage();
 
