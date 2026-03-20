@@ -736,6 +736,11 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         return;
       }
 
+      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+        resolve(null);
+        return;
+      }
+
       const canvasW = 300;
       const canvasH = 200;
       const canvas = document.createElement('canvas');
@@ -753,6 +758,10 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         const ch = container.offsetHeight;
         const iw = image.naturalWidth;
         const ih = image.naturalHeight;
+        if (ch === 0 || ih === 0) {
+          resolve(null);
+          return;
+        }
         const containerAspect = cw / ch;
         const imageAspect = iw / ih;
 
