@@ -314,22 +314,27 @@ export function EditModal({
 
   const handleSourceUrlChange = (value: string) => {
     const detectedEntryType = detectVrcEntryTypeFromUrl(value.trim());
-    setFormData((prev) => ({
-      ...prev,
-      sourceUrl: value,
-      avatarUrl: value,
-      entryType: detectedEntryType ?? prev.entryType,
-      ...(shouldResetWorldMetadata(prev.sourceUrl, value)
-        ? { nickname: '', author: '' }
-        : {}),
-      displaySerial: resolveDisplaySerialForSourceUrlChange({
-        currentDisplaySerial: prev.displaySerial,
-        detectedEntryType,
-        id: akyo?.id ?? prev.displaySerial,
-        originalDisplaySerial: akyo?.displaySerial,
-        originalEntryType: akyo?.entryType,
-      }),
-    }));
+    setFormData((prev) => {
+      // sourceUrlが空になった場合、boothUrlがあればboothに戻す
+      const resolvedEntryType = detectedEntryType
+        ?? (!value.trim() && prev.boothUrl.trim() ? 'booth' : prev.entryType);
+      return {
+        ...prev,
+        sourceUrl: value,
+        avatarUrl: value,
+        entryType: resolvedEntryType,
+        ...(shouldResetWorldMetadata(prev.sourceUrl, value)
+          ? { nickname: '', author: '' }
+          : {}),
+        displaySerial: resolveDisplaySerialForSourceUrlChange({
+          currentDisplaySerial: prev.displaySerial,
+          detectedEntryType,
+          id: akyo?.id ?? prev.displaySerial,
+          originalDisplaySerial: akyo?.displaySerial,
+          originalEntryType: akyo?.entryType,
+        }),
+      };
+    });
   };
 
   // ... (重複チェック系ロジックは変更なし) ...
@@ -546,6 +551,10 @@ export function EditModal({
     }
     if (isBoothEntry && !formData.nickname.trim()) {
       alert('名前は必須です');
+      return;
+    }
+    if (!formData.sourceUrl.trim() && !formData.boothUrl.trim()) {
+      alert('VRChat URLまたはBOOTH URLのいずれかを入力してください');
       return;
     }
     if (!formData.author.trim()) {

@@ -31,6 +31,12 @@ export function resolveEntryType(akyo: AkyoData): AkyoEntryType {
     return "booth";
   }
 
+  // sourceUrl/avatarUrlがなくboothUrlがあればBOOTH専用エントリ
+  const sourceUrl = akyo.sourceUrl?.trim() || akyo.avatarUrl?.trim() || "";
+  if (!sourceUrl && akyo.boothUrl?.trim()) {
+    return "booth";
+  }
+
   const hasWorldCategory = getCategoryTokens(akyo).some((token) =>
     WORLD_CATEGORY_MARKERS.has(token),
   );
