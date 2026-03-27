@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-27T07:20:41.558Z",
-  "count": 819,
+  "updatedAt": "2026-03-27T07:26:07.951Z",
+  "count": 820,
   "data": [
     {
       "id": "0001",
@@ -9268,6 +9268,18 @@
       "author": "あ～さ～ arthur",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6ad3700f-7e28-4b99-803b-8e82a754eb65",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_6ad3700f-7e28-4b99-803b-8e82a754eb65"
+    },
+    {
+      "id": "0820",
+      "entryType": "avatar",
+      "displaySerial": "0749",
+      "nickname": "マシンAkyo",
+      "avatarName": "akyo machine",
+      "category": "乗り物,武器・機械",
+      "comment": "",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_51729e13-4deb-4dde-b4ba-db8e778778ed",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_51729e13-4deb-4dde-b4ba-db8e778778ed"
     }
   ]
 }
