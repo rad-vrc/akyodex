@@ -225,7 +225,7 @@ export function AkyoCard({
               />
             </button>
           )}
-          {!isWorldEntry && (
+          {entryType === "avatar" && (
             <button
               type="button"
               onClick={handleDownloadClick}
