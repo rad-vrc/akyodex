@@ -478,11 +478,33 @@ export function getNextDisplaySerial(
   header: string[],
   entryType: 'avatar' | 'world'
 ): string {
-  if (entryType !== WORLD_ENTRY_TYPE) {
-    return '';
+  if (entryType === WORLD_ENTRY_TYPE) {
+    return String(buildWorldDisplaySerialState(records, header).maxSerial + 1).padStart(4, '0');
   }
 
-  return String(buildWorldDisplaySerialState(records, header).maxSerial + 1).padStart(4, '0');
+  // アバター: 非ワールド・非BOOTHレコードの displaySerial (または ID) の最大値 + 1
+  const displaySerialIndex = header.indexOf(DISPLAY_SERIAL_COLUMN);
+  let maxSerial = 0;
+
+  for (const record of records) {
+    if (isWorldRecord(record, header)) {
+      continue;
+    }
+    // BOOTH エントリはスキップ
+    const serial = displaySerialIndex >= 0 ? String(record[displaySerialIndex] || '').trim() : '';
+    if (serial.startsWith(BOOTH_DISPLAY_SERIAL_PREFIX)) {
+      continue;
+    }
+
+    // displaySerial があればそれを使い、なければ ID にフォールバック
+    const source = serial || String(record[0] ?? '').trim().replace(/^"|"$/g, '');
+    const parsed = Number.parseInt(source, 10);
+    if (!Number.isNaN(parsed) && parsed > maxSerial) {
+      maxSerial = parsed;
+    }
+  }
+
+  return String(maxSerial + 1).padStart(4, '0');
 }
 
 export function getNextBoothDisplaySerialFromCsv(
