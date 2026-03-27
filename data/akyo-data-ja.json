@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-27T07:37:23.694Z",
-  "count": 822,
+  "updatedAt": "2026-03-27T07:50:54.603Z",
+  "count": 823,
   "data": [
     {
       "id": "0001",
@@ -9304,6 +9304,18 @@
       "author": "あ～さ～ arthur",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b272cc4a-41cf-4f62-99ae-50163513747e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b272cc4a-41cf-4f62-99ae-50163513747e"
+    },
+    {
+      "id": "0823",
+      "entryType": "avatar",
+      "displaySerial": "0752",
+      "nickname": "ニコAkyo",
+      "avatarName": "akyo_nico",
+      "category": "ギミック・特殊,ギミック・特殊/ライト",
+      "comment": "",
+      "author": "nezu_jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6e962ae9-73e1-422c-9012-c636d3ddea6f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6e962ae9-73e1-422c-9012-c636d3ddea6f"
     }
   ]
 }
