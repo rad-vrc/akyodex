@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-27T06:51:37.532Z",
-  "count": 818,
+  "updatedAt": "2026-03-27T07:20:41.558Z",
+  "count": 819,
   "data": [
     {
       "id": "0001",
@@ -9256,6 +9256,18 @@
       "author": "あ～さ～ arthur",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_bd594338-0c38-4203-9f81-582e98bc1367",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_bd594338-0c38-4203-9f81-582e98bc1367"
+    },
+    {
+      "id": "0819",
+      "entryType": "avatar",
+      "displaySerial": "0748",
+      "nickname": "腕付きイエローAkyo",
+      "avatarName": "AkyoYellowWithArms",
+      "category": "色,色/黄",
+      "comment": "",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6ad3700f-7e28-4b99-803b-8e82a754eb65",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6ad3700f-7e28-4b99-803b-8e82a754eb65"
     }
   ]
 }
