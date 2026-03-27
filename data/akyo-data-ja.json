@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-27T06:40:17.778Z",
-  "count": 817,
+  "updatedAt": "2026-03-27T06:51:37.532Z",
+  "count": 818,
   "data": [
     {
       "id": "0001",
@@ -9244,6 +9244,18 @@
       "author": "あ～さ～ arthur",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a53627d8-c685-479d-afc9-826385ea8d80",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a53627d8-c685-479d-afc9-826385ea8d80"
+    },
+    {
+      "id": "0818",
+      "entryType": "avatar",
+      "displaySerial": "0747",
+      "nickname": "ブラAkyo",
+      "avatarName": "akyoBra",
+      "category": "ファッション,ファッション/薄着",
+      "comment": "",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_bd594338-0c38-4203-9f81-582e98bc1367",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_bd594338-0c38-4203-9f81-582e98bc1367"
     }
   ]
 }
