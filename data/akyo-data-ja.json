@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-19T03:48:56.777Z",
-  "count": 816,
+  "updatedAt": "2026-03-27T06:06:35.736Z",
+  "count": 817,
   "data": [
     {
       "id": "0001",
@@ -9232,6 +9232,18 @@
       "author": "konachi-",
       "sourceUrl": "https://vrchat.com/home/world/wrld_b0d752e6-bbb8-4b1e-acfa-2a111a9cd990",
       "avatarUrl": "https://vrchat.com/home/world/wrld_b0d752e6-bbb8-4b1e-acfa-2a111a9cd990"
+    },
+    {
+      "id": "0817",
+      "entryType": "avatar",
+      "displaySerial": "0817",
+      "nickname": "黒い水のAkyo",
+      "avatarName": "akyoBlackWater",
+      "category": "色,色/黒,飲み物",
+      "comment": "",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a53627d8-c685-479d-afc9-826385ea8d80",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a53627d8-c685-479d-afc9-826385ea8d80"
     }
   ]
 }
