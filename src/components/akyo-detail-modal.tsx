@@ -24,7 +24,7 @@ import {
   IconUser,
 } from '@/components/icons';
 import { ensureContrastForWhiteText, getCategoryColor, parseAndSortCategories } from '@/lib/akyo-data-helpers';
-import { formatDisplayId, getAkyoSourceUrl, resolveEntryType } from '@/lib/akyo-entry';
+import { formatDisplayId, getAkyoSourceUrl, getDisplaySerial, resolveEntryType } from '@/lib/akyo-entry';
 import type { SupportedLanguage } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
@@ -157,7 +157,7 @@ export function AkyoDetailModal({
         setImageUrl(buildAvatarImageUrl(localAkyo.id, nextSourceUrl, 800));
         setImageLoadAttempt(1);
       } else {
-        const pngUrl = `${r2Base}/${localAkyo.id}.png`;
+        const pngUrl = `${r2Base}/${getDisplaySerial(localAkyo)}.png`;
         setImageUrl(pngUrl);
         setImageLoadAttempt(0);
       }
