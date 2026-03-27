@@ -184,7 +184,7 @@ export async function processAkyoCRUD(
                 } else if (recordData.entryType === 'world') {
                     recordData.displaySerial = getNextDisplaySerial(dataRecords, header, 'world');
                 } else {
-                    recordData.displaySerial = recordData.displaySerial || id;
+                    recordData.displaySerial = getNextDisplaySerial(dataRecords, header, 'avatar');
                 }
 
                 // Create and add new record
@@ -233,7 +233,12 @@ export async function processAkyoCRUD(
                         nextWorldDisplaySerial: getNextDisplaySerial(dataRecords, header, 'world'),
                     });
                 } else {
-                    recordData.displaySerial = recordData.displaySerial || id;
+                    // アバター更新: フォームの値 → 既存レコードの値 → ID の優先順で保持
+                    const displaySerialIndex = header.indexOf('DisplaySerial');
+                    const existingSerial = displaySerialIndex >= 0
+                        ? String(existingRecord[displaySerialIndex] || '').trim()
+                        : '';
+                    recordData.displaySerial = recordData.displaySerial || existingSerial || id;
                 }
 
                 // Create updated record
