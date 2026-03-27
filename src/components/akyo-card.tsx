@@ -9,6 +9,7 @@ import {
 import {
   formatDisplayId,
   getAkyoSourceUrl,
+  getDisplaySerial,
   resolveEntryType,
 } from "@/lib/akyo-entry";
 import { generateBlurDataURL } from "@/lib/blur-data-url";
@@ -69,6 +70,7 @@ export function AkyoCard({
   ).replace(/\/$/, "");
   const sourceUrl = getAkyoSourceUrl(akyo);
   const entryType = resolveEntryType(akyo);
+  const imageId = getDisplaySerial(akyo);
   const apiImageSrc = buildAvatarImageUrl(
     akyo.id,
     sourceUrl,
@@ -77,8 +79,8 @@ export function AkyoCard({
   const apiFallbackImageSrc = `${apiImageSrc}&bypassCloudflare=1`;
   const isWorldEntry = entryType === "world";
   const primaryImageSrc = cloudflareImagesEnabled
-    ? `/${akyo.id}.webp`
-    : `${r2BaseUrl}/${akyo.id}.webp`;
+    ? `/${imageId}.webp`
+    : `${r2BaseUrl}/${imageId}.webp`;
   const placeholderImageSrc = "/images/placeholder.webp";
   // ワールドの場合はVRChat APIから最新のサムネイルを取得する（R2には古い画像が残っている可能性があるため）
   const [imageSrc, setImageSrc] = useState(
@@ -112,7 +114,7 @@ export function AkyoCard({
     e.preventDefault();
 
     // APIエンドポイント経由でダウンロード（Content-Disposition: attachment が設定される）
-    const downloadUrl = `/api/download-reference?id=${akyo.id}`;
+    const downloadUrl = `/api/download-reference?id=${imageId}`;
 
     // 新しいウィンドウ/タブで開くとダウンロードがトリガーされる
     window.location.href = downloadUrl;
@@ -156,7 +158,7 @@ export function AkyoCard({
           loading={priority ? "eager" : "lazy"}
           fetchPriority={priority ? "high" : "auto"}
           placeholder="blur"
-          blurDataURL={generateBlurDataURL(akyo.id)}
+          blurDataURL={generateBlurDataURL(imageId)}
           onError={() => {
             if (isWorldEntry) {
               // ワールド: VRChat API → R2画像 → placeholder
