@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-27T07:26:07.951Z",
-  "count": 820,
+  "updatedAt": "2026-03-27T07:30:29.176Z",
+  "count": 821,
   "data": [
     {
       "id": "0001",
@@ -9280,6 +9280,18 @@
       "author": "あ～さ～ arthur",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_51729e13-4deb-4dde-b4ba-db8e778778ed",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_51729e13-4deb-4dde-b4ba-db8e778778ed"
+    },
+    {
+      "id": "0821",
+      "entryType": "avatar",
+      "displaySerial": "0750",
+      "nickname": "ママAkyo",
+      "avatarName": "akyo mama",
+      "category": "身分・役割,身分・役割/親",
+      "comment": "",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_5c7f0462-8717-4578-b109-25aba3f93be9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5c7f0462-8717-4578-b109-25aba3f93be9"
     }
   ]
 }
