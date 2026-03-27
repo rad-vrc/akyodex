@@ -184,7 +184,7 @@ export async function processAkyoCRUD(
                 } else if (recordData.entryType === 'world') {
                     recordData.displaySerial = getNextDisplaySerial(dataRecords, header, 'world');
                 } else {
-                    recordData.displaySerial = recordData.displaySerial || id;
+                    recordData.displaySerial = getNextDisplaySerial(dataRecords, header, 'avatar');
                 }
 
                 // Create and add new record
