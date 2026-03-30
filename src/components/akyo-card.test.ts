@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getCatalogCardPrimaryImageSrc,
   getCatalogCardImageRequestWidth,
   shouldBypassImageOptimization,
 } from "./akyo-card";
@@ -16,4 +17,18 @@ test("shouldBypassImageOptimization bypasses local API and placeholder paths", (
 test("getCatalogCardImageRequestWidth returns 384 for all entry types", () => {
   assert.equal(getCatalogCardImageRequestWidth("avatar"), 384);
   assert.equal(getCatalogCardImageRequestWidth("world"), 384);
+});
+
+test("getCatalogCardPrimaryImageSrc uses the stable Akyo id instead of displaySerial", () => {
+  assert.equal(
+    getCatalogCardPrimaryImageSrc(
+      {
+        id: "0826",
+        displaySerial: "0755",
+      },
+      false,
+      "https://images.akyodex.com",
+    ),
+    "https://images.akyodex.com/0826.webp",
+  );
 });
