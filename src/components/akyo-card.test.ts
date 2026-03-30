@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import type { AkyoData } from "@/types/akyo";
 import {
   getCatalogCardPrimaryImageSrc,
   getCatalogCardImageRequestWidth,
@@ -20,15 +21,10 @@ test("getCatalogCardImageRequestWidth returns 384 for all entry types", () => {
 });
 
 test("getCatalogCardPrimaryImageSrc uses the stable Akyo id instead of displaySerial", () => {
+  const akyo: Pick<AkyoData, "id"> = { id: "0826" };
+
   assert.equal(
-    getCatalogCardPrimaryImageSrc(
-      {
-        id: "0826",
-        displaySerial: "0755",
-      },
-      false,
-      "https://images.akyodex.com",
-    ),
+    getCatalogCardPrimaryImageSrc(akyo, false, "https://images.akyodex.com"),
     "https://images.akyodex.com/0826.webp",
   );
 });
