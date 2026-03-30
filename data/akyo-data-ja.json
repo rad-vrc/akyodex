@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-30T06:37:51.787Z",
-  "count": 824,
+  "updatedAt": "2026-03-30T06:48:43.365Z",
+  "count": 825,
   "data": [
     {
       "id": "0001",
@@ -9328,6 +9328,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_24853b00-fcfd-472e-a3e3-922005ac8b35",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_24853b00-fcfd-472e-a3e3-922005ac8b35"
+    },
+    {
+      "id": "0825",
+      "entryType": "avatar",
+      "displaySerial": "0754",
+      "nickname": "森の妖精Akyo",
+      "avatarName": "Akyo_Forest_Beastie",
+      "category": "ギミック・特殊,ギミック・特殊/飛行,ギミック・特殊/色変え,レア,器官,器官/翼,技能・特性,技能・特性/ひこう,架空の存在,架空の存在/幻獣・精霊,環境・天候,環境・天候/森",
+      "comment": "みつけたらラッキー！？",
+      "author": "りなきのこ",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_526c765f-de9b-4bbe-89cf-be6bd998e3c0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_526c765f-de9b-4bbe-89cf-be6bd998e3c0"
     }
   ]
 }
