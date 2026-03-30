@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-30T06:58:28.370Z",
-  "count": 826,
+  "updatedAt": "2026-03-30T07:03:10.700Z",
+  "count": 827,
   "data": [
     {
       "id": "0001",
@@ -9352,6 +9352,18 @@
       "author": "葱 potipoti93",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5c2c4384-c017-4e05-af87-eba7dd39cf5f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_5c2c4384-c017-4e05-af87-eba7dd39cf5f"
+    },
+    {
+      "id": "0827",
+      "entryType": "avatar",
+      "displaySerial": "0756",
+      "nickname": "256Akyo",
+      "avatarName": "256Akyo",
+      "category": "ローポリ,チョコミント類",
+      "comment": "遠くから見たらチョコミントAkyoに見えるかも！",
+      "author": "暗手_Ante",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_37f98004-e209-48d3-964b-de2ff915afba",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_37f98004-e209-48d3-964b-de2ff915afba"
     }
   ]
 }
