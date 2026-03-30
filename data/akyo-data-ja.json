@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-27T07:50:54.603Z",
-  "count": 823,
+  "updatedAt": "2026-03-30T06:37:51.787Z",
+  "count": 824,
   "data": [
     {
       "id": "0001",
@@ -9316,6 +9316,18 @@
       "author": "nezu_jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6e962ae9-73e1-422c-9012-c636d3ddea6f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_6e962ae9-73e1-422c-9012-c636d3ddea6f"
+    },
+    {
+      "id": "0824",
+      "entryType": "avatar",
+      "displaySerial": "0753",
+      "nickname": "フュージョンAkyo/フライングAkyo",
+      "avatarName": "FlyingAkyo",
+      "category": "合体・変身,技能・特性,技能・特性/ひこう,ギミック・特殊,ギミック・特殊/飛行",
+      "comment": "Agyoの遺志は受け継がれる・・・",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_24853b00-fcfd-472e-a3e3-922005ac8b35",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_24853b00-fcfd-472e-a3e3-922005ac8b35"
     }
   ]
 }
