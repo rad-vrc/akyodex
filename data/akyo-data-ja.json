@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-30T06:48:43.365Z",
-  "count": 825,
+  "updatedAt": "2026-03-30T06:58:28.370Z",
+  "count": 826,
   "data": [
     {
       "id": "0001",
@@ -9340,6 +9340,18 @@
       "author": "りなきのこ",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_526c765f-de9b-4bbe-89cf-be6bd998e3c0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_526c765f-de9b-4bbe-89cf-be6bd998e3c0"
+    },
+    {
+      "id": "0826",
+      "entryType": "avatar",
+      "displaySerial": "0755",
+      "nickname": "SunmanAkyo",
+      "avatarName": "sunmanAkyo",
+      "category": "パロディ,パロディ/VRChat,ホラー,レア,正体不明のUMAkyo",
+      "comment": "この張り紙、どこかで見たような・・・",
+      "author": "葱 potipoti93",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_5c2c4384-c017-4e05-af87-eba7dd39cf5f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5c2c4384-c017-4e05-af87-eba7dd39cf5f"
     }
   ]
 }
