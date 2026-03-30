@@ -14,6 +14,7 @@ import { assertWorldRegistrationAssets } from '@/lib/world-registration';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { AttributeModal } from '../attribute-modal';
 import { ADD_TAB_DRAFT_KEY } from '../draft-keys';
+import { resolveCropSourceImage } from './add-tab-image';
 import type { AdminRole, AkyoEntryType } from '@/types/akyo';
 
 interface AddTabProps {
@@ -453,10 +454,12 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         submitBtn.textContent = '💾 画像処理中...';
       }
 
+      let latestLoadedImageSrc: string | null = null;
       await new Promise<void>((resolve) => {
         const reader = new FileReader();
         reader.onload = (readerEvent) => {
           const imgSrc = readerEvent.target?.result as string;
+          latestLoadedImageSrc = imgSrc;
           setOriginalImageSrc(imgSrc);
           setShowImagePreview(true);
           // React状態更新とDOM反映を待つ（rAF + setTimeout で確実に待機）
@@ -469,7 +472,9 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => setTimeout(resolve, 150))
       );
-      croppedImageData = await generateCroppedImage();
+      croppedImageData = await generateCroppedImage(
+        resolveCropSourceImage(latestLoadedImageSrc, originalImageSrc)
+      );
 
       if (!croppedImageData) {
         const reader = new FileReader();
@@ -727,11 +732,11 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
     zoomImage(delta);
   };
 
-  const generateCroppedImage = (): Promise<string | null> => {
+  const generateCroppedImage = (sourceImageSrc: string | null): Promise<string | null> => {
     return new Promise((resolve) => {
       const container = cropContainerRef.current;
       const imgEl = cropImageRef.current;
-      if (!container || !imgEl || !imgEl.src || !originalImageSrc) {
+      if (!container || !imgEl || !imgEl.src || !sourceImageSrc) {
         resolve(null);
         return;
       }
@@ -792,7 +797,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         );
       };
       image.crossOrigin = 'anonymous';
-      image.src = originalImageSrc;
+      image.src = sourceImageSrc;
     });
   };
 
