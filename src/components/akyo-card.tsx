@@ -48,6 +48,16 @@ export function getCatalogCardImageRequestWidth(_entryType: string): number {
   return 384;
 }
 
+export function getCatalogCardPrimaryImageSrc(
+  akyo: Pick<AkyoData, "id">,
+  cloudflareImagesEnabled: boolean,
+  r2BaseUrl: string,
+): string {
+  return cloudflareImagesEnabled
+    ? `/${akyo.id}.webp`
+    : `${r2BaseUrl}/${akyo.id}.webp`;
+}
+
 /**
  * AkyoCard Component
  * Displays a single Akyo avatar as a stylized card with an image, metadata, and action buttons.
@@ -78,9 +88,11 @@ export function AkyoCard({
   );
   const apiFallbackImageSrc = `${apiImageSrc}&bypassCloudflare=1`;
   const isWorldEntry = entryType === "world";
-  const primaryImageSrc = cloudflareImagesEnabled
-    ? `/${imageId}.webp`
-    : `${r2BaseUrl}/${imageId}.webp`;
+  const primaryImageSrc = getCatalogCardPrimaryImageSrc(
+    akyo,
+    cloudflareImagesEnabled,
+    r2BaseUrl,
+  );
   const placeholderImageSrc = "/images/placeholder.webp";
   // ワールドの場合はVRChat APIから最新のサムネイルを取得する（R2には古い画像が残っている可能性があるため）
   const [imageSrc, setImageSrc] = useState(
