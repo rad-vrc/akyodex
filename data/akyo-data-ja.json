@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-05T06:47:41.425Z",
-  "count": 830,
+  "updatedAt": "2026-04-05T07:01:45.676Z",
+  "count": 831,
   "data": [
     {
       "id": "0001",
@@ -9400,6 +9400,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26"
+    },
+    {
+      "id": "0831",
+      "entryType": "avatar",
+      "displaySerial": "0760",
+      "nickname": "プリン屋さんプリンAkyo",
+      "avatarName": "akyo_プリン屋さん",
+      "category": "素材・原材料,素材・原材料/牛乳,身分・役割,身分・役割/サービス業従事者,食べ物,食べ物/スイーツ",
+      "comment": "（ささのきの手記）\nプリンakyoのプリン屋さん。うしakyoの新鮮なミルクを使ったプリンはとっても濃厚で、やみつきになるほど美味しい",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_783c36a8-4094-409a-a1b8-9c00de4c3f8a",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_783c36a8-4094-409a-a1b8-9c00de4c3f8a"
     }
   ]
 }
