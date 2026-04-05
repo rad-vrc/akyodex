@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-05T06:41:01.331Z",
-  "count": 829,
+  "updatedAt": "2026-04-05T06:47:41.425Z",
+  "count": 830,
   "data": [
     {
       "id": "0001",
@@ -9388,6 +9388,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5a716670-989d-4dcd-aaff-01deefee4945",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_5a716670-989d-4dcd-aaff-01deefee4945"
+    },
+    {
+      "id": "0830",
+      "entryType": "avatar",
+      "displaySerial": "0759",
+      "nickname": "焼きそばパンAkyo",
+      "avatarName": "akyo_焼きそばパン",
+      "category": "食べ物,食べ物/パン",
+      "comment": "（ささのきの手記）\n濃いソースの香りが食欲をそそる。 炭水化物と炭水化物でお腹も大満足",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26"
     }
   ]
 }
