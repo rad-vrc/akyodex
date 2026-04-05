@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-05T06:18:37.927Z",
-  "count": 828,
+  "updatedAt": "2026-04-05T06:41:01.331Z",
+  "count": 829,
   "data": [
     {
       "id": "0001",
@@ -9376,6 +9376,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_65f66557-3be1-484d-bf73-3594c93e61a6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_65f66557-3be1-484d-bf73-3594c93e61a6"
+    },
+    {
+      "id": "0829",
+      "entryType": "avatar",
+      "displaySerial": "0758",
+      "nickname": "板前きつねAkyo",
+      "avatarName": "板前きつねakyo",
+      "category": "動物,動物/きつね,身分・役割,身分・役割/サービス業従事者,身分・役割/職人",
+      "comment": "",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_5a716670-989d-4dcd-aaff-01deefee4945",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5a716670-989d-4dcd-aaff-01deefee4945"
     }
   ]
 }
