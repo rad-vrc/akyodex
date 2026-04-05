@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-05T07:01:45.676Z",
-  "count": 831,
+  "updatedAt": "2026-04-05T08:25:59.009Z",
+  "count": 832,
   "data": [
     {
       "id": "0001",
@@ -9412,6 +9412,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_783c36a8-4094-409a-a1b8-9c00de4c3f8a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_783c36a8-4094-409a-a1b8-9c00de4c3f8a"
+    },
+    {
+      "id": "0832",
+      "entryType": "avatar",
+      "displaySerial": "0761",
+      "nickname": "サメパーカーきつねAkyo",
+      "avatarName": "akyoきつねサメパーカー",
+      "category": "ファッション,ファッション/フード,動物,動物/きつね",
+      "comment": "（ささのきの手記）\nサメパーカーを着たきつねakyo。部屋着にもお出かけにも。",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8fd2bc63-d9e8-4c77-b332-b4945df7059f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8fd2bc63-d9e8-4c77-b332-b4945df7059f"
     }
   ]
 }
