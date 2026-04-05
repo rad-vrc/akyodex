@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-03-30T07:03:10.700Z",
-  "count": 827,
+  "updatedAt": "2026-04-05T06:18:37.927Z",
+  "count": 828,
   "data": [
     {
       "id": "0001",
@@ -9364,6 +9364,18 @@
       "author": "暗手_Ante",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_37f98004-e209-48d3-964b-de2ff915afba",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_37f98004-e209-48d3-964b-de2ff915afba"
+    },
+    {
+      "id": "0828",
+      "entryType": "avatar",
+      "displaySerial": "0757",
+      "nickname": "にんぎょAkyo",
+      "avatarName": "akyo_にんぎょ",
+      "category": "チョコミント類,形状・触り心地,形状・触り心地/うろこ,技能・特性,技能・特性/せんすい,架空の存在,環境・天候,環境・天候/水域,架空の存在/人魚,環境・天候/陸地",
+      "comment": "（ささのきの手記）\n水中の環境に適応したakyo。泳ぐのは得意ではないようで、よく打ち上げられている",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_65f66557-3be1-484d-bf73-3594c93e61a6",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_65f66557-3be1-484d-bf73-3594c93e61a6"
     }
   ]
 }
