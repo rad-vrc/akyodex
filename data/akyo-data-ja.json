@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-07T08:04:50.650Z",
-  "count": 835,
+  "updatedAt": "2026-04-07T08:16:35.885Z",
+  "count": 836,
   "data": [
     {
       "id": "0001",
@@ -9460,6 +9460,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_144628cb-a217-4e77-a641-e7a4671db3e0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_144628cb-a217-4e77-a641-e7a4671db3e0"
+    },
+    {
+      "id": "0836",
+      "entryType": "avatar",
+      "displaySerial": "0764",
+      "nickname": "こいのぼりAkyo",
+      "avatarName": "こいのぼりAkyo",
+      "category": "動物,動物/魚,季節・行事,季節・行事/端午の節句,歴史,願い事,設備",
+      "comment": "Akyoがすくすくと育ちますように・・・",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_af17b0cf-57da-4870-be70-4bd0036a4e10",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_af17b0cf-57da-4870-be70-4bd0036a4e10"
     }
   ]
 }
