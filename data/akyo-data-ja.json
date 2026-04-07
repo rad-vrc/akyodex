@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-07T05:35:23.804Z",
-  "count": 834,
+  "updatedAt": "2026-04-07T08:04:50.650Z",
+  "count": 835,
   "data": [
     {
       "id": "0001",
@@ -9448,6 +9448,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/world/wrld_beeb5606-36ef-46c2-aa22-d8e3e583f39a",
       "avatarUrl": "https://vrchat.com/home/world/wrld_beeb5606-36ef-46c2-aa22-d8e3e583f39a"
+    },
+    {
+      "id": "0835",
+      "entryType": "avatar",
+      "displaySerial": "0763",
+      "nickname": "かたまりAkyo",
+      "avatarName": "かたまりAkyo",
+      "category": "チョコミント類,合体・変身",
+      "comment": "Agyoの遺志は受け継がれる・・・",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_144628cb-a217-4e77-a641-e7a4671db3e0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_144628cb-a217-4e77-a641-e7a4671db3e0"
     }
   ]
 }
