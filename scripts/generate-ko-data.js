@@ -308,6 +308,9 @@ function main() {
       outRow[headerMap["DisplaySerial"]] =
         displaySerial || (entryType === "avatar" ? id : "");
     }
+    if (headerMap["BoothURL"] != null) {
+      outRow[headerMap["BoothURL"]] = row[headerMap["BoothURL"]] || "";
+    }
 
     return outRow;
   });
@@ -352,6 +355,9 @@ function main() {
       avatarUrl:
         row[headerMap["AvatarURL"]] ||
         (headerMap["SourceURL"] != null ? row[headerMap["SourceURL"]] : ""),
+      ...(headerMap["BoothURL"] != null && row[headerMap["BoothURL"]]
+        ? { boothUrl: row[headerMap["BoothURL"]] }
+        : {}),
     };
   });
   fs.writeFileSync(jsonKoPath, JSON.stringify(jsonData, null, 2), "utf-8");
