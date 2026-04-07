@@ -883,7 +883,7 @@ const NICKNAME_MAP = {
   永久凍土Akyo: '영구동토 Akyo',
   カワウソAkyo: '수달 Akyo',
   インポスターAkyo: '임포스터 Akyo',
-  モヒカンAkyo: '모히칸 Akyo',
+  'モヒカンAkyo/せいきまつAkyo': '모히칸 Akyo/세기말 Akyo',
   バターAkyo: '버터 Akyo',
   ピーナッツくんAkyo: '피넛츠군 Akyo',
   ぽんぽこAkyo: '폰포코 Akyo',
