@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-05T08:37:20.288Z",
-  "count": 833,
+  "updatedAt": "2026-04-07T05:35:23.804Z",
+  "count": 834,
   "data": [
     {
       "id": "0001",
@@ -9436,6 +9436,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f0a77706-555b-4240-9775-0074661b5663",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f0a77706-555b-4240-9775-0074661b5663"
+    },
+    {
+      "id": "0834",
+      "entryType": "world",
+      "displaySerial": "0072",
+      "nickname": "roma38 Akyo Avater Pedestal",
+      "avatarName": "",
+      "category": "ワールド,ワールド/ペデスタル",
+      "comment": "",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_beeb5606-36ef-46c2-aa22-d8e3e583f39a",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_beeb5606-36ef-46c2-aa22-d8e3e583f39a"
     }
   ]
 }
