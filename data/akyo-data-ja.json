@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-11T08:00:59.194Z",
-  "count": 841,
+  "updatedAt": "2026-05-11T08:09:20.983Z",
+  "count": 842,
   "data": [
     {
       "id": "0001",
@@ -9535,6 +9535,18 @@
       "author": "栬くん。",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_cb875676-55aa-4c9b-96aa-19de2c41f9ca",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_cb875676-55aa-4c9b-96aa-19de2c41f9ca"
+    },
+    {
+      "id": "0842",
+      "entryType": "avatar",
+      "displaySerial": "0770",
+      "nickname": "バルクアップAkyo",
+      "avatarName": "バルクアップAkyo",
+      "category": "エネルギー,フィジカル,フィジカル/体育会系,チョコミント類,形状・触り心地,形状・触り心地/ムキムキ,最強戦士",
+      "comment": "Akyo界最強のAkyoが今ここに誕生する‥‥",
+      "author": "はすとらみ",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_5a3f5e9c-e62e-4df6-8bfa-a55906f557c3",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5a3f5e9c-e62e-4df6-8bfa-a55906f557c3"
     }
   ]
 }
