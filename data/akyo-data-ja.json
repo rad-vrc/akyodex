@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-11T07:37:35.334Z",
-  "count": 838,
+  "updatedAt": "2026-05-11T07:50:47.851Z",
+  "count": 839,
   "data": [
     {
       "id": "0001",
@@ -9499,6 +9499,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_89a8ac46-4c79-434b-b712-d9b4f1a11ed8",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_89a8ac46-4c79-434b-b712-d9b4f1a11ed8"
+    },
+    {
+      "id": "0839",
+      "entryType": "avatar",
+      "displaySerial": "0767",
+      "nickname": "カブトガニAkyo",
+      "avatarName": "akyo_カブトガニ",
+      "category": "レア,動物,歴史,環境・天候,環境・天候/水域",
+      "comment": "【ささのきの手記】\n固い甲羅を持ち、波の穏やかな浅海に住む。恐竜の時代よりもずっと昔から存在したとされ、「生きた化石」とも呼ばれる",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_970a4054-3db9-4e68-87df-50e7e8422a21",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_970a4054-3db9-4e68-87df-50e7e8422a21"
     }
   ]
 }
