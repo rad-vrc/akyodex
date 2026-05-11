@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-11T07:57:59.218Z",
-  "count": 840,
+  "updatedAt": "2026-05-11T08:00:59.194Z",
+  "count": 841,
   "data": [
     {
       "id": "0001",
@@ -9523,6 +9523,18 @@
       "author": "kuro5963",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6f91ad81-8654-4584-829c-7378072b130d",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_6f91ad81-8654-4584-829c-7378072b130d"
+    },
+    {
+      "id": "0841",
+      "entryType": "avatar",
+      "displaySerial": "0769",
+      "nickname": "サンプルAkyo",
+      "avatarName": "サンプルあきょ",
+      "category": "ギミック・特殊,チョコミント類",
+      "comment": "いろんな表示ギミックのサンプルがあるよ！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_cb875676-55aa-4c9b-96aa-19de2c41f9ca",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_cb875676-55aa-4c9b-96aa-19de2c41f9ca"
     }
   ]
 }
