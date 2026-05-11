@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-04-30T15:34:41.574Z",
-  "count": 836,
+  "updatedAt": "2026-05-11T07:07:49.441Z",
+  "count": 837,
   "data": [
     {
       "id": "0001",
@@ -9475,6 +9475,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_af17b0cf-57da-4870-be70-4bd0036a4e10",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_af17b0cf-57da-4870-be70-4bd0036a4e10"
+    },
+    {
+      "id": "0837",
+      "entryType": "avatar",
+      "displaySerial": "0765",
+      "nickname": "マトリョーシカAkyo",
+      "avatarName": "マトリョーシカAkyo",
+      "category": "ギミック・特殊,チョコミント類",
+      "comment": "メニューからAkyoが出せるよ！",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_1fab22ae-4a9e-43e8-8997-50507a916437",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1fab22ae-4a9e-43e8-8997-50507a916437"
     }
   ]
 }
