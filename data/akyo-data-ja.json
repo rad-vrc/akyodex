@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-11T07:50:47.851Z",
-  "count": 839,
+  "updatedAt": "2026-05-11T07:57:59.218Z",
+  "count": 840,
   "data": [
     {
       "id": "0001",
@@ -9511,6 +9511,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_970a4054-3db9-4e68-87df-50e7e8422a21",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_970a4054-3db9-4e68-87df-50e7e8422a21"
+    },
+    {
+      "id": "0840",
+      "entryType": "avatar",
+      "displaySerial": "0768",
+      "nickname": "もちまめAkyo",
+      "avatarName": "もちまめあきょ",
+      "category": "まめ,まめAkyo,体型,体型/豊満,季節・行事,季節・行事/春,形状・触り心地,形状・触り心地/柔らかい,食べ物,食べ物/スイーツ",
+      "comment": "おいしそう！",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6f91ad81-8654-4584-829c-7378072b130d",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6f91ad81-8654-4584-829c-7378072b130d"
     }
   ]
 }
