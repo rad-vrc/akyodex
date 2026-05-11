@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-11T07:07:49.441Z",
-  "count": 837,
+  "updatedAt": "2026-05-11T07:37:35.334Z",
+  "count": 838,
   "data": [
     {
       "id": "0001",
@@ -9487,6 +9487,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1fab22ae-4a9e-43e8-8997-50507a916437",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_1fab22ae-4a9e-43e8-8997-50507a916437"
+    },
+    {
+      "id": "0838",
+      "entryType": "avatar",
+      "displaySerial": "0766",
+      "nickname": "サメパーカーサメAkyo",
+      "avatarName": "akyo_サメパーカサメakyo",
+      "category": "ファッション,ファッション/フード,動物,動物/サメ,動物/海の生き物,器官,器官/しっぽ,技能・特性,技能・特性/せんすい",
+      "comment": "【ささのきの手記】\nサメパーカを着たサメakyo。陸上の生活に慣れてきたのかも？",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_89a8ac46-4c79-434b-b712-d9b4f1a11ed8",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_89a8ac46-4c79-434b-b712-d9b4f1a11ed8"
     }
   ]
 }
