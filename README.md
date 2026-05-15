@@ -113,6 +113,12 @@ npm run dev
 - ✅ **Dual Admin System** (Owner/Admin role separation)
 - ✅ **On-demand ISR** (Revalidation API + KV Edge Cache)
 
+### Data Snapshot (origin/main @ 2026-05-11)
+- `data/akyo-data-ja.json`: `count = 842`
+- `data/akyo-data-en.json`: `count = 816`
+- `data/akyo-data-ko.json`: `count = 816`
+- JSON payload format: `{ version, language, updatedAt, count, data[] }`
+
 ---
 
 ## 📖 Glossary
@@ -1333,6 +1339,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-03-07  
+**Last Updated**: 2026-05-15  
 **Status**: ✅ Production Ready
 
