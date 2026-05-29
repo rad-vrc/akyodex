@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T12:47:54.765Z",
-  "count": 853,
+  "updatedAt": "2026-05-29T14:19:14.076Z",
+  "count": 854,
   "data": [
     {
       "id": "0001",
@@ -9679,6 +9679,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_23a692ea-5f26-4c95-8bc5-1c85b64b5bd9",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_23a692ea-5f26-4c95-8bc5-1c85b64b5bd9"
+    },
+    {
+      "id": "0854",
+      "entryType": "avatar",
+      "displaySerial": "0782",
+      "nickname": "ドローAkyo",
+      "avatarName": "Draw Akyo",
+      "category": "ギミック・特殊",
+      "comment": "Akyoのえかきうたが作れるかも！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_63adfa9b-f7c7-45b9-ac1f-fb2170659b7f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_63adfa9b-f7c7-45b9-ac1f-fb2170659b7f"
     }
   ]
 }
