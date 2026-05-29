@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T14:19:14.076Z",
-  "count": 854,
+  "updatedAt": "2026-05-29T14:29:47.189Z",
+  "count": 855,
   "data": [
     {
       "id": "0001",
@@ -9691,6 +9691,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_63adfa9b-f7c7-45b9-ac1f-fb2170659b7f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_63adfa9b-f7c7-45b9-ac1f-fb2170659b7f"
+    },
+    {
+      "id": "0855",
+      "entryType": "avatar",
+      "displaySerial": "0783",
+      "nickname": "ブラックホールとAkyo",
+      "avatarName": "Akyo With Black Hole",
+      "category": "エネルギー,チョコミント類,危険物",
+      "comment": "えっ！？うしろにブラックホール！？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_b17607e5-d09b-4c36-90fb-cfcfca5d733f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b17607e5-d09b-4c36-90fb-cfcfca5d733f"
     }
   ]
 }
