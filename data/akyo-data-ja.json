@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T12:25:57.756Z",
-  "count": 850,
+  "updatedAt": "2026-05-29T12:27:18.106Z",
+  "count": 851,
   "data": [
     {
       "id": "0001",
@@ -9643,6 +9643,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e0619ce4-2734-420d-879e-3e26ce2f4dc4",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e0619ce4-2734-420d-879e-3e26ce2f4dc4"
+    },
+    {
+      "id": "0851",
+      "entryType": "avatar",
+      "displaySerial": "0779",
+      "nickname": "シティAkyo",
+      "avatarName": "City akyo",
+      "category": "ギミック・特殊",
+      "comment": "街が見えるような気がする・・・\nどこの街だろう？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ca644a56-a798-4364-ba16-1f85784c8160",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ca644a56-a798-4364-ba16-1f85784c8160"
     }
   ]
 }
