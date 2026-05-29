@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T12:02:19.026Z",
-  "count": 848,
+  "updatedAt": "2026-05-29T12:24:47.250Z",
+  "count": 849,
   "data": [
     {
       "id": "0001",
@@ -9619,6 +9619,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e8a0cf45-a7ba-4c8c-9726-5e770e6a1f63",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e8a0cf45-a7ba-4c8c-9726-5e770e6a1f63"
+    },
+    {
+      "id": "0849",
+      "entryType": "avatar",
+      "displaySerial": "0777",
+      "nickname": "メイドインAkyo",
+      "avatarName": "Made In Akyo",
+      "category": "合体・変身,チョコミント類",
+      "comment": "AkyoでできたAkyo！？\nAgyoの対になる存在かもしれないね。",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_aa2039a5-4eb6-4e75-a426-0763e52e8b4c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_aa2039a5-4eb6-4e75-a426-0763e52e8b4c"
     }
   ]
 }
