@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T11:49:37.885Z",
-  "count": 845,
+  "updatedAt": "2026-05-29T11:58:56.240Z",
+  "count": 846,
   "data": [
     {
       "id": "0001",
@@ -9583,6 +9583,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1d44ac31-7d4c-4294-a3ce-0f82248c31b9",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_1d44ac31-7d4c-4294-a3ce-0f82248c31b9"
+    },
+    {
+      "id": "0846",
+      "entryType": "avatar",
+      "displaySerial": "0774",
+      "nickname": "仕方ないかAkyo",
+      "avatarName": "まあ仕方ないか․․",
+      "category": "ギミック・特殊",
+      "comment": "どういう意味だろう？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_bf613614-9201-4d7e-9fa8-dc49f101add9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_bf613614-9201-4d7e-9fa8-dc49f101add9"
     }
   ]
 }
