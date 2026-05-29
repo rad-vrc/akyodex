@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T14:47:25.368Z",
-  "count": 856,
+  "updatedAt": "2026-05-29T15:08:11.292Z",
+  "count": 857,
   "data": [
     {
       "id": "0001",
@@ -9715,6 +9715,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_db04b9ed-7018-4eea-9b8a-653c8eef7874",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_db04b9ed-7018-4eea-9b8a-653c8eef7874"
+    },
+    {
+      "id": "0857",
+      "entryType": "avatar",
+      "displaySerial": "0785",
+      "nickname": "チンアナゴAkyo",
+      "avatarName": "akyo_チンアナゴ（オレンジ）",
+      "category": "動物,動物/魚,動物/海の生き物,環境・天候,環境・天候/水域",
+      "comment": "【ささのきの手記】\n暖かい海域に生息するakyo。緩やかな海流が好みのようで、よく熱帯魚と遊んでいる",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8d77e15c-7a69-4a87-b51f-8dfda73b3105",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8d77e15c-7a69-4a87-b51f-8dfda73b3105"
     }
   ]
 }
