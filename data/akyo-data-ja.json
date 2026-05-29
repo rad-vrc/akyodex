@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T15:48:47.224Z",
-  "count": 859,
+  "updatedAt": "2026-05-29T15:58:48.771Z",
+  "count": 860,
   "data": [
     {
       "id": "0001",
@@ -9751,6 +9751,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a52612c2-630c-4c2f-be61-5b0996a73e6c",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a52612c2-630c-4c2f-be61-5b0996a73e6c"
+    },
+    {
+      "id": "0860",
+      "entryType": "avatar",
+      "displaySerial": "0788",
+      "nickname": "デスクトップAkyo",
+      "avatarName": "Desktop Akyo",
+      "category": "ギミック・特殊,チョコミント類,次元",
+      "comment": "向こう側にも、Akyoがいる。",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6fc57a6a-9a0a-4b46-9d66-caa4027166f0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6fc57a6a-9a0a-4b46-9d66-caa4027166f0"
     }
   ]
 }
