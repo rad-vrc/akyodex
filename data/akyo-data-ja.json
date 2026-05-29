@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T14:29:47.189Z",
-  "count": 855,
+  "updatedAt": "2026-05-29T14:47:25.368Z",
+  "count": 856,
   "data": [
     {
       "id": "0001",
@@ -9703,6 +9703,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b17607e5-d09b-4c36-90fb-cfcfca5d733f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b17607e5-d09b-4c36-90fb-cfcfca5d733f"
+    },
+    {
+      "id": "0856",
+      "entryType": "avatar",
+      "displaySerial": "0784",
+      "nickname": "ジッターAkyo",
+      "avatarName": "Jitter Akyo",
+      "category": "ギミック・特殊,チョコミント類",
+      "comment": "何の変哲もないAkyoに見えるけど・・・？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_db04b9ed-7018-4eea-9b8a-653c8eef7874",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_db04b9ed-7018-4eea-9b8a-653c8eef7874"
     }
   ]
 }
