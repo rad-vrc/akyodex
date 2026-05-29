@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T11:58:56.240Z",
-  "count": 846,
+  "updatedAt": "2026-05-29T12:01:07.390Z",
+  "count": 847,
   "data": [
     {
       "id": "0001",
@@ -9595,6 +9595,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_bf613614-9201-4d7e-9fa8-dc49f101add9",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_bf613614-9201-4d7e-9fa8-dc49f101add9"
+    },
+    {
+      "id": "0847",
+      "entryType": "avatar",
+      "displaySerial": "0775",
+      "nickname": "わくせいAkyo",
+      "avatarName": "akyo_planet",
+      "category": "惑星",
+      "comment": "【ささのきの手記】\nAkyoは青かった",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_00680735-2e23-44af-8020-7d67e831f66b",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_00680735-2e23-44af-8020-7d67e831f66b"
     }
   ]
 }
