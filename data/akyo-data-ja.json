@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T12:24:47.250Z",
-  "count": 849,
+  "updatedAt": "2026-05-29T12:25:57.756Z",
+  "count": 850,
   "data": [
     {
       "id": "0001",
@@ -9631,6 +9631,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_aa2039a5-4eb6-4e75-a426-0763e52e8b4c",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_aa2039a5-4eb6-4e75-a426-0763e52e8b4c"
+    },
+    {
+      "id": "0850",
+      "entryType": "avatar",
+      "displaySerial": "0778",
+      "nickname": "0.725Akyo",
+      "avatarName": "0․725",
+      "category": "ギミック・特殊",
+      "comment": "ここには映らないみたい・・・\nきみの目で確かめてみて！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e0619ce4-2734-420d-879e-3e26ce2f4dc4",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e0619ce4-2734-420d-879e-3e26ce2f4dc4"
     }
   ]
 }
