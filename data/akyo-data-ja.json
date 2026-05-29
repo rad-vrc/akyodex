@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T11:43:35.090Z",
-  "count": 844,
+  "updatedAt": "2026-05-29T11:49:37.885Z",
+  "count": 845,
   "data": [
     {
       "id": "0001",
@@ -9571,6 +9571,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b3288ba7-e9e4-47df-a39e-e203870f35a6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b3288ba7-e9e4-47df-a39e-e203870f35a6"
+    },
+    {
+      "id": "0845",
+      "entryType": "avatar",
+      "displaySerial": "0773",
+      "nickname": "さすらいの梅雨Akyo",
+      "avatarName": "さすらいの梅雨Akyo",
+      "category": "武器・機械,液体,液体/水,身分・役割,身分・役割/兵士",
+      "comment": "かっぱAkyoが喜びそう！",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_1d44ac31-7d4c-4294-a3ce-0f82248c31b9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1d44ac31-7d4c-4294-a3ce-0f82248c31b9"
     }
   ]
 }
