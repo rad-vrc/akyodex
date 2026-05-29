@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T12:01:07.390Z",
-  "count": 847,
+  "updatedAt": "2026-05-29T12:02:19.026Z",
+  "count": 848,
   "data": [
     {
       "id": "0001",
@@ -9607,6 +9607,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_00680735-2e23-44af-8020-7d67e831f66b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_00680735-2e23-44af-8020-7d67e831f66b"
+    },
+    {
+      "id": "0848",
+      "entryType": "avatar",
+      "displaySerial": "0776",
+      "nickname": "パルスAkyo",
+      "avatarName": "OrganicPulseAkyo",
+      "category": "ギミック・特殊,エネルギー",
+      "comment": "よくわからないけど、すごい力を感じるね！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e8a0cf45-a7ba-4c8c-9726-5e770e6a1f63",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e8a0cf45-a7ba-4c8c-9726-5e770e6a1f63"
     }
   ]
 }
