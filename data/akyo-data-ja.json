@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T12:38:39.194Z",
-  "count": 852,
+  "updatedAt": "2026-05-29T12:47:54.765Z",
+  "count": 853,
   "data": [
     {
       "id": "0001",
@@ -9667,6 +9667,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e546b6e4-832f-4fe2-837b-4757ea8e49e7",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e546b6e4-832f-4fe2-837b-4757ea8e49e7"
+    },
+    {
+      "id": "0853",
+      "entryType": "avatar",
+      "displaySerial": "0781",
+      "nickname": "UVアンラップAkyo",
+      "avatarName": "UVUnwrapAkyo",
+      "category": "ギミック・特殊,チョコミント類",
+      "comment": "UV展開したらこんな感じになるみたい！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_23a692ea-5f26-4c95-8bc5-1c85b64b5bd9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_23a692ea-5f26-4c95-8bc5-1c85b64b5bd9"
     }
   ]
 }
