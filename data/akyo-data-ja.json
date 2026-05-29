@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T12:27:18.106Z",
-  "count": 851,
+  "updatedAt": "2026-05-29T12:38:39.194Z",
+  "count": 852,
   "data": [
     {
       "id": "0001",
@@ -9655,6 +9655,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ca644a56-a798-4364-ba16-1f85784c8160",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ca644a56-a798-4364-ba16-1f85784c8160"
+    },
+    {
+      "id": "0852",
+      "entryType": "avatar",
+      "displaySerial": "0780",
+      "nickname": "つりきつねAkyo",
+      "avatarName": "akyo_きつねつり",
+      "category": "動物,動物/きつね,身分・役割,身分・役割/釣り師,道具・文房具・生活用品,道具・文房具・生活用品/釣り具",
+      "comment": "【ささのきの手記】\n釣りの楽しみを知ったきつねakyo。今日は何が釣れるかな？",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e546b6e4-832f-4fe2-837b-4757ea8e49e7",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e546b6e4-832f-4fe2-837b-4757ea8e49e7"
     }
   ]
 }
