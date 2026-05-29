@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-11T08:09:20.983Z",
-  "count": 842,
+  "updatedAt": "2026-05-29T11:38:29.532Z",
+  "count": 843,
   "data": [
     {
       "id": "0001",
@@ -9547,6 +9547,18 @@
       "author": "はすとらみ",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5a3f5e9c-e62e-4df6-8bfa-a55906f557c3",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_5a3f5e9c-e62e-4df6-8bfa-a55906f557c3"
+    },
+    {
+      "id": "0843",
+      "entryType": "avatar",
+      "displaySerial": "0771",
+      "nickname": "ラッコAkyo",
+      "avatarName": "akyo＿ラッコ",
+      "category": "動物,動物/カワウソ,動物/海の生き物,器官,器官/しっぽ,技能・特性,技能・特性/せんすい,環境・天候,環境・天候/水域,貝",
+      "comment": "【ささのきの手記】\nラッコakyo。ぷかぷかと海面を漂い、よく貝を食べている",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d8c7cc44-8e40-4e6d-b914-4194ec534ba2",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d8c7cc44-8e40-4e6d-b914-4194ec534ba2"
     }
   ]
 }
