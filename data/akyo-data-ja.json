@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-05-29T15:58:48.771Z",
-  "count": 860,
+  "updatedAt": "2026-06-03T07:49:23.091Z",
+  "count": 861,
   "data": [
     {
       "id": "0001",
@@ -9763,6 +9763,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6fc57a6a-9a0a-4b46-9d66-caa4027166f0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_6fc57a6a-9a0a-4b46-9d66-caa4027166f0"
+    },
+    {
+      "id": "0861",
+      "entryType": "world",
+      "displaySerial": "0073",
+      "nickname": "ミルキーズスカイ",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "u83usagi",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_f20f2f5e-366d-4feb-9202-4cd6f90c2892",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_f20f2f5e-366d-4feb-9202-4cd6f90c2892"
     }
   ]
 }
