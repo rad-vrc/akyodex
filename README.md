@@ -1,6 +1,6 @@
 # Akyodex - Next.js 16 + Cloudflare Pages
 
-**VRChat Avatar & World Encyclopedia**
+**VRChat Avatar, World & BOOTH Encyclopedia**
 
 ## 📋 Table of Contents
 
@@ -90,10 +90,10 @@ npm run dev
 
 ## 📖 Project Overview
 
-**Akyodex** は、VRChatのオリジナルアバター「Akyo」シリーズと関連ワールドを網羅したオンライン図鑑です。
+**Akyodex** は、VRChatのオリジナルアバター「Akyo」シリーズ、関連ワールド、BOOTH導線付きの派生エントリをまとめて扱うオンライン図鑑です。
 
 ### Key Features
-- 🎨 **アバター＋ワールドデータベース** - 4桁ID管理システム（日本語/英語/韓国語 CSV + JSON データ、avatar/world 二種別）
+- 🎨 **アバター・ワールド・BOOTH対応図鑑** - 4桁ID管理システム（日本語/英語/韓国語 CSV + JSON データ、avatar/world/booth 対応）
 - 🔐 **Admin Panel** - HMAC署名セッション認証、画像クロッピング、VRChat連携
 - 📱 **PWA対応** - 6種類のキャッシング戦略
 - 🌍 **多言語対応** - 日本語/英語/韓国語（自動検出 + 手動切替）
@@ -103,8 +103,8 @@ npm run dev
 - 🔍 **Sentry 監視** - エラー追跡 + パフォーマンスモニタリング
 
 ### Project Status
-- ✅ **Next.js 16.1.6 + Cloudflare Pages** (OpenNext adapter)
-- ✅ **Avatar + World Support** (Dual entry types with separate display IDs)
+- ✅ **Next.js 16.1.7 + Cloudflare Pages** (OpenNext adapter)
+- ✅ **Avatar + World + BOOTH Support** (Typed entries with public display IDs)
 - ✅ **Security Hardening** (Timing attack, XSS prevention, Input validation)
 - ✅ **PWA Implementation** (Service Worker with 6 caching strategies)
 - ✅ **VRChat Image Fallback** (3-tier fallback: R2 → VRChat page/API → Placeholder)
@@ -112,6 +112,13 @@ npm run dev
 - ✅ **Dify AI Chatbot Integration** (Natural language avatar search)
 - ✅ **Dual Admin System** (Owner/Admin role separation)
 - ✅ **On-demand ISR** (Revalidation API + KV Edge Cache)
+
+### Data Snapshot (origin/main @ 2026-06-03)
+- `data/akyo-data-ja.json`: `count = 861`
+- `data/akyo-data-en.json`: `count = 816`
+- `data/akyo-data-ko.json`: `count = 816`
+- Public entry mix in JA dataset: `avatar = 788`, `world = 73`
+- JSON payload format: `{ version, language, updatedAt, count, data[] }`
 
 ---
 
@@ -178,7 +185,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 16.1.6 (App Router)
+- **Framework**: Next.js 16.1.7 (App Router)
 - **React**: 19.2.4 (Server/Client Components)
 - **Styling**: Tailwind CSS 4 (PostCSS plugin)
 - **Fonts**: Google Fonts (M PLUS Rounded 1c, Kosugi Maru, Noto Sans JP)
@@ -186,7 +193,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 
 ### Backend
 - **Runtime**: Cloudflare Pages (Edge + Node.js Runtime)
-- **Adapter**: @opennextjs/cloudflare ^1.16.5
+- **Adapter**: @opennextjs/cloudflare ^1.17.1
 - **Authentication**: HMAC-signed sessions (Web Crypto API)
 - **Session Storage**: Cloudflare KV
 - **File Storage**: Cloudflare R2
@@ -194,7 +201,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 - **Data Sync**: GitHub API (CSV commit on CRUD operations)
 
 ### Observability
-- **Error Tracking**: Sentry (@sentry/nextjs ^10.39.0) — runtime errors + performance monitoring
+- **Error Tracking**: Sentry (@sentry/nextjs ^10.44.0) — runtime errors + performance monitoring
 - **Instrumentation**: Server-side (`instrumentation.ts`) + client-side (`instrumentation-client.ts`)
 
 ### Security
@@ -327,6 +334,7 @@ Akyodex/
 │   │   ├── vrchat-world-image.ts    # VRChat world image fetch
 │   │   ├── vrchat-world-info.ts     # VRChat world info fetch
 │   │   ├── world-registration.ts    # World entry registration helpers
+│   │   ├── booth-url.ts             # BOOTH URL validation + category helpers
 │   │   ├── blur-data-url.ts         # Blur placeholder generation
 │   │   └── cloudflare-image-loader.ts # Cloudflare Images loader
 │   │
@@ -345,6 +353,7 @@ Akyodex/
 │
 ├── scripts/                         # Utility scripts (ESLint excluded)
 │   ├── csv-to-json.ts               # CSV → JSON conversion
+│   ├── fix-opennext-instrumentation.js # Patch build output for OpenNext/Sentry
 │   ├── fix-categories.js            # Japanese category fixes
 │   ├── fix-categories-en.js         # English category fixes
 │   ├── category-definitions-ja.js   # Japanese category keywords
@@ -359,16 +368,19 @@ Akyodex/
 │   ├── sync-akyo-data-en-from-ja.js # Sync EN data from JA
 │   ├── convert-akyo-data.js         # Data conversion utility
 │   ├── generate-vectorize-payload.js # Vectorize payload generator
+│   ├── generate-social-images.js    # OG/social image generation
+│   ├── compress-social-images.js    # Social image compression
 │   ├── prepare-cloudflare-pages.js  # Cloudflare Pages build prep
+│   ├── verify-dify-csp-hash.js      # Dify/Udify CSP hash verification
 │   └── test-csv-quality.js          # CSV data quality tests
 │
 └── data/
-    ├── akyo-data-ja.csv             # Japanese avatar data
-    ├── akyo-data-en.csv             # English avatar data
-    ├── akyo-data-ko.csv             # Korean avatar data
-    ├── akyo-data-ja.json            # Japanese data (JSON cache)
-    ├── akyo-data-en.json            # English data (JSON cache)
-    └── akyo-data-ko.json            # Korean data (JSON cache)
+    ├── akyo-data-ja.csv             # Japanese entry data
+    ├── akyo-data-en.csv             # English entry data
+    ├── akyo-data-ko.csv             # Korean entry data
+    ├── akyo-data-ja.json            # Japanese entry data (JSON cache)
+    ├── akyo-data-en.json            # English entry data (JSON cache)
+    └── akyo-data-ko.json            # Korean entry data (JSON cache)
 ```
 
 ---
@@ -419,7 +431,7 @@ npm run dev
 ### Admin Password Setup
 
 **Simple Access Codes** (same for development and production):
-- **Owner Password**: `RadAkyo` (full access - can delete avatars)
+- **Owner Password**: `RadAkyo` (full access - can delete entries)
 - **Admin Password**: `Akyo` (limited access - can add/edit only)
 
 These are simple, easy-to-share access codes for community contributors.
@@ -431,11 +443,13 @@ These are simple, easy-to-share access codes for community contributors.
 npm run dev              # Start dev server with Turbopack (localhost:3000)
 npm run build            # Build for Cloudflare Pages (OpenNext + prepare script)
 npm run next:build       # Next.js build only
+npm run next:build:opennext # Next build + OpenNext/Sentry instrumentation patch
 npm run start            # Start production server (local)
 
 # Quality
 npm run lint             # Run ESLint
 npm run knip             # Dead code analysis
+npm run verify:dify-csp-hash # Verify Udify embed CSP hash stays current
 
 # Testing
 npm run test             # Run Playwright E2E tests
@@ -446,6 +460,10 @@ npm run test:csv         # CSV data quality checks
 
 # Data
 npm run data:convert     # Convert CSV to JSON (npx tsx scripts/csv-to-json.ts)
+npm run generate-ko-data # Regenerate KO CSV/JSON from JA source
+npm run social:generate  # Generate social share images
+npm run social:compress  # Compress generated social images
+npm run hooks:install    # Install local git hooks
 ```
 
 ---
@@ -653,17 +671,19 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
 
 ## ✨ Features
 
-### Recent behavior updates (2026-03)
+### Recent behavior updates (2026-06)
 
 - **Mobile filter panel default**: On first render, mobile keeps the filter panel closed by default (`isMobile === true`), while desktop keeps it open.
 - **Catalog card image request width**: Card image width is tuned per entry type (`avatar: 512`, `world: 384`) to reduce world-card transfer size.
+- **Entry-type filtering**: The gallery now exposes explicit avatar / world / BOOTH filters, and BOOTH links can appear on any entry that has `boothUrl`.
 - **Accessibility fixes (WCAG 2.1)**: Recent updates include contrast and keyboard/semantic improvements across filter controls and related UI.
 
-### 1. Avatar Gallery
+### 1. Entry Gallery
 
-- **Avatars**: Complete database with 4-digit IDs, JP/EN/KO data
+- **Entries**: Avatar, world, and BOOTH-linked records with 4-digit IDs and language-specific JSON/CSV datasets
 - **Search**: By nickname, avatar name, category, author
 - **Filtering**: Multi-select categories (OR/AND) + multi-select authors
+- **Entry Types**: One-tap filters for avatar / world / BOOTH-only views
 - **Keyboard A11y**: Arrow/Home/End/Enter support in filter lists
 - **View Modes**: Grid view and list view
 - **Detail View**: Modal with full information
@@ -682,9 +702,10 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
   - Auto ID numbering (fetches next available ID)
   - Image upload to R2
   - VRChat integration (fetch avatar/world info from VRChat)
+  - BOOTH-only registration flow (`sourceUrl` omitted, `boothUrl` required)
   - Duplicate checking (nickname, avatar name)
 - ✅ **Edit Entry**:
-  - Update all fields (category, comment, author, etc.)
+  - Update all fields (category, comment, author, source/BOOTH URLs, etc.)
   - Re-upload images
   - Delete entries (owner only)
 - ✅ **Category Management**:
@@ -908,32 +929,36 @@ Users can ask questions like:
 ```
 
 #### `GET /api/admin/next-id`
-**Get next available avatar ID**
+**Get next available entry ID**
 
 **Response**:
 ```json
 {
-  "nextId": "0640"
+  "nextId": "0862"
 }
 ```
 
 #### `POST /api/upload-akyo`
-**Register new avatar**
+**Register a new entry**
 
 **Body** (FormData):
-- `id`: Avatar ID (4-digit)
-- `nickname`: Nickname
-- `avatarName`: Avatar name
+- `id`: Entry ID (4-digit)
+- `entryType`: `avatar`, `world`, or `booth`
+- `nickname`: Nickname / display name
+- `avatarName`: Avatar name (`avatar` entries only)
 - `category`: Categories (comma-separated)
 - `comment`: Notes/comments
 - `author`: Author name
-- `avatarUrl`: VRChat avatar URL
+- `sourceUrl`: VRChat avatar/world URL (`avatar` / `world` entries)
+- `boothUrl`: BOOTH item URL (optional, required for BOOTH-only entries)
+- `displaySerial`: Public display serial for world / BOOTH flows when applicable
+- `avatarUrl`: Legacy fallback field still accepted by the parser
 - `imageData`: Base64 image data (optional)
 
 #### `POST /api/update-akyo`
 **Update existing entry**
 
-**Body** (FormData): Same as upload-akyo
+**Body** (FormData): Same fields as upload-akyo
 
 #### `POST /api/delete-akyo`
 **Delete entry**
@@ -1239,12 +1264,12 @@ export const runtime = 'nodejs';
 - ✅ HMAC-signed sessions (replacing JWT)
 - ✅ Nonce-based CSP via middleware
 
-### Phase 10: Next.js 16 + World Support (Completed)
-- ✅ Next.js 15 → 16 upgrade (React 19.2.4, @opennextjs/cloudflare ^1.16.5)
-- ✅ World entry type support (avatar + world dual entries)
+### Phase 10: Next.js 16 + Multi-entry Support (Completed)
+- ✅ Next.js 15 → 16 upgrade (React 19.2.4, @opennextjs/cloudflare ^1.17.1)
+- ✅ World and BOOTH-aware entry support (`avatar`, `world`, `booth`)
 - ✅ Entry normalization (`hydrateAkyoDataset` — type inference, display serial allocation)
 - ✅ VRChat World APIs (`vrc-world-info`, `vrc-world-image`)
-- ✅ Extended CSV schema (`SourceURL`, `EntryType`, `DisplaySerial` columns)
+- ✅ Extended CSV schema (`SourceURL`, `BoothURL`, `EntryType`, `DisplaySerial` columns)
 - ✅ Korean language data support (`akyo-data-ko.csv`)
 - ✅ Sentry integration (error tracking + performance monitoring)
 - ✅ Korean data generation script (`generate-ko-data.js`)
@@ -1333,6 +1358,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-03-07  
+**Last Updated**: 2026-06-03  
 **Status**: ✅ Production Ready
 
