@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-03T07:49:23.091Z",
-  "count": 861,
+  "updatedAt": "2026-06-04T16:47:13.048Z",
+  "count": 862,
   "data": [
     {
       "id": "0001",
@@ -9775,6 +9775,18 @@
       "author": "u83usagi",
       "sourceUrl": "https://vrchat.com/home/world/wrld_f20f2f5e-366d-4feb-9202-4cd6f90c2892",
       "avatarUrl": "https://vrchat.com/home/world/wrld_f20f2f5e-366d-4feb-9202-4cd6f90c2892"
+    },
+    {
+      "id": "0862",
+      "entryType": "world",
+      "displaySerial": "0074",
+      "nickname": "Akyo Party",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "KuibayMооre",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_42c43e18-6aea-4f7e-bd03-5f39c24d7acc",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_42c43e18-6aea-4f7e-bd03-5f39c24d7acc"
     }
   ]
 }
