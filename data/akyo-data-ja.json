@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-07T16:14:40.441Z",
-  "count": 864,
+  "updatedAt": "2026-06-07T16:18:04.352Z",
+  "count": 865,
   "data": [
     {
       "id": "0001",
@@ -9811,6 +9811,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_06dcb2ac-f959-4f3b-9567-830db7e41e49",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_06dcb2ac-f959-4f3b-9567-830db7e41e49"
+    },
+    {
+      "id": "0865",
+      "entryType": "avatar",
+      "displaySerial": "0791",
+      "nickname": "セキュリティAkyo",
+      "avatarName": "akyo_セキュリティ",
+      "category": "素材・原材料,素材・原材料/金属",
+      "comment": "【ささのきの手記】\nSFな世界で生きるakyo。危険な作業もおまかせ！ただ、あくまでakyoであることを忘れないように。",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8020f1ad-a051-4f22-8498-cf691da9d36d",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8020f1ad-a051-4f22-8498-cf691da9d36d"
     }
   ]
 }
