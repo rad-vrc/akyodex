@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-07T16:10:46.914Z",
-  "count": 863,
+  "updatedAt": "2026-06-07T16:14:40.441Z",
+  "count": 864,
   "data": [
     {
       "id": "0001",
@@ -9799,6 +9799,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d7261932-dc94-425e-a315-7f2470f2059e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d7261932-dc94-425e-a315-7f2470f2059e"
+    },
+    {
+      "id": "0864",
+      "entryType": "avatar",
+      "displaySerial": "0790",
+      "nickname": "さびさびAkyo",
+      "avatarName": "akyo_さびさび",
+      "category": "状態,状態/経年劣化,歴史",
+      "comment": "【ささのきの手記】\n塗装が剥がれ、全体が錆びついたakyo。「形あるもの、いずれ朽ちる」とはいえ本人は元気そうである",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_06dcb2ac-f959-4f3b-9567-830db7e41e49",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_06dcb2ac-f959-4f3b-9567-830db7e41e49"
     }
   ]
 }
