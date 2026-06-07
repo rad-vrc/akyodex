@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-07T16:21:58.891Z",
-  "count": 866,
+  "updatedAt": "2026-06-07T16:37:51.252Z",
+  "count": 867,
   "data": [
     {
       "id": "0001",
@@ -9835,6 +9835,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d1804b77-6728-4ebd-83ee-1abb32219cca",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d1804b77-6728-4ebd-83ee-1abb32219cca"
+    },
+    {
+      "id": "0867",
+      "entryType": "avatar",
+      "displaySerial": "0793",
+      "nickname": "たこやきAkyo",
+      "avatarName": "akyo_たこやき",
+      "category": "食べ物,食べ物/料理,動物,動物/海の生き物",
+      "comment": "【ささのきの手記】\n大阪名物たこ焼きakyo。焼きたてほやほやアツアツをどうぞ！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_1c494acd-24f7-4c77-84aa-2a1dd377dc40",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1c494acd-24f7-4c77-84aa-2a1dd377dc40"
     }
   ]
 }
