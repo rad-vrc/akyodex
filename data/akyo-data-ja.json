@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-07T16:18:04.352Z",
-  "count": 865,
+  "updatedAt": "2026-06-07T16:21:58.891Z",
+  "count": 866,
   "data": [
     {
       "id": "0001",
@@ -9823,6 +9823,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8020f1ad-a051-4f22-8498-cf691da9d36d",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_8020f1ad-a051-4f22-8498-cf691da9d36d"
+    },
+    {
+      "id": "0866",
+      "entryType": "avatar",
+      "displaySerial": "0792",
+      "nickname": "ようがんAkyo",
+      "avatarName": "akyo_ようがん",
+      "category": "エネルギー,エネルギー/熱,惑星,環境・天候,環境・天候/山,素材・原材料,素材・原材料/石",
+      "comment": "【ささのきの手記】\n星のコアから生まれたakyo。太古の熱をその身に宿している",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d1804b77-6728-4ebd-83ee-1abb32219cca",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d1804b77-6728-4ebd-83ee-1abb32219cca"
     }
   ]
 }
