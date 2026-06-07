@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-04T16:47:13.048Z",
-  "count": 862,
+  "updatedAt": "2026-06-07T16:10:46.914Z",
+  "count": 863,
   "data": [
     {
       "id": "0001",
@@ -9787,6 +9787,18 @@
       "author": "KuibayMооre",
       "sourceUrl": "https://vrchat.com/home/world/wrld_42c43e18-6aea-4f7e-bd03-5f39c24d7acc",
       "avatarUrl": "https://vrchat.com/home/world/wrld_42c43e18-6aea-4f7e-bd03-5f39c24d7acc"
+    },
+    {
+      "id": "0863",
+      "entryType": "avatar",
+      "displaySerial": "0789",
+      "nickname": "カレーうしAkyo",
+      "avatarName": "akyo_牛curry",
+      "category": "動物,動物/うし,食べ物,食べ物/料理",
+      "comment": "牛肉が入ってるのかな？",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d7261932-dc94-425e-a315-7f2470f2059e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d7261932-dc94-425e-a315-7f2470f2059e"
     }
   ]
 }
