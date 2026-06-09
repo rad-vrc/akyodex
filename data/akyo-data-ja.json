@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-07T16:37:51.252Z",
-  "count": 867,
+  "updatedAt": "2026-06-09T17:06:17.448Z",
+  "count": 868,
   "data": [
     {
       "id": "0001",
@@ -9847,6 +9847,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1c494acd-24f7-4c77-84aa-2a1dd377dc40",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_1c494acd-24f7-4c77-84aa-2a1dd377dc40"
+    },
+    {
+      "id": "0868",
+      "entryType": "avatar",
+      "displaySerial": "0794",
+      "nickname": "ムルルまめAkyo",
+      "avatarName": "MuruBeanAkyo_public",
+      "category": "まめ,まめAkyo,チョコミント類,パロディ,パロディ/VRChat,器官,器官/耳,器官/しっぽ",
+      "comment": "あっ！ムルルのまめAkyoがいる！",
+      "author": "ツライワ_サガリ",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_36b779d3-9fb2-4726-8e0e-6eec7416044e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_36b779d3-9fb2-4726-8e0e-6eec7416044e"
     }
   ]
 }
