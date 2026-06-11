@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-09T17:06:17.448Z",
-  "count": 868,
+  "updatedAt": "2026-06-11T09:24:33.774Z",
+  "count": 869,
   "data": [
     {
       "id": "0001",
@@ -9859,6 +9859,18 @@
       "author": "ツライワ_サガリ",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_36b779d3-9fb2-4726-8e0e-6eec7416044e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_36b779d3-9fb2-4726-8e0e-6eec7416044e"
+    },
+    {
+      "id": "0869",
+      "entryType": "avatar",
+      "displaySerial": "0795",
+      "nickname": "キツネツキ式巫女狐Akyo",
+      "avatarName": "AKyo_Miko",
+      "category": "ファッション,プリティ,動物,動物/きつね,国,国/日本,季節・行事,歴史",
+      "comment": "巫女さんだ～！かわいい～！",
+      "author": "kitsune_tsuki",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_649b0ce6-1f79-4469-8a8d-e6ce7ec74b4e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_649b0ce6-1f79-4469-8a8d-e6ce7ec74b4e"
     }
   ]
 }
