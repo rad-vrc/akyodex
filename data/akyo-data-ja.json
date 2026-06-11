@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-11T09:24:33.774Z",
-  "count": 869,
+  "updatedAt": "2026-06-11T09:50:18.866Z",
+  "count": 870,
   "data": [
     {
       "id": "0001",
@@ -9871,6 +9871,18 @@
       "author": "kitsune_tsuki",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_649b0ce6-1f79-4469-8a8d-e6ce7ec74b4e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_649b0ce6-1f79-4469-8a8d-e6ce7ec74b4e"
+    },
+    {
+      "id": "0870",
+      "entryType": "avatar",
+      "displaySerial": "0796",
+      "nickname": "ガムテープAkyo",
+      "avatarName": "Akyo_DuctTape",
+      "category": "素材・原材料,素材・原材料/植物,素材・原材料/植物/木,形状・触り心地,形状・触り心地/粘着質",
+      "comment": "絶対にはがさないでね！",
+      "author": "らど⁄rad1031",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6d0c7a67-0fc3-4e17-9ca7-fe1d271b0e25",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6d0c7a67-0fc3-4e17-9ca7-fe1d271b0e25"
     }
   ]
 }
