@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-11T09:50:18.866Z",
-  "count": 870,
+  "updatedAt": "2026-06-12T02:35:23.482Z",
+  "count": 871,
   "data": [
     {
       "id": "0001",
@@ -9883,6 +9883,18 @@
       "author": "らど⁄rad1031",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6d0c7a67-0fc3-4e17-9ca7-fe1d271b0e25",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_6d0c7a67-0fc3-4e17-9ca7-fe1d271b0e25"
+    },
+    {
+      "id": "0871",
+      "entryType": "avatar",
+      "displaySerial": "0797",
+      "nickname": "すなAkyo",
+      "avatarName": "akyo_すな",
+      "category": "形状・触り心地,形状・触り心地/さらさら,状態,状態/経年劣化,素材・原材料,素材・原材料/石,環境・天候,環境・天候/水域,環境・天候/砂漠",
+      "comment": "【ささのきの手記】\n砂浜で生まれたakyo",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_99af4a74-6426-4e45-98fa-803e6844f1aa",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_99af4a74-6426-4e45-98fa-803e6844f1aa"
     }
   ]
 }
