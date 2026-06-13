@@ -103,7 +103,7 @@ npm run dev
 - 🔍 **Sentry 監視** - エラー追跡 + パフォーマンスモニタリング
 
 ### Project Status
-- ✅ **Next.js 16.1.6 + Cloudflare Pages** (OpenNext adapter)
+- ✅ **Next.js 16.1.7 + Cloudflare Pages** (OpenNext adapter)
 - ✅ **Avatar + World Support** (Dual entry types with separate display IDs)
 - ✅ **Security Hardening** (Timing attack, XSS prevention, Input validation)
 - ✅ **PWA Implementation** (Service Worker with 6 caching strategies)
@@ -178,7 +178,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 16.1.6 (App Router)
+- **Framework**: Next.js 16.1.7 (App Router)
 - **React**: 19.2.4 (Server/Client Components)
 - **Styling**: Tailwind CSS 4 (PostCSS plugin)
 - **Fonts**: Google Fonts (M PLUS Rounded 1c, Kosugi Maru, Noto Sans JP)
@@ -186,7 +186,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 
 ### Backend
 - **Runtime**: Cloudflare Pages (Edge + Node.js Runtime)
-- **Adapter**: @opennextjs/cloudflare ^1.16.5
+- **Adapter**: @opennextjs/cloudflare ^1.17.1
 - **Authentication**: HMAC-signed sessions (Web Crypto API)
 - **Session Storage**: Cloudflare KV
 - **File Storage**: Cloudflare R2
@@ -194,7 +194,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 - **Data Sync**: GitHub API (CSV commit on CRUD operations)
 
 ### Observability
-- **Error Tracking**: Sentry (@sentry/nextjs ^10.39.0) — runtime errors + performance monitoring
+- **Error Tracking**: Sentry (@sentry/nextjs ^10.44.0) — runtime errors + performance monitoring
 - **Instrumentation**: Server-side (`instrumentation.ts`) + client-side (`instrumentation-client.ts`)
 
 ### Security
@@ -1240,7 +1240,7 @@ export const runtime = 'nodejs';
 - ✅ Nonce-based CSP via middleware
 
 ### Phase 10: Next.js 16 + World Support (Completed)
-- ✅ Next.js 15 → 16 upgrade (React 19.2.4, @opennextjs/cloudflare ^1.16.5)
+- ✅ Next.js 15 → 16 upgrade (React 19.2.4, @opennextjs/cloudflare ^1.17.1)
 - ✅ World entry type support (avatar + world dual entries)
 - ✅ Entry normalization (`hydrateAkyoDataset` — type inference, display serial allocation)
 - ✅ VRChat World APIs (`vrc-world-info`, `vrc-world-image`)
@@ -1333,6 +1333,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-03-07  
+**Last Updated**: 2026-05-15  
 **Status**: ✅ Production Ready
 
