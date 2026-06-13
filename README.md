@@ -656,7 +656,9 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
 ### Recent behavior updates (2026-03)
 
 - **Mobile filter panel default**: On first render, mobile keeps the filter panel closed by default (`isMobile === true`), while desktop keeps it open.
-- **Catalog card image request width**: Card image width is tuned per entry type (`avatar: 512`, `world: 384`) to reduce world-card transfer size.
+- **Catalog card image request width**: Card image width is now unified at `384px` for both avatar/world cards to keep mobile transfer size predictable.
+- **Card image ID collision guard**: Catalog cards now resolve primary image assets with stable entry `id` instead of display serial, preventing wrong-image collisions when `DisplaySerial` overlaps.
+- **Admin crop source consistency**: Add-entry cropping always uses the latest fetched image source (`latestLoadedImageSrc`) to avoid stale preview/crop mismatches.
 - **Accessibility fixes (WCAG 2.1)**: Recent updates include contrast and keyboard/semantic improvements across filter controls and related UI.
 
 ### 1. Avatar Gallery
@@ -786,12 +788,12 @@ Users can ask questions like:
 **Avatar image proxy with VRChat fallback**
 
 **Query Parameters**:
-- `id` (string): Avatar ID (e.g., "0001")
+- `id` (string): Image ID (`1`-`4`桁の数値。内部で4桁ゼロ埋めに正規化、例: `"1"` → `"0001"`)
 - `avtr` (string, optional): VRChat avatar ID (e.g., "avtr_abc123...")
 - `w` (number, optional): Image width (default: 512, max: 4096)
 
 **Fallback Priority**:
-1. R2 Bucket (`https://images.akyodex.com/images/{id}.webp`)
+1. R2 Bucket (`https://images.akyodex.com/{id}.webp`)
 2. VRChat API (if `avtr` provided or found in CSV)
 3. Placeholder image
 
@@ -1333,6 +1335,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-03-07  
+**Last Updated**: 2026-04-05  
 **Status**: ✅ Production Ready
 
