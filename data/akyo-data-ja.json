@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-12T02:35:23.482Z",
-  "count": 871,
+  "updatedAt": "2026-06-13T07:57:03.917Z",
+  "count": 872,
   "data": [
     {
       "id": "0001",
@@ -9895,6 +9895,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_99af4a74-6426-4e45-98fa-803e6844f1aa",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_99af4a74-6426-4e45-98fa-803e6844f1aa"
+    },
+    {
+      "id": "0872",
+      "entryType": "world",
+      "displaySerial": "0075",
+      "nickname": "砂の下のチルワ",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "キツネツキ式狐Akyoがいるよ！",
+      "author": "たい焼きつね",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_21eea3d2-8096-4d56-972b-03a7af61631f",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_21eea3d2-8096-4d56-972b-03a7af61631f"
     }
   ]
 }
