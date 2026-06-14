@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-14T01:34:15.026Z",
-  "count": 873,
+  "updatedAt": "2026-06-14T03:08:13.714Z",
+  "count": 874,
   "data": [
     {
       "id": "0001",
@@ -9919,6 +9919,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_928edea7-f12e-48e5-a29a-f4829cd3d5e1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_928edea7-f12e-48e5-a29a-f4829cd3d5e1"
+    },
+    {
+      "id": "0874",
+      "entryType": "avatar",
+      "displaySerial": "0799",
+      "nickname": "ささのき式Akyo",
+      "avatarName": "akyo________ver‚sasanoki",
+      "category": "歴史",
+      "comment": "Akyo、きみだったのか。",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_b54887b0-2a90-469c-92c4-abf2bbb0759e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b54887b0-2a90-469c-92c4-abf2bbb0759e"
     }
   ]
 }
