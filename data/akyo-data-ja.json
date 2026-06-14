@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-14T03:08:13.714Z",
-  "count": 874,
+  "updatedAt": "2026-06-14T03:10:45.968Z",
+  "count": 875,
   "data": [
     {
       "id": "0001",
@@ -9931,6 +9931,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b54887b0-2a90-469c-92c4-abf2bbb0759e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b54887b0-2a90-469c-92c4-abf2bbb0759e"
+    },
+    {
+      "id": "0875",
+      "entryType": "avatar",
+      "displaySerial": "0800",
+      "nickname": "ささのき式こたつAkyo",
+      "avatarName": "akyo_____こたつ",
+      "category": "歴史,家電・家具",
+      "comment": "歴史上初めてAkyoがこたつを使った瞬間である。",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_7dfe7803-71f3-4cdc-bdd9-5c5c21e5fca8",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7dfe7803-71f3-4cdc-bdd9-5c5c21e5fca8"
     }
   ]
 }
