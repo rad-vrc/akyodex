@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-13T07:57:03.917Z",
-  "count": 872,
+  "updatedAt": "2026-06-14T01:34:15.026Z",
+  "count": 873,
   "data": [
     {
       "id": "0001",
@@ -9907,6 +9907,18 @@
       "author": "たい焼きつね",
       "sourceUrl": "https://vrchat.com/home/world/wrld_21eea3d2-8096-4d56-972b-03a7af61631f",
       "avatarUrl": "https://vrchat.com/home/world/wrld_21eea3d2-8096-4d56-972b-03a7af61631f"
+    },
+    {
+      "id": "0873",
+      "entryType": "avatar",
+      "displaySerial": "0798",
+      "nickname": "空洞Akyo",
+      "avatarName": "cavityAkyo",
+      "category": "ギミック・特殊",
+      "comment": "Akyo空っぽのほうが～夢詰め込める～♪",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_928edea7-f12e-48e5-a29a-f4829cd3d5e1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_928edea7-f12e-48e5-a29a-f4829cd3d5e1"
     }
   ]
 }
