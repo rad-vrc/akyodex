@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-14T03:10:45.968Z",
-  "count": 875,
+  "updatedAt": "2026-06-15T12:52:09.360Z",
+  "count": 876,
   "data": [
     {
       "id": "0001",
@@ -9943,6 +9943,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7dfe7803-71f3-4cdc-bdd9-5c5c21e5fca8",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_7dfe7803-71f3-4cdc-bdd9-5c5c21e5fca8"
+    },
+    {
+      "id": "0876",
+      "entryType": "avatar",
+      "displaySerial": "0801",
+      "nickname": "雨上がりまめAkyo",
+      "avatarName": "雨上がりまめAkyo",
+      "category": "まめ,まめAkyo,体型,体型/豊満,季節・行事,ファッション,動物,動物/かたつむり",
+      "comment": "梅雨が終わったみたい！",
+      "author": "bosa_bosa",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ba1c82e4-a017-441e-9922-30deb5cbcd94",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ba1c82e4-a017-441e-9922-30deb5cbcd94"
     }
   ]
 }
