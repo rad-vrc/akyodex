@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-15T12:52:09.360Z",
-  "count": 876,
+  "updatedAt": "2026-06-16T08:13:07.050Z",
+  "count": 877,
   "data": [
     {
       "id": "0001",
@@ -9955,6 +9955,18 @@
       "author": "bosa_bosa",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ba1c82e4-a017-441e-9922-30deb5cbcd94",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ba1c82e4-a017-441e-9922-30deb5cbcd94"
+    },
+    {
+      "id": "0877",
+      "entryType": "world",
+      "displaySerial": "0076",
+      "nickname": "キツネツキ実験室 kitsune_tsuki testing room",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "ついてくる狐Akyoがいる実験室だよ！",
+      "author": "kitsune_tsuki",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_77d6a73e-56ad-460c-a288-163eafcdd14b",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_77d6a73e-56ad-460c-a288-163eafcdd14b"
     }
   ]
 }
