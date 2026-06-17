@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-16T22:56:13.111Z",
-  "count": 877,
+  "updatedAt": "2026-06-17T14:34:20.013Z",
+  "count": 878,
   "data": [
     {
       "id": "0001",
@@ -9967,6 +9967,18 @@
       "author": "kitsune_tsuki",
       "sourceUrl": "https://vrchat.com/home/world/wrld_77d6a73e-56ad-460c-a288-163eafcdd14b",
       "avatarUrl": "https://vrchat.com/home/world/wrld_77d6a73e-56ad-460c-a288-163eafcdd14b"
+    },
+    {
+      "id": "0878",
+      "entryType": "world",
+      "displaySerial": "0077",
+      "nickname": "Home",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "カラフル回転Akyoがいる～！",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_ae4891af-172e-4d90-811e-df0c769ff111",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_ae4891af-172e-4d90-811e-df0c769ff111"
     }
   ]
 }
