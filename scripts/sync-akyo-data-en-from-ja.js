@@ -191,6 +191,232 @@ const overridesById = {
     Nickname: 'Red Rust Akyo',
     Comment: "Akyo never dies, even if its body rusts crimson.",
   },
+  '0817': { Nickname: 'Black Water Akyo', Comment: '' },
+  '0818': { Nickname: 'Bra Akyo', Comment: '' },
+  '0819': { Nickname: 'Yellow Akyo with Arms', Comment: '' },
+  '0820': { Nickname: 'Machine Akyo', Comment: '' },
+  '0821': { Nickname: 'Mama Akyo', Comment: '' },
+  '0822': { Nickname: 'Mama Akyo 2', Comment: '' },
+  '0823': { Nickname: 'Nico Akyo', Comment: '' },
+  '0824': {
+    Nickname: 'Fusion Akyo/Flying Akyo',
+    Comment: "Agyo's will lives on...",
+  },
+  '0825': {
+    Nickname: 'Forest Fairy Akyo',
+    Comment: 'Lucky if you find it!?',
+  },
+  '0826': {
+    Nickname: 'Sunman Akyo',
+    Comment: "I feel like I've seen this poster somewhere...",
+  },
+  '0827': {
+    Nickname: '256 Akyo',
+    Comment: 'From a distance, it might look like Chocolate Mint Akyo!',
+  },
+  '0828': {
+    Nickname: 'Mermaid Akyo',
+    Comment:
+      "(Sasanoki's notes)\nAn Akyo adapted to underwater environments. It does not seem to be a strong swimmer and is often washed ashore.",
+  },
+  '0829': { Nickname: 'Sushi Chef Fox Akyo', Comment: '' },
+  '0830': {
+    Nickname: 'Yakisoba Bread Akyo',
+    Comment:
+      "(Sasanoki's notes)\nThe rich aroma of sauce whets the appetite. Carbs on carbs make for a very satisfying meal.",
+  },
+  '0831': {
+    Nickname: 'Pudding Shop Pudding Akyo',
+    Comment:
+      "(Sasanoki's notes)\nA pudding shop run by Pudding Akyo. The pudding, made with fresh milk from Cow Akyo, is wonderfully rich and irresistibly delicious.",
+  },
+  '0832': {
+    Nickname: 'Shark Hoodie Fox Akyo',
+    Comment:
+      "(Sasanoki's notes)\nA fox Akyo wearing a shark hoodie. Perfect for relaxing at home or going out.",
+  },
+  '0833': {
+    Nickname: 'Sometimes It Happens Akyo',
+    Comment: 'Well, sometimes that happens!',
+  },
+  '0834': { Nickname: 'roma38 Akyo Avatar Pedestal', Comment: '' },
+  '0835': {
+    Nickname: 'Cluster Akyo',
+    Comment: "Agyo's will lives on...",
+  },
+  '0836': {
+    Nickname: 'Koinobori Akyo',
+    Comment: 'May Akyo grow up healthy and strong...',
+  },
+  '0837': {
+    Nickname: 'Matryoshka Akyo',
+    Comment: 'You can summon Akyo from the menu!',
+  },
+  '0838': {
+    Nickname: 'Shark Hoodie Shark Akyo',
+    Comment:
+      "(Sasanoki's notes)\nA shark Akyo wearing a shark hoodie. Maybe it is getting used to life on land?",
+  },
+  '0839': {
+    Nickname: 'Horseshoe Crab Akyo',
+    Comment:
+      "(Sasanoki's notes)\nIt has a hard shell and lives in calm, shallow seas. It is said to have existed long before the age of dinosaurs and is also called a living fossil.",
+  },
+  '0840': { Nickname: 'Mochi Bean Akyo', Comment: 'Looks delicious!' },
+  '0841': {
+    Nickname: 'Sample Akyo',
+    Comment: 'It has samples of all kinds of display gimmicks!',
+  },
+  '0842': {
+    Nickname: 'Bulked-Up Akyo',
+    Comment: 'The strongest Akyo in the Akyo world is born here and now...',
+  },
+  '0843': {
+    Nickname: 'Sea Otter Akyo',
+    Comment:
+      "(Sasanoki's notes)\nSea Otter Akyo. It floats along the surface of the sea and often eats shellfish.",
+  },
+  '0844': {
+    Nickname: 'Scientist Akyo',
+    Comment:
+      "(Sasanoki's notes)\nA very clever Akyo. It seems to be conducting some suspicious research.",
+  },
+  '0845': {
+    Nickname: 'Wandering Rainy-Season Akyo',
+    Comment: 'Kappa Akyo would love this!',
+  },
+  '0846': {
+    Nickname: "Can't Be Helped Akyo",
+    Comment: 'What could it mean?',
+  },
+  '0847': {
+    Nickname: 'Planet Akyo',
+    Comment: "(Sasanoki's notes)\nAkyo was blue.",
+  },
+  '0848': {
+    Nickname: 'Pulse Akyo',
+    Comment: "I don't really understand it, but I can feel incredible power!",
+  },
+  '0849': {
+    Nickname: 'Made-in-Akyo',
+    Comment: "An Akyo made of Akyo!?\nIt might be Agyo's counterpart.",
+  },
+  '0850': {
+    Nickname: '0.725 Akyo',
+    Comment: "It doesn't seem to show up here...\nSee it with your own eyes!",
+  },
+  '0851': {
+    Nickname: 'City Akyo',
+    Comment: 'I feel like I can see a city...\nWhich city could it be?',
+  },
+  '0852': {
+    Nickname: 'Fishing Fox Akyo',
+    Comment:
+      "(Sasanoki's notes)\nA fox Akyo that discovered the joy of fishing. What will it catch today?",
+  },
+  '0853': {
+    Nickname: 'UV Unwrap Akyo',
+    Comment: 'Apparently this is what it looks like when UV unwrapped!',
+  },
+  '0854': {
+    Nickname: 'Draw Akyo',
+    Comment: 'Maybe we can make an Akyo drawing song!',
+  },
+  '0855': {
+    Nickname: 'Akyo and a Black Hole',
+    Comment: 'What!? A black hole behind it!?',
+  },
+  '0856': {
+    Nickname: 'Jitter Akyo',
+    Comment: 'It looks like an ordinary Akyo, but...?',
+  },
+  '0857': {
+    Nickname: 'Garden Eel Akyo',
+    Comment:
+      "(Sasanoki's notes)\nAn Akyo that lives in warm seas. It seems to prefer gentle currents and often plays with tropical fish.",
+  },
+  '0858': {
+    Nickname: 'There? Akyo',
+    Comment: 'What? Which one is real??',
+  },
+  '0859': {
+    Nickname: 'Ice Cream Akyo',
+    Comment: "There's chocolate mint ice cream too!!",
+  },
+  '0860': {
+    Nickname: 'Desktop Akyo',
+    Comment: 'There is another Akyo on the other side.',
+  },
+  '0861': { Nickname: "Milky's Sky", Comment: '' },
+  '0862': { Nickname: 'Akyo Party', Comment: '' },
+  '0863': {
+    Nickname: 'Curry Cow Akyo',
+    Comment: 'I wonder if it contains beef?',
+  },
+  '0864': {
+    Nickname: 'Rusty Akyo',
+    Comment:
+      "(Sasanoki's notes)\nIts paint has peeled away and its entire body has rusted. Even though all things eventually decay, it still seems lively.",
+  },
+  '0865': {
+    Nickname: 'Security Akyo',
+    Comment:
+      "(Sasanoki's notes)\nAn Akyo living in a sci-fi world. It can handle dangerous jobs too! Just don't forget that it is still an Akyo.",
+  },
+  '0866': {
+    Nickname: 'Lava Akyo',
+    Comment:
+      "(Sasanoki's notes)\nAn Akyo born from the core of a planet. It carries ancient heat within its body.",
+  },
+  '0867': {
+    Nickname: 'Takoyaki Akyo',
+    Comment:
+      "(Sasanoki's notes)\nTakoyaki Akyo, an Osaka specialty. Enjoy it piping hot and freshly cooked!",
+  },
+  '0868': {
+    Nickname: 'Mururu Bean Akyo',
+    Comment: "Ah! There's a Mururu Bean Akyo!",
+  },
+  '0869': {
+    Nickname: 'Kitsunetsuki-style Shrine Maiden Fox Akyo',
+    Comment: 'A shrine maiden! So cute!',
+  },
+  '0870': {
+    Nickname: 'Duct Tape Akyo',
+    Comment: "Don't ever peel it off!",
+  },
+  '0871': {
+    Nickname: 'Sand Akyo',
+    Comment: "(Sasanoki's notes)\nAn Akyo born on a sandy beach.",
+  },
+  '0872': {
+    Nickname: 'Chilwa Beneath the Sand',
+    Comment: "There's a Kitsunetsuki-style Fox Akyo!",
+  },
+  '0873': {
+    Nickname: 'Hollow Akyo',
+    Comment: 'The emptier Akyo is, the more dreams it can hold~♪',
+  },
+  '0874': {
+    Nickname: 'Sasanoki-style Akyo',
+    Comment: 'Akyo, so it was you.',
+  },
+  '0875': {
+    Nickname: 'Sasanoki-style Kotatsu Akyo',
+    Comment: 'The historic moment when Akyo used a kotatsu for the first time.',
+  },
+  '0876': {
+    Nickname: 'After-the-Rain Bean Akyo',
+    Comment: 'Looks like the rainy season is over!',
+  },
+  '0877': {
+    Nickname: 'Kitsunetsuki Laboratory / kitsune_tsuki testing room',
+    Comment: 'A laboratory with a Fox Akyo that follows you!',
+  },
+  '0878': {
+    Nickname: 'Home',
+    Comment: "There's a Colorful Spinning Akyo!",
+  },
 };
 
 function parseCsv(filePath) {
@@ -274,7 +500,7 @@ function main() {
   assertCsvRowLengthsMatchHeader(en, enPath);
 
   const outHeader = [...en.header];
-  for (const optionalColumn of ['SourceURL', 'EntryType', 'DisplaySerial']) {
+  for (const optionalColumn of ['SourceURL', 'EntryType', 'DisplaySerial', 'BoothURL']) {
     if (ja.header.includes(optionalColumn) && !outHeader.includes(optionalColumn)) {
       outHeader.push(optionalColumn);
     }
@@ -291,6 +517,7 @@ function main() {
     EntryType: outHeader.includes('EntryType') ? indexOfHeader(outHeader, 'EntryType') : -1,
     DisplaySerial:
       outHeader.includes('DisplaySerial') ? indexOfHeader(outHeader, 'DisplaySerial') : -1,
+    BoothURL: outHeader.includes('BoothURL') ? indexOfHeader(outHeader, 'BoothURL') : -1,
   };
 
   const jaIdx = {
@@ -305,6 +532,7 @@ function main() {
     EntryType: ja.header.includes('EntryType') ? indexOfHeader(ja.header, 'EntryType') : -1,
     DisplaySerial:
       ja.header.includes('DisplaySerial') ? indexOfHeader(ja.header, 'DisplaySerial') : -1,
+    BoothURL: ja.header.includes('BoothURL') ? indexOfHeader(ja.header, 'BoothURL') : -1,
   };
 
   const enById = new Map();
@@ -372,6 +600,10 @@ function main() {
       outRow[idx.DisplaySerial] =
         jaIdx.DisplaySerial >= 0 ? String(jaRow[jaIdx.DisplaySerial] || '') : '';
     }
+    if (idx.BoothURL >= 0) {
+      outRow[idx.BoothURL] =
+        jaIdx.BoothURL >= 0 ? String(jaRow[jaIdx.BoothURL] || '') : '';
+    }
     outRows.push(outRow);
   }
 
@@ -390,8 +622,8 @@ function main() {
   }
 
   const outCsv = stringify(outRows, {
-    quoted: true,
     record_delimiter: '\r\n',
+    quoted_match: /[\r\n]/,
   });
   fs.writeFileSync(enPath, outCsv, 'utf8');
 
