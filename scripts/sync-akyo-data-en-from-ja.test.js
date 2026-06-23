@@ -8,9 +8,10 @@ const { parse } = require('csv-parse/sync');
 
 const rootDir = path.resolve(__dirname, '..');
 
-test('maps Japanese tooth category to hierarchical English category', () => {
+test('maps Japanese body part categories to hierarchical English categories', () => {
   const categoryMap = require('./category-ja-en-map');
 
+  assert.equal(categoryMap['器官/耳'], 'Body Part/Ear');
   assert.equal(categoryMap['器官/歯'], 'Body Part/Teeth');
 });
 

@@ -145,7 +145,7 @@ module.exports = {
   '動物/鳥': 'Animal/Bird',
   '合体・変身': 'Transformation',
   '器官': 'Body Part',
-  '器官/耳': 'Ear',
+  '器官/耳': 'Body Part/Ear',
   '器官/鼻': 'Body Part/Nose',
   '器官/しっぽ': 'Body Part/Tail',
   '器官/翼': 'Body Part/Wing',
