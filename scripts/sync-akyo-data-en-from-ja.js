@@ -602,7 +602,9 @@ function main() {
     }
     if (idx.BoothURL >= 0) {
       outRow[idx.BoothURL] =
-        jaIdx.BoothURL >= 0 ? String(jaRow[jaIdx.BoothURL] || '') : '';
+        jaIdx.BoothURL >= 0
+          ? String(jaRow[jaIdx.BoothURL] || '')
+          : String(existingEnRow?.[idx.BoothURL] || '');
     }
     outRows.push(outRow);
   }

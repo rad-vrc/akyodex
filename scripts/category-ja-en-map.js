@@ -149,7 +149,7 @@ module.exports = {
   '器官/鼻': 'Body Part/Nose',
   '器官/しっぽ': 'Body Part/Tail',
   '器官/翼': 'Body Part/Wing',
-  '器官/歯': 'Teeth',
+  '器官/歯': 'Body Part/Teeth',
   '季節・行事': 'Season・Event',
   '季節・行事/ハロウィン': 'Season・Event/Halloween',
   '季節・行事/お正月': 'Season・Event/New Year',
