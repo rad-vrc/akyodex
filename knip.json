@@ -18,6 +18,7 @@
     "scripts/fix-categories-en.js",
     "scripts/fix-categories.js",
     "scripts/sync-akyo-data-en-from-ja.js",
+    "scripts/sync-akyo-data-en-from-ja.test.js",
     "scripts/generate-ko-data.js",
     "scripts/generate-ko-data.test.js",
     "scripts/push-pr-state.test.js",
