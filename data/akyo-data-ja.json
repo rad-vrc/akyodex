@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-27T05:37:18.322Z",
-  "count": 881,
+  "updatedAt": "2026-06-27T05:38:44.157Z",
+  "count": 882,
   "data": [
     {
       "id": "0001",
@@ -10020,6 +10020,18 @@
       "author": "gularis",
       "sourceUrl": "https://vrchat.com/home/world/wrld_f3472640-f7b7-4013-b622-42c8ec1448f2/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_f3472640-f7b7-4013-b622-42c8ec1448f2/"
+    },
+    {
+      "id": "0882",
+      "entryType": "world",
+      "displaySerial": "0081",
+      "nickname": "しおさい街道 - Siosai Highway -",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "takachiho",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_76045cdd-a948-4a87-8227-bacde3daa3f5/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_76045cdd-a948-4a87-8227-bacde3daa3f5/"
     }
   ]
 }
