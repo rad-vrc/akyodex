@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-27T05:41:27.194Z",
-  "count": 884,
+  "updatedAt": "2026-06-27T05:42:17.922Z",
+  "count": 885,
   "data": [
     {
       "id": "0001",
@@ -10056,6 +10056,18 @@
       "author": "たまも狐",
       "sourceUrl": "https://vrchat.com/home/world/wrld_61a5194e-7dc8-48b0-9a83-747e46fa0ddb/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_61a5194e-7dc8-48b0-9a83-747e46fa0ddb/"
+    },
+    {
+      "id": "0885",
+      "entryType": "world",
+      "displaySerial": "0084",
+      "nickname": "ラスクさんぽ FAN MEETING WORLD",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "クロイヌヨウヘイ",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_31fc3cad-e624-4307-b7fd-f428bbea76af/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_31fc3cad-e624-4307-b7fd-f428bbea76af/"
     }
   ]
 }
