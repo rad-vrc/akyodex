@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-27T05:34:15.928Z",
-  "count": 880,
+  "updatedAt": "2026-06-27T05:37:18.322Z",
+  "count": 881,
   "data": [
     {
       "id": "0001",
@@ -10008,6 +10008,18 @@
       "author": "Reika_801",
       "sourceUrl": "https://vrchat.com/home/world/wrld_b64e51eb-0ce0-43d4-bf60-40bf6d878c25/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_b64e51eb-0ce0-43d4-bf60-40bf6d878c25/"
+    },
+    {
+      "id": "0881",
+      "entryType": "world",
+      "displaySerial": "0080",
+      "nickname": "hospitalCrom",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "gularis",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_f3472640-f7b7-4013-b622-42c8ec1448f2/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_f3472640-f7b7-4013-b622-42c8ec1448f2/"
     }
   ]
 }
