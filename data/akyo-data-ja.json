@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-23T10:31:11.686Z",
-  "count": 879,
+  "updatedAt": "2026-06-27T05:34:15.928Z",
+  "count": 880,
   "data": [
     {
       "id": "0001",
@@ -9996,6 +9996,18 @@
       "author": "yuwa1027",
       "sourceUrl": "https://vrchat.com/home/world/wrld_f3f10623-f3bb-4c9f-aa7a-5eb06de381fd",
       "avatarUrl": "https://vrchat.com/home/world/wrld_f3f10623-f3bb-4c9f-aa7a-5eb06de381fd"
+    },
+    {
+      "id": "0880",
+      "entryType": "world",
+      "displaySerial": "0079",
+      "nickname": "Just 芋掘り - Just imohori -",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "Reika_801",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_b64e51eb-0ce0-43d4-bf60-40bf6d878c25/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_b64e51eb-0ce0-43d4-bf60-40bf6d878c25/"
     }
   ]
 }
