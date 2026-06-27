@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-27T05:38:44.157Z",
-  "count": 882,
+  "updatedAt": "2026-06-27T05:39:59.364Z",
+  "count": 883,
   "data": [
     {
       "id": "0001",
@@ -10032,6 +10032,18 @@
       "author": "takachiho",
       "sourceUrl": "https://vrchat.com/home/world/wrld_76045cdd-a948-4a87-8227-bacde3daa3f5/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_76045cdd-a948-4a87-8227-bacde3daa3f5/"
+    },
+    {
+      "id": "0883",
+      "entryType": "world",
+      "displaySerial": "0082",
+      "nickname": "聖雪オラトリウム -Oratorium in Holy Snow-",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "Atto_あっと",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_93863398-71e0-4fab-97e9-608156084f4a/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_93863398-71e0-4fab-97e9-608156084f4a/"
     }
   ]
 }
