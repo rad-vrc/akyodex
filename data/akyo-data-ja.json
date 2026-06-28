@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-28T21:44:35.490Z",
-  "count": 888,
+  "updatedAt": "2026-06-28T22:06:36.711Z",
+  "count": 889,
   "data": [
     {
       "id": "0001",
@@ -10104,6 +10104,18 @@
       "author": "かざはや あお",
       "sourceUrl": "https://vrchat.com/home/world/wrld_69072fb3-d7d2-465a-a18e-dcdbd637fc4d/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_69072fb3-d7d2-465a-a18e-dcdbd637fc4d/"
+    },
+    {
+      "id": "0889",
+      "entryType": "world",
+      "displaySerial": "0088",
+      "nickname": "町屋旅館 百代通-HAKUTAI-",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "maro․",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_e5969bb4-7147-4f16-9a46-56e37ba845d0/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_e5969bb4-7147-4f16-9a46-56e37ba845d0/"
     }
   ]
 }
