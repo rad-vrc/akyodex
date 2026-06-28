@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-28T14:19:29.942Z",
-  "count": 886,
+  "updatedAt": "2026-06-28T16:55:18.208Z",
+  "count": 887,
   "data": [
     {
       "id": "0001",
@@ -10080,6 +10080,18 @@
       "author": "にくおぢ",
       "sourceUrl": "https://vrchat.com/home/world/wrld_9497b15a-72df-4d45-8ae4-d8c0afb44a5b/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_9497b15a-72df-4d45-8ae4-d8c0afb44a5b/"
+    },
+    {
+      "id": "0887",
+      "entryType": "world",
+      "displaySerial": "0086",
+      "nickname": "Just Digging 1․4",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_47a415ca-b745-40fe-a10a-612193159ecd/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_47a415ca-b745-40fe-a10a-612193159ecd/"
     }
   ]
 }
