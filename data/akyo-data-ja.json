@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-27T05:42:17.922Z",
-  "count": 885,
+  "updatedAt": "2026-06-28T14:19:29.942Z",
+  "count": 886,
   "data": [
     {
       "id": "0001",
@@ -10068,6 +10068,18 @@
       "author": "クロイヌヨウヘイ",
       "sourceUrl": "https://vrchat.com/home/world/wrld_31fc3cad-e624-4307-b7fd-f428bbea76af/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_31fc3cad-e624-4307-b7fd-f428bbea76af/"
+    },
+    {
+      "id": "0886",
+      "entryType": "world",
+      "displaySerial": "0085",
+      "nickname": "夜景と緑のチルルーム -Chill room˸ Night views ＆ Plants-",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "にくおぢ",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_9497b15a-72df-4d45-8ae4-d8c0afb44a5b/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_9497b15a-72df-4d45-8ae4-d8c0afb44a5b/"
     }
   ]
 }
