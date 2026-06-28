@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-28T16:55:18.208Z",
-  "count": 887,
+  "updatedAt": "2026-06-28T21:44:35.490Z",
+  "count": 888,
   "data": [
     {
       "id": "0001",
@@ -10092,6 +10092,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/world/wrld_47a415ca-b745-40fe-a10a-612193159ecd/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_47a415ca-b745-40fe-a10a-612193159ecd/"
+    },
+    {
+      "id": "0888",
+      "entryType": "world",
+      "displaySerial": "0087",
+      "nickname": "海に近い部屋",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "かざはや あお",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_69072fb3-d7d2-465a-a18e-dcdbd637fc4d/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_69072fb3-d7d2-465a-a18e-dcdbd637fc4d/"
     }
   ]
 }
