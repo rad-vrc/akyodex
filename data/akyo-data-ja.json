@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-28T22:06:36.711Z",
-  "count": 889,
+  "updatedAt": "2026-06-29T03:03:54.823Z",
+  "count": 890,
   "data": [
     {
       "id": "0001",
@@ -10116,6 +10116,18 @@
       "author": "maro․",
       "sourceUrl": "https://vrchat.com/home/world/wrld_e5969bb4-7147-4f16-9a46-56e37ba845d0/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_e5969bb4-7147-4f16-9a46-56e37ba845d0/"
+    },
+    {
+      "id": "0890",
+      "entryType": "world",
+      "displaySerial": "0089",
+      "nickname": "アバター面接会場",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "nezu_jp",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_f94dbbb7-4be3-4833-82bd-24b403567788/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_f94dbbb7-4be3-4833-82bd-24b403567788/"
     }
   ]
 }
