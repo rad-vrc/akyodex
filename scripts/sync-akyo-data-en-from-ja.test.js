@@ -7,12 +7,37 @@ const test = require('node:test');
 const { parse } = require('csv-parse/sync');
 
 const rootDir = path.resolve(__dirname, '..');
+const tanabataBonusComment = 'Akyoに願いを！';
+
+function readDataFile(relativePath) {
+  return fs.readFileSync(path.join(rootDir, relativePath), 'utf8');
+}
 
 test('maps Japanese body part categories to hierarchical English categories', () => {
   const categoryMap = require('./category-ja-en-map');
 
   assert.equal(categoryMap['器官/耳'], 'Body Part/Ear');
   assert.equal(categoryMap['器官/歯'], 'Body Part/Teeth');
+});
+
+test('keeps Tanabata Akyo bonus comment in Japanese data', () => {
+  const rows = parse(readDataFile('data/akyo-data-ja.csv'), {
+    columns: true,
+    skip_empty_lines: true,
+    record_delimiter: ['\r\n', '\n', '\r'],
+  });
+  const csvRow = rows.find(
+    (record) => record.DisplaySerial === '0804' && record.Nickname === 'たなばたAkyo',
+  );
+  assert.ok(csvRow, 'Japanese CSV should include public number 0804 Tanabata Akyo');
+  assert.equal(csvRow.Comment, tanabataBonusComment);
+
+  const jsonPayload = JSON.parse(readDataFile('data/akyo-data-ja.json'));
+  const jsonRow = jsonPayload.data.find(
+    (record) => record.displaySerial === '0804' && record.nickname === 'たなばたAkyo',
+  );
+  assert.ok(jsonRow, 'Japanese JSON should include public number 0804 Tanabata Akyo');
+  assert.equal(jsonRow.comment, tanabataBonusComment);
 });
 
 test('preserves existing English BoothURL when Japanese CSV lacks BoothURL column', () => {
