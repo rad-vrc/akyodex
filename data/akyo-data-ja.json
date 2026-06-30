@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-30T05:29:35.272Z",
-  "count": 891,
+  "updatedAt": "2026-06-30T05:35:04.329Z",
+  "count": 892,
   "data": [
     {
       "id": "0001",
@@ -10140,6 +10140,18 @@
       "author": "Light Green",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a09a5363-7b78-4498-9997-448c6363ac95",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a09a5363-7b78-4498-9997-448c6363ac95"
+    },
+    {
+      "id": "0892",
+      "entryType": "avatar",
+      "displaySerial": "0803",
+      "nickname": "ろま式だるまAkyo",
+      "avatarName": "だるまAkyo",
+      "category": "家電・家具,歴史,願い事",
+      "comment": "願いが成就するとき、もう一つの目が現れる・・・",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3722ebe3-531a-4890-b92a-22c93e31f80a",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3722ebe3-531a-4890-b92a-22c93e31f80a"
     }
   ]
 }
