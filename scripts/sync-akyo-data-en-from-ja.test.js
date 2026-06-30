@@ -7,12 +7,70 @@ const test = require('node:test');
 const { parse } = require('csv-parse/sync');
 
 const rootDir = path.resolve(__dirname, '..');
+const correctKChanAuthor = '（Ｋ）けーちゃん';
+
+function readDataFile(relativePath) {
+  return fs.readFileSync(path.join(rootDir, relativePath), 'utf8');
+}
 
 test('maps Japanese body part categories to hierarchical English categories', () => {
   const categoryMap = require('./category-ja-en-map');
 
   assert.equal(categoryMap['器官/耳'], 'Body Part/Ear');
   assert.equal(categoryMap['器官/歯'], 'Body Part/Teeth');
+});
+
+test('keeps K-chan author spelling consistent in tracked data', () => {
+  const activeCsvFiles = [
+    'data/akyo-data-ja.csv',
+    'data/akyo-data-en.csv',
+    'data/akyo-data-ko.csv',
+  ];
+  const dataFiles = [
+    ...activeCsvFiles,
+    'data/akyo-data-ja.json',
+    'data/akyo-data-en.json',
+    'data/akyo-data-ko.json',
+    'data/vectorize-payload.json',
+    'data/akyo-data.csv.bak',
+    'data/akyo-data-US.csv.bak',
+  ];
+  const invalidSpellings = ['＂K＂ ちゃん', '"K" ちゃん', '""K"" ちゃん'];
+
+  for (const filePath of dataFiles) {
+    const content = readDataFile(filePath);
+    for (const invalidSpelling of invalidSpellings) {
+      assert.equal(
+        content.includes(invalidSpelling),
+        false,
+        `${filePath} includes invalid author spelling ${invalidSpelling}`,
+      );
+    }
+  }
+
+  for (const filePath of activeCsvFiles) {
+    const rows = parse(readDataFile(filePath), {
+      columns: true,
+      skip_empty_lines: true,
+      record_delimiter: ['\r\n', '\n', '\r'],
+    });
+    const row = rows.find((record) => record.ID === '0505');
+    assert.ok(row, `${filePath} should include Avatar0505`);
+    assert.equal(row.Author, correctKChanAuthor);
+  }
+
+  for (const language of ['ja', 'en', 'ko']) {
+    const filePath = `data/akyo-data-${language}.json`;
+    const payload = JSON.parse(readDataFile(filePath));
+    const row = payload.data.find((record) => record.id === '0505');
+    assert.ok(row, `${filePath} should include Avatar0505`);
+    assert.equal(row.author, correctKChanAuthor);
+  }
+
+  const vectorizePayload = JSON.parse(readDataFile('data/vectorize-payload.json'));
+  const vectorizeRow = vectorizePayload.find((record) => record.id === '0505');
+  assert.ok(vectorizeRow, 'data/vectorize-payload.json should include Avatar0505');
+  assert.equal(vectorizeRow.author, correctKChanAuthor);
 });
 
 test('preserves existing English BoothURL when Japanese CSV lacks BoothURL column', () => {
