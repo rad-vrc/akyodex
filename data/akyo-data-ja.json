@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-30T05:53:59.484Z",
-  "count": 894,
+  "updatedAt": "2026-06-30T05:55:46.429Z",
+  "count": 895,
   "data": [
     {
       "id": "0001",
@@ -10176,6 +10176,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ac8ecc86-5d0b-4782-8cfe-b6c6d7bb5426",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ac8ecc86-5d0b-4782-8cfe-b6c6d7bb5426"
+    },
+    {
+      "id": "0895",
+      "entryType": "avatar",
+      "displaySerial": "0806",
+      "nickname": "21.63Akyo",
+      "avatarName": "21․63",
+      "category": "ギミック・特殊",
+      "comment": "この景色、どこかで・・・",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_52073d62-50d2-414f-af91-9e7ad5eee3e5",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_52073d62-50d2-414f-af91-9e7ad5eee3e5"
     }
   ]
 }
