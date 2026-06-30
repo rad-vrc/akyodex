@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-30T05:46:37.494Z",
-  "count": 893,
+  "updatedAt": "2026-06-30T05:53:59.484Z",
+  "count": 894,
   "data": [
     {
       "id": "0001",
@@ -10164,6 +10164,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_31151216-9453-4f7a-8982-640c5955168b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_31151216-9453-4f7a-8982-640c5955168b"
+    },
+    {
+      "id": "0894",
+      "entryType": "avatar",
+      "displaySerial": "0805",
+      "nickname": "アロハおおかみAkyo",
+      "avatarName": "akyo_おおかみアロハ",
+      "category": "ファッション,動物,動物/おおかみ,季節・行事,季節・行事/夏,器官,器官/耳,器官/しっぽ",
+      "comment": "アロ～ハ～！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ac8ecc86-5d0b-4782-8cfe-b6c6d7bb5426",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ac8ecc86-5d0b-4782-8cfe-b6c6d7bb5426"
     }
   ]
 }
