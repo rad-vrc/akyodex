@@ -90,12 +90,12 @@ npm run dev
 
 ## 📖 Project Overview
 
-**Akyodex** は、VRChatのオリジナルアバター「Akyo」シリーズと関連ワールドを網羅したオンライン図鑑です。
+**Akyodex** は、VRChat のオリジナルアバター「Akyo」シリーズ、関連ワールド、BOOTH 導線付きコンテンツをまとめたオンライン図鑑です。
 
 ### Key Features
-- 🎨 **アバター＋ワールドデータベース** - 4桁ID管理システム（日本語/英語/韓国語 CSV + JSON データ、avatar/world 二種別）
+- 🎨 **アバター / ワールド / BOOTH導線付きカタログ** - 4桁ID管理システム（日本語/英語/韓国語 CSV + JSON、`avatar` / `world` / `booth` 系表示に対応）
 - 🔐 **Admin Panel** - HMAC署名セッション認証、画像クロッピング、VRChat連携
-- 📱 **PWA対応** - 6種類のキャッシング戦略
+- 📱 **PWA対応** - リクエスト種別ごとに分けたカスタム Service Worker
 - 🌍 **多言語対応** - 日本語/英語/韓国語（自動検出 + 手動切替）
 - ⚡ **Edge Runtime** - Cloudflare Pages + R2 + KV
 - 🤖 **Difyチャットボット** - AI搭載のアバター検索アシスタント
@@ -103,15 +103,15 @@ npm run dev
 - 🔍 **Sentry 監視** - エラー追跡 + パフォーマンスモニタリング
 
 ### Project Status
-- ✅ **Next.js 16.1.6 + Cloudflare Pages** (OpenNext adapter)
-- ✅ **Avatar + World Support** (Dual entry types with separate display IDs)
+- ✅ **Next.js 16.1.7 + Cloudflare Pages** (`@opennextjs/cloudflare` ^1.17.1)
+- ✅ **Avatar + World + BOOTH-ready Catalog** (`entryType` + `boothUrl` + separate display IDs)
 - ✅ **Security Hardening** (Timing attack, XSS prevention, Input validation)
-- ✅ **PWA Implementation** (Service Worker with 6 caching strategies)
+- ✅ **PWA Implementation** (Custom Service Worker with request-type-based caching)
 - ✅ **VRChat Image Fallback** (3-tier fallback: R2 → VRChat page/API → Placeholder)
-- ✅ **Sentry Observability** (Error tracking + performance monitoring)
+- ✅ **Sentry Observability** (`@sentry/nextjs` ^10.44.0)
 - ✅ **Dify AI Chatbot Integration** (Natural language avatar search)
 - ✅ **Dual Admin System** (Owner/Admin role separation)
-- ✅ **On-demand ISR** (Revalidation API + KV Edge Cache)
+- ✅ **Dynamic Catalog Rendering** (`/zukan` + KV/JSON/CSV fallback + tag revalidation)
 
 ---
 
@@ -156,8 +156,8 @@ npm run dev
 │  ┌───────────────────────────────────────────────────────┐  │
 │  │          Next.js 16 App (OpenNext Adapter)            │  │
 │  │  ┌─────────────┐  ┌──────────────┐  ┌─────────────┐  │  │
-│  │  │   SSG Pages │  │ API Routes   │  │ Middleware  │  │  │
-│  │  │   (Static)  │  │ (Edge/Node)  │  │  (i18n+CSP) │  │  │
+│  │  │ Dynamic UI  │  │ API Routes   │  │ Middleware  │  │  │
+│  │  │ + Cache Tag │  │ (Edge/Node)  │  │  (i18n+CSP) │  │  │
 │  │  └─────────────┘  └──────────────┘  └─────────────┘  │  │
 │  └───────────────────────────────────────────────────────┘  │
 │           │                │                │                │
@@ -178,15 +178,15 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 16.1.6 (App Router)
+- **Framework**: Next.js 16.1.7 (App Router)
 - **React**: 19.2.4 (Server/Client Components)
 - **Styling**: Tailwind CSS 4 (PostCSS plugin)
 - **Fonts**: Google Fonts (M PLUS Rounded 1c, Kosugi Maru, Noto Sans JP)
-- **PWA**: Custom Service Worker with 6 caching strategies
+- **PWA**: Custom Service Worker with request-type-based caching
 
 ### Backend
 - **Runtime**: Cloudflare Pages (Edge + Node.js Runtime)
-- **Adapter**: @opennextjs/cloudflare ^1.16.5
+- **Adapter**: @opennextjs/cloudflare ^1.17.1
 - **Authentication**: HMAC-signed sessions (Web Crypto API)
 - **Session Storage**: Cloudflare KV
 - **File Storage**: Cloudflare R2
@@ -194,7 +194,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 - **Data Sync**: GitHub API (CSV commit on CRUD operations)
 
 ### Observability
-- **Error Tracking**: Sentry (@sentry/nextjs ^10.39.0) — runtime errors + performance monitoring
+- **Error Tracking**: Sentry (@sentry/nextjs ^10.44.0) — runtime errors + performance monitoring
 - **Instrumentation**: Server-side (`instrumentation.ts`) + client-side (`instrumentation-client.ts`)
 
 ### Security
@@ -221,154 +221,43 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 
 ```
 Akyodex/
-├── README.md                        # This file
-├── package.json                     # Dependencies and scripts
-├── next.config.ts                   # Next.js + Cloudflare config
-├── open-next.config.ts              # OpenNext Cloudflare adapter config
-├── wrangler.toml                    # Cloudflare Pages / R2 / KV bindings
-├── tsconfig.json                    # TypeScript config
-├── eslint.config.mjs                # ESLint flat config
-├── knip.json                        # Dead code analysis config
-├── postcss.config.mjs               # PostCSS config (Tailwind CSS 4)
-├── playwright.config.ts             # E2E test config
-│
+├── README.md
+├── package.json
+├── next.config.ts
+├── open-next.config.ts
+├── wrangler.toml
 ├── public/
-│   ├── sw.js                        # Service Worker (6 caching strategies)
-│   └── images/                      # PWA icons, logos, placeholder
-│
+│   ├── sw.js                        # Request-type-based Service Worker
+│   └── images/                      # Logos, icons, placeholders, BOOTH banner
 ├── src/
-│   ├── app/                         # Next.js App Router
-│   │   ├── layout.tsx               # Root layout (fonts, Dify chatbot, Sentry)
-│   │   ├── page.tsx                 # Landing page (redirects to /zukan)
-│   │   ├── globals.css              # Global styles (Tailwind CSS 4)
-│   │   ├── manifest.ts              # PWA manifest (dynamic)
-│   │   ├── sitemap.ts               # Dynamic sitemap
-│   │   ├── robots.ts                # robots.txt
-│   │   ├── not-found.tsx            # 404 page
-│   │   ├── error.tsx                # Error boundary
-│   │   ├── global-error.tsx         # Global error boundary
-│   │   ├── offline/                 # PWA offline page
-│   │   ├── admin/                   # Admin panel
-│   │   │   ├── page.tsx             # Admin server component
-│   │   │   └── admin-client.tsx     # Admin client logic
-│   │   ├── zukan/                   # Entry gallery
-│   │   │   ├── page.tsx             # Gallery page (SSG + ISR)
-│   │   │   ├── loading.tsx          # Loading skeleton
-│   │   │   └── zukan-client.tsx     # Gallery client component
-│   │   └── api/                     # API Routes
-│   │       ├── admin/               # Auth APIs
-│   │       │   ├── login/           # POST - Login
-│   │       │   ├── logout/          # POST - Logout
-│   │       │   ├── verify-session/  # GET - Session verification
-│   │       │   └── next-id/         # GET - Next available ID
-│   │       ├── akyo-data/           # GET - Data retrieval API (Node.js runtime)
-│   │       ├── upload-akyo/         # POST - Entry registration
-│   │       ├── update-akyo/         # POST - Entry update
-│   │       ├── delete-akyo/         # POST - Entry deletion
-│   │       ├── check-duplicate/     # POST - Duplicate check
-│   │       ├── avatar-image/        # GET - Image proxy (R2 → VRChat page/API → Placeholder)
-│   │       ├── vrc-avatar-info/     # GET - VRChat avatar info fetch
-│   │       ├── vrc-avatar-image/    # GET - VRChat avatar image fetch
-│   │       ├── vrc-world-info/      # GET - VRChat world info fetch (Node.js runtime)
-│   │       ├── vrc-world-image/     # GET - VRChat world image fetch (Node.js runtime)
-│   │       ├── csv/                 # GET - CSV data endpoint
-│   │       ├── download-reference/  # GET - Reference image download (R2)
-│   │       ├── revalidate/          # POST - On-demand ISR revalidation
-│   │       ├── kv-migrate/          # POST - KV data migration
-│   │       └── manifest/            # GET - Dynamic manifest
-│   │
-│   ├── components/                  # React Components
-│   │   ├── akyo-card.tsx            # Entry card (grid view)
-│   │   ├── akyo-list.tsx            # Entry list (list view)
-│   │   ├── akyo-detail-modal.tsx    # Detail modal
-│   │   ├── filter-panel.tsx         # Category/author filter
-│   │   ├── search-bar.tsx           # Search input
-│   │   ├── language-toggle.tsx      # Language switcher
-│   │   ├── loading-spinner.tsx      # Loading indicator
-│   │   ├── mini-akyo-bg.tsx         # Animated background
-│   │   ├── icons.tsx                # SVG icon components
-│   │   ├── dify-chatbot.tsx         # Dify chatbot loader/state handler
-│   │   ├── structured-data.tsx      # JSON-LD structured data
-│   │   ├── web-vitals.tsx           # Web Vitals reporting
-│   │   ├── service-worker-register.tsx  # SW registration
-│   │   └── admin/                   # Admin components
-│   │       ├── admin-header.tsx
-│   │       ├── admin-login.tsx
-│   │       ├── admin-tabs.tsx
-│   │       ├── attribute-modal.tsx  # Category management
-│   │       ├── edit-modal.tsx       # Edit modal
-│   │       └── tabs/
-│   │           ├── add-tab.tsx      # Add entry tab
-│   │           ├── edit-tab.tsx     # Edit entry tab
-│   │           └── tools-tab.tsx    # Tools tab
-│   │
-│   ├── hooks/                       # Custom React Hooks
-│   │   ├── use-akyo-data.ts         # Data loading + language refetch
-│   │   └── use-language.ts          # Language detection + cookie
-│   │
-│   ├── lib/                         # Utility Libraries
-│   │   ├── akyo-data.ts             # Unified data module (KV → JSON → CSV)
-│   │   ├── akyo-data-json.ts        # JSON data source
-│   │   ├── akyo-data-kv.ts          # KV data source
-│   │   ├── akyo-data-server.ts      # Server-side CSV data loading
-│   │   ├── akyo-data-helpers.ts     # Shared helpers (extractCategories, etc.)
-│   │   ├── akyo-crud-helpers.ts     # CRUD operation helpers
-│   │   ├── akyo-entry.ts            # Entry normalization (hydrateAkyoDataset)
-│   │   ├── api-helpers.ts           # API helpers (jsonError, getApiErrorResponse, CSRF, session)
-│   │   ├── csv-utils.ts             # CSV parsing/stringify + GitHub sync
-│   │   ├── github-utils.ts          # GitHub API operations
-│   │   ├── r2-utils.ts              # R2 storage operations
-│   │   ├── html-utils.ts            # HTML sanitization
-│   │   ├── i18n.ts                  # i18n utilities
-│   │   ├── next-id-state.ts         # Next ID allocation state
-│   │   ├── session.ts               # HMAC session management
-│   │   ├── sentry-browser.ts        # Sentry browser configuration
-│   │   ├── vrchat-utils.ts          # VRChat avatar/world utilities
-│   │   ├── vrchat-world-image.ts    # VRChat world image fetch
-│   │   ├── vrchat-world-info.ts     # VRChat world info fetch
-│   │   ├── world-registration.ts    # World entry registration helpers
-│   │   ├── blur-data-url.ts         # Blur placeholder generation
-│   │   └── cloudflare-image-loader.ts # Cloudflare Images loader
-│   │
-│   ├── types/
-│   │   ├── akyo.ts                  # Core types (AkyoData, AkyoEntryType, etc.)
-│   │   ├── kv.ts                    # KV binding types
-│   │   ├── env.d.ts                 # Environment variable types
-│   │   ├── cloudflare-workers.d.ts  # Cloudflare Workers type declarations
-│   │   ├── css.d.ts                 # CSS module types
-│   │   └── sanitize-html.d.ts       # sanitize-html type augmentation
-│   │
-│   └── middleware.ts                # Edge middleware (i18n + CSP + nonce)
-│
-├── instrumentation.ts               # Sentry server-side initialization
-├── instrumentation-client.ts        # Sentry client-side initialization
-│
-├── scripts/                         # Utility scripts (ESLint excluded)
-│   ├── csv-to-json.ts               # CSV → JSON conversion
-│   ├── fix-categories.js            # Japanese category fixes
-│   ├── fix-categories-en.js         # English category fixes
-│   ├── category-definitions-ja.js   # Japanese category keywords
-│   ├── category-definitions-en.js   # English category keywords
-│   ├── category-definitions-ko.js   # Korean category keywords
-│   ├── category-ja-en-map.js        # Category translation map
-│   ├── generate-ko-data.js          # Generate KO data from JA source
-│   ├── nickname-map-ko.js           # KO nickname translation map
-│   ├── update-categories-v3.js      # Japanese category updater
-│   ├── update-categories-en-v3.js   # English category updater
-│   ├── update-categories-common.js  # Shared category logic
-│   ├── sync-akyo-data-en-from-ja.js # Sync EN data from JA
-│   ├── convert-akyo-data.js         # Data conversion utility
-│   ├── generate-vectorize-payload.js # Vectorize payload generator
-│   ├── prepare-cloudflare-pages.js  # Cloudflare Pages build prep
-│   └── test-csv-quality.js          # CSV data quality tests
-│
-└── data/
-    ├── akyo-data-ja.csv             # Japanese avatar data
-    ├── akyo-data-en.csv             # English avatar data
-    ├── akyo-data-ko.csv             # Korean avatar data
-    ├── akyo-data-ja.json            # Japanese data (JSON cache)
-    ├── akyo-data-en.json            # English data (JSON cache)
-    └── akyo-data-ko.json            # Korean data (JSON cache)
+│   ├── app/
+│   │   ├── page.tsx                 # `/` → `/zukan` permanent redirect
+│   │   ├── zukan/                   # Main catalog (dynamic render + client filtering)
+│   │   ├── admin/                   # Admin UI
+│   │   ├── api/                     # Auth, CRUD, image, CSV, revalidate routes
+│   │   ├── offline/                 # Offline fallback page
+│   │   └── layout.tsx               # Fonts, metadata, chatbot, SW registration
+│   ├── components/
+│   │   ├── akyo-card.tsx
+│   │   ├── akyo-list.tsx
+│   │   ├── akyo-detail-modal.tsx
+│   │   ├── filter-panel.tsx
+│   │   ├── dify-chatbot.tsx
+│   │   └── admin/                   # Add / edit / tools tabs, login, modals
+│   ├── hooks/
+│   │   ├── use-akyo-data.ts         # Favorites + filtering + language refetch
+│   │   └── use-language.ts
+│   ├── lib/
+│   │   ├── akyo-data.ts             # KV → JSON → CSV fallback
+│   │   ├── akyo-entry.ts            # Entry type / display ID normalization
+│   │   ├── booth-url.ts             # BOOTH URL validation and category helpers
+│   │   ├── api-helpers.ts           # JSON helpers, CSRF/session checks
+│   │   ├── github-utils.ts
+│   │   ├── r2-utils.ts
+│   │   └── world-registration.ts
+│   └── types/
+├── scripts/                         # Data sync, CSV conversion, deployment helpers
+└── data/                            # ja / en / ko CSV + JSON payloads
 ```
 
 ---
@@ -431,11 +320,13 @@ These are simple, easy-to-share access codes for community contributors.
 npm run dev              # Start dev server with Turbopack (localhost:3000)
 npm run build            # Build for Cloudflare Pages (OpenNext + prepare script)
 npm run next:build       # Next.js build only
+npm run next:build:opennext # Next build + OpenNext instrumentation fix
 npm run start            # Start production server (local)
 
 # Quality
 npm run lint             # Run ESLint
 npm run knip             # Dead code analysis
+npm run verify:dify-csp-hash # Verify Dify CSP allowlist/hash assumptions
 
 # Testing
 npm run test             # Run Playwright E2E tests
@@ -446,6 +337,10 @@ npm run test:csv         # CSV data quality checks
 
 # Data
 npm run data:convert     # Convert CSV to JSON (npx tsx scripts/csv-to-json.ts)
+npm run generate-ko-data # Regenerate KO dataset from JA source
+npm run social:generate  # Generate social images
+npm run social:compress  # Compress generated social images
+npm run hooks:install    # Install repo-local git hooks
 ```
 
 ---
@@ -653,24 +548,27 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
 
 ## ✨ Features
 
-### Recent behavior updates (2026-03)
+### Recent behavior updates (2026-06)
 
 - **Mobile filter panel default**: On first render, mobile keeps the filter panel closed by default (`isMobile === true`), while desktop keeps it open.
 - **Catalog card image request width**: Card image width is tuned per entry type (`avatar: 512`, `world: 384`) to reduce world-card transfer size.
 - **Accessibility fixes (WCAG 2.1)**: Recent updates include contrast and keyboard/semantic improvements across filter controls and related UI.
+- **Data refresh confirmed on `main`**: `origin/main` includes Akyo additions through `#0878` plus JSON sync commits up to `2026-06-17T14:34:20Z`.
 
 ### 1. Avatar Gallery
 
-- **Avatars**: Complete database with 4-digit IDs, JP/EN/KO data
+- **Catalog scope**: 2026-06-23 時点で `878` 件（`801` avatars / `77` worlds、うち `185` 件が `boothUrl` を保持）
 - **Search**: By nickname, avatar name, category, author
 - **Filtering**: Multi-select categories (OR/AND) + multi-select authors
+- **Entry type filters**: Avatar / World / BOOTH-linked item filters
 - **Keyboard A11y**: Arrow/Home/End/Enter support in filter lists
 - **View Modes**: Grid view and list view
 - **Detail View**: Modal with full information
-- **SSG + ISR**: Static generation with 1-hour revalidation
+- **Favorites**: localStorage-based favorite system with cross-tab synchronization
+- **Rendering**: `/zukan` is dynamically rendered and backed by React cache + Next cache tags
 - **Responsive**: Mobile-first design
 - **Image Fallback**: R2 → VRChat page/API → Placeholder (3-tier fallback system)
-- **Favorites**: localStorage-based favorite system
+- **BOOTH links**: Entry cards and modal can surface `booth.pm` product URLs when available
 
 ### 2. Admin Panel
 
@@ -682,6 +580,7 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
   - Auto ID numbering (fetches next available ID)
   - Image upload to R2
   - VRChat integration (fetch avatar/world info from VRChat)
+  - BOOTH URL input / validation for product-linked entries
   - Duplicate checking (nickname, avatar name)
 - ✅ **Edit Entry**:
   - Update all fields (category, comment, author, etc.)
@@ -692,7 +591,7 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
   - Edit existing categories
   - Unicode normalization (NFC) for duplicate checking
 - ✅ **Tools**:
-  - CSV export
+  - CSV export (`ja` / `en` / `ko`)
   - Data management
 
 #### Security:
@@ -707,35 +606,34 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
 
 #### Service Worker Caching Strategies:
 
-1. **Cache First** (Fonts, Icons)
-   - Check cache → Network fallback
-   - 30-day cache duration
+1. **API (default)**: `Network Only`
+   - `/api/*` は常にネットワーク優先
+   - ただし `/api/avatar-image` と `/api/vrc-avatar-image` は画像扱い
 
-2. **Network First** (HTML, API)
-   - Network first → Cache fallback
-   - 5-minute cache duration
+2. **CSV**: `Network First`
+   - `/data/akyo-data-ja.csv` と `/data/akyo-data-en.csv`
+   - 失敗時のみキャッシュへフォールバック
 
-3. **Cache Only** (Offline page)
-   - Always serve from cache
+3. **App icons / manifests**: `Network First`
+   - favicon や manifest を新鮮に保つ
 
-4. **Network Only** (Admin, Auth)
-   - Never cache sensitive data
+4. **Scripts / styles**: `Network First`
+   - JS/CSS はまず最新を取得し、失敗時のみキャッシュ利用
 
-5. **Stale While Revalidate** (Images, CSS, JS)
-   - Serve from cache immediately
-   - Fetch fresh copy in background
-   - 7-day cache duration
+5. **Next static assets**: `Cache First`
+   - `/_next/static/*` のハッシュ付き成果物向け
 
-6. **Offline Fallback**
-   - Custom offline page
-   - Shows cached avatars
+6. **Images**: `Stale While Revalidate`
+   - `/images/*` と画像 API を即時表示しつつ裏で更新
+
+7. **Other same-origin assets**: `Cache First + background update`
+   - フォントなどの補助アセット向け
 
 #### PWA Features:
 - ✅ Installable (Add to Home Screen)
 - ✅ Offline support
-- ✅ Background sync
-- ✅ Push notifications (future)
 - ✅ App-like experience
+- ✅ Offline fallback page (`/offline`)
 
 ### 4. Internationalization (i18n)
 
@@ -765,7 +663,7 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
 - 📱 **Responsive**: Works on desktop and mobile
 
 #### Configuration:
-- **Token**: `NEXT_PUBLIC_DIFY_CHATBOT_TOKEN` から読み込み（必須・未設定ならチャットボットを読み込まない）
+- **Token**: `NEXT_PUBLIC_DIFY_CHATBOT_TOKEN` から読み込み（任意・未設定ならチャットボットを読み込まない）
 - **Provider**: Udify.app（`https://udify.app/embed.min.js`）
 - **Position**: Fixed bottom-right
 - **Size**: 24rem × 40rem
@@ -791,8 +689,8 @@ Users can ask questions like:
 - `w` (number, optional): Image width (default: 512, max: 4096)
 
 **Fallback Priority**:
-1. R2 Bucket (`https://images.akyodex.com/images/{id}.webp`)
-2. VRChat API (if `avtr` provided or found in CSV)
+1. R2 / public image URL (`https://images.akyodex.com/{id}.webp`)
+2. VRChat page + API-derived image (if `avtr` provided or found in CSV)
 3. Placeholder image
 
 **Response**: Image binary (WebP/PNG/JPEG)
@@ -913,7 +811,7 @@ Users can ask questions like:
 **Response**:
 ```json
 {
-  "nextId": "0640"
+  "nextId": "0879"
 }
 ```
 
@@ -1206,7 +1104,7 @@ export const runtime = 'nodejs';
 - ✅ VRChat integration
 
 ### Phase 5: PWA (Completed 2025-02-15)
-- ✅ Service Worker with 6 caching strategies
+- ✅ Custom Service Worker rollout
 - ✅ Offline support
 - ✅ PWA manifest
 - ✅ Install prompt
@@ -1240,7 +1138,7 @@ export const runtime = 'nodejs';
 - ✅ Nonce-based CSP via middleware
 
 ### Phase 10: Next.js 16 + World Support (Completed)
-- ✅ Next.js 15 → 16 upgrade (React 19.2.4, @opennextjs/cloudflare ^1.16.5)
+- ✅ Next.js 15 → 16 upgrade (React 19.2.4, OpenNext Cloudflare adapter)
 - ✅ World entry type support (avatar + world dual entries)
 - ✅ Entry normalization (`hydrateAkyoDataset` — type inference, display serial allocation)
 - ✅ VRChat World APIs (`vrc-world-info`, `vrc-world-image`)
@@ -1248,6 +1146,12 @@ export const runtime = 'nodejs';
 - ✅ Korean language data support (`akyo-data-ko.csv`)
 - ✅ Sentry integration (error tracking + performance monitoring)
 - ✅ Korean data generation script (`generate-ko-data.js`)
+
+### Phase 11: Catalog Refinements (Ongoing on `main`)
+- ✅ `boothUrl` validation and BOOTH-linked catalog surfacing
+- ✅ Dynamic `/zukan` rendering with cache-tag invalidation
+- ✅ Mobile filter panel default-close behavior and image width tuning
+- ✅ June 2026 content refresh through `#0878` + JSON sync pipeline
 
 ---
 
@@ -1317,12 +1221,6 @@ For questions or issues:
 
 ---
 
-## 📄 License
-
-[MIT License](./LICENSE) - See LICENSE file for details
-
----
-
 ## 🎉 Acknowledgments
 
 - **Next.js Team**: For the amazing framework
@@ -1333,6 +1231,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-03-07  
+**Last Updated**: 2026-06-23
 **Status**: ✅ Production Ready
 
