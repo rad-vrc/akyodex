@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-29T03:03:54.823Z",
-  "count": 890,
+  "updatedAt": "2026-06-30T05:29:35.272Z",
+  "count": 891,
   "data": [
     {
       "id": "0001",
@@ -10128,6 +10128,18 @@
       "author": "nezu_jp",
       "sourceUrl": "https://vrchat.com/home/world/wrld_f94dbbb7-4be3-4833-82bd-24b403567788/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_f94dbbb7-4be3-4833-82bd-24b403567788/"
+    },
+    {
+      "id": "0891",
+      "entryType": "avatar",
+      "displaySerial": "0802",
+      "nickname": "きんぐAkyo",
+      "avatarName": "King Akyo",
+      "category": "頂に立つ者,身分・役割,身分・役割/王族",
+      "comment": "Akyoの王、Akyooh",
+      "author": "Light Green",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a09a5363-7b78-4498-9997-448c6363ac95",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a09a5363-7b78-4498-9997-448c6363ac95"
     }
   ]
 }
