@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-30T06:06:12.092Z",
-  "count": 896,
+  "updatedAt": "2026-06-30T06:11:31.494Z",
+  "count": 897,
   "data": [
     {
       "id": "0001",
@@ -10200,6 +10200,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_42755356-9e9d-49a0-9b79-a67115366e10",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_42755356-9e9d-49a0-9b79-a67115366e10"
+    },
+    {
+      "id": "0897",
+      "entryType": "avatar",
+      "displaySerial": "0808",
+      "nickname": "サスペンダーきつねAkyo",
+      "avatarName": "akyo_きつねサスペンダー",
+      "category": "動物,動物/きつね,ファッション,ファッション/ひげ,器官,器官/耳,器官/しっぽ",
+      "comment": "付け髭なのかな？",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ee1d40e3-b797-49f1-ace8-973c3332eae4",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ee1d40e3-b797-49f1-ace8-973c3332eae4"
     }
   ]
 }
