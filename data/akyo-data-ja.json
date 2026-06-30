@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-30T05:55:46.429Z",
-  "count": 895,
+  "updatedAt": "2026-06-30T06:06:12.092Z",
+  "count": 896,
   "data": [
     {
       "id": "0001",
@@ -10188,6 +10188,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_52073d62-50d2-414f-af91-9e7ad5eee3e5",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_52073d62-50d2-414f-af91-9e7ad5eee3e5"
+    },
+    {
+      "id": "0896",
+      "entryType": "avatar",
+      "displaySerial": "0807",
+      "nickname": "ルックAkyo？？？",
+      "avatarName": "Look???Akyo",
+      "category": "ギミック・特殊",
+      "comment": "からだだけついてくる！？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_42755356-9e9d-49a0-9b79-a67115366e10",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_42755356-9e9d-49a0-9b79-a67115366e10"
     }
   ]
 }
