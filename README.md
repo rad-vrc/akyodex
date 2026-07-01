@@ -208,11 +208,12 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 
 ### DevOps
 - **Package Manager**: npm 10.x
-- **Node Version**: 20.x
+- **Node Version**: 20.9.0 or later
 - **TypeScript**: 5.9.3 (Strict mode)
 - **Linting**: ESLint 9 with Next.js config
 - **Testing**: Playwright (E2E), node:test + assert (unit tests)
 - **Dead Code Analysis**: Knip
+- **Cloudflare CLI**: Wrangler ^4.75.0
 - **Git Workflow**: Feature branches → PR → main
 - **CI/CD**: Cloudflare Pages automatic deployment
 
@@ -437,6 +438,7 @@ npm run start            # Start production server (local)
 # Quality
 npm run lint             # Run ESLint
 npm run knip             # Dead code analysis
+npm run verify:dify-csp-hash  # Verify the Dify embed CSP hash
 
 # Testing
 npm run test             # Run Playwright E2E tests
@@ -447,6 +449,11 @@ npm run test:csv         # CSV data quality checks
 
 # Data
 npm run data:convert     # Convert CSV to JSON (npx tsx scripts/csv-to-json.ts)
+npm run generate-ko-data # Generate Korean data from Japanese source
+
+# Social images
+npm run social:generate  # Generate social preview images
+npm run social:compress  # Compress generated social preview images
 ```
 
 ---
@@ -1259,6 +1266,11 @@ export const runtime = 'nodejs';
 - ✅ Sentry integration (error tracking + performance monitoring)
 - ✅ Korean data generation script (`generate-ko-data.js`)
 
+### Phase 11: Data Operations Refresh (Completed 2026-07)
+- ✅ CSV/JSON data refreshed through repository ID `0897`
+- ✅ Current dataset documents 808 avatar entries and 89 world entries
+- ✅ Sync workflow regenerates JA/EN/KO JSON, uploads to R2, and refreshes ISR/KV cache when secrets are configured
+
 ---
 
 ## 🤝 Contributing
@@ -1343,6 +1355,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-03-07  
+**Last Updated**: 2026-07-01  
 **Status**: ✅ Production Ready
 
