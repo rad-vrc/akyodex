@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-06T09:42:09.985Z",
-  "count": 900,
+  "updatedAt": "2026-07-06T09:49:19.266Z",
+  "count": 901,
   "data": [
     {
       "id": "0001",
@@ -10248,6 +10248,18 @@
       "author": "あ～さ～ arthur",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8b7e3e32-7578-4abb-9efe-e7da8ee5077a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_8b7e3e32-7578-4abb-9efe-e7da8ee5077a"
+    },
+    {
+      "id": "0901",
+      "entryType": "avatar",
+      "displaySerial": "0812",
+      "nickname": "アゲハAkyo",
+      "avatarName": "akyo ageha",
+      "category": "動物,動物/虫,動物/虫/蝶",
+      "comment": "羽がないけど、気合いで飛ぶのかも！",
+      "author": "Kageji_jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_173269e9-bec4-44cc-b579-7a0060588b76",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_173269e9-bec4-44cc-b579-7a0060588b76"
     }
   ]
 }
