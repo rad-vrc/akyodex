@@ -8,6 +8,7 @@ const { parse } = require('csv-parse/sync');
 
 const rootDir = path.resolve(__dirname, '..');
 const tanabataBonusComment = 'Akyoに願いを！';
+const canonicalKChanAuthor = '（Ｋ）けーちゃん';
 
 function readDataFile(relativePath) {
   return fs.readFileSync(path.join(rootDir, relativePath), 'utf8');
@@ -38,6 +39,62 @@ test('keeps Tanabata Akyo bonus comment in Japanese data', () => {
   );
   assert.ok(jsonRow, 'Japanese JSON should include public number 0804 Tanabata Akyo');
   assert.equal(jsonRow.comment, tanabataBonusComment);
+});
+
+test('keeps okinkin Akyo author spelling canonical in tracked data', () => {
+  const targetIds = ['0504', '0505'];
+  const activeCsvFiles = [
+    'data/akyo-data-ja.csv',
+    'data/akyo-data-en.csv',
+    'data/akyo-data-ko.csv',
+  ];
+
+  for (const filePath of activeCsvFiles) {
+    const rows = parse(readDataFile(filePath), {
+      columns: true,
+      skip_empty_lines: true,
+      record_delimiter: ['\r\n', '\n', '\r'],
+    });
+
+    for (const id of targetIds) {
+      const row = rows.find((record) => record.ID === id);
+      assert.ok(row, `${filePath} should include Avatar${id}`);
+      assert.equal(row.Author, canonicalKChanAuthor, `${filePath} Avatar${id} author`);
+    }
+  }
+
+  for (const language of ['ja', 'en', 'ko']) {
+    const filePath = `data/akyo-data-${language}.json`;
+    const payload = JSON.parse(readDataFile(filePath));
+
+    for (const id of targetIds) {
+      const row = payload.data.find((record) => record.id === id);
+      assert.ok(row, `${filePath} should include Avatar${id}`);
+      assert.equal(row.author, canonicalKChanAuthor, `${filePath} Avatar${id} author`);
+    }
+  }
+
+  const vectorizePayload = JSON.parse(readDataFile('data/vectorize-payload.json'));
+  for (const id of targetIds) {
+    const row = vectorizePayload.find((record) => record.id === id);
+    assert.ok(row, `data/vectorize-payload.json should include Avatar${id}`);
+    assert.equal(row.author, canonicalKChanAuthor, `data/vectorize-payload.json Avatar${id} author`);
+  }
+
+  const legacyCsvFiles = ['data/akyo-data.csv.bak', 'data/akyo-data-US.csv.bak'];
+  for (const filePath of legacyCsvFiles) {
+    const rows = parse(readDataFile(filePath), {
+      skip_empty_lines: true,
+      record_delimiter: ['\r\n', '\n', '\r'],
+    });
+    const dataRows = rows.slice(1);
+
+    for (const id of targetIds) {
+      const row = dataRows.find((record) => String(record[0]).padStart(4, '0') === id);
+      assert.ok(row, `${filePath} should include Avatar${id}`);
+      assert.equal(row[6], canonicalKChanAuthor, `${filePath} Avatar${id} author`);
+    }
+  }
 });
 
 test('preserves existing English BoothURL when Japanese CSV lacks BoothURL column', () => {
