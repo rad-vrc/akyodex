@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-06T10:30:41.107Z",
-  "count": 903,
+  "updatedAt": "2026-07-06T14:29:44.904Z",
+  "count": 904,
   "data": [
     {
       "id": "0001",
@@ -10284,6 +10284,18 @@
       "author": "にじざかな",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f8751cb4-0326-41cb-afec-3b5dd4a6bc16",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f8751cb4-0326-41cb-afec-3b5dd4a6bc16"
+    },
+    {
+      "id": "0904",
+      "entryType": "avatar",
+      "displaySerial": "0815",
+      "nickname": "マトAkyo",
+      "avatarName": "マトkyo",
+      "category": "チョコミント類,ギミック・特殊",
+      "comment": "Akyoの中にはAkyo、またその中にはAkyo、またその中にもAkyo・・・",
+      "author": "z9ll",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_71c91dc6-04c6-445b-9df8-3b340d848b50",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_71c91dc6-04c6-445b-9df8-3b340d848b50"
     }
   ]
 }
