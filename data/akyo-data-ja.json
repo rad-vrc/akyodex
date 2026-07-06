@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-06T10:26:29.403Z",
-  "count": 902,
+  "updatedAt": "2026-07-06T10:30:41.107Z",
+  "count": 903,
   "data": [
     {
       "id": "0001",
@@ -10272,6 +10272,18 @@
       "author": "Fuganbya",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_787c5491-9cd7-4ce9-bdc2-fdda604a99f4",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_787c5491-9cd7-4ce9-bdc2-fdda604a99f4"
+    },
+    {
+      "id": "0903",
+      "entryType": "avatar",
+      "displaySerial": "0814",
+      "nickname": "にじAkyo",
+      "avatarName": "niziakyo",
+      "category": "お大事に,囚われの身,状態,状態/経年劣化",
+      "comment": "かつては虹色に輝いていたその姿は、厄災の力に呑まれ今では封印されている。\n残された我々には、いつかの未来で再び人々に虹の輝きを与えてくれるはずだと信じることしかできない。",
+      "author": "にじざかな",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_f8751cb4-0326-41cb-afec-3b5dd4a6bc16",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f8751cb4-0326-41cb-afec-3b5dd4a6bc16"
     }
   ]
 }
