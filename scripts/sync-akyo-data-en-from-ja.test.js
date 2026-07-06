@@ -82,6 +82,8 @@ test('keeps okinkin Akyo author spelling canonical in tracked data', () => {
   }
 
   const legacyCsvFiles = ['data/akyo-data.csv.bak', 'data/akyo-data-US.csv.bak'];
+  const legacyCsvIdColumnIndex = 0;
+  const legacyCsvAuthorColumnIndex = 6;
   for (const filePath of legacyCsvFiles) {
     const rows = parse(readDataFile(filePath), {
       skip_empty_lines: true,
@@ -90,9 +92,15 @@ test('keeps okinkin Akyo author spelling canonical in tracked data', () => {
     const dataRows = rows.slice(1);
 
     for (const id of targetIds) {
-      const row = dataRows.find((record) => String(record[0]).padStart(4, '0') === id);
+      const row = dataRows.find(
+        (record) => String(record[legacyCsvIdColumnIndex]).padStart(4, '0') === id,
+      );
       assert.ok(row, `${filePath} should include Avatar${id}`);
-      assert.equal(row[6], canonicalKChanAuthor, `${filePath} Avatar${id} author`);
+      assert.equal(
+        row[legacyCsvAuthorColumnIndex],
+        canonicalKChanAuthor,
+        `${filePath} Avatar${id} author`,
+      );
     }
   }
 });
