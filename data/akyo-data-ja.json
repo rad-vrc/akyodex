@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-06T10:18:34.323Z",
-  "count": 901,
+  "updatedAt": "2026-07-06T10:26:29.403Z",
+  "count": 902,
   "data": [
     {
       "id": "0001",
@@ -10260,6 +10260,18 @@
       "author": "Kageji_jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_173269e9-bec4-44cc-b579-7a0060588b76",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_173269e9-bec4-44cc-b579-7a0060588b76"
+    },
+    {
+      "id": "0902",
+      "entryType": "avatar",
+      "displaySerial": "0813",
+      "nickname": "おしゃれAkyo",
+      "avatarName": "おしゃれAkyo",
+      "category": "パロディ,パロディ/VRChat,集団・組織,集団・組織/魚頭族",
+      "comment": "ジョルセロおじさんって知ってる？",
+      "author": "Fuganbya",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_787c5491-9cd7-4ce9-bdc2-fdda604a99f4",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_787c5491-9cd7-4ce9-bdc2-fdda604a99f4"
     }
   ]
 }
