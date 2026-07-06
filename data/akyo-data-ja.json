@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-06T09:06:55.989Z",
-  "count": 898,
+  "updatedAt": "2026-07-06T09:39:48.516Z",
+  "count": 899,
   "data": [
     {
       "id": "0001",
@@ -10224,6 +10224,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1"
+    },
+    {
+      "id": "0899",
+      "entryType": "avatar",
+      "displaySerial": "0810",
+      "nickname": "デュエルAkyo",
+      "avatarName": "duel akyo",
+      "category": "チョコミント類,パロディ,パロディ/遊戯王",
+      "comment": "Akyoを召喚！",
+      "author": "qchan949",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_99a3ff58-0848-475f-8ab0-5f991ee27bc3",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_99a3ff58-0848-475f-8ab0-5f991ee27bc3"
     }
   ]
 }
