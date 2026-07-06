@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-06-30T06:11:31.494Z",
-  "count": 897,
+  "updatedAt": "2026-07-06T09:06:55.989Z",
+  "count": 898,
   "data": [
     {
       "id": "0001",
@@ -10212,6 +10212,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ee1d40e3-b797-49f1-ace8-973c3332eae4",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ee1d40e3-b797-49f1-ace8-973c3332eae4"
+    },
+    {
+      "id": "0898",
+      "entryType": "avatar",
+      "displaySerial": "0809",
+      "nickname": "びっくりAkyo",
+      "avatarName": "akyo_びっくり",
+      "category": "パロディ,パロディ/びっくりチキン,動物,動物/鳥",
+      "comment": "【ささのきの手記】\nびっくりしているakyo。叫び声を上げそうだ",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1"
     }
   ]
 }
