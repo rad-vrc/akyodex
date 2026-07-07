@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-06T14:29:44.904Z",
-  "count": 904,
+  "updatedAt": "2026-07-07T10:51:03.823Z",
+  "count": 905,
   "data": [
     {
       "id": "0001",
@@ -10296,6 +10296,18 @@
       "author": "z9ll",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_71c91dc6-04c6-445b-9df8-3b340d848b50",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_71c91dc6-04c6-445b-9df8-3b340d848b50"
+    },
+    {
+      "id": "0905",
+      "entryType": "world",
+      "displaySerial": "0090",
+      "nickname": "Akyoについて本気出して考えてみた⁄アキョノグラフィティ",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "nagisa210",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_54a87299-2a4c-4373-9135-581a0fe68eb6/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_54a87299-2a4c-4373-9135-581a0fe68eb6/"
     }
   ]
 }
