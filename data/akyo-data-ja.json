@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-07T10:51:03.823Z",
-  "count": 905,
+  "updatedAt": "2026-07-07T12:15:28.657Z",
+  "count": 906,
   "data": [
     {
       "id": "0001",
@@ -10308,6 +10308,18 @@
       "author": "nagisa210",
       "sourceUrl": "https://vrchat.com/home/world/wrld_54a87299-2a4c-4373-9135-581a0fe68eb6/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_54a87299-2a4c-4373-9135-581a0fe68eb6/"
+    },
+    {
+      "id": "0906",
+      "entryType": "world",
+      "displaySerial": "0091",
+      "nickname": "Akyoと一緒の夏-Akyo Summer-",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_62399dc3-82b5-4965-819f-5bc0049b7631/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_62399dc3-82b5-4965-819f-5bc0049b7631/"
     }
   ]
 }
