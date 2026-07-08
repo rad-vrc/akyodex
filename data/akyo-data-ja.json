@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-08T06:46:59.913Z",
-  "count": 907,
+  "updatedAt": "2026-07-08T06:53:51.341Z",
+  "count": 908,
   "data": [
     {
       "id": "0001",
@@ -10332,6 +10332,18 @@
       "author": "栬くん。",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_46d8b513-c8ad-406b-b9cb-5b15ae881912",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_46d8b513-c8ad-406b-b9cb-5b15ae881912"
+    },
+    {
+      "id": "0908",
+      "entryType": "avatar",
+      "displaySerial": "0817",
+      "nickname": "水平線Akyo",
+      "avatarName": "水平線あきょ",
+      "category": "ギミック・特殊",
+      "comment": "きれいな水平線が見える！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_c9a060a1-9d76-434f-9275-3b44de2f6bd6",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c9a060a1-9d76-434f-9275-3b44de2f6bd6"
     }
   ]
 }
