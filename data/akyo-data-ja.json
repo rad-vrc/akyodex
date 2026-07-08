@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-07T12:15:28.657Z",
-  "count": 906,
+  "updatedAt": "2026-07-08T06:46:59.913Z",
+  "count": 907,
   "data": [
     {
       "id": "0001",
@@ -10320,6 +10320,18 @@
       "author": "yuwa1027",
       "sourceUrl": "https://vrchat.com/home/world/wrld_62399dc3-82b5-4965-819f-5bc0049b7631/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_62399dc3-82b5-4965-819f-5bc0049b7631/"
+    },
+    {
+      "id": "0907",
+      "entryType": "avatar",
+      "displaySerial": "0816",
+      "nickname": "片目Akyo",
+      "avatarName": "片目あきょ",
+      "category": "ギミック・特殊",
+      "comment": "片目らしいけど、どういうことだろう？",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_46d8b513-c8ad-406b-b9cb-5b15ae881912",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_46d8b513-c8ad-406b-b9cb-5b15ae881912"
     }
   ]
 }
