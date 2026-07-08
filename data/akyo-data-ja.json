@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-08T07:14:32.802Z",
-  "count": 910,
+  "updatedAt": "2026-07-08T15:09:34.541Z",
+  "count": 911,
   "data": [
     {
       "id": "0001",
@@ -10368,6 +10368,18 @@
       "author": "はすとらみ",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f257276f-e833-4294-84af-d365ca11f8e5",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f257276f-e833-4294-84af-d365ca11f8e5"
+    },
+    {
+      "id": "0911",
+      "entryType": "world",
+      "displaySerial": "0092",
+      "nickname": "JUST Bridge",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "速すぎて見逃さないように注意！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_9083351d-26f9-44fd-9786-57b76d7bddf0",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_9083351d-26f9-44fd-9786-57b76d7bddf0"
     }
   ]
 }
