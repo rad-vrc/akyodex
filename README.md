@@ -51,16 +51,15 @@ npm install
 The example below uses Bash heredoc syntax. On PowerShell, create `.env.local` manually and paste the same key/value pairs.
 
 ```bash
-# Create .env.local file with default credentials
+# Create .env.local with development-only credentials
 cat > .env.local << 'EOF'
 # Admin Authentication (simple access codes)
-# Owner password (full access): RadAkyo
-# Admin password (limited access): Akyo
-ADMIN_PASSWORD_OWNER=RadAkyo
-ADMIN_PASSWORD_ADMIN=Akyo
+# Use unique values; there are no built-in default credentials.
+ADMIN_PASSWORD_OWNER=replace-with-a-unique-owner-code
+ADMIN_PASSWORD_ADMIN=replace-with-a-unique-admin-code
 
-# Session Secret (Development only)
-SESSION_SECRET=629de6ec4bc16b1b31a6b0be24a63a9ab32869c3e7138407cafece0a5226c39d8439bd4ac8c21b028d7eb9be948cf37a23288ce4b8eebe3aa6fefb255b9c4cbf
+# Session Secret (generate with: openssl rand -hex 64)
+SESSION_SECRET=replace-with-a-random-128-character-hex-string
 
 # R2 Base URL (for image fetching)
 NEXT_PUBLIC_R2_BASE=https://images.akyodex.com
@@ -82,9 +81,8 @@ npm run dev
 ✅ Admin Panel: http://localhost:3000/admin
 ```
 
-**Default Admin Credentials:**
-- Owner Password: `RadAkyo` (full access)
-- Admin Password: `Akyo` (limited access)
+The admin panel has no default credentials. Use the values configured in
+`ADMIN_PASSWORD_OWNER` and `ADMIN_PASSWORD_ADMIN`.
 
 ---
 
@@ -102,8 +100,14 @@ npm run dev
 - 📊 **多段データロード** - KV → JSON → CSV 自動フォールバック
 - 🔍 **Sentry 監視** - エラー追跡 + パフォーマンスモニタリング
 
+### Current dataset snapshot
+- **Japanese**: 911 entries
+- **English**: 878 entries
+- **Korean**: 878 entries
+- **Generated JSON updated**: 2026-07-08
+
 ### Project Status
-- ✅ **Next.js 16.1.6 + Cloudflare Pages** (OpenNext adapter)
+- ✅ **Next.js 16.1.7 + Cloudflare Pages** (OpenNext adapter)
 - ✅ **Avatar + World Support** (Dual entry types with separate display IDs)
 - ✅ **Security Hardening** (Timing attack, XSS prevention, Input validation)
 - ✅ **PWA Implementation** (Service Worker with 6 caching strategies)
@@ -178,7 +182,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: Next.js 16.1.6 (App Router)
+- **Framework**: Next.js 16.1.7 (App Router)
 - **React**: 19.2.4 (Server/Client Components)
 - **Styling**: Tailwind CSS 4 (PostCSS plugin)
 - **Fonts**: Google Fonts (M PLUS Rounded 1c, Kosugi Maru, Noto Sans JP)
@@ -186,7 +190,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 
 ### Backend
 - **Runtime**: Cloudflare Pages (Edge + Node.js Runtime)
-- **Adapter**: @opennextjs/cloudflare ^1.16.5
+- **Adapter**: @opennextjs/cloudflare ^1.17.1
 - **Authentication**: HMAC-signed sessions (Web Crypto API)
 - **Session Storage**: Cloudflare KV
 - **File Storage**: Cloudflare R2
@@ -194,7 +198,7 @@ Data Source Priority: KV (~5ms) → JSON (~20ms) → CSV (~200ms)
 - **Data Sync**: GitHub API (CSV commit on CRUD operations)
 
 ### Observability
-- **Error Tracking**: Sentry (@sentry/nextjs ^10.39.0) — runtime errors + performance monitoring
+- **Error Tracking**: Sentry (@sentry/nextjs ^10.44.0) — runtime errors + performance monitoring
 - **Instrumentation**: Server-side (`instrumentation.ts`) + client-side (`instrumentation-client.ts`)
 
 ### Security
@@ -284,7 +288,6 @@ Akyodex/
 │   │   ├── filter-panel.tsx         # Category/author filter
 │   │   ├── search-bar.tsx           # Search input
 │   │   ├── language-toggle.tsx      # Language switcher
-│   │   ├── loading-spinner.tsx      # Loading indicator
 │   │   ├── mini-akyo-bg.tsx         # Animated background
 │   │   ├── icons.tsx                # SVG icon components
 │   │   ├── dify-chatbot.tsx         # Dify chatbot loader/state handler
@@ -397,13 +400,12 @@ npm install
 # Create .env.local file for local development
 cat > .env.local << 'EOF'
 # Admin Authentication (simple access codes)
-# Owner password (full access): RadAkyo
-# Admin password (limited access): Akyo
-ADMIN_PASSWORD_OWNER=RadAkyo
-ADMIN_PASSWORD_ADMIN=Akyo
+# Use unique values; there are no built-in default credentials.
+ADMIN_PASSWORD_OWNER=replace-with-a-unique-owner-code
+ADMIN_PASSWORD_ADMIN=replace-with-a-unique-admin-code
 
-# Session Secret (Development only)
-SESSION_SECRET=629de6ec4bc16b1b31a6b0be24a63a9ab32869c3e7138407cafece0a5226c39d8439bd4ac8c21b028d7eb9be948cf37a23288ce4b8eebe3aa6fefb255b9c4cbf
+# Session Secret (generate with: openssl rand -hex 64)
+SESSION_SECRET=replace-with-a-random-128-character-hex-string
 
 # R2 Base URL (for image fetching)
 NEXT_PUBLIC_R2_BASE=https://images.akyodex.com
@@ -418,11 +420,11 @@ npm run dev
 
 ### Admin Password Setup
 
-**Simple Access Codes** (same for development and production):
-- **Owner Password**: `RadAkyo` (full access - can delete avatars)
-- **Admin Password**: `Akyo` (limited access - can add/edit only)
+**Simple Access Codes** (configured separately for each environment):
+- **Owner Password**: value of `ADMIN_PASSWORD_OWNER` (full access, including deletion)
+- **Admin Password**: value of `ADMIN_PASSWORD_ADMIN` (limited access, add/edit only)
 
-These are simple, easy-to-share access codes for community contributors.
+Use unique secrets and share them only with authorized contributors.
 
 ### Available Scripts
 
@@ -574,9 +576,9 @@ PR preview と production/manual deploy は source of truth が異なります�
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `ADMIN_PASSWORD_OWNER` | Owner access code（平文） | `RadAkyo` |
-| `ADMIN_PASSWORD_ADMIN` | Admin access code（平文） | `Akyo` |
-| `SESSION_SECRET` | Secret key for HMAC signing | `629de6ec...` (128 chars) |
+| `ADMIN_PASSWORD_OWNER` | Owner access code（平文） | unique local value |
+| `ADMIN_PASSWORD_ADMIN` | Admin access code（平文） | unique local value |
+| `SESSION_SECRET` | Secret key for HMAC signing | random 128-character hex string |
 | `NEXT_PUBLIC_APP_URL` | App origin for CSRF allowlist | `http://localhost:3000` |
 | `NEXT_PUBLIC_R2_BASE` | R2 bucket base URL | `https://images.akyodex.com` |
 | `NEXT_PUBLIC_DIFY_CHATBOT_TOKEN` | Udify cloud token | *(optional, chatbot disabled if unset)* |
@@ -643,11 +645,11 @@ node -e "const crypto = require('crypto'); console.log(crypto.randomBytes(64).to
 
 ### About Access Codes
 
-The admin passwords are **simple access codes** designed to be easily shared with community contributors:
-- **RadAkyo**: Full access (owner role)
-- **Akyo**: Limited access (admin role)
+The admin passwords are environment-provided access codes:
+- `ADMIN_PASSWORD_OWNER`: Full access (owner role)
+- `ADMIN_PASSWORD_ADMIN`: Limited access (admin role)
 
-These are not meant to be highly secure passwords, but rather easy-to-remember codes for trusted community members.
+Use unique values for each environment and treat both as secrets.
 
 ---
 
@@ -707,34 +709,24 @@ These are not meant to be highly secure passwords, but rather easy-to-remember c
 
 #### Service Worker Caching Strategies:
 
-1. **Cache First** (Fonts, Icons)
-   - Check cache → Network fallback
-   - 30-day cache duration
-
-2. **Network First** (HTML, API)
-   - Network first → Cache fallback
-   - 5-minute cache duration
-
-3. **Cache Only** (Offline page)
-   - Always serve from cache
-
-4. **Network Only** (Admin, Auth)
-   - Never cache sensitive data
-
-5. **Stale While Revalidate** (Images, CSS, JS)
-   - Serve from cache immediately
-   - Fetch fresh copy in background
-   - 7-day cache duration
-
-6. **Offline Fallback**
-   - Custom offline page
-   - Shows cached avatars
+1. **Browser-managed navigation** (HTML)
+   - The service worker does not intercept navigation requests, preventing stale page shells.
+2. **Network Only** (API routes except image proxies)
+   - Returns a JSON `503` response when offline.
+3. **Network First** (JA/EN CSV, app icons, manifests, scripts, and styles)
+   - Uses a cached response only after a network failure.
+4. **Cache First + background refresh** (hashed Next.js static assets)
+   - Serves the cached asset immediately and refreshes it in the background.
+5. **Stale While Revalidate** (images and image proxy APIs)
+   - Serves cached images immediately and refreshes them in the background.
+6. **Cache First + background refresh** (other same-origin assets)
+   - Applies to remaining resources such as fonts.
 
 #### PWA Features:
 - ✅ Installable (Add to Home Screen)
 - ✅ Offline support
-- ✅ Background sync
-- ✅ Push notifications (future)
+- ❌ Background Sync API is not implemented
+- ❌ Push notifications are not implemented
 - ✅ App-like experience
 
 ### 4. Internationalization (i18n)
@@ -913,7 +905,7 @@ Users can ask questions like:
 **Response**:
 ```json
 {
-  "nextId": "0640"
+  "nextId": "0912"
 }
 ```
 
@@ -1240,7 +1232,7 @@ export const runtime = 'nodejs';
 - ✅ Nonce-based CSP via middleware
 
 ### Phase 10: Next.js 16 + World Support (Completed)
-- ✅ Next.js 15 → 16 upgrade (React 19.2.4, @opennextjs/cloudflare ^1.16.5)
+- ✅ Next.js 15 → 16 upgrade (React 19.2.4, @opennextjs/cloudflare ^1.17.1)
 - ✅ World entry type support (avatar + world dual entries)
 - ✅ Entry normalization (`hydrateAkyoDataset` — type inference, display serial allocation)
 - ✅ VRChat World APIs (`vrc-world-info`, `vrc-world-image`)
@@ -1319,7 +1311,7 @@ For questions or issues:
 
 ## 📄 License
 
-[MIT License](./LICENSE) - See LICENSE file for details
+No license file is currently included in this repository.
 
 ---
 
@@ -1333,6 +1325,6 @@ For questions or issues:
 
 ---
 
-**Last Updated**: 2026-03-07  
+**Last Updated**: 2026-07-12
 **Status**: ✅ Production Ready
 
