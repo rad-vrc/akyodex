@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-08T15:09:34.541Z",
-  "count": 911,
+  "updatedAt": "2026-07-12T09:31:03.431Z",
+  "count": 912,
   "data": [
     {
       "id": "0001",
@@ -10380,6 +10380,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/world/wrld_9083351d-26f9-44fd-9786-57b76d7bddf0",
       "avatarUrl": "https://vrchat.com/home/world/wrld_9083351d-26f9-44fd-9786-57b76d7bddf0"
+    },
+    {
+      "id": "0912",
+      "entryType": "world",
+      "displaySerial": "0093",
+      "nickname": "Akyoの消えた海 - The Sea Where Akyo Vanished",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "近づいては、消える。\n何度繰り返しても、結果は変わらない。",
+      "author": "らど⁄rad1031",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_36dd69d5-0de1-4337-bcf8-57cf77d22bf3",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_36dd69d5-0de1-4337-bcf8-57cf77d22bf3"
     }
   ]
 }
