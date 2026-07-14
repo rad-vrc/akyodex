@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-12T09:31:03.431Z",
-  "count": 912,
+  "updatedAt": "2026-07-14T14:40:01.536Z",
+  "count": 913,
   "data": [
     {
       "id": "0001",
@@ -10392,6 +10392,18 @@
       "author": "らど⁄rad1031",
       "sourceUrl": "https://vrchat.com/home/world/wrld_36dd69d5-0de1-4337-bcf8-57cf77d22bf3",
       "avatarUrl": "https://vrchat.com/home/world/wrld_36dd69d5-0de1-4337-bcf8-57cf77d22bf3"
+    },
+    {
+      "id": "0913",
+      "entryType": "world",
+      "displaySerial": "0094",
+      "nickname": "羊Akyoを数えて眠りましょ",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_5746d99e-2226-4a1b-b34f-1c895c2178bb/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_5746d99e-2226-4a1b-b34f-1c895c2178bb/"
     }
   ]
 }
