@@ -27,7 +27,12 @@ function main() {
 
   const raw = fs.readFileSync(inputPath, 'utf8');
   const parsed = JSON.parse(raw);
-  const items = Array.isArray(parsed) ? parsed : parsed.data;
+  let items;
+  if (Array.isArray(parsed)) {
+    items = parsed;
+  } else if (parsed !== null && typeof parsed === 'object') {
+    items = parsed.data;
+  }
 
   if (!Array.isArray(items)) {
     console.error(`入力JSONの形式が不正です: ${path.relative(rootDir, inputPath)}`);
