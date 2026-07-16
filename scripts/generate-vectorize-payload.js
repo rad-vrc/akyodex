@@ -26,7 +26,13 @@ function main() {
   }
 
   const raw = fs.readFileSync(inputPath, 'utf8');
-  const items = JSON.parse(raw);
+  const parsed = JSON.parse(raw);
+  const items = Array.isArray(parsed) ? parsed : parsed.data;
+
+  if (!Array.isArray(items)) {
+    console.error(`入力JSONの形式が不正です: ${path.relative(rootDir, inputPath)}`);
+    process.exit(1);
+  }
 
   const payload = items.map((item) => ({
     id: item.id,
