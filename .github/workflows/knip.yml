@@ -9,7 +9,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    name: Ubuntu/Node v20
+    name: Ubuntu/Node v22
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'  # Next.js 15 に最適。Node.js 22 も使用可能
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
