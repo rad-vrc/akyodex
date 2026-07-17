@@ -2,7 +2,7 @@
 # https://developers.cloudflare.com/pages/functions/wrangler-configuration/
 
 name = "akyodex"
-compatibility_date = "2025-01-22"
+compatibility_date = "2025-05-05"
 compatibility_flags = ["nodejs_compat"]
 
 # Pages-specific settings
