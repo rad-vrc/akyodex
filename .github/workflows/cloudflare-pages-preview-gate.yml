@@ -36,23 +36,6 @@ jobs:
       PR_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
 
     steps:
-      - name: Skip gate for Dependabot PRs
-        if: github.actor == 'dependabot[bot]'
-        id: dependabot-check
-        run: |
-          echo "Dependabot PR のためリポジトリシークレットにアクセスできません。"
-          echo "このチェックはスキップします。"
-          echo "skip=true" >> "${GITHUB_OUTPUT}"
-
-      - name: Validate required secrets
-        if: github.event.pull_request.head.repo.fork == false && steps.dependabot-check.outputs.skip != 'true'
-        run: |
-          set -euo pipefail
-          if [ -z "${CF_API_TOKEN:-}" ] || [ -z "${CF_ACCOUNT_ID:-}" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID が未設定です。"
-            exit 1
-          fi
-
       - name: Skip gate for forked PRs
         if: github.event.pull_request.head.repo.fork == true
         run: |
@@ -60,10 +43,82 @@ jobs:
           echo "このチェックはスキップします。"
 
       - name: Wait for Cloudflare Pages preview result
-        if: github.event.pull_request.head.repo.fork == false && steps.dependabot-check.outputs.skip != 'true'
+        if: github.event.pull_request.head.repo.fork == false
         id: gate
         run: |
           set -euo pipefail
+
+          normalize_preview_url() {
+            local raw_url="${1:-}"
+            if [ -z "${raw_url}" ]; then
+              return 0
+            fi
+            if [[ "${raw_url}" == http://* || "${raw_url}" == https://* ]]; then
+              printf '%s' "${raw_url%/}"
+            else
+              printf 'https://%s' "${raw_url%/}"
+            fi
+          }
+
+          verify_preview_health() {
+            local raw_base_url="${1:-}"
+            local base_url
+            base_url="$(normalize_preview_url "${raw_base_url}")"
+
+            if [ -z "${base_url}" ]; then
+              echo "::error::Cloudflare Pages preview URL is empty; cannot verify runtime health."
+              return 1
+            fi
+
+            local max_health_attempts=12
+            local health_interval_seconds=5
+            local health_paths=(
+              "/zukan"
+              "/api/akyo-data?lang=ja"
+            )
+
+            echo "Verifying Cloudflare Pages runtime health at ${base_url}..."
+
+            for ((health_attempt=1; health_attempt<=max_health_attempts; health_attempt++)); do
+              local all_healthy=true
+
+              for health_path in "${health_paths[@]}"; do
+                local health_url="${base_url}${health_path}"
+                local http_code
+                http_code="$(curl --silent --show-error \
+                  --output /tmp/cloudflare-preview-health-body \
+                  --write-out "%{http_code}" \
+                  --connect-timeout 10 \
+                  --max-time 20 \
+                  "${health_url}" || echo "000")"
+
+                if [ "${http_code}" = "200" ]; then
+                  echo "✅ ${health_url} returned HTTP 200 on attempt ${health_attempt}/${max_health_attempts}."
+                else
+                  all_healthy=false
+                  echo "❌ ${health_url} returned HTTP ${http_code} on attempt ${health_attempt}/${max_health_attempts}."
+                  if [ -s /tmp/cloudflare-preview-health-body ]; then
+                    echo "Response body preview:"
+                    head -c 500 /tmp/cloudflare-preview-health-body
+                    echo ""
+                  fi
+                fi
+              done
+
+              if [ "${all_healthy}" = "true" ]; then
+                echo "✅ Cloudflare Pages preview runtime is healthy."
+                return 0
+              fi
+
+              if [ "${health_attempt}" -lt "${max_health_attempts}" ]; then
+                echo "Waiting ${health_interval_seconds}s before retrying runtime health check..."
+                sleep "${health_interval_seconds}"
+              fi
+            done
+
+            echo "::error::Cloudflare Pages preview deployment completed, but runtime health checks did not pass."
+            return 1
+          }
 
           max_attempts=36
           fast_interval_seconds=5
@@ -103,58 +158,65 @@ jobs:
             echo "Attempt ${attempt}/${max_attempts}"
             found_in_progress=false
 
-            for project_name in "${project_candidates[@]}"; do
-              api_url="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${project_name}/deployments?per_page=50"
+            if [ -n "${CF_API_TOKEN:-}" ] && [ -n "${CF_ACCOUNT_ID:-}" ]; then
+              for project_name in "${project_candidates[@]}"; do
+                api_url="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${project_name}/deployments?per_page=50"
 
-              response=""
-              if ! response="$(curl --silent --show-error \
-                --retry 5 \
-                --retry-delay 2 \
-                --retry-connrefused \
-                --retry-all-errors \
-                --connect-timeout 10 \
-                --max-time 20 \
-                -H "Authorization: Bearer ${CF_API_TOKEN}" \
-                -H "Content-Type: application/json" \
-                "${api_url}")"; then
-                echo "Cloudflare API request failed for project ${project_name}; trying next candidate."
-                continue
-              fi
+                response=""
+                if ! response="$(curl --silent --show-error \
+                  --retry 5 \
+                  --retry-delay 2 \
+                  --retry-connrefused \
+                  --retry-all-errors \
+                  --connect-timeout 10 \
+                  --max-time 20 \
+                  -H "Authorization: Bearer ${CF_API_TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  "${api_url}")"; then
+                  echo "Cloudflare API request failed for project ${project_name}; trying next candidate."
+                  continue
+                fi
 
-              if [ -z "${response}" ]; then
-                echo "Cloudflare API returned empty response for project ${project_name}; trying next candidate."
-                continue
-              fi
+                if [ -z "${response}" ]; then
+                  echo "Cloudflare API returned empty response for project ${project_name}; trying next candidate."
+                  continue
+                fi
 
-              parsed=""
-              if ! parsed="$(node -e 'const body = JSON.parse(process.argv[1]); const sha = process.argv[2]; const branch = process.argv[3]; const deployments = Array.isArray(body.result) ? body.result : []; const match = deployments.find((deployment) => { const metadata = deployment?.deployment_trigger?.metadata ?? {}; const commitHash = metadata.commit_hash ?? metadata.commit_sha ?? metadata.sha ?? deployment?.source?.revision ?? ""; const commitBranch = metadata.branch ?? metadata.commit_ref ?? deployment?.source?.branch ?? ""; return commitHash === sha && (commitBranch === "" || commitBranch === branch); }); if (!match) { console.log("not_found|||"); process.exit(0); } const status = String(match?.latest_stage?.status ?? "").toLowerCase(); const stageName = String(match?.latest_stage?.name ?? ""); const deploymentUrl = String(match?.url ?? (Array.isArray(match?.aliases) && match.aliases[0] ? match.aliases[0] : "")); const deploymentId = String(match?.short_id ?? match?.id ?? ""); console.log(status + "|" + stageName + "|" + deploymentUrl + "|" + deploymentId);' "${response}" "${PR_HEAD_SHA}" "${PR_HEAD_BRANCH}")"; then
-                echo "Failed to parse Cloudflare API response for project ${project_name}; trying next candidate."
-                continue
-              fi
+                parsed=""
+                if ! parsed="$(node -e 'const body = JSON.parse(process.argv[1]); const sha = process.argv[2]; const branch = process.argv[3]; const deployments = Array.isArray(body.result) ? body.result : []; const match = deployments.find((deployment) => { const metadata = deployment?.deployment_trigger?.metadata ?? {}; const commitHash = metadata.commit_hash ?? metadata.commit_sha ?? metadata.sha ?? deployment?.source?.revision ?? ""; const commitBranch = metadata.branch ?? metadata.commit_ref ?? deployment?.source?.branch ?? ""; return commitHash === sha && (commitBranch === "" || commitBranch === branch); }); if (!match) { console.log("not_found|||"); process.exit(0); } const status = String(match?.latest_stage?.status ?? "").toLowerCase(); const stageName = String(match?.latest_stage?.name ?? ""); const deploymentUrl = String(match?.url ?? (Array.isArray(match?.aliases) && match.aliases[0] ? match.aliases[0] : "")); const deploymentId = String(match?.short_id ?? match?.id ?? ""); console.log(status + "|" + stageName + "|" + deploymentUrl + "|" + deploymentId);' "${response}" "${PR_HEAD_SHA}" "${PR_HEAD_BRANCH}")"; then
+                  echo "Failed to parse Cloudflare API response for project ${project_name}; trying next candidate."
+                  continue
+                fi
 
-              IFS='|' read -r status stage_name deployment_url deployment_id <<<"${parsed}"
+                IFS='|' read -r status stage_name deployment_url deployment_id <<<"${parsed}"
 
-              if [ "${status}" = "not_found" ]; then
-                echo "No deployment match yet in project ${project_name}."
-                continue
-              fi
+                if [ "${status}" = "not_found" ]; then
+                  echo "No deployment match yet in project ${project_name}."
+                  continue
+                fi
 
-              echo "Found deployment ${deployment_id} in ${project_name} (stage=${stage_name}, status=${status})"
+                echo "Found deployment ${deployment_id} in ${project_name} (stage=${stage_name}, status=${status})"
 
-              if [ "${status}" = "success" ]; then
-                echo "deployment_url=${deployment_url}" >> "${GITHUB_OUTPUT}"
-                echo "deployment_id=${deployment_id}" >> "${GITHUB_OUTPUT}"
-                echo "✅ Cloudflare Pages preview is successful."
-                exit 0
-              fi
+                if [ "${status}" = "success" ]; then
+                  if verify_preview_health "${deployment_url}"; then
+                    echo "deployment_url=$(normalize_preview_url "${deployment_url}")" >> "${GITHUB_OUTPUT}"
+                    echo "deployment_id=${deployment_id}" >> "${GITHUB_OUTPUT}"
+                    echo "✅ Cloudflare Pages preview is successful and healthy."
+                    exit 0
+                  fi
+                  exit 1
+                fi
 
-              if [ "${status}" = "failure" ] || [ "${status}" = "failed" ] || [ "${status}" = "error" ] || [ "${status}" = "canceled" ] || [ "${status}" = "cancelled" ]; then
-                echo "::error::Cloudflare Pages preview failed (project=${project_name}, deployment=${deployment_id}, status=${status}, url=${deployment_url})"
-                exit 1
-              fi
+                if [ "${status}" = "failure" ] || [ "${status}" = "failed" ] || [ "${status}" = "error" ] || [ "${status}" = "canceled" ] || [ "${status}" = "cancelled" ]; then
+                  echo "::error::Cloudflare Pages preview failed (project=${project_name}, deployment=${deployment_id}, status=${status}, url=${deployment_url})"
+                  exit 1
+                fi
 
-              found_in_progress=true
-            done
+                found_in_progress=true
+              done
+            else
+              echo "Cloudflare API credentials are unavailable; using GitHub check-run fallback only."
+            fi
 
             if [ "${found_in_progress}" = "true" ]; then
               echo "Deployment is still in progress."
@@ -177,14 +239,20 @@ jobs:
               -H "Accept: application/vnd.github+json" \
               "${github_api_url}")"; then
               gh_parsed=""
-              if gh_parsed="$(node -e 'const body = JSON.parse(process.argv[1]); const runs = Array.isArray(body.check_runs) ? body.check_runs : []; const run = runs.find((item) => String(item?.name ?? "").toLowerCase() === "cloudflare pages"); if (!run) { console.log("not_found|||"); process.exit(0); } const status = String(run?.status ?? ""); const conclusion = String(run?.conclusion ?? ""); const detailsUrl = String(run?.details_url ?? ""); console.log(status + "|" + conclusion + "|" + detailsUrl);' "${gh_response}")"; then
-                IFS='|' read -r gh_status gh_conclusion gh_details_url <<<"${gh_parsed}"
+              if gh_parsed="$(node -e 'const body = JSON.parse(process.argv[1]); const fallbackProject = process.argv[2] || "akyodex"; const runs = Array.isArray(body.check_runs) ? body.check_runs : []; const run = runs.find((item) => String(item?.name ?? "").toLowerCase() === "cloudflare pages"); if (!run) { console.log("not_found||||"); process.exit(0); } const status = String(run?.status ?? ""); const conclusion = String(run?.conclusion ?? ""); const detailsUrl = String(run?.details_url ?? ""); const match = detailsUrl.match(/\/pages\/view\/([^/?#]+)\/([0-9a-f-]+)/i); const project = match?.[1] || fallbackProject; const deploymentId = match?.[2] || ""; const shortId = deploymentId.split("-")[0]; const previewUrl = shortId ? `https://${shortId}.${project}.pages.dev` : ""; console.log(status + "|" + conclusion + "|" + detailsUrl + "|" + previewUrl + "|" + deploymentId);' "${gh_response}" "${CF_PROJECT_NAME_FALLBACK}")"; then
+                IFS='|' read -r gh_status gh_conclusion gh_details_url gh_preview_url gh_deployment_id <<<"${gh_parsed}"
                 if [ "${gh_status}" = "completed" ]; then
                   if [ "${gh_conclusion}" = "success" ]; then
-                    echo "deployment_url=${gh_details_url}" >> "${GITHUB_OUTPUT}"
-                    echo "deployment_id=github-check-cloudflare-pages" >> "${GITHUB_OUTPUT}"
-                    echo "✅ Cloudflare Pages check-run is successful."
-                    exit 0
+                    if [ -n "${gh_preview_url}" ]; then
+                      if verify_preview_health "${gh_preview_url}"; then
+                        echo "deployment_url=${gh_preview_url}" >> "${GITHUB_OUTPUT}"
+                        echo "deployment_id=${gh_deployment_id:-github-check-cloudflare-pages}" >> "${GITHUB_OUTPUT}"
+                        echo "✅ Cloudflare Pages check-run is successful and preview runtime is healthy."
+                        exit 0
+                      fi
+                      exit 1
+                    fi
+                    echo "Cloudflare Pages check-run is successful, but preview URL could not be derived from ${gh_details_url}."
                   fi
                   if [ "${gh_conclusion}" = "failure" ] || [ "${gh_conclusion}" = "cancelled" ] || [ "${gh_conclusion}" = "timed_out" ] || [ "${gh_conclusion}" = "action_required" ]; then
                     echo "::error::Cloudflare Pages check-run failed (conclusion=${gh_conclusion}, url=${gh_details_url})"
@@ -213,7 +281,8 @@ jobs:
           exit 1
 
       - name: Add PR comment on failure
-        if: failure() && github.event.pull_request.head.repo.fork == false && steps.dependabot-check.outputs.skip != 'true'
+        if: failure() && github.event.pull_request.head.repo.fork == false && github.actor != 'dependabot[bot]'
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
@@ -222,7 +291,7 @@ jobs:
             const body = [
               header,
               '',
-              '- このPRコミットの Cloudflare Pages プレビューデプロイが失敗、またはタイムアウトしました。',
+              '- このPRコミットの Cloudflare Pages プレビューデプロイ、または runtime health check が失敗しました。',
               `- 詳細ログ: ${runUrl}`,
               '',
               'マージ前に Cloudflare Pages のデプロイ失敗原因を解消してください。'
@@ -257,7 +326,7 @@ jobs:
             }
 
       - name: Publish success summary
-        if: success() && github.event.pull_request.head.repo.fork == false && steps.dependabot-check.outputs.skip != 'true'
+        if: success() && github.event.pull_request.head.repo.fork == false
         run: |
           {
             echo "## Cloudflare Pages Preview Gate"
