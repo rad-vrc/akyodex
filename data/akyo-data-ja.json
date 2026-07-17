@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-14T14:40:01.536Z",
-  "count": 913,
+  "updatedAt": "2026-07-17T07:14:14.523Z",
+  "count": 914,
   "data": [
     {
       "id": "0001",
@@ -10404,6 +10404,18 @@
       "author": "yuwa1027",
       "sourceUrl": "https://vrchat.com/home/world/wrld_5746d99e-2226-4a1b-b34f-1c895c2178bb/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_5746d99e-2226-4a1b-b34f-1c895c2178bb/"
+    },
+    {
+      "id": "0914",
+      "entryType": "world",
+      "displaySerial": "0095",
+      "nickname": "海に沈む花火~Fireworks Over the Sea ~",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "スポーン地点近くにあるすりガラスのような場所からAkyoのいる部屋に行けます。",
+      "author": "hennjinn",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_fc5c56fa-67ed-49c4-bb0a-b50a7988031c/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_fc5c56fa-67ed-49c4-bb0a-b50a7988031c/"
     }
   ]
 }
