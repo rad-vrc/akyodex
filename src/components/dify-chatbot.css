@@ -1,17 +1,13 @@
-.difyHost {
-  /* Ensures this CSS module is attached when the chatbot runtime mounts */
-}
-
-:global(#dify-chatbot-container) {
+#dify-chatbot-container {
   position: fixed;
 }
 
-:global(#dify-chatbot-container[data-dify-load-state='error']) {
+#dify-chatbot-container[data-dify-load-state='error'] {
   width: min(20rem, calc(100vw - 2rem));
   max-width: 20rem;
 }
 
-:global(#dify-chatbot-container.dify-chatbot-load-failed::before) {
+#dify-chatbot-container.dify-chatbot-load-failed::before {
   content: 'Chat temporarily unavailable. Please try again later.';
   display: block;
   padding: 0.75rem 0.875rem;
@@ -24,7 +20,7 @@
   backdrop-filter: blur(4px);
 }
 
-:global(#dify-chatbot-bubble-button) {
+#dify-chatbot-bubble-button {
   bottom: 24px !important;
   right: 24px !important;
   width: 56px !important;
@@ -35,13 +31,13 @@
   transition: all 0.3s ease !important;
 }
 
-:global(#dify-chatbot-bubble-button:hover) {
+#dify-chatbot-bubble-button:hover {
   transform: translateY(-4px) scale(1.05) !important;
   box-shadow: 0 8px 20px rgba(59, 130, 246, 0.6) !important;
 }
 
 @media (max-width: 640px) {
-  :global(#dify-chatbot-bubble-button) {
+  #dify-chatbot-bubble-button {
     bottom: 20px !important;
     right: 16px !important;
     width: 48px !important;
@@ -49,7 +45,7 @@
   }
 }
 
-:global(#dify-chatbot-bubble-window) {
+#dify-chatbot-bubble-window {
   width: 24rem !important;
   height: 40rem !important;
   position: fixed !important;
@@ -57,23 +53,23 @@
 }
 
 @media (max-width: 640px) {
-  :global(#dify-chatbot-bubble-window) {
+  #dify-chatbot-bubble-window {
     inset: auto 1rem 1rem auto !important;
   }
 }
 
-:global(#dify-chatbot-bubble-button svg),
-:global(#dify-chatbot-bubble-button .loading-spinner),
-:global(#dify-chatbot-bubble-button [class*='loading']),
-:global(#dify-chatbot-bubble-button [class*='spinner']) {
+#dify-chatbot-bubble-button svg,
+#dify-chatbot-bubble-button .loading-spinner,
+#dify-chatbot-bubble-button [class*='loading'],
+#dify-chatbot-bubble-button [class*='spinner'] {
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) !important;
   animation: enhanced-spin 1s linear infinite !important;
 }
 
-:global(#dify-chatbot-bubble-button.chat-window-open svg),
-:global(#dify-chatbot-bubble-button.chat-window-open .loading-spinner),
-:global(#dify-chatbot-bubble-button.chat-window-open [class*='loading']),
-:global(#dify-chatbot-bubble-button.chat-window-open [class*='spinner']) {
+#dify-chatbot-bubble-button.chat-window-open svg,
+#dify-chatbot-bubble-button.chat-window-open .loading-spinner,
+#dify-chatbot-bubble-button.chat-window-open [class*='loading'],
+#dify-chatbot-bubble-button.chat-window-open [class*='spinner'] {
   animation: none !important;
 }
 
@@ -94,8 +90,8 @@
   }
 }
 
-:global(#dify-chatbot-bubble-button.loading),
-:global(#dify-chatbot-bubble-button[data-loading='true']) {
+#dify-chatbot-bubble-button.loading,
+#dify-chatbot-bubble-button[data-loading='true'] {
   animation: pulse-glow 1.5s ease-in-out infinite !important;
 }
 
@@ -111,14 +107,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(#dify-chatbot-bubble-button),
-  :global(#dify-chatbot-bubble-button:hover),
-  :global(#dify-chatbot-bubble-button.loading),
-  :global(#dify-chatbot-bubble-button[data-loading='true']),
-  :global(#dify-chatbot-bubble-button svg),
-  :global(#dify-chatbot-bubble-button .loading-spinner),
-  :global(#dify-chatbot-bubble-button [class*='loading']),
-  :global(#dify-chatbot-bubble-button [class*='spinner']) {
+  #dify-chatbot-bubble-button,
+  #dify-chatbot-bubble-button:hover,
+  #dify-chatbot-bubble-button.loading,
+  #dify-chatbot-bubble-button[data-loading='true'],
+  #dify-chatbot-bubble-button svg,
+  #dify-chatbot-bubble-button .loading-spinner,
+  #dify-chatbot-bubble-button [class*='loading'],
+  #dify-chatbot-bubble-button [class*='spinner'] {
     animation: none !important;
     transition: none !important;
   }

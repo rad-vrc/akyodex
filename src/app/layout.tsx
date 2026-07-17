@@ -3,6 +3,7 @@ import { StructuredData } from '@/components/structured-data';
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { connection } from 'next/server';
+import '@/components/dify-chatbot.css';
 import './globals.css';
 
 export const viewport: Viewport = {

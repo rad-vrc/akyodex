@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "next:build": "next build",
-    "next:build:opennext": "next build && node scripts/fix-opennext-instrumentation.js",
+    "next:build:opennext": "next build --webpack && node scripts/fix-opennext-instrumentation.js",
     "build": "opennextjs-cloudflare build && node scripts/prepare-cloudflare-pages.js",
     "start": "next start",
     "lint": "eslint",
