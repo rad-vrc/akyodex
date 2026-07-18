@@ -14,7 +14,7 @@ test('fallback category colors avoid purple and yellow hues', () => {
 
   assert.deepEqual(
     categoriesByPaletteIndex.map(getCategoryColor),
-    ['#00acc1', '#43a047', '#795548', '#f5576c', '#1a73cc'],
+    ['#00acc1', '#43a047', '#607d8b', '#f5576c', '#1a73cc'],
   );
 });
 

@@ -117,9 +117,9 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 /**
  * デフォルト色（カテゴリマッピングに該当しない場合に使用）
  *
- * 紫に偏らない、色名で区別しやすいシアン・緑・茶・ピンク・青を使用する。
+ * 紫に偏らない、色名で区別しやすいシアン・緑・青灰・ピンク・青を使用する。
  */
-const DEFAULT_COLORS = ['#00acc1', '#43a047', '#795548', '#f5576c', '#1a73cc'];
+const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#f5576c', '#1a73cc'];
 
 /**
  * Generates a deterministic hash value from a string (simple djb2 algorithm).
