@@ -28,3 +28,19 @@ test('food and fox categories use orange instead of mustard yellow', () => {
   assert.equal(getCategoryColor('食べ物'), '#d84315');
   assert.equal(getCategoryColor('きつね'), '#d84315');
 });
+
+test('nested categories inherit the top-level category color', () => {
+  const categoryHierarchies = [
+    ['器官', '器官/耳'],
+    ['芸術・アート', '芸術・アート/絵画'],
+    ['Food', 'Food/Dish', 'Food/Dish/Fried'],
+    ['동물', '동물/여우'],
+  ];
+
+  for (const [topLevelCategory, ...nestedCategories] of categoryHierarchies) {
+    const topLevelColor = getCategoryColor(topLevelCategory);
+    for (const category of nestedCategories) {
+      assert.equal(getCategoryColor(category), topLevelColor);
+    }
+  }
+});

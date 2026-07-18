@@ -141,20 +141,23 @@ function hashString(str: string): number {
 /**
  * カテゴリ名に対応する色を取得
  *
- * マッピングに一致するキーワードが含まれていればその色を返し、
- * 一致しなければカテゴリ名のハッシュからデフォルト色を決定的に選択する。
+ * 最上位カテゴリのマッピングに一致するキーワードが含まれていればその色を返し、
+ * 一致しなければ最上位カテゴリ名のハッシュからデフォルト色を決定的に選択する。
+ * 下位カテゴリは階層の深さにかかわらず最上位カテゴリの色を継承する。
  * （Math.random() を使わないため SSR/CSR のハイドレーションミスマッチが起きない）
  *
  * @param category - カテゴリ文字列
  * @returns HEX カラーコード
  */
 export function getCategoryColor(category: string): string {
+  const topLevelCategory = (category || '').split('/', 1)[0].trim();
+
   for (const [key, color] of Object.entries(CATEGORY_COLOR_MAP)) {
-    if (category && category.includes(key)) {
+    if (topLevelCategory.includes(key)) {
       return color;
     }
   }
-  return DEFAULT_COLORS[hashString(category || '') % DEFAULT_COLORS.length];
+  return DEFAULT_COLORS[hashString(topLevelCategory) % DEFAULT_COLORS.length];
 }
 
 // ---------------------------------------------------------------------------
