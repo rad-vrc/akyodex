@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-17T07:14:14.523Z",
-  "count": 914,
+  "updatedAt": "2026-07-18T05:14:45.976Z",
+  "count": 915,
   "data": [
     {
       "id": "0001",
@@ -10416,6 +10416,18 @@
       "author": "hennjinn",
       "sourceUrl": "https://vrchat.com/home/world/wrld_fc5c56fa-67ed-49c4-bb0a-b50a7988031c/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_fc5c56fa-67ed-49c4-bb0a-b50a7988031c/"
+    },
+    {
+      "id": "0915",
+      "entryType": "world",
+      "displaySerial": "0096",
+      "nickname": "Create Your World ～部屋作りの出来るワールド～",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "自分好みのAkyoハウスを作っちゃおう！",
+      "author": "ঌ٭がみてゃ٭໒",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_5d46d718-2732-4c1f-81c2-38fdaf6e79a6",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_5d46d718-2732-4c1f-81c2-38fdaf6e79a6"
     }
   ]
 }
