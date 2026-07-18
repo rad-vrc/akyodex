@@ -85,28 +85,28 @@ export function findAkyoById(data: AkyoData[], id: string): AkyoData | null {
 /**
  * カテゴリ名 → 色の定数マッピング
  *
- * 著しく低コントラストだった色は WCAG 1.4.3 準拠のために暗めに調整済み:
- *   食べ物: #ffc107 → #c69500, 植物: #8bc34a → #5a8a1a, きつね: #ff9800 → #cc7a00
+ * 黄色系は白背景で黄土色に見えるため、食べ物・きつねを深いオレンジに調整済み。
+ * 低コントラストだった植物色も WCAG 1.4.3 準拠のために暗めに調整済み。
  */
 const CATEGORY_COLOR_MAP: Record<string, string> = {
   チョコミント: '#00bfa5',
   動物: '#ff6f61',
-  きつね: '#cc7a00',
-  おばけ: '#9c27b0',
+  きつね: '#d84315',
+  おばけ: '#607d8b',
   人類: '#2196f3',
   ギミック: '#4caf50',
   特殊: '#e91e63',
   ネコ: '#795548',
   イヌ: '#607d8b',
   うさぎ: '#ff4081',
-  ドラゴン: '#673ab7',
+  ドラゴン: '#d32f2f',
   ロボット: '#757575',
-  食べ物: '#c69500',
+  食べ物: '#d84315',
   植物: '#5a8a1a',
   宇宙: '#3f51b5',
   和風: '#d32f2f',
   洋風: '#1976d2',
-  ファンタジー: '#ab47bc',
+  ファンタジー: '#00acc1',
   SF: '#00acc1',
   ホラー: '#424242',
   かわいい: '#ec407a',
@@ -117,10 +117,9 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 /**
  * デフォルト色（カテゴリマッピングに該当しない場合に使用）
  *
- * 著しく低コントラストだった色は WCAG 1.4.3 準拠のために暗めに調整済み:
- *   #f093fb → #9b30a8, #4facfe → #1a73cc
+ * 紫に偏らない、色名で区別しやすいシアン・緑・青灰・ピンク・青を使用する。
  */
-const DEFAULT_COLORS = ['#667eea', '#764ba2', '#9b30a8', '#f5576c', '#1a73cc'];
+const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#f5576c', '#1a73cc'];
 
 /**
  * Generates a deterministic hash value from a string (simple djb2 algorithm).
@@ -142,20 +141,23 @@ function hashString(str: string): number {
 /**
  * カテゴリ名に対応する色を取得
  *
- * マッピングに一致するキーワードが含まれていればその色を返し、
- * 一致しなければカテゴリ名のハッシュからデフォルト色を決定的に選択する。
+ * 最上位カテゴリのマッピングに一致するキーワードが含まれていればその色を返し、
+ * 一致しなければ最上位カテゴリ名のハッシュからデフォルト色を決定的に選択する。
+ * 下位カテゴリは階層の深さにかかわらず最上位カテゴリの色を継承する。
  * （Math.random() を使わないため SSR/CSR のハイドレーションミスマッチが起きない）
  *
  * @param category - カテゴリ文字列
  * @returns HEX カラーコード
  */
 export function getCategoryColor(category: string): string {
+  const topLevelCategory = (category || '').split('/', 1)[0].trim();
+
   for (const [key, color] of Object.entries(CATEGORY_COLOR_MAP)) {
-    if (category && category.includes(key)) {
+    if (topLevelCategory.includes(key)) {
       return color;
     }
   }
-  return DEFAULT_COLORS[hashString(category || '') % DEFAULT_COLORS.length];
+  return DEFAULT_COLORS[hashString(topLevelCategory) % DEFAULT_COLORS.length];
 }
 
 // ---------------------------------------------------------------------------
