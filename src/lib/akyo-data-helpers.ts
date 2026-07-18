@@ -8,6 +8,8 @@
  */
 
 import type { AkyoData } from '@/types/akyo';
+export { getCategoryBadgeColors, getCategoryColor } from './category-colors';
+
 /**
  * Delimiter pattern for splitting multi-value strings in CSV (comma or Japanese ideographic comma)
  */
@@ -80,82 +82,6 @@ export function parseAndSortCategories(category: string): string[] {
  */
 export function findAkyoById(data: AkyoData[], id: string): AkyoData | null {
   return data.find((akyo) => akyo.id === id) || null;
-}
-
-/**
- * カテゴリ名 → 色の定数マッピング
- *
- * 著しく低コントラストだった色は WCAG 1.4.3 準拠のために暗めに調整済み:
- *   食べ物: #ffc107 → #c69500, 植物: #8bc34a → #5a8a1a, きつね: #ff9800 → #cc7a00
- */
-const CATEGORY_COLOR_MAP: Record<string, string> = {
-  チョコミント: '#00bfa5',
-  動物: '#ff6f61',
-  きつね: '#cc7a00',
-  おばけ: '#9c27b0',
-  人類: '#2196f3',
-  ギミック: '#4caf50',
-  特殊: '#e91e63',
-  ネコ: '#795548',
-  イヌ: '#607d8b',
-  うさぎ: '#ff4081',
-  ドラゴン: '#673ab7',
-  ロボット: '#757575',
-  食べ物: '#c69500',
-  植物: '#5a8a1a',
-  宇宙: '#3f51b5',
-  和風: '#d32f2f',
-  洋風: '#1976d2',
-  ファンタジー: '#ab47bc',
-  SF: '#00acc1',
-  ホラー: '#424242',
-  かわいい: '#ec407a',
-  クール: '#5c6bc0',
-  シンプル: '#78909c',
-};
-
-/**
- * デフォルト色（カテゴリマッピングに該当しない場合に使用）
- *
- * 著しく低コントラストだった色は WCAG 1.4.3 準拠のために暗めに調整済み:
- *   #f093fb → #9b30a8, #4facfe → #1a73cc
- */
-const DEFAULT_COLORS = ['#667eea', '#764ba2', '#9b30a8', '#f5576c', '#1a73cc'];
-
-/**
- * Generates a deterministic hash value from a string (simple djb2 algorithm).
- * Used instead of Math.random() to ensure consistent UI state (like colors)
- * between SSR and CSR, preventing hydration mismatches.
- *
- * @param str - The string to hash
- * @returns A non-negative 32-bit integer
- */
-function hashString(str: string): number {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) + str.charCodeAt(i);
-    hash |= 0; // 32bit整数に変換
-  }
-  return Math.abs(hash);
-}
-
-/**
- * カテゴリ名に対応する色を取得
- *
- * マッピングに一致するキーワードが含まれていればその色を返し、
- * 一致しなければカテゴリ名のハッシュからデフォルト色を決定的に選択する。
- * （Math.random() を使わないため SSR/CSR のハイドレーションミスマッチが起きない）
- *
- * @param category - カテゴリ文字列
- * @returns HEX カラーコード
- */
-export function getCategoryColor(category: string): string {
-  for (const [key, color] of Object.entries(CATEGORY_COLOR_MAP)) {
-    if (category && category.includes(key)) {
-      return color;
-    }
-  }
-  return DEFAULT_COLORS[hashString(category || '') % DEFAULT_COLORS.length];
 }
 
 // ---------------------------------------------------------------------------
