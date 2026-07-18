@@ -18,3 +18,13 @@ test("all category badge surfaces use the shared opaque color tokens", () => {
     assert.doesNotMatch(source, /ensureContrastForWhiteText/, fileName);
   });
 });
+
+test("legacy category contrast helpers are removed from the shared data helpers", () => {
+  const source = readFileSync(
+    path.join(__dirname, "../lib/akyo-data-helpers.ts"),
+    "utf8",
+  );
+
+  assert.doesNotMatch(source, /export function ensureContrastOnWhite/);
+  assert.doesNotMatch(source, /export function ensureContrastForWhiteText/);
+});
