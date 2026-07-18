@@ -1,7 +1,7 @@
 'use client';
 
 import { IconHeart, IconHeartOutline, IconInfoCircle, IconVRChat } from '@/components/icons';
-import { getCategoryBadgeColors, parseAndSortCategories } from '@/lib/akyo-data-helpers';
+import { ensureContrastOnWhite, getCategoryColor, parseAndSortCategories } from '@/lib/akyo-data-helpers';
 import { formatDisplayId, getAkyoSourceUrl, resolveEntryType } from '@/lib/akyo-entry';
 import { generateBlurDataURL } from '@/lib/blur-data-url';
 import { t, type SupportedLanguage } from '@/lib/i18n';
@@ -187,16 +187,15 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                     {renderRowDetailTrigger(akyo, rowDetailLabel, { hiddenFromAssistiveTech: true })}
                     <div className="relative z-10 pointer-events-none flex flex-wrap gap-1">
                       {sortedCategories.map((trimmedCat, index) => {
-                        const colors = getCategoryBadgeColors(trimmedCat);
+                        const color = getCategoryColor(trimmedCat);
                         return (
                           <span
                             key={index}
-                            className="attribute-badge border"
+                            className="attribute-badge"
                             style={{
-                              background: colors.background,
-                              borderColor: colors.border,
-                              color: colors.text,
-                              boxShadow: `0 4px 10px ${colors.accent}18`,
+                              background: `${color}20`,
+                              color: ensureContrastOnWhite(color),
+                              boxShadow: `0 6px 12px ${color}20`,
                             }}
                           >
                             {trimmedCat}

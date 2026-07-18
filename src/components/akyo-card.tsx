@@ -2,7 +2,8 @@
 
 import { IconDownload, IconHeart, IconHeartOutline, IconVRChat } from "@/components/icons";
 import {
-  getCategoryBadgeColors,
+  ensureContrastOnWhite,
+  getCategoryColor,
   parseAndSortCategories,
 } from "@/lib/akyo-data-helpers";
 import {
@@ -286,16 +287,15 @@ export function AkyoCard({
         {category && (
           <div className="flex flex-wrap gap-1 mb-2">
             {sortedCategories.map((trimmedCat, index) => {
-              const colors = getCategoryBadgeColors(trimmedCat);
+              const color = getCategoryColor(trimmedCat);
               return (
                 <span
                   key={index}
-                  className="attribute-badge text-xs border"
+                  className="attribute-badge text-xs"
                   style={{
-                    background: colors.background,
-                    borderColor: colors.border,
-                    color: colors.text,
-                    boxShadow: `0 4px 10px ${colors.accent}18`,
+                    background: `${color}20`,
+                    color: ensureContrastOnWhite(color),
+                    boxShadow: `0 6px 12px ${color}20`,
                   }}
                 >
                   {trimmedCat}
