@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-07-28T08:59:39.175Z",
-  "count": 917,
+  "updatedAt": "2026-07-28T16:04:44.509Z",
+  "count": 918,
   "data": [
     {
       "id": "0001",
@@ -10452,6 +10452,18 @@
       "author": "Saila_E",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8"
+    },
+    {
+      "id": "0918",
+      "entryType": "world",
+      "displaySerial": "0098",
+      "nickname": "いっけなーい！ 遅刻、遅刻！",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_01bc26c3-0391-4b7e-b847-222f323125d6/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_01bc26c3-0391-4b7e-b847-222f323125d6/"
     }
   ]
 }
