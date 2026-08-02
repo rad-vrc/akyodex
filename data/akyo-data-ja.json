@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-02T15:47:45.181Z",
-  "count": 921,
+  "updatedAt": "2026-08-02T15:52:28.919Z",
+  "count": 922,
   "data": [
     {
       "id": "0001",
@@ -10501,6 +10501,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4f2bbe09-aae8-4067-bbb8-15e0542cd419",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4f2bbe09-aae8-4067-bbb8-15e0542cd419"
+    },
+    {
+      "id": "0922",
+      "entryType": "avatar",
+      "displaySerial": "0824",
+      "nickname": "そうかAkyo",
+      "avatarName": "そうか․․․",
+      "category": "チョコミント類,ギミック・特殊",
+      "comment": "ふしぎなAkyo！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_83dcbda1-64f8-4dd2-af36-bbce3c0bde1f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_83dcbda1-64f8-4dd2-af36-bbce3c0bde1f"
     }
   ]
 }
