@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-02T15:00:51.814Z",
-  "count": 919,
+  "updatedAt": "2026-08-02T15:39:59.622Z",
+  "count": 920,
   "data": [
     {
       "id": "0001",
@@ -10477,6 +10477,18 @@
       "author": "kuro5963",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a13c66f9-6a5b-46de-a510-f087e18cc3bc",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a13c66f9-6a5b-46de-a510-f087e18cc3bc"
+    },
+    {
+      "id": "0920",
+      "entryType": "avatar",
+      "displaySerial": "0822",
+      "nickname": "アロハだいこんAkyo/アロハにんじんAkyo",
+      "avatarName": "akyo_だいこん＆にんじんアロハ",
+      "category": "食べ物,食べ物/野菜,食べ物/野菜/だいこん,食べ物/野菜/にんじん,季節・行事,季節・行事/夏,ファッション,ファッション/メガネ",
+      "comment": "【ささのきの手記】\n夏が楽しみでウキウキなだいこんakyoとにんじんakyo",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_7c9495bc-d97b-4d87-909f-03b30a3941ca",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7c9495bc-d97b-4d87-909f-03b30a3941ca"
     }
   ]
 }
