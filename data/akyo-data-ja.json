@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-01T08:55:39.326Z",
-  "count": 918,
+  "updatedAt": "2026-08-02T15:00:51.814Z",
+  "count": 919,
   "data": [
     {
       "id": "0001",
@@ -10465,6 +10465,18 @@
       "author": "yuwa1027",
       "sourceUrl": "https://vrchat.com/home/world/wrld_01bc26c3-0391-4b7e-b847-222f323125d6/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_01bc26c3-0391-4b7e-b847-222f323125d6/"
+    },
+    {
+      "id": "0919",
+      "entryType": "avatar",
+      "displaySerial": "0821",
+      "nickname": "ぴーなっつ まめあきょ",
+      "avatarName": "ぴーなっつ まめあきょ",
+      "category": "まめAkyo,植物,植物/木の実,食べ物",
+      "comment": "",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a13c66f9-6a5b-46de-a510-f087e18cc3bc",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a13c66f9-6a5b-46de-a510-f087e18cc3bc"
     }
   ]
 }
