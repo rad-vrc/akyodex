@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-02T15:39:59.622Z",
-  "count": 920,
+  "updatedAt": "2026-08-02T15:47:45.181Z",
+  "count": 921,
   "data": [
     {
       "id": "0001",
@@ -10489,6 +10489,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7c9495bc-d97b-4d87-909f-03b30a3941ca",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_7c9495bc-d97b-4d87-909f-03b30a3941ca"
+    },
+    {
+      "id": "0921",
+      "entryType": "avatar",
+      "displaySerial": "0823",
+      "nickname": "アロハわにAkyo",
+      "avatarName": "akyo_わにアロハ",
+      "category": "季節・行事,季節・行事/夏,ファッション,ファッション/メガネ,動物,動物/ワニ,音楽・楽器",
+      "comment": "【ささのきの手記】\nアロハ～な雰囲気のわにakyo。ウクレレを弾くのが趣味のようだ。夕日のビーチが良く似合う",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4f2bbe09-aae8-4067-bbb8-15e0542cd419",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4f2bbe09-aae8-4067-bbb8-15e0542cd419"
     }
   ]
 }
