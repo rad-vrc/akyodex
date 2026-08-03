@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-03T09:21:53.113Z",
-  "count": 925,
+  "updatedAt": "2026-08-03T09:28:06.694Z",
+  "count": 926,
   "data": [
     {
       "id": "0001",
@@ -10549,6 +10549,18 @@
       "author": "Sweet Forest",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_460a1fb0-7320-4acd-937d-3e81d08de536",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_460a1fb0-7320-4acd-937d-3e81d08de536"
+    },
+    {
+      "id": "0926",
+      "entryType": "avatar",
+      "displaySerial": "0828",
+      "nickname": "水ゼリーAkyo/ウォータージェリーAkyo",
+      "avatarName": "water jerry akyo",
+      "category": "形状・触り心地,形状・触り心地/柔らかい,エネルギー,エネルギー/水",
+      "comment": "ぐにょんぐにょんしてる！",
+      "author": "Fuganbya",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_019b0a86-3065-4454-aeed-b688c07359aa",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_019b0a86-3065-4454-aeed-b688c07359aa"
     }
   ]
 }
