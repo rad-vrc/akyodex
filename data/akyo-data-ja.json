@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-02T15:52:28.919Z",
-  "count": 922,
+  "updatedAt": "2026-08-03T06:38:51.242Z",
+  "count": 923,
   "data": [
     {
       "id": "0001",
@@ -10513,6 +10513,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_83dcbda1-64f8-4dd2-af36-bbce3c0bde1f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_83dcbda1-64f8-4dd2-af36-bbce3c0bde1f"
+    },
+    {
+      "id": "0923",
+      "entryType": "avatar",
+      "displaySerial": "0825",
+      "nickname": "あきょう玉Akyo/でもそれってAkyo",
+      "avatarName": "え、でもそれって、、",
+      "category": "エネルギー,ギミック・特殊,体型,体型/豊満,形状・触り心地,形状・触り心地/丸い",
+      "comment": "あきょう玉だ！\nAkyoにAkyo魂をわけてくれ～～～！！！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_592f6556-6e09-44e2-b2fa-b439323e31ee",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_592f6556-6e09-44e2-b2fa-b439323e31ee"
     }
   ]
 }
