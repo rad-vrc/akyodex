@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-03T06:38:51.242Z",
-  "count": 923,
+  "updatedAt": "2026-08-03T09:09:17.063Z",
+  "count": 924,
   "data": [
     {
       "id": "0001",
@@ -10525,6 +10525,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_592f6556-6e09-44e2-b2fa-b439323e31ee",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_592f6556-6e09-44e2-b2fa-b439323e31ee"
+    },
+    {
+      "id": "0924",
+      "entryType": "avatar",
+      "displaySerial": "0826",
+      "nickname": "アライグマAkyo",
+      "avatarName": "racoon akyo",
+      "category": "動物,動物/アライグマ,器官,器官/耳,器官/しっぽ",
+      "comment": "ラクーンはアライグマのことなんだね！",
+      "author": "chm_dan",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6ee5a13a-0613-46fb-90eb-b2be92a49776",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6ee5a13a-0613-46fb-90eb-b2be92a49776"
     }
   ]
 }
