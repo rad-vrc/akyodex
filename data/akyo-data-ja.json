@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-03T09:09:17.063Z",
-  "count": 924,
+  "updatedAt": "2026-08-03T09:21:53.113Z",
+  "count": 925,
   "data": [
     {
       "id": "0001",
@@ -10537,6 +10537,18 @@
       "author": "chm_dan",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6ee5a13a-0613-46fb-90eb-b2be92a49776",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_6ee5a13a-0613-46fb-90eb-b2be92a49776"
+    },
+    {
+      "id": "0925",
+      "entryType": "avatar",
+      "displaySerial": "0827",
+      "nickname": "Akyo at night",
+      "avatarName": "Akyo at night",
+      "category": "ギミック・特殊,ギミック・特殊/AudioLink",
+      "comment": "Audiolinkがついてるよ！",
+      "author": "Sweet Forest",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_460a1fb0-7320-4acd-937d-3e81d08de536",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_460a1fb0-7320-4acd-937d-3e81d08de536"
     }
   ]
 }
