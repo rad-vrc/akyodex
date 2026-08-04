@@ -239,6 +239,18 @@ test("limits and deduplicates generated keyword input", () => {
   assert.deepEqual(normalizeSearchTerms("たなばたAkyo", []), ["たなばたAkyo"]);
 });
 
+test("bounds the number of keyword candidates that are normalized", () => {
+  const candidateLimit = 24;
+  const keywords = Array.from({ length: candidateLimit + 1 }, () => "Akyo");
+  Object.defineProperty(keywords, candidateLimit, {
+    get() {
+      throw new Error("normalized too many keyword candidates");
+    },
+  });
+
+  assert.deepEqual(normalizeSearchTerms(undefined, keywords), ["Akyo"]);
+});
+
 test("extracts exact avatar candidates from natural-language questions", () => {
   assert.deepEqual(exactCandidates("たなばたAkyoについて教えて"), [
     "たなばたAkyo",

@@ -13,6 +13,7 @@ export const MAX_KEYWORDS = 3;
 
 const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const MIN_SEMANTIC_SCORE = 0.35;
+const MAX_KEYWORD_CANDIDATES = 24;
 const GENERIC_SEARCH_TERMS = new Set([
   "akyo",
   "アバター",
@@ -122,7 +123,7 @@ export function normalizeSearchTerms(
     : [query ?? keywords];
   const terms: string[] = [];
 
-  for (const value of values) {
+  for (const value of values.slice(0, MAX_KEYWORD_CANDIDATES)) {
     if (typeof value !== "string") {
       continue;
     }
