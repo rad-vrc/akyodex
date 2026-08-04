@@ -133,9 +133,6 @@ export function normalizeSearchTerms(
     if (!terms.some((item) => item.toLowerCase() === cleaned.toLowerCase())) {
       terms.push(cleaned);
     }
-    if (terms.length === MAX_KEYWORDS) {
-      break;
-    }
   }
 
   if (terms.length === 0 && Array.isArray(keywords) && typeof query === "string") {
@@ -145,7 +142,7 @@ export function normalizeSearchTerms(
     }
   }
 
-  return terms;
+  return prioritizeSpecificTerms(terms).slice(0, MAX_KEYWORDS);
 }
 
 function prioritizeSpecificTerms(terms: string[]): string[] {
@@ -412,9 +409,7 @@ export async function searchWithD1AndVectorize(
   env: Env
 ): Promise<SearchResult[]> {
   const limit = normalizeTopK(requestedTopK);
-  const terms = prioritizeSpecificTerms(
-    normalizeSearchTerms(undefined, rawTerms)
-  );
+  const terms = normalizeSearchTerms(undefined, rawTerms);
   const exactResults = new Map<string, SearchResult>();
 
   const exactMatches = await Promise.all(

@@ -63,6 +63,7 @@ class FakeDatabase implements D1Database {
   exactRows: FakeSearchRow[] = [];
   partialRows: FakeSearchRow[] = [];
   exactCandidates: string[] = [];
+  partialKeywords: string[] = [];
   batchFailure?: Error;
   batchCalls = 0;
   runCalls = 0;
@@ -98,6 +99,7 @@ class FakeDatabase implements D1Database {
       );
     }
     if (query.includes("WHEN category = ?")) {
+      this.partialKeywords.push(String(values[0] ?? ""));
       return this.partialRows;
     }
     return [];
@@ -223,8 +225,17 @@ test("limits and deduplicates generated keyword input", () => {
     "キャラクター",
     "アニメ",
   ]);
-  assert.deepEqual(terms, ["たなばた", "Akyo", "キャラクター"]);
-  assert.equal(terms.length, MAX_KEYWORDS);
+  assert.deepEqual(terms, ["たなばた", "アニメ"]);
+  assert.ok(terms.length <= MAX_KEYWORDS);
+  assert.deepEqual(
+    normalizeSearchTerms(undefined, [
+      "Akyo",
+      "キャラクター",
+      "avatar",
+      "たなばた",
+    ]),
+    ["たなばた"]
+  );
   assert.deepEqual(normalizeSearchTerms("たなばたAkyo", []), ["たなばたAkyo"]);
 });
 
@@ -304,6 +315,8 @@ test("uses only specific terms for fallback search", async () => {
   );
 
   assert.equal(results[0].id, "0893");
+  assert.deepEqual(database.exactCandidates, ["たなばた"]);
+  assert.deepEqual(database.partialKeywords, ["たなばた"]);
   assert.deepEqual(ai.calls, ["たなばた"]);
 });
 
