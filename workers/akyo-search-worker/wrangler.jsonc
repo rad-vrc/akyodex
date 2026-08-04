@@ -8,6 +8,9 @@
   "observability": {
     "enabled": true
   },
+  "secrets": {
+    "required": ["INGEST_TOKEN"]
+  },
   "ai": {
     "binding": "AI"
   },

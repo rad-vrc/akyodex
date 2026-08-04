@@ -21,8 +21,27 @@ Set the ingest secret before the first deployment:
 npx wrangler secret put INGEST_TOKEN --config workers/akyo-search-worker/wrangler.jsonc
 ```
 
+`wrangler secret put` creates and deploys a new Worker version. Run it only as
+part of the approved production rollout, after the source change has merged.
+Use `wrangler versions secret put` instead when preparing a version without
+immediately routing production traffic to it.
+
 Send the same value as `Authorization: Bearer <token>` when uploading data.
 Do not put the token in the repository or in a command committed to shell history.
+The Wrangler configuration declares `INGEST_TOKEN` as required, so deployment
+validation fails when the Worker secret is missing.
+
+The upload helper reads the same value from `AKYO_INGEST_TOKEN`. Set
+`AKYO_WORKER_URL` to exercise a preview Worker before using the production URL:
+
+```powershell
+$env:AKYO_INGEST_TOKEN = "<INGEST_TOKEN>"
+$env:AKYO_WORKER_URL = "https://<preview-worker>/insert-data"
+node scripts/upload-vectorize-data.js --batch-size 50
+```
+
+Neither environment variable should be committed. `--dry-run` does not require
+the token because it does not send an HTTP request.
 
 ## Verification
 
