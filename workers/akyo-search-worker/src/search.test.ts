@@ -257,6 +257,34 @@ test("returns an exact D1 match without invoking Workers AI", async () => {
   assert.ok(database.exactCandidates.includes("たなばたAkyo"));
 });
 
+test("does not let a generic Akyo exact match hide a specific keyword", async () => {
+  const database = new FakeDatabase();
+  database.exactRows = [
+    row({
+      id: "0017",
+      nickname: "N/A",
+      name: "Akyo",
+      match_score: 0.98,
+      matched_field: "name",
+    }),
+  ];
+  database.partialRows = [
+    row({ match_score: 0.85, matched_field: "nickname" }),
+  ];
+
+  const results = await searchWithD1AndVectorize(
+    ["たなばた", "Akyo", "キャラクター"],
+    "ja",
+    5,
+    fakeEnv({ database })
+  );
+
+  assert.equal(results[0].id, "0893");
+  assert.equal(results[0].nickname, "たなばたAkyo");
+  assert.equal(results[0].matchType, "partial");
+  assert.ok(!database.exactCandidates.includes("Akyo"));
+});
+
 test("finds a numeric avatar ID across languages", async () => {
   const database = new FakeDatabase();
   database.exactRows = [row({ id: "0504", language: "ja" })];

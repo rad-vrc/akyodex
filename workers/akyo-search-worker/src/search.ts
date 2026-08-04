@@ -397,9 +397,12 @@ export async function searchWithD1AndVectorize(
   const limit = normalizeTopK(requestedTopK);
   const terms = normalizeSearchTerms(undefined, rawTerms);
   const exactResults = new Map<string, SearchResult>();
+  const exactTerms = terms.length > 1
+    ? terms.filter((term) => term.toLowerCase() !== "akyo")
+    : terms;
 
   const exactMatches = await Promise.all(
-    terms.flatMap((term) =>
+    exactTerms.flatMap((term) =>
       exactCandidates(term).map((candidate) =>
         findExactCandidateMatches(candidate, language, limit, env)
       )
