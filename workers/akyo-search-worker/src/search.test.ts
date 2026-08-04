@@ -289,6 +289,24 @@ test("does not let a generic Akyo exact match hide a specific keyword", async ()
   );
 });
 
+test("uses only specific terms for fallback search", async () => {
+  const database = new FakeDatabase();
+  database.partialRows = [
+    row({ match_score: 0.85, matched_field: "nickname" }),
+  ];
+  const ai = new FakeAi();
+
+  const results = await searchWithD1AndVectorize(
+    ["たなばた", "Akyo", "キャラクター"],
+    "ja",
+    5,
+    fakeEnv({ database, ai })
+  );
+
+  assert.equal(results[0].id, "0893");
+  assert.deepEqual(ai.calls, ["たなばた"]);
+});
+
 test("keeps a generic Akyo exact match for a single keyword", async () => {
   const database = new FakeDatabase();
   database.exactRows = [
