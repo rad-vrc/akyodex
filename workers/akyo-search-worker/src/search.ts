@@ -13,6 +13,16 @@ export const MAX_KEYWORDS = 3;
 
 const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const MIN_SEMANTIC_SCORE = 0.35;
+const MAX_KEYWORD_CANDIDATES = 24;
+const GENERIC_SEARCH_TERMS = new Set([
+  "akyo",
+  "アバター",
+  "キャラクター",
+  "avatar",
+  "character",
+  "아바타",
+  "캐릭터",
+]);
 
 interface SearchRow extends AkyoRecord {
   match_score: number;
@@ -113,7 +123,7 @@ export function normalizeSearchTerms(
     : [query ?? keywords];
   const terms: string[] = [];
 
-  for (const value of values) {
+  for (const value of values.slice(0, MAX_KEYWORD_CANDIDATES)) {
     if (typeof value !== "string") {
       continue;
     }
@@ -124,9 +134,6 @@ export function normalizeSearchTerms(
     if (!terms.some((item) => item.toLowerCase() === cleaned.toLowerCase())) {
       terms.push(cleaned);
     }
-    if (terms.length === MAX_KEYWORDS) {
-      break;
-    }
   }
 
   if (terms.length === 0 && Array.isArray(keywords) && typeof query === "string") {
@@ -136,7 +143,15 @@ export function normalizeSearchTerms(
     }
   }
 
-  return terms;
+  return prioritizeSpecificTerms(terms).slice(0, MAX_KEYWORDS);
+}
+
+function prioritizeSpecificTerms(terms: string[]): string[] {
+  const specificTerms = terms.filter(
+    (term) => !GENERIC_SEARCH_TERMS.has(term.toLowerCase())
+  );
+
+  return specificTerms.length > 0 ? specificTerms : terms;
 }
 
 export function selectVectorIndex(env: Env): VectorizeIndex {
@@ -397,12 +412,9 @@ export async function searchWithD1AndVectorize(
   const limit = normalizeTopK(requestedTopK);
   const terms = normalizeSearchTerms(undefined, rawTerms);
   const exactResults = new Map<string, SearchResult>();
-  const exactTerms = terms.length > 1
-    ? terms.filter((term) => term.toLowerCase() !== "akyo")
-    : terms;
 
   const exactMatches = await Promise.all(
-    exactTerms.flatMap((term) =>
+    terms.flatMap((term) =>
       exactCandidates(term).map((candidate) =>
         findExactCandidateMatches(candidate, language, limit, env)
       )

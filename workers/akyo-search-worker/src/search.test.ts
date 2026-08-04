@@ -63,6 +63,7 @@ class FakeDatabase implements D1Database {
   exactRows: FakeSearchRow[] = [];
   partialRows: FakeSearchRow[] = [];
   exactCandidates: string[] = [];
+  partialKeywords: string[] = [];
   batchFailure?: Error;
   batchCalls = 0;
   runCalls = 0;
@@ -98,6 +99,7 @@ class FakeDatabase implements D1Database {
       );
     }
     if (query.includes("WHEN category = ?")) {
+      this.partialKeywords.push(String(values[0] ?? ""));
       return this.partialRows;
     }
     return [];
@@ -223,9 +225,30 @@ test("limits and deduplicates generated keyword input", () => {
     "キャラクター",
     "アニメ",
   ]);
-  assert.deepEqual(terms, ["たなばた", "Akyo", "キャラクター"]);
-  assert.equal(terms.length, MAX_KEYWORDS);
+  assert.deepEqual(terms, ["たなばた", "アニメ"]);
+  assert.ok(terms.length <= MAX_KEYWORDS);
+  assert.deepEqual(
+    normalizeSearchTerms(undefined, [
+      "Akyo",
+      "キャラクター",
+      "avatar",
+      "たなばた",
+    ]),
+    ["たなばた"]
+  );
   assert.deepEqual(normalizeSearchTerms("たなばたAkyo", []), ["たなばたAkyo"]);
+});
+
+test("bounds the number of keyword candidates that are normalized", () => {
+  const candidateLimit = 24;
+  const keywords = Array.from({ length: candidateLimit + 1 }, () => "Akyo");
+  Object.defineProperty(keywords, candidateLimit, {
+    get() {
+      throw new Error("normalized too many keyword candidates");
+    },
+  });
+
+  assert.deepEqual(normalizeSearchTerms(undefined, keywords), ["Akyo"]);
 });
 
 test("extracts exact avatar candidates from natural-language questions", () => {
@@ -287,6 +310,26 @@ test("does not let a generic Akyo exact match hide a specific keyword", async ()
       (candidate) => candidate.toLowerCase() !== "akyo"
     )
   );
+});
+
+test("uses only specific terms for fallback search", async () => {
+  const database = new FakeDatabase();
+  database.partialRows = [
+    row({ match_score: 0.85, matched_field: "nickname" }),
+  ];
+  const ai = new FakeAi();
+
+  const results = await searchWithD1AndVectorize(
+    ["たなばた", "Akyo", "キャラクター"],
+    "ja",
+    5,
+    fakeEnv({ database, ai })
+  );
+
+  assert.equal(results[0].id, "0893");
+  assert.deepEqual(database.exactCandidates, ["たなばた"]);
+  assert.deepEqual(database.partialKeywords, ["たなばた"]);
+  assert.deepEqual(ai.calls, ["たなばた"]);
 });
 
 test("keeps a generic Akyo exact match for a single keyword", async () => {
