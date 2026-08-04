@@ -72,10 +72,11 @@ the total count and up to 10 avatars.
 ```
 
 `POST /insert-data` requires `Authorization: Bearer <INGEST_TOKEN>` and a
-`records` array of at most 1,000 records. It returns `processed`, `failed`, and
-per-record `errors`. Records are committed to D1 as one transaction before
-their vectors are uploaded in bounded batches; failed vector uploads can be
-retried safely because D1 writes use `INSERT OR REPLACE`.
+`records` array of at most 1,000 records. It returns D1 `processed` count,
+Vectorize `indexed` count, `failed`, and per-record `errors`. Records are
+committed to D1 as one transaction before their vectors are uploaded in bounded
+batches; failed vector uploads can be retried safely because D1 writes use
+`INSERT OR REPLACE`.
 
 ```json
 {

@@ -203,6 +203,45 @@ async function findExactMatches(
   return (result.results ?? []).map((row) => toSearchResult(row, candidate));
 }
 
+async function findExactIdMatches(
+  id: string,
+  preferredLanguage: Language,
+  limit: number,
+  env: Env
+): Promise<SearchResult[]> {
+  const result = await env.DB.prepare(`
+    SELECT id, nickname, name, category, description, author, url, language,
+      1.0 AS match_score,
+      'id' AS matched_field
+    FROM akyos
+    WHERE id = ?
+    ORDER BY
+      CASE
+        WHEN language = ? THEN 0
+        WHEN language = 'ja' THEN 1
+        ELSE 2
+      END,
+      id ASC
+    LIMIT ?
+  `)
+    .bind(id, preferredLanguage, limit)
+    .all<SearchRow>();
+
+  return (result.results ?? []).map((row) => toSearchResult(row, id));
+}
+
+function findExactCandidateMatches(
+  candidate: string,
+  language: Language,
+  limit: number,
+  env: Env
+): Promise<SearchResult[]> {
+  if (/^\d{4}$/u.test(candidate)) {
+    return findExactIdMatches(candidate, language, limit, env);
+  }
+  return findExactMatches(candidate, language, limit, env);
+}
+
 async function findPartialMatches(
   keyword: string,
   language: Language,
@@ -362,7 +401,7 @@ export async function searchWithD1AndVectorize(
   const exactMatches = await Promise.all(
     terms.flatMap((term) =>
       exactCandidates(term).map((candidate) =>
-        findExactMatches(candidate, language, limit, env)
+        findExactCandidateMatches(candidate, language, limit, env)
       )
     )
   );

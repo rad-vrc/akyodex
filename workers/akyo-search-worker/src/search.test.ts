@@ -80,6 +80,13 @@ class FakeDatabase implements D1Database {
   }
 
   rowsFor(query: string, values: unknown[]): FakeSearchRow[] {
+    if (query.includes("1.0 AS match_score") && query.includes("WHERE id = ?")) {
+      this.exactCandidates.push(String(values[0] ?? ""));
+      const candidate = String(values[0] ?? "");
+      return this.exactRows.filter(
+        (row) => row.id.toLowerCase() === candidate.toLowerCase()
+      );
+    }
     if (query.includes("WHEN id = ?")) {
       this.exactCandidates.push(String(values[0] ?? ""));
       const candidate = String(values[0] ?? "");
@@ -250,6 +257,25 @@ test("returns an exact D1 match without invoking Workers AI", async () => {
   assert.ok(database.exactCandidates.includes("たなばたAkyo"));
 });
 
+test("finds a numeric avatar ID across languages", async () => {
+  const database = new FakeDatabase();
+  database.exactRows = [row({ id: "0504", language: "ja" })];
+  const ai = new FakeAi();
+
+  const results = await searchWithD1AndVectorize(
+    ["0504"],
+    "en",
+    5,
+    fakeEnv({ database, ai })
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].id, "0504");
+  assert.equal(results[0].language, "ja");
+  assert.equal(results[0].matchType, "exact");
+  assert.deepEqual(ai.calls, []);
+});
+
 test("globally limits merged results and uses the populated shared index", async () => {
   const database = new FakeDatabase();
   database.partialRows = [
@@ -362,6 +388,7 @@ test("batches embeddings and writes D1 before Vectorize", async () => {
   );
 
   assert.equal(result.processed, 21);
+  assert.equal(result.indexed, 21);
   assert.equal(result.failed, 0);
   assert.equal(ai.calls.length, 2);
   assert.ok(ai.calls.every(Array.isArray));
@@ -382,6 +409,7 @@ test("does not create vectors when the D1 transaction fails", async () => {
   );
 
   assert.equal(result.processed, 0);
+  assert.equal(result.indexed, 0);
   assert.equal(result.failed, 1);
   assert.deepEqual(result.errors, [{ id: "0001", error: "D1 unavailable" }]);
   assert.deepEqual(vectorize.upsertCalls, []);
@@ -398,7 +426,8 @@ test("reports Vectorize failures after keeping the D1 source record", async () =
   );
 
   assert.equal(database.runCalls, 1);
-  assert.equal(result.processed, 0);
+  assert.equal(result.processed, 1);
+  assert.equal(result.indexed, 0);
   assert.equal(result.failed, 1);
   assert.deepEqual(result.errors, [
     { id: "0001", error: "Vectorize unavailable" },

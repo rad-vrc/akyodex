@@ -121,7 +121,12 @@ function embeddingText(record: AkyoRecord): string {
 export async function ingestRecords(
   records: unknown[],
   env: Env
-): Promise<{ processed: number; failed: number; errors: IngestError[] }> {
+): Promise<{
+  processed: number;
+  indexed: number;
+  failed: number;
+  errors: IngestError[];
+}> {
   const normalizedRecords: AkyoRecord[] = [];
   const preparedRecords: PreparedRecord[] = [];
   const errors: IngestError[] = [];
@@ -174,7 +179,7 @@ export async function ingestRecords(
   }
 
   if (preparedRecords.length === 0) {
-    return { processed: 0, failed: errors.length, errors };
+    return { processed: 0, indexed: 0, failed: errors.length, errors };
   }
 
   const insertStatement = env.DB.prepare(INSERT_RECORD_SQL);
@@ -197,14 +202,15 @@ export async function ingestRecords(
     for (const { record } of preparedRecords) {
       errors.push({ id: record.id, error: errorMessage(error) });
     }
-    return { processed: 0, failed: errors.length, errors };
+    return { processed: 0, indexed: 0, failed: errors.length, errors };
   }
 
-  let processed = 0;
+  const processed = preparedRecords.length;
+  let indexed = 0;
   for (const batch of chunksOf(preparedRecords, VECTOR_UPSERT_BATCH_SIZE)) {
     try {
       await env.VECTORIZE.upsert(batch.map(({ vector }) => vector));
-      processed += batch.length;
+      indexed += batch.length;
     } catch (error) {
       for (const { record } of batch) {
         errors.push({ id: record.id, error: errorMessage(error) });
@@ -214,6 +220,7 @@ export async function ingestRecords(
 
   return {
     processed,
+    indexed,
     failed: errors.length,
     errors,
   };
