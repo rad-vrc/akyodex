@@ -1,0 +1,35 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "akyo-search-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-11-09",
+  "compatibility_flags": ["global_fetch_strictly_public"],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "akyo-database",
+      "database_id": "a3394262-977b-4722-b8bc-f35865f1e28c"
+    }
+  ],
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "akyo-search-index"
+    },
+    {
+      "binding": "VECTORIZE_EN",
+      "index_name": "akyo-search-index-en"
+    },
+    {
+      "binding": "VECTORIZE_JA",
+      "index_name": "akyo-search-index-ja"
+    }
+  ]
+}
