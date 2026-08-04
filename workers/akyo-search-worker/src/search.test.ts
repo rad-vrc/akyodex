@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import worker from "./index";
+import { ingestRecords } from "./ingest";
 import {
   MAX_KEYWORDS,
+  escapeLikePattern,
   exactCandidates,
   normalizeSearchTerms,
   normalizeTopK,
   searchWithD1AndVectorize,
+  selectVectorIndex,
 } from "./search";
 import type {
   AiBinding,
@@ -27,19 +30,21 @@ interface FakeSearchRow extends AkyoRecord {
 }
 
 class FakeStatement implements D1PreparedStatement {
-  private values: unknown[] = [];
-
   constructor(
     private readonly database: FakeDatabase,
-    private readonly query: string
+    private readonly query: string,
+    private readonly values: unknown[] = []
   ) {}
 
   bind(...values: unknown[]): D1PreparedStatement {
-    this.values = values;
-    return this;
+    return new FakeStatement(this.database, this.query, values);
   }
 
   async all<T>(): Promise<D1Result<T>> {
+    if (this.query.includes("INSERT OR REPLACE")) {
+      this.database.runCalls += 1;
+      return { results: [] };
+    }
     const rows = this.database.rowsFor(this.query, this.values);
     return { results: rows as T[] };
   }
@@ -58,10 +63,20 @@ class FakeDatabase implements D1Database {
   exactRows: FakeSearchRow[] = [];
   partialRows: FakeSearchRow[] = [];
   exactCandidates: string[] = [];
+  batchFailure?: Error;
+  batchCalls = 0;
   runCalls = 0;
 
   prepare(query: string): D1PreparedStatement {
     return new FakeStatement(this, query);
+  }
+
+  async batch<T>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]> {
+    this.batchCalls += 1;
+    if (this.batchFailure) {
+      throw this.batchFailure;
+    }
+    return Promise.all(statements.map((statement) => statement.all<T>()));
   }
 
   rowsFor(query: string, values: unknown[]): FakeSearchRow[] {
@@ -83,23 +98,33 @@ class FakeDatabase implements D1Database {
 }
 
 class FakeAi implements AiBinding {
-  calls: string[] = [];
+  calls: Array<string | string[]> = [];
   failure?: Error;
 
-  async run(_model: string, input: { text: string }): Promise<{ data: number[][] }> {
+  async run(
+    _model: string,
+    input: { text: string | string[] }
+  ): Promise<{ data: number[][] }> {
     this.calls.push(input.text);
     if (this.failure) {
       throw this.failure;
     }
-    return { data: [[0.1, 0.2, 0.3]] };
+    const count = Array.isArray(input.text) ? input.text.length : 1;
+    return {
+      data: Array.from({ length: count }, () => [0.1, 0.2, 0.3]),
+    };
   }
 }
 
 class FakeVectorize implements VectorizeIndex {
   queryTopK: number[] = [];
   upsertCalls: VectorizeVector[][] = [];
+  upsertFailure?: Error;
 
-  constructor(public matches: VectorizeMatch[] = []) {}
+  constructor(
+    public matches: VectorizeMatch[] = [],
+    private readonly beforeUpsert?: () => void
+  ) {}
 
   async query(
     _vector: number[],
@@ -110,6 +135,10 @@ class FakeVectorize implements VectorizeIndex {
   }
 
   async upsert(vectors: VectorizeVector[]): Promise<unknown> {
+    this.beforeUpsert?.();
+    if (this.upsertFailure) {
+      throw this.upsertFailure;
+    }
     this.upsertCalls.push(vectors);
     return {};
   }
@@ -166,10 +195,17 @@ function fakeEnv(options?: {
 
 test("normalizes topK to the supported 1-8 range", () => {
   assert.equal(normalizeTopK(undefined), 5);
+  assert.equal(normalizeTopK(null), 5);
+  assert.equal(normalizeTopK([]), 5);
+  assert.equal(normalizeTopK(""), 5);
   assert.equal(normalizeTopK(0), 1);
   assert.equal(normalizeTopK(4.9), 4);
   assert.equal(normalizeTopK(16), 8);
   assert.equal(normalizeTopK("not-a-number"), 5);
+});
+
+test("escapes SQL LIKE wildcards in user input", () => {
+  assert.equal(escapeLikePattern("100%_Akyo\\test"), "100\\%\\_Akyo\\\\test");
 });
 
 test("limits and deduplicates generated keyword input", () => {
@@ -241,6 +277,14 @@ test("globally limits merged results and uses the populated shared index", async
   assert.equal(ai.calls.length, 1);
 });
 
+test("always selects the populated shared Vectorize index", () => {
+  const sharedIndex = new FakeVectorize();
+  const japaneseIndex = new FakeVectorize();
+  const env = fakeEnv({ vectorize: sharedIndex, vectorizeJa: japaneseIndex });
+
+  assert.equal(selectVectorIndex(env), sharedIndex);
+});
+
 test("falls back to D1 results when semantic search fails", async () => {
   const database = new FakeDatabase();
   database.partialRows = [row({ match_score: 0.85 })];
@@ -282,6 +326,83 @@ test("search endpoint clamps topK before returning results", async () => {
   assert.equal(body.results.length, 8);
   assert.deepEqual(sharedIndex.queryTopK, [24]);
   assert.deepEqual(japaneseIndex.queryTopK, []);
+});
+
+test("returns 400 for malformed JSON request bodies", async () => {
+  const response = await worker.fetch(
+    new Request("https://worker.example/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{invalid",
+    }),
+    fakeEnv()
+  );
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), {
+    error: "request body must be valid JSON",
+  });
+});
+
+test("batches embeddings and writes D1 before Vectorize", async () => {
+  const database = new FakeDatabase();
+  const ai = new FakeAi();
+  const vectorize = new FakeVectorize([], () => {
+    assert.equal(database.runCalls, 21);
+  });
+  const records = Array.from({ length: 21 }, (_, index) => ({
+    id: String(index + 1).padStart(4, "0"),
+    nickname: `Akyo ${index + 1}`,
+    language: "en",
+  }));
+
+  const result = await ingestRecords(
+    records,
+    fakeEnv({ database, ai, vectorize })
+  );
+
+  assert.equal(result.processed, 21);
+  assert.equal(result.failed, 0);
+  assert.equal(ai.calls.length, 2);
+  assert.ok(ai.calls.every(Array.isArray));
+  assert.equal(database.batchCalls, 1);
+  assert.equal(database.runCalls, 21);
+  assert.equal(vectorize.upsertCalls.length, 1);
+  assert.equal(vectorize.upsertCalls[0].length, 21);
+});
+
+test("does not create vectors when the D1 transaction fails", async () => {
+  const database = new FakeDatabase();
+  database.batchFailure = new Error("D1 unavailable");
+  const vectorize = new FakeVectorize();
+
+  const result = await ingestRecords(
+    [{ id: "0001", nickname: "Akyo", language: "en" }],
+    fakeEnv({ database, vectorize })
+  );
+
+  assert.equal(result.processed, 0);
+  assert.equal(result.failed, 1);
+  assert.deepEqual(result.errors, [{ id: "0001", error: "D1 unavailable" }]);
+  assert.deepEqual(vectorize.upsertCalls, []);
+});
+
+test("reports Vectorize failures after keeping the D1 source record", async () => {
+  const database = new FakeDatabase();
+  const vectorize = new FakeVectorize();
+  vectorize.upsertFailure = new Error("Vectorize unavailable");
+
+  const result = await ingestRecords(
+    [{ id: "0001", nickname: "Akyo", language: "en" }],
+    fakeEnv({ database, vectorize })
+  );
+
+  assert.equal(database.runCalls, 1);
+  assert.equal(result.processed, 0);
+  assert.equal(result.failed, 1);
+  assert.deepEqual(result.errors, [
+    { id: "0001", error: "Vectorize unavailable" },
+  ]);
 });
 
 test("insert endpoint requires a configured bearer token", async () => {

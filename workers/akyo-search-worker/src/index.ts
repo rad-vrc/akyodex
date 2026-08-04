@@ -18,6 +18,8 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
+class BadRequestError extends Error {}
+
 function jsonResponse(value: unknown, status = 200): Response {
   return Response.json(value, {
     status,
@@ -30,9 +32,14 @@ function errorMessage(error: unknown): string {
 }
 
 async function readJsonObject(request: Request): Promise<Record<string, unknown>> {
-  const value: unknown = await request.json();
+  let value: unknown;
+  try {
+    value = await request.json();
+  } catch {
+    throw new BadRequestError("request body must be valid JSON");
+  }
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("request body must be a JSON object");
+    throw new BadRequestError("request body must be a JSON object");
   }
   return value as Record<string, unknown>;
 }
@@ -85,7 +92,7 @@ async function handleInsertData(request: Request, env: Env): Promise<Response> {
   if (!env.INGEST_TOKEN) {
     return jsonResponse({ error: "INGEST_TOKEN is not configured" }, 503);
   }
-  if (!isAuthorizedForIngest(request, env.INGEST_TOKEN)) {
+  if (!(await isAuthorizedForIngest(request, env.INGEST_TOKEN))) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -126,8 +133,11 @@ const worker = {
         return await handleInsertData(request, env);
       }
     } catch (error) {
-      console.error("Worker request failed", error);
-      return jsonResponse({ error: errorMessage(error) }, 500);
+      const status = error instanceof BadRequestError ? 400 : 500;
+      if (status === 500) {
+        console.error("Worker request failed", error);
+      }
+      return jsonResponse({ error: errorMessage(error) }, status);
     }
 
     return jsonResponse({ error: "Not Found" }, 404);

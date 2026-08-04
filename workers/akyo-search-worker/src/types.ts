@@ -20,6 +20,7 @@ export interface SearchResult extends AkyoRecord {
 
 export interface D1Result<T> {
   results?: T[];
+  success?: boolean;
 }
 
 export interface D1PreparedStatement {
@@ -31,10 +32,14 @@ export interface D1PreparedStatement {
 
 export interface D1Database {
   prepare(query: string): D1PreparedStatement;
+  batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
 }
 
 export interface AiBinding {
-  run(model: string, input: { text: string }): Promise<{ data: number[][] }>;
+  run(
+    model: string,
+    input: { text: string | string[] }
+  ): Promise<{ data: number[][] }>;
 }
 
 export interface VectorizeMetadata extends Partial<AkyoRecord> {

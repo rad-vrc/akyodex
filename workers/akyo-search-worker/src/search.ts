@@ -20,12 +20,20 @@ interface SearchRow extends AkyoRecord {
 }
 
 export function normalizeTopK(value: unknown): number {
-  const parsed = typeof value === "number" ? value : Number(value);
+  const parsed = typeof value === "number"
+    ? value
+    : typeof value === "string" && value.trim()
+      ? Number(value)
+      : Number.NaN;
   if (!Number.isFinite(parsed)) {
     return DEFAULT_TOP_K;
   }
 
   return Math.min(Math.max(Math.floor(parsed), 1), MAX_TOP_K);
+}
+
+export function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/gu, "\\$&");
 }
 
 export function isJapanese(text: string): boolean {
@@ -201,31 +209,32 @@ async function findPartialMatches(
   limit: number,
   env: Env
 ): Promise<SearchResult[]> {
-  const like = `%${keyword}%`;
+  const like = `%${escapeLikePattern(keyword)}%`;
   const result = await env.DB.prepare(`
     SELECT id, nickname, name, category, description, author, url, language,
       CASE
         WHEN category = ? THEN 0.95
         WHEN author = ? THEN 0.90
-        WHEN nickname LIKE ? THEN 0.85
-        WHEN name LIKE ? THEN 0.80
-        WHEN category LIKE ? THEN 0.75
-        WHEN author LIKE ? THEN 0.70
+        WHEN nickname LIKE ? ESCAPE '\\' THEN 0.85
+        WHEN name LIKE ? ESCAPE '\\' THEN 0.80
+        WHEN category LIKE ? ESCAPE '\\' THEN 0.75
+        WHEN author LIKE ? ESCAPE '\\' THEN 0.70
         ELSE 0.50
       END AS match_score,
       CASE
         WHEN category = ? THEN 'category'
         WHEN author = ? THEN 'author'
-        WHEN nickname LIKE ? THEN 'nickname'
-        WHEN name LIKE ? THEN 'name'
-        WHEN category LIKE ? THEN 'category'
-        WHEN author LIKE ? THEN 'author'
+        WHEN nickname LIKE ? ESCAPE '\\' THEN 'nickname'
+        WHEN name LIKE ? ESCAPE '\\' THEN 'name'
+        WHEN category LIKE ? ESCAPE '\\' THEN 'category'
+        WHEN author LIKE ? ESCAPE '\\' THEN 'author'
         ELSE 'description'
       END AS matched_field
     FROM akyos
     WHERE language = ? AND (
-      nickname LIKE ? OR name LIKE ? OR category LIKE ? OR
-      description LIKE ? OR author LIKE ?
+      nickname LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\' OR
+      category LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR
+      author LIKE ? ESCAPE '\\'
     )
     ORDER BY match_score DESC, id ASC
     LIMIT ?
@@ -350,12 +359,16 @@ export async function searchWithD1AndVectorize(
   const terms = normalizeSearchTerms(undefined, rawTerms);
   const exactResults = new Map<string, SearchResult>();
 
-  for (const term of terms) {
-    for (const candidate of exactCandidates(term)) {
-      const matches = await findExactMatches(candidate, language, limit, env);
-      for (const match of matches) {
-        mergeResult(exactResults, match);
-      }
+  const exactMatches = await Promise.all(
+    terms.flatMap((term) =>
+      exactCandidates(term).map((candidate) =>
+        findExactMatches(candidate, language, limit, env)
+      )
+    )
+  );
+  for (const matches of exactMatches) {
+    for (const match of matches) {
+      mergeResult(exactResults, match);
     }
   }
 
