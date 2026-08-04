@@ -273,7 +273,7 @@ test("does not let a generic Akyo exact match hide a specific keyword", async ()
   ];
 
   const results = await searchWithD1AndVectorize(
-    ["たなばた", "Akyo", "キャラクター"],
+    ["たなばた", "akyo", "AKYO"],
     "ja",
     5,
     fakeEnv({ database })
@@ -282,7 +282,37 @@ test("does not let a generic Akyo exact match hide a specific keyword", async ()
   assert.equal(results[0].id, "0893");
   assert.equal(results[0].nickname, "たなばたAkyo");
   assert.equal(results[0].matchType, "partial");
-  assert.ok(!database.exactCandidates.includes("Akyo"));
+  assert.ok(
+    database.exactCandidates.every(
+      (candidate) => candidate.toLowerCase() !== "akyo"
+    )
+  );
+});
+
+test("keeps a generic Akyo exact match for a single keyword", async () => {
+  const database = new FakeDatabase();
+  database.exactRows = [
+    row({
+      id: "0017",
+      nickname: "N/A",
+      name: "Akyo",
+      match_score: 0.98,
+      matched_field: "name",
+    }),
+  ];
+  const ai = new FakeAi();
+
+  const results = await searchWithD1AndVectorize(
+    ["Akyo"],
+    "ja",
+    5,
+    fakeEnv({ database, ai })
+  );
+
+  assert.equal(results[0].id, "0017");
+  assert.equal(results[0].matchType, "exact");
+  assert.ok(database.exactCandidates.includes("Akyo"));
+  assert.deepEqual(ai.calls, []);
 });
 
 test("finds a numeric avatar ID across languages", async () => {
