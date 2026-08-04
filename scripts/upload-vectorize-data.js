@@ -13,8 +13,10 @@ const DEFAULT_WORKER_URL =
 const INGEST_TOKEN_ENV = 'AKYO_INGEST_TOKEN';
 const WORKER_URL_ENV = 'AKYO_WORKER_URL';
 const DEFAULT_BATCH_SIZE = 50;
+const MAX_BATCH_SIZE = 1000;
 const RETRY_LIMIT = 3;
 const RETRY_DELAY_MS = 3000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,8 +30,15 @@ function parseArgs(args = process.argv.slice(2)) {
     if (args[i] === '--batch-size') {
       const value = args[i + 1];
       const parsed = Number(value);
-      if (!value || !Number.isInteger(parsed) || parsed <= 0) {
-        throw new Error('--batch-size must be a positive integer');
+      if (
+        !value ||
+        !Number.isSafeInteger(parsed) ||
+        parsed < 1 ||
+        parsed > MAX_BATCH_SIZE
+      ) {
+        throw new Error(
+          `--batch-size must be an integer from 1 through ${MAX_BATCH_SIZE}`
+        );
       }
       batchSize = parsed;
       i++;
@@ -64,38 +73,105 @@ function buildRequestHeaders(ingestToken) {
   };
 }
 
-async function sendBatch(
-  records,
-  batchIndex,
-  { workerUrl, ingestToken },
-  retries = 0
-) {
-  const res = await fetch(workerUrl, {
-    method: 'POST',
-    headers: buildRequestHeaders(ingestToken),
-    body: JSON.stringify({ records }),
-  });
+function validateRecordsPayload(value) {
+  if (!Array.isArray(value)) {
+    throw new Error('vectorize-payload.json must contain a records array');
+  }
+  return value;
+}
 
-  if (!res.ok) {
-    const text = await res.text();
-    if (retries < RETRY_LIMIT) {
-      console.warn(
-        `  ⚠ Batch ${batchIndex} failed (${res.status}), retrying in ${RETRY_DELAY_MS / 1000}s... (${retries + 1}/${RETRY_LIMIT})`
-      );
-      await sleep(RETRY_DELAY_MS);
-      return sendBatch(
-        records,
-        batchIndex,
-        { workerUrl, ingestToken },
-        retries + 1
-      );
-    }
+function isRetryableStatus(status) {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function errorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function responseSummary(text) {
+  return text.length > 1000 ? `${text.slice(0, 1000)}...` : text;
+}
+
+async function retryBatch(records, batchIndex, options, retries, reason) {
+  if (retries >= RETRY_LIMIT) {
     throw new Error(
-      `Batch ${batchIndex} failed after ${RETRY_LIMIT} retries: ${res.status} ${text}`
+      `Batch ${batchIndex} failed after ${RETRY_LIMIT} retries: ${reason}`
     );
   }
 
-  return res.json();
+  const delayMs = options.retryDelayMs ?? RETRY_DELAY_MS;
+  console.warn(
+    `  ⚠ Batch ${batchIndex} failed (${reason}), retrying in ${delayMs / 1000}s... (${retries + 1}/${RETRY_LIMIT})`
+  );
+  await sleep(delayMs);
+  return sendBatch(records, batchIndex, options, retries + 1);
+}
+
+async function sendBatch(records, batchIndex, options, retries = 0) {
+  const { workerUrl, ingestToken } = options;
+  let res;
+  try {
+    res = await fetch(workerUrl, {
+      method: 'POST',
+      headers: buildRequestHeaders(ingestToken),
+      body: JSON.stringify({ records }),
+      signal: AbortSignal.timeout(
+        options.requestTimeoutMs ?? REQUEST_TIMEOUT_MS
+      ),
+    });
+  } catch (error) {
+    return retryBatch(
+      records,
+      batchIndex,
+      options,
+      retries,
+      `network error: ${errorMessage(error)}`
+    );
+  }
+
+  const text = await res.text();
+  if (!res.ok) {
+    const reason = `HTTP ${res.status}: ${responseSummary(text)}`;
+    if (isRetryableStatus(res.status)) {
+      return retryBatch(records, batchIndex, options, retries, reason);
+    }
+    throw new Error(`Batch ${batchIndex} failed without retry: ${reason}`);
+  }
+
+  let result;
+  try {
+    result = JSON.parse(text);
+  } catch {
+    return retryBatch(
+      records,
+      batchIndex,
+      options,
+      retries,
+      'success response was not valid JSON'
+    );
+  }
+
+  if (result === null || typeof result !== 'object' || Array.isArray(result)) {
+    return retryBatch(
+      records,
+      batchIndex,
+      options,
+      retries,
+      'success response was not a JSON object'
+    );
+  }
+
+  if (result?.ok === false || Number(result?.failed) > 0) {
+    return retryBatch(
+      records,
+      batchIndex,
+      options,
+      retries,
+      `application failure: ${responseSummary(text)}`
+    );
+  }
+
+  return result;
 }
 
 async function main() {
@@ -109,7 +185,9 @@ async function main() {
     process.exit(1);
   }
 
-  const records = JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
+  const records = validateRecordsPayload(
+    JSON.parse(fs.readFileSync(payloadPath, 'utf8'))
+  );
   const totalBatches = Math.ceil(records.length / batchSize);
 
   console.log(`Records: ${records.length}`);
@@ -161,6 +239,8 @@ module.exports = {
   buildRequestHeaders,
   getIngestToken,
   getWorkerUrl,
+  isRetryableStatus,
   parseArgs,
   sendBatch,
+  validateRecordsPayload,
 };
