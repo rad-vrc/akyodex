@@ -1,0 +1,388 @@
+import type {
+  AkyoRecord,
+  Env,
+  Language,
+  SearchResult,
+  VectorizeIndex,
+  VectorizeMetadata,
+} from "./types";
+
+export const DEFAULT_TOP_K = 5;
+export const MAX_TOP_K = 8;
+export const MAX_KEYWORDS = 3;
+
+const EMBEDDING_MODEL = "@cf/baai/bge-m3";
+const MIN_SEMANTIC_SCORE = 0.35;
+
+interface SearchRow extends AkyoRecord {
+  match_score: number;
+  matched_field: string;
+}
+
+export function normalizeTopK(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_TOP_K;
+  }
+
+  return Math.min(Math.max(Math.floor(parsed), 1), MAX_TOP_K);
+}
+
+export function isJapanese(text: string): boolean {
+  return /[\u3040-\u30ff\u3400-\u9fff]/u.test(text);
+}
+
+export function isKorean(text: string): boolean {
+  return /[\uac00-\ud7af]/u.test(text);
+}
+
+export function detectLanguage(text: string): Language {
+  if (isJapanese(text)) {
+    return "ja";
+  }
+  if (isKorean(text)) {
+    return "ko";
+  }
+  return "en";
+}
+
+export function normalizeLanguage(value: unknown, text: string): Language {
+  if (value === "ja" || value === "en" || value === "ko") {
+    return value;
+  }
+  return detectLanguage(text);
+}
+
+function cleanNaturalLanguageQuery(value: string): string {
+  let cleaned = value.trim().replace(/[?？!！。]+$/gu, "").trim();
+
+  cleaned = cleaned
+    .replace(
+      /(?:について)?(?:教えて(?:ください)?|知りたい(?:です)?|説明して(?:ください)?)$/u,
+      ""
+    )
+    .replace(/とは$/u, "")
+    .replace(/^(?:tell me about|what is|who is)\s+/iu, "")
+    .replace(
+      /(?:에\s*대해\s*)?(?:알려\s*줘|알려\s*주세요|설명해\s*줘|설명해\s*주세요)$/u,
+      ""
+    )
+    .trim();
+
+  return cleaned;
+}
+
+export function exactCandidates(value: string): string[] {
+  const original = value.trim().replace(/[?？!！。]+$/gu, "").trim();
+  const cleaned = cleanNaturalLanguageQuery(value);
+  const candidates: string[] = [];
+
+  for (const candidate of [cleaned, original]) {
+    if (candidate && !candidates.some((item) => item.toLowerCase() === candidate.toLowerCase())) {
+      candidates.push(candidate);
+    }
+  }
+
+  for (const candidate of [...candidates]) {
+    const idMatch = candidate.match(/^(?:#?avatar)?\s*0*(\d{1,4})$/iu);
+    if (idMatch) {
+      const id = idMatch[1].padStart(4, "0");
+      if (!candidates.includes(id)) {
+        candidates.unshift(id);
+      }
+    }
+  }
+
+  return candidates;
+}
+
+export function normalizeSearchTerms(
+  query: unknown,
+  keywords: unknown
+): string[] {
+  const values = Array.isArray(keywords) && keywords.length > 0
+    ? keywords
+    : [query ?? keywords];
+  const terms: string[] = [];
+
+  for (const value of values) {
+    if (typeof value !== "string") {
+      continue;
+    }
+    const cleaned = cleanNaturalLanguageQuery(value) || value.trim();
+    if (!cleaned) {
+      continue;
+    }
+    if (!terms.some((item) => item.toLowerCase() === cleaned.toLowerCase())) {
+      terms.push(cleaned);
+    }
+    if (terms.length === MAX_KEYWORDS) {
+      break;
+    }
+  }
+
+  if (terms.length === 0 && Array.isArray(keywords) && typeof query === "string") {
+    const fallback = cleanNaturalLanguageQuery(query) || query.trim();
+    if (fallback) {
+      terms.push(fallback);
+    }
+  }
+
+  return terms;
+}
+
+export function selectVectorIndex(env: Env): VectorizeIndex {
+  // The production JA/EN indexes are currently empty. Keep using the populated
+  // shared index until a verified language-index backfill has completed.
+  return env.VECTORIZE;
+}
+
+function toSearchResult(row: SearchRow, keyword: string): SearchResult {
+  return {
+    id: row.id,
+    nickname: row.nickname,
+    name: row.name,
+    category: row.category,
+    description: row.description,
+    author: row.author,
+    url: row.url,
+    language: row.language,
+    score: row.match_score,
+    matchType: row.match_score >= 0.98 ? "exact" : "partial",
+    matchedField: row.matched_field,
+    matchedKeyword: keyword,
+  };
+}
+
+async function findExactMatches(
+  candidate: string,
+  language: Language,
+  limit: number,
+  env: Env
+): Promise<SearchResult[]> {
+  const result = await env.DB.prepare(`
+    SELECT id, nickname, name, category, description, author, url, language,
+      CASE
+        WHEN id = ? THEN 1.0
+        WHEN nickname = ? COLLATE NOCASE THEN 0.99
+        ELSE 0.98
+      END AS match_score,
+      CASE
+        WHEN id = ? THEN 'id'
+        WHEN nickname = ? COLLATE NOCASE THEN 'nickname'
+        ELSE 'name'
+      END AS matched_field
+    FROM akyos
+    WHERE language = ? AND (
+      id = ? OR nickname = ? COLLATE NOCASE OR name = ? COLLATE NOCASE
+    )
+    ORDER BY match_score DESC, id ASC
+    LIMIT ?
+  `)
+    .bind(
+      candidate,
+      candidate,
+      candidate,
+      candidate,
+      language,
+      candidate,
+      candidate,
+      candidate,
+      limit
+    )
+    .all<SearchRow>();
+
+  return (result.results ?? []).map((row) => toSearchResult(row, candidate));
+}
+
+async function findPartialMatches(
+  keyword: string,
+  language: Language,
+  limit: number,
+  env: Env
+): Promise<SearchResult[]> {
+  const like = `%${keyword}%`;
+  const result = await env.DB.prepare(`
+    SELECT id, nickname, name, category, description, author, url, language,
+      CASE
+        WHEN category = ? THEN 0.95
+        WHEN author = ? THEN 0.90
+        WHEN nickname LIKE ? THEN 0.85
+        WHEN name LIKE ? THEN 0.80
+        WHEN category LIKE ? THEN 0.75
+        WHEN author LIKE ? THEN 0.70
+        ELSE 0.50
+      END AS match_score,
+      CASE
+        WHEN category = ? THEN 'category'
+        WHEN author = ? THEN 'author'
+        WHEN nickname LIKE ? THEN 'nickname'
+        WHEN name LIKE ? THEN 'name'
+        WHEN category LIKE ? THEN 'category'
+        WHEN author LIKE ? THEN 'author'
+        ELSE 'description'
+      END AS matched_field
+    FROM akyos
+    WHERE language = ? AND (
+      nickname LIKE ? OR name LIKE ? OR category LIKE ? OR
+      description LIKE ? OR author LIKE ?
+    )
+    ORDER BY match_score DESC, id ASC
+    LIMIT ?
+  `)
+    .bind(
+      keyword,
+      keyword,
+      like,
+      like,
+      like,
+      like,
+      keyword,
+      keyword,
+      like,
+      like,
+      like,
+      like,
+      language,
+      like,
+      like,
+      like,
+      like,
+      like,
+      limit
+    )
+    .all<SearchRow>();
+
+  return (result.results ?? []).map((row) => toSearchResult(row, keyword));
+}
+
+function metadataToResult(
+  matchId: string,
+  score: number,
+  metadata: VectorizeMetadata,
+  keyword: string,
+  language: Language
+): SearchResult | null {
+  const id = metadata.id || matchId;
+  const nickname = metadata.nickname;
+  if (!id || !nickname) {
+    return null;
+  }
+
+  return {
+    id,
+    nickname,
+    name: metadata.name ?? "",
+    category: metadata.category ?? "",
+    description: metadata.description ?? "",
+    author: metadata.author ?? "",
+    url: metadata.url ?? "",
+    language: metadata.language ?? language,
+    score: score * 0.6,
+    matchType: "semantic",
+    matchedField: "semantic",
+    matchedKeyword: keyword,
+  };
+}
+
+async function findVectorMatches(
+  keyword: string,
+  language: Language,
+  limit: number,
+  env: Env
+): Promise<SearchResult[]> {
+  const index = selectVectorIndex(env);
+  const embeddings = await env.AI.run(EMBEDDING_MODEL, { text: keyword });
+  const vector = embeddings.data[0];
+  if (!vector) {
+    return [];
+  }
+
+  const candidateLimit = Math.min(limit * 3, 24);
+  const vectorResults = await index.query(vector, {
+    topK: candidateLimit,
+    returnMetadata: true,
+  });
+
+  const results: SearchResult[] = [];
+  for (const match of vectorResults.matches) {
+    if (match.score < MIN_SEMANTIC_SCORE || !match.metadata) {
+      continue;
+    }
+    const dataLanguage = match.metadata.language ?? language;
+    if (dataLanguage !== language) {
+      continue;
+    }
+    const result = metadataToResult(
+      match.id,
+      match.score,
+      match.metadata,
+      keyword,
+      language
+    );
+    if (result) {
+      results.push(result);
+    }
+  }
+  return results;
+}
+
+function mergeResult(target: Map<string, SearchResult>, result: SearchResult): void {
+  const existing = target.get(result.id);
+  if (!existing || result.score > existing.score) {
+    target.set(result.id, result);
+  }
+}
+
+function sortAndLimit(results: Iterable<SearchResult>, limit: number): SearchResult[] {
+  return [...results]
+    .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))
+    .slice(0, limit);
+}
+
+export async function searchWithD1AndVectorize(
+  rawTerms: string[],
+  language: Language,
+  requestedTopK: unknown,
+  env: Env
+): Promise<SearchResult[]> {
+  const limit = normalizeTopK(requestedTopK);
+  const terms = normalizeSearchTerms(undefined, rawTerms);
+  const exactResults = new Map<string, SearchResult>();
+
+  for (const term of terms) {
+    for (const candidate of exactCandidates(term)) {
+      const matches = await findExactMatches(candidate, language, limit, env);
+      for (const match of matches) {
+        mergeResult(exactResults, match);
+      }
+    }
+  }
+
+  if (exactResults.size > 0) {
+    return sortAndLimit(exactResults.values(), limit);
+  }
+
+  const fallbackResults = new Map<string, SearchResult>();
+  await Promise.all(
+    terms.map(async (term) => {
+      const partialPromise = findPartialMatches(term, language, limit, env);
+      const vectorPromise = findVectorMatches(term, language, limit, env).catch(
+        (error: unknown) => {
+          console.error("Vector search failed; returning D1 matches only", error);
+          return [];
+        }
+      );
+
+      const [partialMatches, vectorMatches] = await Promise.all([
+        partialPromise,
+        vectorPromise,
+      ]);
+      for (const result of [...partialMatches, ...vectorMatches]) {
+        mergeResult(fallbackResults, result);
+      }
+    })
+  );
+
+  return sortAndLimit(fallbackResults.values(), limit);
+}
