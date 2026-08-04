@@ -20,14 +20,18 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parseArgs() {
-  const args = process.argv.slice(2);
+function parseArgs(args = process.argv.slice(2)) {
   let batchSize = DEFAULT_BATCH_SIZE;
   let dryRun = false;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--batch-size' && args[i + 1]) {
-      batchSize = parseInt(args[i + 1], 10);
+    if (args[i] === '--batch-size') {
+      const value = args[i + 1];
+      const parsed = Number(value);
+      if (!value || !Number.isInteger(parsed) || parsed <= 0) {
+        throw new Error('--batch-size must be a positive integer');
+      }
+      batchSize = parsed;
       i++;
     }
     if (args[i] === '--dry-run') {
@@ -157,5 +161,6 @@ module.exports = {
   buildRequestHeaders,
   getIngestToken,
   getWorkerUrl,
+  parseArgs,
   sendBatch,
 };

@@ -5,8 +5,27 @@ const {
   buildRequestHeaders,
   getIngestToken,
   getWorkerUrl,
+  parseArgs,
   sendBatch,
 } = require('./upload-vectorize-data');
+
+test('accepts only a positive integer batch size', () => {
+  assert.deepEqual(parseArgs(['--batch-size', '25', '--dry-run']), {
+    batchSize: 25,
+    dryRun: true,
+  });
+
+  for (const value of ['0', '-1', '1.5', 'not-a-number']) {
+    assert.throws(
+      () => parseArgs(['--batch-size', value]),
+      /--batch-size must be a positive integer/
+    );
+  }
+  assert.throws(
+    () => parseArgs(['--batch-size']),
+    /--batch-size must be a positive integer/
+  );
+});
 
 test('requires the ingest token outside dry-run orchestration', () => {
   assert.throws(
