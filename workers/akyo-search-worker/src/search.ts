@@ -106,7 +106,7 @@ export function isSpecificNameQuery(value: unknown): boolean {
 
   return (
     /akyo$/iu.test(candidate) ||
-    /^akyo[_-][\p{L}\p{N}_-]+$/iu.test(candidate)
+    /^akyo[_-][\p{L}\p{N}][\p{L}\p{N}_-]*$/iu.test(candidate)
   );
 }
 
@@ -339,6 +339,36 @@ async function findPartialMatches(
   return (result.results ?? []).map((row) => toSearchResult(row, keyword));
 }
 
+async function findPartialNameMatches(
+  keyword: string,
+  language: Language,
+  limit: number,
+  env: Env
+): Promise<SearchResult[]> {
+  const like = `%${escapeLikePattern(keyword)}%`;
+  const result = await env.DB.prepare(`
+    SELECT id, nickname, name, category, description, author, url, language,
+      CASE
+        WHEN nickname LIKE ? ESCAPE '\\' THEN 0.85
+        ELSE 0.80
+      END AS match_score,
+      CASE
+        WHEN nickname LIKE ? ESCAPE '\\' THEN 'nickname'
+        ELSE 'name'
+      END AS matched_field
+    FROM akyos
+    WHERE language = ? AND (
+      nickname LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'
+    )
+    ORDER BY match_score DESC, id ASC
+    LIMIT ?
+  `)
+    .bind(like, like, language, like, like, limit)
+    .all<SearchRow>();
+
+  return (result.results ?? []).map((row) => toSearchResult(row, keyword));
+}
+
 function metadataToResult(
   matchId: string,
   score: number,
@@ -421,6 +451,45 @@ function sortAndLimit(results: Iterable<SearchResult>, limit: number): SearchRes
   return [...results]
     .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))
     .slice(0, limit);
+}
+
+export async function searchSpecificNameMatches(
+  rawTerms: string[],
+  language: Language,
+  env: Env
+): Promise<SearchResult[]> {
+  const limit = 1;
+  const terms = normalizeSearchTerms(undefined, rawTerms);
+  const exactResults = new Map<string, SearchResult>();
+
+  const exactMatches = await Promise.all(
+    terms.flatMap((term) =>
+      exactCandidates(term).map((candidate) =>
+        findExactCandidateMatches(candidate, language, limit, env)
+      )
+    )
+  );
+  for (const matches of exactMatches) {
+    for (const match of matches) {
+      mergeResult(exactResults, match);
+    }
+  }
+
+  if (exactResults.size > 0) {
+    return sortAndLimit(exactResults.values(), limit);
+  }
+
+  const partialResults = new Map<string, SearchResult>();
+  const partialMatches = await Promise.all(
+    terms.map((term) => findPartialNameMatches(term, language, limit, env))
+  );
+  for (const matches of partialMatches) {
+    for (const match of matches) {
+      mergeResult(partialResults, match);
+    }
+  }
+
+  return sortAndLimit(partialResults.values(), limit);
 }
 
 export async function searchWithD1AndVectorize(

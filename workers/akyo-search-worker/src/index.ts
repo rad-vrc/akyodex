@@ -9,6 +9,7 @@ import {
   normalizeLanguage,
   normalizeSearchTerms,
   normalizeTopK,
+  searchSpecificNameMatches,
   searchWithD1AndVectorize,
 } from "./search";
 import type { Env } from "./types";
@@ -54,22 +55,16 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
 
   const language = normalizeLanguage(body.language, terms.join(" "));
   const topK = normalizeTopK(body.topK);
-  const searchResults = await searchWithD1AndVectorize(
-    terms,
-    language,
-    topK,
-    env
-  );
-  const specificNameQuery = isSpecificNameQuery(body.query);
+  const specificNameInput =
+    typeof body.query === "string" && body.query.trim()
+      ? body.query
+      : Array.isArray(body.keywords) && body.keywords.length === 1
+        ? body.keywords[0]
+        : undefined;
+  const specificNameQuery = isSpecificNameQuery(specificNameInput);
   const results = specificNameQuery
-    ? searchResults
-        .filter(
-          (result) =>
-            result.matchType !== "semantic" &&
-            ["id", "nickname", "name"].includes(result.matchedField)
-        )
-        .slice(0, 1)
-    : searchResults;
+    ? await searchSpecificNameMatches(terms, language, env)
+    : await searchWithD1AndVectorize(terms, language, topK, env);
 
   return jsonResponse({
     query: typeof body.query === "string" ? body.query : undefined,

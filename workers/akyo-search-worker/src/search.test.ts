@@ -103,6 +103,10 @@ class FakeDatabase implements D1Database {
       this.partialKeywords.push(String(values[0] ?? ""));
       return this.partialRows;
     }
+    if (query.includes("WHEN nickname LIKE ?") && query.includes("ELSE 'name'")) {
+      this.partialKeywords.push(String(values[0] ?? ""));
+      return this.partialRows;
+    }
     return [];
   }
 }
@@ -268,6 +272,7 @@ test("distinguishes specific Akyo names from discovery queries", () => {
   assert.equal(isSpecificNameQuery("かわいいAkyoを教えて"), false);
   assert.equal(isSpecificNameQuery("七夕っぽいアバター"), false);
   assert.equal(isSpecificNameQuery("Akyo"), false);
+  assert.equal(isSpecificNameQuery("akyo__"), false);
 });
 
 test("returns an exact D1 match without invoking Workers AI", async () => {
@@ -467,6 +472,7 @@ test("search endpoint clamps topK before returning results", async () => {
 });
 
 test("does not return semantic candidates for an unknown specific Akyo name", async () => {
+  const ai = new FakeAi();
   const sharedIndex = new FakeVectorize([
     {
       id: "0138",
@@ -490,7 +496,7 @@ test("does not return semantic candidates for an unknown specific Akyo name", as
         keywords: ["ぬへもらふ", "Akyo"],
       }),
     }),
-    fakeEnv({ vectorize: sharedIndex })
+    fakeEnv({ ai, vectorize: sharedIndex })
   );
   const body = (await response.json()) as {
     searchMode?: string;
@@ -504,6 +510,8 @@ test("does not return semantic candidates for an unknown specific Akyo name", as
   assert.equal(body.nameMatch, false);
   assert.equal(body.count, 0);
   assert.deepEqual(body.results, []);
+  assert.deepEqual(ai.calls, []);
+  assert.deepEqual(sharedIndex.queryTopK, []);
 });
 
 test("keeps the best lexical name match for a specific Akyo query", async () => {
@@ -511,7 +519,17 @@ test("keeps the best lexical name match for a specific Akyo query", async () => 
   database.partialRows = [
     row({ match_score: 0.85, matched_field: "nickname" }),
   ];
-  const sharedIndex = new FakeVectorize(vectorMatches(3));
+  const sharedIndex = new FakeVectorize([
+    {
+      id: "9999",
+      score: 2,
+      metadata: {
+        id: "9999",
+        nickname: "意味検索候補Akyo",
+        language: "ja",
+      },
+    },
+  ]);
   const response = await worker.fetch(
     new Request("https://worker.example/search", {
       method: "POST",
@@ -519,6 +537,7 @@ test("keeps the best lexical name match for a specific Akyo query", async () => 
       body: JSON.stringify({
         query: "七夕Akyoについて教えて",
         keywords: ["たなばた", "Akyo"],
+        topK: 1,
       }),
     }),
     fakeEnv({ database, vectorize: sharedIndex })
@@ -537,6 +556,57 @@ test("keeps the best lexical name match for a specific Akyo query", async () => 
   assert.deepEqual(body.results.map((result) => result.id), ["0893"]);
   assert.equal(body.results[0].matchType, "partial");
   assert.equal(body.results[0].matchedField, "nickname");
+  assert.deepEqual(sharedIndex.queryTopK, []);
+});
+
+test("treats one keyword-only Akyo name as a specific-name query", async () => {
+  const ai = new FakeAi();
+  const sharedIndex = new FakeVectorize(vectorMatches(3));
+  const response = await worker.fetch(
+    new Request("https://worker.example/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keywords: ["未登録Akyo"] }),
+    }),
+    fakeEnv({ ai, vectorize: sharedIndex })
+  );
+  const body = (await response.json()) as {
+    searchMode?: string;
+    nameMatch?: boolean;
+    count: number;
+    results: unknown[];
+  };
+
+  assert.equal(body.searchMode, "specific-name");
+  assert.equal(body.nameMatch, false);
+  assert.equal(body.count, 0);
+  assert.deepEqual(body.results, []);
+  assert.deepEqual(ai.calls, []);
+  assert.deepEqual(sharedIndex.queryTopK, []);
+});
+
+test("keeps multiple keyword-only requests in discovery mode", async () => {
+  const ai = new FakeAi();
+  const sharedIndex = new FakeVectorize(vectorMatches(3));
+  const response = await worker.fetch(
+    new Request("https://worker.example/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keywords: ["七夕", "夏"] }),
+    }),
+    fakeEnv({ ai, vectorize: sharedIndex })
+  );
+  const body = (await response.json()) as {
+    searchMode?: string;
+    nameMatch?: boolean;
+    count: number;
+  };
+
+  assert.equal(body.searchMode, "discovery");
+  assert.equal(body.nameMatch, undefined);
+  assert.equal(body.count, 3);
+  assert.deepEqual(ai.calls, ["七夕", "夏"]);
+  assert.deepEqual(sharedIndex.queryTopK, [15, 15]);
 });
 
 test("keeps semantic candidates for discovery queries", async () => {
