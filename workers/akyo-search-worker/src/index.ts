@@ -5,9 +5,11 @@ import {
   isAuthorizedForIngest,
 } from "./ingest";
 import {
+  isSpecificNameQuery,
   normalizeLanguage,
   normalizeSearchTerms,
   normalizeTopK,
+  searchSpecificNameMatches,
   searchWithD1AndVectorize,
 } from "./search";
 import type { Env } from "./types";
@@ -53,12 +55,25 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
 
   const language = normalizeLanguage(body.language, terms.join(" "));
   const topK = normalizeTopK(body.topK);
-  const results = await searchWithD1AndVectorize(terms, language, topK, env);
+  const specificNameInput =
+    typeof body.query === "string" && body.query.trim()
+      ? body.query
+      : Array.isArray(body.keywords) && body.keywords.length === 1
+        ? body.keywords[0]
+        : undefined;
+  const specificNameQuery = isSpecificNameQuery(specificNameInput);
+  const specificNameTerms =
+    typeof specificNameInput === "string" ? [specificNameInput] : terms;
+  const results = specificNameQuery
+    ? await searchSpecificNameMatches(specificNameTerms, language, env)
+    : await searchWithD1AndVectorize(terms, language, topK, env);
 
   return jsonResponse({
     query: typeof body.query === "string" ? body.query : undefined,
     keywords: Array.isArray(body.keywords) ? terms : undefined,
     language,
+    searchMode: specificNameQuery ? "specific-name" : "discovery",
+    nameMatch: specificNameQuery ? results.length > 0 : undefined,
     results,
     count: results.length,
   });

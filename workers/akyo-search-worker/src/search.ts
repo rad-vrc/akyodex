@@ -23,6 +23,29 @@ const GENERIC_SEARCH_TERMS = new Set([
   "아바타",
   "캐릭터",
 ]);
+const DESCRIPTIVE_AKYO_MODIFIERS = new Set([
+  "cute",
+  "cool",
+  "pretty",
+  "funny",
+  "scary",
+  "small",
+  "big",
+  "かわいい",
+  "可愛い",
+  "かっこいい",
+  "面白い",
+  "怖い",
+  "小さい",
+  "大きい",
+  "귀여운",
+  "멋진",
+  "예쁜",
+  "재미있는",
+  "무서운",
+  "작은",
+  "큰",
+]);
 
 interface SearchRow extends AkyoRecord {
   match_score: number;
@@ -88,6 +111,36 @@ function cleanNaturalLanguageQuery(value: string): string {
     .trim();
 
   return cleaned;
+}
+
+function isDescriptiveAkyoQuery(value: string): boolean {
+  const match = value.match(/^(.*?)\s*akyo$/iu);
+  if (!match) {
+    return false;
+  }
+
+  return DESCRIPTIVE_AKYO_MODIFIERS.has(match[1].trim().toLowerCase());
+}
+
+export function isSpecificNameQuery(value: unknown): boolean {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const candidate = cleanNaturalLanguageQuery(value);
+  if (!candidate || GENERIC_SEARCH_TERMS.has(candidate.toLowerCase())) {
+    return false;
+  }
+
+  if (/^(?:#?avatar)?\s*0*\d{1,4}$/iu.test(candidate)) {
+    return true;
+  }
+
+  if (/akyo$/iu.test(candidate)) {
+    return !isDescriptiveAkyoQuery(candidate);
+  }
+
+  return /^akyo[_-][\p{L}\p{N}][\p{L}\p{N}_-]*$/iu.test(candidate);
 }
 
 export function exactCandidates(value: string): string[] {
@@ -319,6 +372,36 @@ async function findPartialMatches(
   return (result.results ?? []).map((row) => toSearchResult(row, keyword));
 }
 
+async function findPartialNameMatches(
+  keyword: string,
+  language: Language,
+  limit: number,
+  env: Env
+): Promise<SearchResult[]> {
+  const like = `%${escapeLikePattern(keyword)}%`;
+  const result = await env.DB.prepare(`
+    SELECT id, nickname, name, category, description, author, url, language,
+      CASE
+        WHEN nickname LIKE ? ESCAPE '\\' THEN 0.85
+        ELSE 0.80
+      END AS match_score,
+      CASE
+        WHEN nickname LIKE ? ESCAPE '\\' THEN 'nickname'
+        ELSE 'name'
+      END AS matched_field
+    FROM akyos
+    WHERE language = ? AND (
+      nickname LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'
+    )
+    ORDER BY match_score DESC, id ASC
+    LIMIT ?
+  `)
+    .bind(like, like, language, like, like, limit)
+    .all<SearchRow>();
+
+  return (result.results ?? []).map((row) => toSearchResult(row, keyword));
+}
+
 function metadataToResult(
   matchId: string,
   score: number,
@@ -401,6 +484,45 @@ function sortAndLimit(results: Iterable<SearchResult>, limit: number): SearchRes
   return [...results]
     .sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))
     .slice(0, limit);
+}
+
+export async function searchSpecificNameMatches(
+  rawTerms: string[],
+  language: Language,
+  env: Env
+): Promise<SearchResult[]> {
+  const limit = 1;
+  const terms = normalizeSearchTerms(undefined, rawTerms);
+  const exactResults = new Map<string, SearchResult>();
+
+  const exactMatches = await Promise.all(
+    terms.flatMap((term) =>
+      exactCandidates(term).map((candidate) =>
+        findExactCandidateMatches(candidate, language, limit, env)
+      )
+    )
+  );
+  for (const matches of exactMatches) {
+    for (const match of matches) {
+      mergeResult(exactResults, match);
+    }
+  }
+
+  if (exactResults.size > 0) {
+    return sortAndLimit(exactResults.values(), limit);
+  }
+
+  const partialResults = new Map<string, SearchResult>();
+  const partialMatches = await Promise.all(
+    terms.map((term) => findPartialNameMatches(term, language, limit, env))
+  );
+  for (const matches of partialMatches) {
+    for (const match of matches) {
+      mergeResult(partialResults, match);
+    }
+  }
+
+  return sortAndLimit(partialResults.values(), limit);
 }
 
 export async function searchWithD1AndVectorize(
