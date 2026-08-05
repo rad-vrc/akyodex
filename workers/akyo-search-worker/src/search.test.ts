@@ -270,6 +270,9 @@ test("distinguishes specific Akyo names from discovery queries", () => {
   assert.equal(isSpecificNameQuery("모래여우Akyo에 대해 알려줘"), true);
   assert.equal(isSpecificNameQuery("#Avatar0504"), true);
   assert.equal(isSpecificNameQuery("かわいいAkyoを教えて"), false);
+  assert.equal(isSpecificNameQuery("cute Akyo"), false);
+  assert.equal(isSpecificNameQuery("かわいいAkyo"), false);
+  assert.equal(isSpecificNameQuery("귀여운 Akyo"), false);
   assert.equal(isSpecificNameQuery("七夕っぽいアバター"), false);
   assert.equal(isSpecificNameQuery("Akyo"), false);
   assert.equal(isSpecificNameQuery("akyo__"), false);

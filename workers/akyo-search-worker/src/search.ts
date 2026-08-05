@@ -23,6 +23,29 @@ const GENERIC_SEARCH_TERMS = new Set([
   "아바타",
   "캐릭터",
 ]);
+const DESCRIPTIVE_AKYO_MODIFIERS = new Set([
+  "cute",
+  "cool",
+  "pretty",
+  "funny",
+  "scary",
+  "small",
+  "big",
+  "かわいい",
+  "可愛い",
+  "かっこいい",
+  "面白い",
+  "怖い",
+  "小さい",
+  "大きい",
+  "귀여운",
+  "멋진",
+  "예쁜",
+  "재미있는",
+  "무서운",
+  "작은",
+  "큰",
+]);
 
 interface SearchRow extends AkyoRecord {
   match_score: number;
@@ -90,6 +113,15 @@ function cleanNaturalLanguageQuery(value: string): string {
   return cleaned;
 }
 
+function isDescriptiveAkyoQuery(value: string): boolean {
+  const match = value.match(/^(.*?)\s*akyo$/iu);
+  if (!match) {
+    return false;
+  }
+
+  return DESCRIPTIVE_AKYO_MODIFIERS.has(match[1].trim().toLowerCase());
+}
+
 export function isSpecificNameQuery(value: unknown): boolean {
   if (typeof value !== "string") {
     return false;
@@ -104,10 +136,11 @@ export function isSpecificNameQuery(value: unknown): boolean {
     return true;
   }
 
-  return (
-    /akyo$/iu.test(candidate) ||
-    /^akyo[_-][\p{L}\p{N}][\p{L}\p{N}_-]*$/iu.test(candidate)
-  );
+  if (/akyo$/iu.test(candidate)) {
+    return !isDescriptiveAkyoQuery(candidate);
+  }
+
+  return /^akyo[_-][\p{L}\p{N}][\p{L}\p{N}_-]*$/iu.test(candidate);
 }
 
 export function exactCandidates(value: string): string[] {
