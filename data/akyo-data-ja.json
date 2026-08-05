@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-03T09:32:42.141Z",
-  "count": 926,
+  "updatedAt": "2026-08-05T09:32:16.095Z",
+  "count": 927,
   "data": [
     {
       "id": "0001",
@@ -10561,6 +10561,18 @@
       "author": "Fuganbya",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_019b0a86-3065-4454-aeed-b688c07359aa",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_019b0a86-3065-4454-aeed-b688c07359aa"
+    },
+    {
+      "id": "0927",
+      "entryType": "world",
+      "displaySerial": "0099",
+      "nickname": "VRCガチャポン専門店",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "しばふ店長（shibafu）",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_e6e87539-a759-48df-9abb-cfacfa3f2556/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_e6e87539-a759-48df-9abb-cfacfa3f2556/"
     }
   ]
 }
