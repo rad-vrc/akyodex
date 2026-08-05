@@ -90,6 +90,26 @@ function cleanNaturalLanguageQuery(value: string): string {
   return cleaned;
 }
 
+export function isSpecificNameQuery(value: unknown): boolean {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const candidate = cleanNaturalLanguageQuery(value);
+  if (!candidate || GENERIC_SEARCH_TERMS.has(candidate.toLowerCase())) {
+    return false;
+  }
+
+  if (/^(?:#?avatar)?\s*0*\d{1,4}$/iu.test(candidate)) {
+    return true;
+  }
+
+  return (
+    /akyo$/iu.test(candidate) ||
+    /^akyo[_-][\p{L}\p{N}_-]+$/iu.test(candidate)
+  );
+}
+
 export function exactCandidates(value: string): string[] {
   const original = value.trim().replace(/[?？!！。]+$/gu, "").trim();
   const cleaned = cleanNaturalLanguageQuery(value);
