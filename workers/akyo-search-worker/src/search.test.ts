@@ -601,6 +601,37 @@ test("searches the original specific name when generated keywords differ", async
   assert.deepEqual(sharedIndex.queryTopK, []);
 });
 
+test("does not replace an unknown specific name with a keyword match", async () => {
+  const database = new FakeDatabase();
+  database.exactRows = [row()];
+  const ai = new FakeAi();
+  const sharedIndex = new FakeVectorize(vectorMatches(3));
+  const response = await worker.fetch(
+    new Request("https://worker.example/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: "未登録Akyoについて教えて",
+        keywords: ["たなばたAkyo"],
+      }),
+    }),
+    fakeEnv({ database, ai, vectorize: sharedIndex })
+  );
+  const body = (await response.json()) as {
+    searchMode?: string;
+    nameMatch?: boolean;
+    count: number;
+    results: unknown[];
+  };
+
+  assert.equal(body.searchMode, "specific-name");
+  assert.equal(body.nameMatch, false);
+  assert.equal(body.count, 0);
+  assert.deepEqual(body.results, []);
+  assert.deepEqual(ai.calls, []);
+  assert.deepEqual(sharedIndex.queryTopK, []);
+});
+
 test("treats one keyword-only Akyo name as a specific-name query", async () => {
   const ai = new FakeAi();
   const sharedIndex = new FakeVectorize(vectorMatches(3));
