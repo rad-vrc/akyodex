@@ -63,7 +63,13 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
         : undefined;
   const specificNameQuery = isSpecificNameQuery(specificNameInput);
   const results = specificNameQuery
-    ? await searchSpecificNameMatches(terms, language, env)
+    ? await searchSpecificNameMatches(
+        typeof specificNameInput === "string"
+          ? [specificNameInput, ...terms]
+          : terms,
+        language,
+        env
+      )
     : await searchWithD1AndVectorize(terms, language, topK, env);
 
   return jsonResponse({

@@ -559,6 +559,45 @@ test("keeps the best lexical name match for a specific Akyo query", async () => 
   assert.deepEqual(sharedIndex.queryTopK, []);
 });
 
+test("searches the original specific name when generated keywords differ", async () => {
+  const database = new FakeDatabase();
+  database.exactRows = [
+    row({ match_score: 0.98, matched_field: "name" }),
+  ];
+  const ai = new FakeAi();
+  const sharedIndex = new FakeVectorize(vectorMatches(3));
+  const response = await worker.fetch(
+    new Request("https://worker.example/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: "七夕Akyoについて教えて",
+        keywords: ["星祭り"],
+      }),
+    }),
+    fakeEnv({ database, ai, vectorize: sharedIndex })
+  );
+  const body = (await response.json()) as {
+    searchMode?: string;
+    nameMatch?: boolean;
+    count: number;
+    results: Array<{ id: string; matchedField: string }>;
+  };
+
+  assert.equal(body.searchMode, "specific-name");
+  assert.equal(body.nameMatch, true);
+  assert.equal(body.count, 1);
+  assert.deepEqual(
+    body.results.map((result) => ({
+      id: result.id,
+      matchedField: result.matchedField,
+    })),
+    [{ id: "0893", matchedField: "name" }]
+  );
+  assert.deepEqual(ai.calls, []);
+  assert.deepEqual(sharedIndex.queryTopK, []);
+});
+
 test("treats one keyword-only Akyo name as a specific-name query", async () => {
   const ai = new FakeAi();
   const sharedIndex = new FakeVectorize(vectorMatches(3));
