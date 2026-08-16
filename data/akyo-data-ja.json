@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-13T02:40:57.742Z",
-  "count": 930,
+  "updatedAt": "2026-08-16T14:50:06.412Z",
+  "count": 931,
   "data": [
     {
       "id": "0001",
@@ -10609,6 +10609,18 @@
       "author": "wata23",
       "sourceUrl": "https://vrchat.com/home/world/wrld_fbb77316-a301-499b-a4f6-5f676c5a1b08/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_fbb77316-a301-499b-a4f6-5f676c5a1b08/"
+    },
+    {
+      "id": "0931",
+      "entryType": "world",
+      "displaySerial": "0103",
+      "nickname": "AKYO CATHEDRAL 忘れられた旧神殿",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_483fdeef-eac1-4c83-86e3-d6bf37deb743/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_483fdeef-eac1-4c83-86e3-d6bf37deb743/"
     }
   ]
 }
