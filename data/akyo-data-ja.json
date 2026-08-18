@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-17T12:00:19.845Z",
-  "count": 932,
+  "updatedAt": "2026-08-18T09:12:13.544Z",
+  "count": 933,
   "data": [
     {
       "id": "0001",
@@ -10633,6 +10633,18 @@
       "author": "~Gia~",
       "sourceUrl": "https://vrchat.com/home/world/wrld_0f13ebe7-bbff-4b7b-993c-25b112a6f193/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_0f13ebe7-bbff-4b7b-993c-25b112a6f193/"
+    },
+    {
+      "id": "0933",
+      "entryType": "world",
+      "displaySerial": "0105",
+      "nickname": "ムチォ Hub",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "TsunomakiJesus",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_f606b469-98b0-42ee-9327-ba0e13725b41/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_f606b469-98b0-42ee-9327-ba0e13725b41/"
     }
   ]
 }
