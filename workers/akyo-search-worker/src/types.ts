@@ -1,7 +1,16 @@
 export type Language = "ja" | "en" | "ko";
+export type EntryType = "avatar" | "world";
+
+export function normalizeEntryType(value: unknown, url = ""): EntryType {
+  if (value === "world" || /\/world\//iu.test(url)) {
+    return "world";
+  }
+  return "avatar";
+}
 
 export interface AkyoRecord {
   id: string;
+  entryType: EntryType;
   nickname: string;
   name: string;
   category: string;
