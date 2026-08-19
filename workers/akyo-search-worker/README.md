@@ -61,6 +61,10 @@ manual production action after review.
 - Natural-language suffixes are removed before exact D1 lookup.
 - Japanese, English, and Korean queries are detected when `language` is omitted.
 - Exact ID, nickname, or registered-name matches return without invoking Workers AI.
+- Exact registered-name lookup searches all stored languages, preferring the
+  detected language and then Japanese. This keeps Latin-only Japanese world
+  names such as `AkyoLabo` discoverable without widening partial or semantic
+  searches across languages.
 - Every result includes `entryType` (`avatar` or `world`). Newly ingested
   records preserve the source value in Vectorize metadata. Existing D1 rows do
   not need a schema migration because the Worker safely infers worlds from
