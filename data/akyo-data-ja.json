@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-19T01:01:42.928Z",
-  "count": 933,
+  "updatedAt": "2026-08-19T19:23:25.700Z",
+  "count": 934,
   "data": [
     {
       "id": "0001",
@@ -10647,6 +10647,18 @@
       "author": "TsunomakiJesus",
       "sourceUrl": "https://vrchat.com/home/world/wrld_f606b469-98b0-42ee-9327-ba0e13725b41/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_f606b469-98b0-42ee-9327-ba0e13725b41/"
+    },
+    {
+      "id": "0934",
+      "entryType": "avatar",
+      "displaySerial": "0829",
+      "nickname": "パイロットAkyo",
+      "avatarName": "Akyoパイロット",
+      "category": "チョコミント類,技能・特性,技能・特性/ひこう,身分・役割,身分・役割/公務員",
+      "comment": "飛ばないAkyoはただのAkyo！？",
+      "author": "Holimond",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_18c0577f-d8af-4473-9534-b0dda0a9e247",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_18c0577f-d8af-4473-9534-b0dda0a9e247"
     }
   ]
 }
