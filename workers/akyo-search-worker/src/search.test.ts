@@ -95,11 +95,15 @@ class FakeDatabase implements D1Database {
     if (query.includes("WHEN id = ?")) {
       this.exactCandidates.push(String(values[0] ?? ""));
       const candidate = String(values[0] ?? "");
+      const requestedLanguage = query.includes("WHERE language = ?")
+        ? String(values[4] ?? "")
+        : undefined;
       return this.exactRows.filter(
         (row) =>
-          row.id.toLowerCase() === candidate.toLowerCase() ||
-          row.nickname.toLowerCase() === candidate.toLowerCase() ||
-          row.name.toLowerCase() === candidate.toLowerCase()
+          (!requestedLanguage || row.language === requestedLanguage) &&
+          (row.id.toLowerCase() === candidate.toLowerCase() ||
+            row.nickname.toLowerCase() === candidate.toLowerCase() ||
+            row.name.toLowerCase() === candidate.toLowerCase())
       );
     }
     if (query.includes("WHEN category = ?")) {
@@ -334,6 +338,54 @@ test("labels exact world results without requiring a D1 schema migration", async
 
   assert.equal(results.length, 1);
   assert.equal(Reflect.get(results[0], "entryType"), "world");
+});
+
+test("finds an exact Japanese world name when the cleaned name looks English", async () => {
+  const database = new FakeDatabase();
+  database.exactRows = [
+    row({
+      id: "0747",
+      nickname: "AkyoLabo",
+      name: "",
+      category: "ワールド",
+      description: "Akyo is made by Ugai․ I love Akyo․",
+      url: "https://vrchat.com/home/world/wrld-example/",
+      language: "ja",
+    }),
+  ];
+
+  const response = await worker.fetch(
+    new Request("https://worker.example/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: "AkyoLaboについて教えて" }),
+    }),
+    fakeEnv({ database })
+  );
+  const body = (await response.json()) as {
+    language?: string;
+    searchMode?: string;
+    nameMatch?: boolean;
+    results: Array<{ id: string; entryType: string; language: string }>;
+  };
+
+  assert.equal(body.language, "en");
+  assert.equal(body.searchMode, "specific-name");
+  assert.equal(body.nameMatch, true);
+  assert.deepEqual(
+    body.results.map(({ id, entryType, language }) => ({
+      id,
+      entryType,
+      language,
+    })),
+    [
+      {
+        id: "0747",
+        entryType: "world",
+        language: "ja",
+      },
+    ]
+  );
 });
 
 test("does not let a generic Akyo exact match hide a specific keyword", async () => {

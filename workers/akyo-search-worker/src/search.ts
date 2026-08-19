@@ -255,10 +255,16 @@ async function findExactMatches(
         ELSE 'name'
       END AS matched_field
     FROM akyos
-    WHERE language = ? AND (
+    WHERE
       id = ? OR nickname = ? COLLATE NOCASE OR name = ? COLLATE NOCASE
-    )
-    ORDER BY match_score DESC, id ASC
+    ORDER BY
+      match_score DESC,
+      CASE
+        WHEN language = ? THEN 0
+        WHEN language = 'ja' THEN 1
+        ELSE 2
+      END,
+      id ASC
     LIMIT ?
   `)
     .bind(
@@ -266,10 +272,10 @@ async function findExactMatches(
       candidate,
       candidate,
       candidate,
+      candidate,
+      candidate,
+      candidate,
       language,
-      candidate,
-      candidate,
-      candidate,
       limit
     )
     .all<SearchRow>();
