@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-19T19:23:25.700Z",
-  "count": 934,
+  "updatedAt": "2026-08-19T19:53:01.687Z",
+  "count": 935,
   "data": [
     {
       "id": "0001",
@@ -10659,6 +10659,18 @@
       "author": "Holimond",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_18c0577f-d8af-4473-9534-b0dda0a9e247",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_18c0577f-d8af-4473-9534-b0dda0a9e247"
+    },
+    {
+      "id": "0935",
+      "entryType": "avatar",
+      "displaySerial": "0830",
+      "nickname": "ブロック型キツネツキ式狐Akyo",
+      "avatarName": "FoxAkyo_Block",
+      "category": "ローポリ,動物,動物/きつね",
+      "comment": "触ったら硬いのかな？",
+      "author": "kitsune_tsuki",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_b24d92f1-4f6a-4dbe-be96-bedcfe51e882",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b24d92f1-4f6a-4dbe-be96-bedcfe51e882"
     }
   ]
 }
