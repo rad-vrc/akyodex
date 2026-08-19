@@ -60,13 +60,18 @@ manual production action after review.
 - At most three input keywords are processed.
 - Natural-language suffixes are removed before exact D1 lookup.
 - Japanese, English, and Korean queries are detected when `language` is omitted.
-- Exact ID, nickname, or avatar-name matches return without invoking Workers AI.
+- Exact ID, nickname, or registered-name matches return without invoking Workers AI.
+- Every result includes `entryType` (`avatar` or `world`). Newly ingested
+  records preserve the source value in Vectorize metadata. Existing D1 rows do
+  not need a schema migration because the Worker safely infers worlds from
+  VRChat `/world/` URLs.
 - Queries that clearly name one Akyo (for example, `七夕Akyoについて教えて`
-  or `#Avatar0504`) use D1 only and return the best `id`, `nickname`, or `name`
-  match. Semantic, category, author, and description searches are skipped so
-  an unrelated avatar cannot be presented as the named one. A request with no
-  `query` is treated the same way when `keywords` contains exactly one name;
-  multiple keyword-only requests remain discovery searches.
+  `Akyoつりぼりについて教えて`, or `#Avatar0504`) use D1 only and return
+  the best `id`, `nickname`, or `name` match. Semantic, category, author, and
+  description searches are skipped so an unrelated record cannot be presented
+  as the named one. A request with no `query` is treated the same way when
+  `keywords` contains exactly one name; multiple keyword-only requests remain
+  discovery searches.
 - All languages, including Korean, use the populated shared index. There is no
   Korean-specific binding, and the empty JA/EN indexes remain reserved.
 - Semantic failures fall back to D1 results instead of returning an HTTP 500.
@@ -82,6 +87,9 @@ matching records, and `count`.
 `searchMode` is `specific-name` for a named Akyo lookup and `discovery` for a
 general search. Specific-name responses also include `nameMatch`; when it is
 `false`, `results` is empty even if Vectorize found semantically similar items.
+Consumers must use each result's `entryType` to label it as an avatar or world;
+world results should use `nickname` as the world name and label `url` as the
+VRChat world URL.
 
 ```json
 {
@@ -111,6 +119,7 @@ batches; failed vector uploads can be retried safely because D1 writes use
   "records": [
     {
       "id": "0893",
+      "entryType": "avatar",
       "nickname": "たなばたAkyo",
       "language": "ja"
     }

@@ -1,4 +1,5 @@
 import { normalizeLanguage } from "./search";
+import { normalizeEntryType } from "./types";
 import type { AkyoRecord, Env, Language, VectorizeVector } from "./types";
 
 const EMBEDDING_MODEL = "@cf/baai/bge-m3";
@@ -13,6 +14,7 @@ export const MAX_INGEST_RECORDS = 1_000;
 
 interface IngestRecord {
   id?: unknown;
+  entryType?: unknown;
   nickname?: unknown;
   name?: unknown;
   category?: unknown;
@@ -82,14 +84,16 @@ function normalizeRecord(record: IngestRecord): AkyoRecord | null {
 
   const requestedLanguage = stringValue(record.language);
   const language: Language = normalizeLanguage(requestedLanguage, nickname);
+  const url = stringValue(record.url);
   return {
     id,
+    entryType: normalizeEntryType(record.entryType, url),
     nickname,
     name: stringValue(record.name),
     category: stringValue(record.category),
     description: stringValue(record.description),
     author: stringValue(record.author),
-    url: stringValue(record.url),
+    url,
     language,
   };
 }

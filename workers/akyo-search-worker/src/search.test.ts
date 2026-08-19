@@ -13,19 +13,22 @@ import {
   searchWithD1AndVectorize,
   selectVectorIndex,
 } from "./search";
+import { normalizeEntryType } from "./types";
 import type {
   AiBinding,
   AkyoRecord,
   D1Database,
   D1PreparedStatement,
   D1Result,
+  EntryType,
   Env,
   VectorizeIndex,
   VectorizeMatch,
   VectorizeVector,
 } from "./types";
 
-interface FakeSearchRow extends AkyoRecord {
+interface FakeSearchRow extends Omit<AkyoRecord, "entryType"> {
+  entryType?: EntryType;
   match_score: number;
   matched_field: string;
 }
@@ -222,6 +225,16 @@ test("escapes SQL LIKE wildcards in user input", () => {
   assert.equal(escapeLikePattern("100%_Akyo\\test"), "100\\%\\_Akyo\\\\test");
 });
 
+test("treats a VRChat world URL as authoritative entry type", () => {
+  assert.equal(
+    normalizeEntryType(
+      "avatar",
+      "https://vrchat.com/home/world/wrld-example/"
+    ),
+    "world"
+  );
+});
+
 test("limits and deduplicates generated keyword input", () => {
   const terms = normalizeSearchTerms(undefined, [
     "たなばた",
@@ -266,6 +279,7 @@ test("extracts exact avatar candidates from natural-language questions", () => {
 
 test("distinguishes specific Akyo names from discovery queries", () => {
   assert.equal(isSpecificNameQuery("七夕Akyoについて教えて"), true);
+  assert.equal(isSpecificNameQuery("Akyoつりぼりについて教えて"), true);
   assert.equal(isSpecificNameQuery("Tell me about Sand Fox Akyo"), true);
   assert.equal(isSpecificNameQuery("모래여우Akyo에 대해 알려줘"), true);
   assert.equal(isSpecificNameQuery("#Avatar0504"), true);
@@ -297,6 +311,29 @@ test("returns an exact D1 match without invoking Workers AI", async () => {
   assert.deepEqual(ai.calls, []);
   assert.deepEqual(vectorizeJa.queryTopK, []);
   assert.ok(database.exactCandidates.includes("たなばたAkyo"));
+});
+
+test("labels exact world results without requiring a D1 schema migration", async () => {
+  const database = new FakeDatabase();
+  database.exactRows = [
+    row({
+      id: "0929",
+      nickname: "Akyoつりぼり",
+      name: "",
+      category: "ワールド",
+      url: "https://vrchat.com/home/world/wrld-example/",
+    }),
+  ];
+
+  const results = await searchWithD1AndVectorize(
+    ["Akyoつりぼりについて教えて"],
+    "ja",
+    5,
+    fakeEnv({ database })
+  );
+
+  assert.equal(results.length, 1);
+  assert.equal(Reflect.get(results[0], "entryType"), "world");
 });
 
 test("does not let a generic Akyo exact match hide a specific keyword", async () => {
@@ -474,7 +511,7 @@ test("search endpoint clamps topK before returning results", async () => {
   assert.deepEqual(japaneseIndex.queryTopK, []);
 });
 
-test("does not return semantic candidates for an unknown specific Akyo name", async () => {
+test("does not return semantic candidates for an unknown Akyo-prefixed name", async () => {
   const ai = new FakeAi();
   const sharedIndex = new FakeVectorize([
     {
@@ -495,8 +532,7 @@ test("does not return semantic candidates for an unknown specific Akyo name", as
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        query: "ぬへもらふAkyoについて教えて",
-        keywords: ["ぬへもらふ", "Akyo"],
+        query: "Akyoつりぼりについて教えて",
       }),
     }),
     fakeEnv({ ai, vectorize: sharedIndex })
@@ -748,6 +784,30 @@ test("batches embeddings and writes D1 before Vectorize", async () => {
   assert.equal(database.runCalls, 21);
   assert.equal(vectorize.upsertCalls.length, 1);
   assert.equal(vectorize.upsertCalls[0].length, 21);
+});
+
+test("keeps world entry type in Vectorize metadata", async () => {
+  const vectorize = new FakeVectorize();
+
+  const result = await ingestRecords(
+    [
+      {
+        id: "0929",
+        entryType: "world",
+        nickname: "Akyoつりぼり",
+        category: "ワールド",
+        url: "https://vrchat.com/home/world/wrld-example/",
+        language: "ja",
+      },
+    ],
+    fakeEnv({ vectorize })
+  );
+
+  assert.equal(result.processed, 1);
+  assert.equal(
+    Reflect.get(vectorize.upsertCalls[0][0].metadata, "entryType"),
+    "world"
+  );
 });
 
 test("does not create vectors when the D1 transaction fails", async () => {

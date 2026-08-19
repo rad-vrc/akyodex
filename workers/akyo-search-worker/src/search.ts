@@ -1,11 +1,13 @@
 import type {
   AkyoRecord,
+  EntryType,
   Env,
   Language,
   SearchResult,
   VectorizeIndex,
   VectorizeMetadata,
 } from "./types";
+import { normalizeEntryType } from "./types";
 
 export const DEFAULT_TOP_K = 5;
 export const MAX_TOP_K = 8;
@@ -47,7 +49,8 @@ const DESCRIPTIVE_AKYO_MODIFIERS = new Set([
   "큰",
 ]);
 
-interface SearchRow extends AkyoRecord {
+interface SearchRow extends Omit<AkyoRecord, "entryType"> {
+  entryType?: EntryType;
   match_score: number;
   matched_field: string;
 }
@@ -140,7 +143,9 @@ export function isSpecificNameQuery(value: unknown): boolean {
     return !isDescriptiveAkyoQuery(candidate);
   }
 
-  return /^akyo[_-][\p{L}\p{N}][\p{L}\p{N}_-]*$/iu.test(candidate);
+  return /^akyo(?:[_-][\p{L}\p{N}]|[\p{L}\p{N}])[\p{L}\p{N}_-]*$/iu.test(
+    candidate
+  );
 }
 
 export function exactCandidates(value: string): string[] {
@@ -216,6 +221,7 @@ export function selectVectorIndex(env: Env): VectorizeIndex {
 function toSearchResult(row: SearchRow, keyword: string): SearchResult {
   return {
     id: row.id,
+    entryType: normalizeEntryType(row.entryType, row.url),
     nickname: row.nickname,
     name: row.name,
     category: row.category,
@@ -417,6 +423,7 @@ function metadataToResult(
 
   return {
     id,
+    entryType: normalizeEntryType(metadata.entryType, metadata.url),
     nickname,
     name: metadata.name ?? "",
     category: metadata.category ?? "",
