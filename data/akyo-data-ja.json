@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-18T09:12:13.544Z",
+  "updatedAt": "2026-08-19T01:01:42.928Z",
   "count": 933,
   "data": [
     {
@@ -3321,13 +3321,15 @@
     {
       "id": "0295",
       "entryType": "avatar",
+      "displaySerial": "0295",
       "nickname": "ひまわりAkyo",
       "avatarName": "akyo_himawari",
-      "category": "植物",
+      "category": "植物,Booth,Booth/アバター",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_fec77d90-2cf2-489f-bcf0-bf801cf3a8e6",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fec77d90-2cf2-489f-bcf0-bf801cf3a8e6"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fec77d90-2cf2-489f-bcf0-bf801cf3a8e6",
+      "boothUrl": "https://sasanoki.booth.pm/items/8618825"
     },
     {
       "id": "0296",
