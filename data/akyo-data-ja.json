@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-19T19:53:01.687Z",
+  "updatedAt": "2026-08-20T11:58:29.106Z",
   "count": 935,
   "data": [
     {
@@ -1625,9 +1625,10 @@
     {
       "id": "0147",
       "entryType": "avatar",
+      "displaySerial": "0147",
       "nickname": "νAkyo",
       "avatarName": "νAkyo",
-      "category": "電子",
+      "category": "電子,パロディ,パロディ/ガンダム,乗り物,乗り物/航空,乗り物/陸上,形状・触り心地,形状・触り心地/硬い,技能・特性,技能・特性/ひこう,技能・特性/無重力耐性,技能・特性/酸素欠乏耐性,武器・機械,環境・天候,環境・天候/外宇宙",
       "comment": "",
       "author": "Kurosuke28",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_db8ff398-41a6-41df-9dbf-17297161f801",
