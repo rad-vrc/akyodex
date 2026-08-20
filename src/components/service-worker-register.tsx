@@ -68,7 +68,7 @@ export function ServiceWorkerRegister() {
         message.includes('The operation is insecure') ||
         message.includes('Failed to register a ServiceWorker') ||
         name === 'SecurityError' ||
-        (phase === 'register' && isGoogleWrsServiceWorkerRejection(normalizedError));
+        (phase === 'register' && isGoogleWrsServiceWorkerRejection(error));
 
       if (isExpectedError) {
         return;

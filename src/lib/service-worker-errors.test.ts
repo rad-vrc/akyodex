@@ -9,6 +9,15 @@ test("identifies only Google WRS service worker rejections", () => {
     "Error: Rejected\n    at wrsParams.serviceWorkers.navigator.serviceWorker.register (<anonymous>:12:648)";
 
   assert.equal(isGoogleWrsServiceWorkerRejection(wrsError), true);
+  assert.equal(
+    isGoogleWrsServiceWorkerRejection({
+      message: "Rejected",
+      stack:
+        "Error: Rejected\n    at wrsParams.serviceWorkers.navigator.serviceWorker.register (<anonymous>:12:648)",
+    }),
+    true,
+  );
+  assert.equal(isGoogleWrsServiceWorkerRejection("Rejected"), false);
   assert.equal(isGoogleWrsServiceWorkerRejection(new Error("Rejected")), false);
   assert.equal(
     isGoogleWrsServiceWorkerRejection(
