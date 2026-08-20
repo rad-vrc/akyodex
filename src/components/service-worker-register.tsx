@@ -1,6 +1,7 @@
 'use client';
 
 import { captureExceptionSafely } from '@/lib/sentry-browser';
+import { isGoogleWrsServiceWorkerRejection } from '@/lib/service-worker-errors';
 import { useEffect, useRef, useState } from 'react';
 
 /**
@@ -66,7 +67,8 @@ export function ServiceWorkerRegister() {
         message.includes('Service Workers are not supported') ||
         message.includes('The operation is insecure') ||
         message.includes('Failed to register a ServiceWorker') ||
-        name === 'SecurityError';
+        name === 'SecurityError' ||
+        (phase === 'register' && isGoogleWrsServiceWorkerRejection(normalizedError));
 
       if (isExpectedError) {
         return;
