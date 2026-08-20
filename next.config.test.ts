@@ -13,3 +13,10 @@ test("next image localPatterns allow both avatar and world image proxy routes", 
     assert.equal(pattern.search, undefined);
   }
 });
+
+test("Sentry public DSN is available to client and server bundles", () => {
+  assert.equal(
+    nextConfig.env?.NEXT_PUBLIC_SENTRY_DSN,
+    process.env.NEXT_PUBLIC_SENTRY_DSN ?? ""
+  );
+});

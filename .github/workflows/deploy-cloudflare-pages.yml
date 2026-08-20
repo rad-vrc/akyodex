@@ -58,6 +58,29 @@ jobs:
           
       - name: Install dependencies
         run: npm ci
+
+      - name: Validate optional Sentry configuration
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          configured=0
+          for value in "$NEXT_PUBLIC_SENTRY_DSN" "$SENTRY_ORG" "$SENTRY_PROJECT" "$SENTRY_AUTH_TOKEN"; do
+            if [ -n "$value" ]; then
+              configured=$((configured + 1))
+            fi
+          done
+
+          if [ "$configured" -eq 0 ]; then
+            echo "::warning::Sentry build integration is disabled because no Sentry settings are configured"
+          elif [ "$configured" -ne 4 ]; then
+            echo "::error::Sentry configuration is incomplete; set NEXT_PUBLIC_SENTRY_DSN, SENTRY_ORG, SENTRY_PROJECT, and SENTRY_AUTH_TOKEN together"
+            exit 1
+          else
+            echo "Sentry error monitoring and source map upload are enabled"
+          fi
         
       - name: Build for Cloudflare Pages
         run: npm run build
@@ -69,6 +92,11 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET || vars.DEFAULT_JWT_SECRET }}
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           NEXT_PUBLIC_R2_BASE: ${{ vars.NEXT_PUBLIC_R2_BASE }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           
       - name: Verify build output
         run: |
