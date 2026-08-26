@@ -4,7 +4,7 @@ import type { AkyoData, AkyoEntryType } from "@/types/akyo";
 
 export const CATALOG_SCHEMA_VERSION = 1 as const;
 export const CATALOG_CACHE_CONTROL =
-  "public, max-age=60, s-maxage=300, stale-while-revalidate=3600";
+  "public, max-age=60, s-maxage=240, stale-while-revalidate=60";
 
 export interface CatalogRecordV1 {
   id: string;

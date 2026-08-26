@@ -50,10 +50,20 @@ export const metadata: Metadata = {
  * - React cache() prevents duplicate fetches
  * - Client handles language detection and refetching if needed
  */
-export default async function ZukanPage() {
-  const requestHeaders = await headers();
+interface ZukanPageProps {
+  searchParams: Promise<{ id?: string | string[] }>;
+}
+
+export default async function ZukanPage({ searchParams }: ZukanPageProps) {
+  const [requestHeaders, resolvedSearchParams] = await Promise.all([
+    headers(),
+    searchParams,
+  ]);
   const lang = resolveCatalogLanguage(requestHeaders.get('x-akyo-lang'));
   const catalogUrl = `/api/catalog/${lang}`;
+  const requestedId = Array.isArray(resolvedSearchParams.id)
+    ? resolvedSearchParams.id[0]
+    : resolvedSearchParams.id;
 
   // Parallel data fetching with React cache() deduplication
   const [data, categories, authors] = await Promise.all([
@@ -61,7 +71,7 @@ export default async function ZukanPage() {
     getAllCategories(lang),
     getAllAuthors(lang),
   ]);
-  const initialCatalog = createInitialCatalogPayload(data);
+  const initialCatalog = createInitialCatalogPayload(data, requestedId);
 
   return (
     <>
@@ -71,6 +81,7 @@ export default async function ZukanPage() {
         initialTotals={initialCatalog.totals}
         initialDataComplete={initialCatalog.complete}
         catalogUrl={catalogUrl}
+        sharedEntryId={initialCatalog.sharedEntryId}
         categories={categories}
         authors={authors}
         // 互換性のため旧プロップスも渡す

@@ -74,6 +74,10 @@ test("createCatalogHttpResponse returns ETag cache headers and supports 304", as
   const serialized = await serializeCatalogPayload("ko", [createAkyo()]);
   const response = createCatalogHttpResponse(serialized);
 
+  assert.equal(
+    CATALOG_CACHE_CONTROL,
+    "public, max-age=60, s-maxage=240, stale-while-revalidate=60",
+  );
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("Cache-Control"), CATALOG_CACHE_CONTROL);
   assert.equal(response.headers.get("Content-Type"), "application/json; charset=utf-8");

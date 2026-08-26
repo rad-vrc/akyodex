@@ -67,6 +67,7 @@ export interface ZukanClientProps {
   initialTotals: CatalogTotals;
   initialDataComplete: boolean;
   catalogUrl: string;
+  sharedEntryId?: string;
 
   // 新フィールド
   categories: string[];
@@ -189,6 +190,7 @@ export function ZukanClient({
   initialTotals,
   initialDataComplete,
   catalogUrl,
+  sharedEntryId,
   categories,
   authors,
   attributes,
@@ -262,6 +264,7 @@ export function ZukanClient({
   const filteredLengthRef = useRef(0);
   const mainContentRef = useRef<HTMLElement | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
+  const sharedEntryHandledRef = useRef(false);
 
   // — Derived values —
   const stats = useMemo(() => {
@@ -464,6 +467,20 @@ export function ZukanClient({
     setIsModalOpen(false);
     setSelectedAkyo(null);
   };
+
+  useEffect(() => {
+    if (!sharedEntryId || sharedEntryHandledRef.current) return;
+    const sharedEntry = data.find((item) => item.id === sharedEntryId);
+    if (!sharedEntry) {
+      if (isCurrentDatasetComplete) sharedEntryHandledRef.current = true;
+      return;
+    }
+
+    sharedEntryHandledRef.current = true;
+    modalTriggerRef.current = null;
+    setSelectedAkyo(sharedEntry);
+    setIsModalOpen(true);
+  }, [data, isCurrentDatasetComplete, sharedEntryId]);
 
   const handleModalFavoriteToggle = (id: string) => {
     toggleFavorite(id);

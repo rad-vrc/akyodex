@@ -91,6 +91,12 @@ test.describe("Complete catalog loading", () => {
   test("preloads the exact complete catalog URL before the window load event", async ({
     page,
   }) => {
+    let catalogRequestCount = 0;
+    page.on("request", (request) => {
+      if (new URL(request.url()).pathname === "/api/catalog/ja") {
+        catalogRequestCount += 1;
+      }
+    });
     let releaseLogo = () => {};
     const logoGate = new Promise<void>((resolve) => {
       releaseLogo = resolve;
@@ -109,6 +115,27 @@ test.describe("Complete catalog loading", () => {
     releaseLogo();
 
     expect(requestedBeforeLoad).toBe(true);
+    await expect(page.locator("input.search-input")).toBeEnabled();
+    await expect.poll(() => catalogRequestCount).toBe(1);
+  });
+
+  test("opens a complete legacy shared entry before the full catalog arrives", async ({
+    page,
+  }) => {
+    const apiRoutePromise = waitForApiRoute(page);
+    await page.goto("/zukan?id=Avatar0013");
+    const apiRoute = await apiRoutePromise;
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText("スーパーワープAkyo", { exact: true }).first(),
+    ).toBeVisible();
+    await expect(dialog.getByText("VRChat アバターURL", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "VRChatで見る" })).toBeVisible();
+    await expect(page.locator("input.search-input")).toBeDisabled();
+
+    await apiRoute.fulfill({ json: { data: catalog.data } });
   });
 
   test("does not expose entries after the first 12 until complete data arrives", async ({

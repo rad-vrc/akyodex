@@ -55,6 +55,19 @@ test("createInitialCatalogPayload keeps only the first 12 display-ordered entrie
   assert.equal(payload.items[0]?.attribute, "動物");
 });
 
+test("createInitialCatalogPayload includes a shared entry beyond the first 12", () => {
+  const items = Array.from({ length: 15 }, (_, index) =>
+    createAkyo(String(index + 1).padStart(4, "0"), "avatar"),
+  );
+
+  const payload = createInitialCatalogPayload(items, "Avatar0015");
+
+  assert.equal(payload.items.length, INITIAL_CATALOG_ITEM_COUNT);
+  assert.equal(payload.items[0]?.id, "0015");
+  assert.equal(payload.items[0]?.comment, "comment-0015");
+  assert.equal(payload.sharedEntryId, "0015");
+});
+
 test("summarizeCatalog reports exact entry, avatar, world, product, and favorite totals", () => {
   const avatar = createAkyo("0001", "avatar", "https://example.com/avatar");
   avatar.isFavorite = true;

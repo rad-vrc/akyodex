@@ -1,5 +1,6 @@
 import {
   getDisplaySerialNumber,
+  getPublicDisplayId,
   resolveEntryType,
 } from "@/lib/akyo-entry";
 import type { AkyoData } from "@/types/akyo";
@@ -18,6 +19,7 @@ export interface InitialCatalogPayload {
   items: AkyoData[];
   totals: CatalogTotals;
   complete: false;
+  sharedEntryId?: string;
 }
 
 function getCatalogSortNumber(item: AkyoData): number {
@@ -45,13 +47,42 @@ export function summarizeCatalog(items: readonly AkyoData[]): CatalogTotals {
   );
 }
 
+function findSharedCatalogEntry(
+  items: readonly AkyoData[],
+  requestedId: string | undefined,
+): AkyoData | undefined {
+  const normalized = requestedId?.trim().replace(/^#/, "").toLowerCase();
+  if (!normalized) return undefined;
+
+  const numericId = /^\d{1,4}$/.test(normalized)
+    ? normalized.padStart(4, "0")
+    : normalized;
+  return items.find(
+    (item) =>
+      item.id.toLowerCase() === numericId ||
+      getPublicDisplayId(item).toLowerCase() === normalized,
+  );
+}
+
 export function createInitialCatalogPayload(
   items: readonly AkyoData[],
+  requestedId?: string,
 ): InitialCatalogPayload {
   const sortedItems = sortCatalogForDisplay(items);
+  const sharedEntry = findSharedCatalogEntry(sortedItems, requestedId);
+  const initialItems = sortedItems.slice(0, INITIAL_CATALOG_ITEM_COUNT);
+  if (
+    sharedEntry &&
+    !initialItems.some((item) => item.id === sharedEntry.id)
+  ) {
+    initialItems.unshift(sharedEntry);
+    initialItems.pop();
+  }
+
   return {
-    items: sortedItems.slice(0, INITIAL_CATALOG_ITEM_COUNT),
+    items: initialItems,
     totals: summarizeCatalog(items),
     complete: false,
+    ...(sharedEntry ? { sharedEntryId: sharedEntry.id } : {}),
   };
 }
