@@ -51,3 +51,34 @@ test("parseAkyoFormData rejects avatar submissions with a non-avatar source URL"
     error: "entryType と sourceUrl の種別が一致していません",
   });
 });
+
+test("parseAkyoFormData rejects avatars without the VRChat avatar name", () => {
+  const formData = new FormData();
+  formData.append("id", "0746");
+  formData.append("entryType", "avatar");
+  formData.append("author", "Author");
+  formData.append(
+    "sourceUrl",
+    "https://vrchat.com/home/avatar/avtr_abc-def",
+  );
+
+  assert.deepEqual(parseAkyoFormData(formData), {
+    success: false,
+    status: 400,
+    error: "必須フィールドが不足しています",
+  });
+});
+
+test("parseAkyoFormData rejects worlds without a display name", () => {
+  const formData = new FormData();
+  formData.append("id", "0746");
+  formData.append("entryType", "world");
+  formData.append("author", "Author");
+  formData.append("sourceUrl", "https://vrchat.com/home/world/wrld_abc-def");
+
+  assert.deepEqual(parseAkyoFormData(formData), {
+    success: false,
+    status: 400,
+    error: "必須フィールドが不足しています",
+  });
+});

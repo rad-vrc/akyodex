@@ -27,8 +27,10 @@ test.describe("Search input focus styling", () => {
     const globalSearch = page.locator("input.search-input");
     const authorSearch = page.getByPlaceholder(/作者を検索|Search authors|작가 검색/i);
 
+    await expect(globalSearch).toBeEnabled();
     await expect(globalSearch).toBeVisible();
     await expect(authorSearch).toBeVisible();
+    await expect(authorSearch).toBeEnabled();
 
     const readFocusStyles = async (selector: typeof globalSearch) => {
       await selector.focus();

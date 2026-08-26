@@ -153,6 +153,16 @@ export const UI_TEXTS = {
     en: "Language data is currently unavailable. Keeping the current view.",
     ko: "언어 데이터를 사용할 수 없어 현재 화면을 유지합니다.",
   },
+  "error.catalogUnavailable": {
+    ja: "全データを取得できませんでした。現在読み込めているデータ内で検索できます。",
+    en: "The full catalog could not be loaded. You can search the entries currently available.",
+    ko: "전체 데이터를 불러오지 못했습니다. 현재 불러온 항목에서 검색할 수 있습니다.",
+  },
+  "warning.catalogEntriesDropped": {
+    ja: "{count}件のデータを読み込めませんでした。残りのデータを表示しています。",
+    en: "{count} catalog entries could not be loaded. Showing the remaining entries.",
+    ko: "{count}개의 데이터를 불러오지 못했습니다. 나머지 항목을 표시합니다.",
+  },
   "loading.text": {
     ja: "データを読み込んでいます...",
     en: "Loading data...",
@@ -162,6 +172,16 @@ export const UI_TEXTS = {
     ja: "言語データを切り替え中...",
     en: "Switching language data...",
     ko: "언어 데이터를 전환 중...",
+  },
+  "loading.catalog": {
+    ja: "図鑑の全データを読み込んでいます...",
+    en: "Loading the complete catalog...",
+    ko: "도감 전체 데이터를 불러오는 중입니다...",
+  },
+  "loading.retry": {
+    ja: "再試行",
+    en: "Retry",
+    ko: "다시 시도",
   },
   "logo.alt": {
     ja: "Akyoずかんロゴ",
@@ -229,19 +249,29 @@ export const UI_TEXTS = {
     ko: "현재 표시 항목",
   },
   "stats.totalBreakdown": {
-    ja: "全{avatars}アバター / {worlds}ワールド / {products}商品",
-    en: "Total {avatars} avatars / {worlds} worlds / {products} products",
-    ko: "전체 {avatars}개 아바타 / {worlds}개 월드 / {products}개 상품",
+    ja: "全{count}件：{avatars}アバター / {worlds}ワールド / {products}商品",
+    en: "{count} total: {avatars} avatars / {worlds} worlds / {products} products",
+    ko: "전체 {count}건: 아바타 {avatars}개 / 월드 {worlds}개 / 상품 {products}개",
   },
   "stats.displayedBreakdown": {
-    ja: "表示{avatars}アバター / {worlds}ワールド / {products}商品",
-    en: "Showing {avatars} avatars / {worlds} worlds / {products} products",
-    ko: "{avatars}개 아바타 / {worlds}개 월드 / {products}개 상품 표시",
+    ja: "表示{count}件：{avatars}アバター / {worlds}ワールド / {products}商品",
+    en: "Showing {count}: {avatars} avatars / {worlds} worlds / {products} products",
+    ko: "{count}건 표시: 아바타 {avatars}개 / 월드 {worlds}개 / 상품 {products}개",
+  },
+  "stats.displayedLoading": {
+    ja: "表示データを読み込み中...",
+    en: "Loading displayed entries...",
+    ko: "표시할 데이터를 불러오는 중...",
   },
   "stats.favoritesLabel": {
     ja: "お気に入り",
     en: "Favorites",
     ko: "즐겨찾기",
+  },
+  "stats.favoritesLoading": {
+    ja: "お気に入り数を読み込み中",
+    en: "Loading favorite count",
+    ko: "즐겨찾기 수를 불러오는 중",
   },
   "search.placeholder": {
     ja: "名前・通称・作者で検索...",
@@ -525,6 +555,16 @@ export const UI_TEXTS = {
     ja: "VRChat アバターURL",
     en: "VRChat Avatar URL",
     ko: "VRChat 아바타 URL",
+  },
+  "modal.vrchatWorldUrl": {
+    ja: "VRChat ワールドURL",
+    en: "VRChat World URL",
+    ko: "VRChat 월드 URL",
+  },
+  "modal.previewUnavailable": {
+    ja: "詳細データを読み込めませんでした。表示できる情報のみを掲載しています。",
+    en: "Detailed data could not be loaded. Only the available information is shown.",
+    ko: "상세 데이터를 불러오지 못했습니다. 현재 이용 가능한 정보만 표시합니다.",
   },
   "modal.boothUrl": {
     ja: "BOOTH URL",

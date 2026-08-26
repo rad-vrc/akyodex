@@ -15,6 +15,7 @@ import { Metadata } from 'next';
 import { getAkyoData, getAllCategories, getAllAuthors } from '@/lib/akyo-data';
 import { ZukanClient } from './zukan-client';
 import { DEFAULT_LANGUAGE } from '@/lib/i18n';
+import { createInitialCatalogPayload } from './catalog-initial-data';
 
 // Dynamic metadata
 export const metadata: Metadata = {
@@ -58,10 +59,14 @@ export default async function ZukanPage() {
     getAllCategories(lang),
     getAllAuthors(lang),
   ]);
+  const initialCatalog = createInitialCatalogPayload(data);
 
   return (
     <ZukanClient
-      initialData={data}
+      initialData={initialCatalog.items}
+      initialPreviewData={initialCatalog.previewItems}
+      initialTotals={initialCatalog.totals}
+      initialDataComplete={initialCatalog.complete}
       categories={categories}
       authors={authors}
       // 互換性のため旧プロップスも渡す

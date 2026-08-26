@@ -11,6 +11,7 @@ interface SearchBarProps {
   debounceMs?: number;
   /** 外部から制御する検索クエリ値（親がリセットした場合に同期される） */
   value?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -26,10 +27,13 @@ export function SearchBar({
   clearAriaLabel = '検索をクリア',
   debounceMs = 200,
   value,
+  disabled = false,
 }: SearchBarProps) {
   const [query, setQuery] = useState(value ?? '');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
 
   // onSearch の最新参照を保持（依存配列に含めずに済む）
   const onSearchRef = useRef(onSearch);
@@ -44,6 +48,7 @@ export function SearchBar({
   const debouncedSearch = useCallback((value: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
+      if (disabledRef.current) return;
       // 発火時点で入力値が変わっていたら（親のリセット等）スキップ
       if (queryRef.current !== value) return;
       onSearchRef.current(value);
@@ -58,6 +63,13 @@ export function SearchBar({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- value の変更時のみ同期
   }, [value]);
+
+  useEffect(() => {
+    if (disabled && timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [disabled]);
 
   // コンポーネントのアンマウント時にタイマーをクリーンアップ
   useEffect(() => {
@@ -82,7 +94,10 @@ export function SearchBar({
   };
 
   return (
-    <div className="relative w-full">
+    <div
+      className={`relative w-full ${disabled ? 'opacity-60' : ''}`}
+      aria-busy={disabled}
+    >
       {/* 検索アイコン */}
       <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-2xl" aria-hidden="true">
         🔍
@@ -99,6 +114,7 @@ export function SearchBar({
         aria-label={ariaLabel}
         autoComplete="off"
         spellCheck="false"
+        disabled={disabled}
       />
 
       {/* クリアボタン */}
@@ -106,6 +122,7 @@ export function SearchBar({
         <button
           type="button"
           onClick={handleClear}
+          disabled={disabled}
           className="absolute right-5 top-1/2 -translate-y-1/2 text-2xl hover:scale-110 transition-transform"
           aria-label={clearAriaLabel}
         >
