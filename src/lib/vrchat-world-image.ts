@@ -1,6 +1,7 @@
 const DEFAULT_VRCHAT_IMAGE_WIDTH = 512;
 const MIN_VRCHAT_IMAGE_WIDTH = 32;
 const MAX_VRCHAT_IMAGE_WIDTH = 4096;
+const ALLOWED_VRCHAT_IMAGE_WIDTHS = [96, 384, 512, 800, 1024] as const;
 const VRCHAT_IMAGE_FETCH_TIMEOUT_MS = 30000;
 const VRCHAT_IMAGE_CACHE_CONTROL =
   'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000';
@@ -59,6 +60,17 @@ export function normalizeVRChatImageWidth(value: string | number | null | undefi
   return Math.max(MIN_VRCHAT_IMAGE_WIDTH, Math.min(MAX_VRCHAT_IMAGE_WIDTH, parsedWidth));
 }
 
+export function snapVRChatImageWidth(
+  value: string | number | null | undefined
+): number {
+  const normalizedWidth = normalizeVRChatImageWidth(value);
+  return ALLOWED_VRCHAT_IMAGE_WIDTHS.reduce((closest, candidate) =>
+    Math.abs(candidate - normalizedWidth) < Math.abs(closest - normalizedWidth)
+      ? candidate
+      : closest
+  );
+}
+
 export function getPreferredCloudflareImageFormat(
   accept: string | null
 ): CloudflareImageFormat | null {
@@ -93,7 +105,7 @@ export function createVRChatWorldImageFetchInit(args: {
   if (format) {
     init.cf = {
       image: {
-        width: normalizeVRChatImageWidth(width),
+        width: snapVRChatImageWidth(width),
         fit: 'scale-down',
         quality: 80,
         format,
@@ -102,6 +114,32 @@ export function createVRChatWorldImageFetchInit(args: {
   }
 
   return init;
+}
+
+function isConfirmedCloudflareImageTransform(
+  response: Response,
+  format: CloudflareImageFormat
+): boolean {
+  const resizedHeader = response.headers.get('Cf-Resized');
+  const contentType = response.headers
+    .get('Content-Type')
+    ?.split(';', 1)[0]
+    ?.trim()
+    .toLowerCase();
+
+  return Boolean(
+    resizedHeader &&
+      !/\berr=\d+/i.test(resizedHeader) &&
+      contentType === `image/${format}`
+  );
+}
+
+async function discardResponseBody(response: Response): Promise<void> {
+  try {
+    await response.body?.cancel();
+  } catch {
+    // A locked or already-consumed body does not prevent the original-image retry.
+  }
 }
 
 async function fetchVRChatWorldImageAttempt(args: {
@@ -143,6 +181,8 @@ export async function fetchVRChatWorldImageWithFallback(args: {
     fetchFn = fetch,
     timeoutMs = VRCHAT_IMAGE_FETCH_TIMEOUT_MS,
   } = args;
+  const deadline = Date.now() + Math.max(1, timeoutMs);
+  const remainingTimeout = () => Math.max(1, deadline - Date.now());
 
   if (format) {
     try {
@@ -151,11 +191,15 @@ export async function fetchVRChatWorldImageWithFallback(args: {
         width,
         format,
         fetchFn,
-        timeoutMs,
+        timeoutMs: remainingTimeout(),
       });
-      if (transformedResponse.ok) {
+      if (
+        transformedResponse.ok &&
+        isConfirmedCloudflareImageTransform(transformedResponse, format)
+      ) {
         return { response: transformedResponse, transformed: true };
       }
+      await discardResponseBody(transformedResponse);
     } catch {
       // Retry once without Images Transformations below.
     }
@@ -166,7 +210,7 @@ export async function fetchVRChatWorldImageWithFallback(args: {
     width,
     format: null,
     fetchFn,
-    timeoutMs,
+    timeoutMs: remainingTimeout(),
   });
   return { response, transformed: false };
 }
@@ -214,7 +258,7 @@ export function getVRChatWorldImageRequestParams(requestUrl: string): {
   const { searchParams } = new URL(requestUrl);
   return {
     wrld: searchParams.get('wrld'),
-    width: normalizeVRChatImageWidth(searchParams.get('w')),
+    width: snapVRChatImageWidth(searchParams.get('w')),
   };
 }
 
