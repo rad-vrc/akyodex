@@ -133,6 +133,30 @@ test.describe("Complete catalog loading", () => {
       ]);
   });
 
+  test("reserves the desktop filter height while the deferred controls load", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1350, height: 940 });
+    const apiRoutePromise = waitForApiRoute(page);
+    await page.goto("/zukan");
+    const apiRoute = await apiRoutePromise;
+    const filterFieldset = page.locator("#zukan-filter-panel > fieldset");
+    const viewControls = page.getByRole("button", { name: "カード表示" });
+
+    await expect(filterFieldset).toHaveAttribute("aria-busy", "true");
+    await expect(filterFieldset).toBeVisible();
+    const pendingFilterBox = await filterFieldset.boundingBox();
+    const pendingViewControlsBox = await viewControls.boundingBox();
+
+    await apiRoute.fulfill({ json: { data: catalog.data } });
+    await expect(page.getByLabel("カテゴリを検索...")).toBeVisible();
+    const loadedFilterBox = await filterFieldset.boundingBox();
+    const loadedViewControlsBox = await viewControls.boundingBox();
+
+    expect(pendingFilterBox?.height).toBe(loadedFilterBox?.height);
+    expect(pendingViewControlsBox?.y).toBe(loadedViewControlsBox?.y);
+  });
+
   test("opens a complete legacy shared entry before the full catalog arrives", async ({
     page,
   }) => {

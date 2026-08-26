@@ -111,7 +111,7 @@ const DeferredFilterPanel = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex min-h-24 items-center justify-center text-sm text-[var(--text-secondary)]"
+        className="flex min-h-[755px] items-center justify-center text-sm text-[var(--text-secondary)] lg:min-h-[403px]"
         role="status"
       >
         <span className="h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600" />
@@ -931,7 +931,7 @@ export function ZukanClient({
               <fieldset
                 disabled
                 aria-busy="true"
-                className="flex min-h-24 items-center justify-center"
+                className="flex min-h-[755px] items-center justify-center lg:min-h-[403px]"
               >
                 <legend className="sr-only">{t("loading.catalog", lang)}</legend>
                 <span
