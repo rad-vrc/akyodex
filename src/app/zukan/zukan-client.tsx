@@ -37,7 +37,9 @@ import {
   loadCompleteCatalogData,
 } from "./catalog-data-loader";
 import {
+  expandCatalogPreviewItems,
   summarizeCatalog,
+  type CatalogPreviewItem,
   type CatalogTotals,
 } from "./catalog-initial-data";
 import {
@@ -56,6 +58,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ZukanClientProps {
   initialData: AkyoData[];
+  initialPreviewData: CatalogPreviewItem[];
   initialTotals: CatalogTotals;
   initialDataComplete: boolean;
 
@@ -177,6 +180,7 @@ function extractTaxonomy(
 
 export function ZukanClient({
   initialData,
+  initialPreviewData,
   initialTotals,
   initialDataComplete,
   categories,
@@ -187,6 +191,17 @@ export function ZukanClient({
 }: ZukanClientProps) {
   // Client-side language detection
   const { lang, isReady } = useLanguage(serverLang);
+  const previewData = useMemo(
+    () => {
+      const completeInitialItems = new Map(
+        initialData.map((item) => [item.id, item]),
+      );
+      return expandCatalogPreviewItems(initialPreviewData).map(
+        (item) => completeInitialItems.get(item.id) ?? item,
+      );
+    },
+    [initialData, initialPreviewData],
+  );
 
   const {
     data,
@@ -239,6 +254,7 @@ export function ZukanClient({
     initialDataComplete,
   );
   const [droppedCatalogEntryCount, setDroppedCatalogEntryCount] = useState(0);
+  const [isPreviewDataActive, setIsPreviewDataActive] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
 
   const languageDatasetCacheRef = useRef<
@@ -343,6 +359,7 @@ export function ZukanClient({
       setCurrentAuthors(immediateDataset.authors);
       setIsCurrentDatasetComplete(true);
       setDroppedCatalogEntryCount(immediateDataset.droppedCount);
+      setIsPreviewDataActive(false);
       setRefetchError(null);
       setError(null);
       setLoading(false);
@@ -354,6 +371,7 @@ export function ZukanClient({
     setError(null);
     setRefetchError(null);
     setDroppedCatalogEntryCount(0);
+    setIsPreviewDataActive(false);
 
     const coordinator = requestCoordinatorRef.current;
     if (!coordinator) return;
@@ -385,6 +403,7 @@ export function ZukanClient({
         setSelectedCreators([]);
         setIsCurrentDatasetComplete(true);
         setDroppedCatalogEntryCount(result.droppedCount);
+        setIsPreviewDataActive(false);
         setRefetchError(null);
         setError(null);
       } catch (err) {
@@ -515,9 +534,26 @@ export function ZukanClient({
 
   // フィルター適用
   useEffect(() => {
-    // Accept search input immediately, but keep the initial 12 cards stable until
-    // the complete dataset arrives. After terminal failure, search the fallback.
-    if (!isCurrentDatasetComplete && !refetchError) return;
+    if (!isCurrentDatasetComplete) {
+      if (lang === serverLang && previewData.length > 0) {
+        if (searchQuery.trim()) {
+          if (!isPreviewDataActive) {
+            refetchWithNewData(previewData);
+            setIsPreviewDataActive(true);
+            return;
+          }
+          filterData({ searchQuery }, sortAscending);
+        } else if (isPreviewDataActive) {
+          refetchWithNewData(serverDataset.items);
+          setIsPreviewDataActive(false);
+        }
+        return;
+      }
+
+      // Non-server languages have no embedded preview dataset. After terminal
+      // failure, retain searchable access to whichever rows remain available.
+      if (!refetchError) return;
+    }
 
     if (randomMode) {
       // ランダム表示中はエントリ種別フィルターのみ反映して再シャッフル
@@ -560,7 +596,13 @@ export function ZukanClient({
     entryTypeFilter,
     filterData,
     isCurrentDatasetComplete,
+    isPreviewDataActive,
+    lang,
+    previewData,
     refetchError,
+    refetchWithNewData,
+    serverDataset.items,
+    serverLang,
   ]);
 
   // ソート切替

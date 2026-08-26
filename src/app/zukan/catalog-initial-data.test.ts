@@ -5,6 +5,7 @@ import type { AkyoData } from "@/types/akyo";
 import {
   INITIAL_CATALOG_ITEM_COUNT,
   createInitialCatalogPayload,
+  expandCatalogPreviewItems,
   summarizeCatalog,
 } from "./catalog-initial-data";
 
@@ -39,12 +40,21 @@ test("createInitialCatalogPayload keeps only the first 12 display-ordered entrie
 
   assert.equal(INITIAL_CATALOG_ITEM_COUNT, 12);
   assert.equal(payload.items.length, 12);
+  assert.equal(payload.previewItems.length, 15);
   assert.deepEqual(
     payload.items.map((item) => item.id),
     Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(4, "0")),
   );
   assert.equal(payload.complete, false);
   assert.equal(payload.totals.entries, 15);
+  assert.equal("comment" in payload.previewItems[0], false);
+  assert.equal("attribute" in payload.previewItems[0], false);
+
+  const expandedPreview = expandCatalogPreviewItems(payload.previewItems);
+  assert.equal(expandedPreview.length, 15);
+  assert.equal(expandedPreview[0]?.category, "動物");
+  assert.equal(expandedPreview[0]?.attribute, "動物");
+  assert.equal(expandedPreview[0]?.comment, "");
 });
 
 test("summarizeCatalog reports exact entry, avatar, world, product, and favorite totals", () => {

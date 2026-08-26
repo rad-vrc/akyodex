@@ -154,9 +154,9 @@ export const UI_TEXTS = {
     ko: "언어 데이터를 사용할 수 없어 현재 화면을 유지합니다.",
   },
   "error.catalogUnavailable": {
-    ja: "全データを取得できませんでした。先頭のデータ内で検索できます。",
-    en: "The full catalog could not be loaded. You can search the initial entries.",
-    ko: "전체 데이터를 불러오지 못했습니다. 첫 항목에서 검색할 수 있습니다.",
+    ja: "全データを取得できませんでした。現在読み込めているデータ内で検索できます。",
+    en: "The full catalog could not be loaded. You can search the entries currently available.",
+    ko: "전체 데이터를 불러오지 못했습니다. 현재 불러온 항목에서 검색할 수 있습니다.",
   },
   "warning.catalogEntriesDropped": {
     ja: "{count}件のデータを読み込めませんでした。残りのデータを表示しています。",

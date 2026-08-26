@@ -114,7 +114,7 @@ test.describe("Deferred full catalog loading", () => {
     expect(requestedBeforeLoad).toBe(true);
   });
 
-  test("queues a search entered while the complete catalog is loading", async ({
+  test("uses the lightweight preview data while the complete catalog is loading", async ({
     page,
   }) => {
     const apiRoutePromise = waitForApiRoute(page);
@@ -124,8 +124,10 @@ test.describe("Deferred full catalog loading", () => {
 
     await expect(searchInput).toBeEnabled();
     await searchInput.fill("スーパーワープAkyo");
-    await page.waitForTimeout(300);
-    await expect(page.locator("article.akyo-card")).toHaveCount(12);
+    await expect(page.locator("article.akyo-card")).toHaveCount(1);
+    await expect(
+      page.getByText("スーパーワープAkyo", { exact: true }),
+    ).toBeVisible();
 
     await apiRoute.fulfill({ json: { data: catalog.data } });
     await expect(page.locator("article.akyo-card")).toHaveCount(1);
@@ -210,7 +212,7 @@ test.describe("Deferred full catalog loading", () => {
     const retryButton = page.getByRole("button", { name: /再試行/ });
     await expect(retryButton).toBeVisible();
 
-    await searchInput.fill("オリジンAkyo");
+    await searchInput.fill("スーパーワープAkyo");
     await expect(page.locator("article.akyo-card")).toHaveCount(1);
 
     await retryButton.click();

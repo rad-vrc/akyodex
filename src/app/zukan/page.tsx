@@ -64,6 +64,7 @@ export default async function ZukanPage() {
   return (
     <ZukanClient
       initialData={initialCatalog.items}
+      initialPreviewData={initialCatalog.previewItems}
       initialTotals={initialCatalog.totals}
       initialDataComplete={initialCatalog.complete}
       categories={categories}
