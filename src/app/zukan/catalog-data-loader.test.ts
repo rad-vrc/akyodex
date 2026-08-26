@@ -333,7 +333,7 @@ test("all checked-in language catalogs keep every canonical UI field after compa
         {
           id: restored?.id,
           entryType: restored?.entryType,
-          displaySerial: restored?.displaySerial,
+          displaySerial: restored?.displaySerial || restored?.id,
           nickname: restored?.nickname,
           avatarName: restored?.avatarName,
           category: restored?.category,
@@ -346,7 +346,7 @@ test("all checked-in language catalogs keep every canonical UI field after compa
         {
           id: source.id,
           entryType: source.entryType,
-          displaySerial: source.displaySerial,
+          displaySerial: source.displaySerial || source.id,
           nickname: source.nickname,
           avatarName: source.avatarName,
           category: source.category,

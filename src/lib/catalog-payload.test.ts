@@ -45,7 +45,6 @@ test("createCatalogPayload preserves canonical UI fields and removes duplicate a
   assert.deepEqual(payload.data[0], {
     id: "0001",
     entryType: "avatar",
-    displaySerial: "0001",
     nickname: "オリジンAkyo",
     avatarName: "Akyo origin",
     category: "チョコミント類",
@@ -60,6 +59,16 @@ test("createCatalogPayload preserves canonical UI fields and removes duplicate a
   assert.equal("notes" in payload.data[0], false);
   assert.equal("creator" in payload.data[0], false);
   assert.equal("avatarUrl" in payload.data[0], false);
+});
+
+test("createCatalogPayload keeps only non-default display serials", async () => {
+  const akyo = createAkyo();
+  akyo.id = "0817";
+  akyo.displaySerial = "0746";
+
+  const payload = await createCatalogPayload("ja", [akyo]);
+
+  assert.equal(payload.data[0]?.displaySerial, "0746");
 });
 
 test("serializeCatalogPayload is deterministic for identical normalized data", async () => {

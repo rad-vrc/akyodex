@@ -59,6 +59,7 @@ function toCatalogRecord(item: AkyoData): CatalogRecordV1 | undefined {
   if (entryType !== "avatar" && !nickname) return undefined;
 
   const sourceUrl = optionalString(getAkyoSourceUrl(item));
+  const displaySerial = optionalString(item.displaySerial);
   const legacyAvatarUrl = optionalString(item.avatarUrl);
   const avatarUrl =
     legacyAvatarUrl && legacyAvatarUrl !== sourceUrl
@@ -68,8 +69,8 @@ function toCatalogRecord(item: AkyoData): CatalogRecordV1 | undefined {
   return {
     id,
     entryType,
-    ...(optionalString(item.displaySerial)
-      ? { displaySerial: optionalString(item.displaySerial) }
+    ...(displaySerial && displaySerial !== id
+      ? { displaySerial }
       : {}),
     nickname,
     avatarName,
