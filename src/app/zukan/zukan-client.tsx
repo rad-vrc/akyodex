@@ -274,6 +274,16 @@ export function ZukanClient({
       favorites: loadedSummary.favorites,
     };
   }, [data, filteredData, initialTotals, isCurrentDatasetComplete]);
+  const displayedBreakdownText = t("stats.displayedBreakdown", lang)
+    .replace("{count}", String(stats.displayedEntries))
+    .replace("{avatars}", String(stats.displayedAvatars))
+    .replace("{worlds}", String(stats.displayedWorlds))
+    .replace("{products}", String(stats.displayedProducts));
+  const displayedBreakdownPlaceholder = t("stats.displayedBreakdown", lang)
+    .replace("{count}", String(initialTotals.entries))
+    .replace("{avatars}", String(initialTotals.avatars))
+    .replace("{worlds}", String(initialTotals.worlds))
+    .replace("{products}", String(initialTotals.products));
 
   const activeFilterCount = useMemo(
     () =>
@@ -694,12 +704,17 @@ export function ZukanClient({
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.displayedLabel", lang)}：</dt>
               <dd className="min-w-0 text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap">
                 {isCurrentDatasetComplete
-                  ? t("stats.displayedBreakdown", lang)
-                      .replace("{count}", String(stats.displayedEntries))
-                      .replace("{avatars}", String(stats.displayedAvatars))
-                      .replace("{worlds}", String(stats.displayedWorlds))
-                      .replace("{products}", String(stats.displayedProducts))
-                  : t("stats.displayedLoading", lang)}
+                  ? displayedBreakdownText
+                  : (
+                      <span className="relative block">
+                        <span aria-hidden="true" className="invisible block">
+                          {displayedBreakdownPlaceholder}
+                        </span>
+                        <span className="absolute inset-0">
+                          {t("stats.displayedLoading", lang)}
+                        </span>
+                      </span>
+                    )}
               </dd>
             </div>
             <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">

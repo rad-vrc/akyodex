@@ -32,6 +32,7 @@ test.describe("Deferred full catalog loading", () => {
   test("keeps 12 initial cards interactive while filters wait for the full catalog", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1350, height: 940 });
     const apiRoutePromise = waitForApiRoute(page);
     await page.goto("/zukan");
     const apiRoute = await apiRoutePromise;
@@ -48,6 +49,9 @@ test.describe("Deferred full catalog loading", () => {
     await expect(page.getByRole("button", { name: "アバターのみ表示" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "ワールドのみ表示" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "BOOTH商品のみ表示" })).toBeDisabled();
+    const headerHeightWhileLoading = await page
+      .locator("header")
+      .evaluate((header) => header.getBoundingClientRect().height);
 
     const firstCard = page.locator("article.akyo-card").first();
     const favoriteButton = firstCard.locator(".favorite-btn");
@@ -66,6 +70,11 @@ test.describe("Deferred full catalog loading", () => {
     await expect(page.locator("input.search-input")).toBeEnabled();
     await expect(filterFieldset).not.toHaveAttribute("disabled", "");
     await expect(categorySearch).toBeEnabled();
+    expect(
+      await page
+        .locator("header")
+        .evaluate((header) => header.getBoundingClientRect().height),
+    ).toBe(headerHeightWhileLoading);
     await expect(page.locator(".list-view-table")).toBeVisible();
     await page.getByRole("button", { name: "カード表示" }).click();
     await expect(
