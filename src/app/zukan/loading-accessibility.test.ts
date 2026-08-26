@@ -21,6 +21,7 @@ test("zukan route loading keeps only the logo and compact progress UI", () => {
 
   assert.match(markup, /logo-mobile\.webp/);
   assert.match(markup, /role="status"/);
+  assert.doesNotMatch(markup, /_next\/image/);
   assert.doesNotMatch(markup, /animate-pulse/);
   assert.doesNotMatch(markup, /backdrop-blur/);
   assert.doesNotMatch(markup, /aspect-\[3\/2\]/);

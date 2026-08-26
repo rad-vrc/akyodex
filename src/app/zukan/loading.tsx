@@ -19,6 +19,7 @@ export function ZukanLoadingView({ lang }: { lang: SupportedLanguage }) {
         width={454}
         height={70}
         priority
+        unoptimized
         sizes="(max-width: 640px) 260px, 454px"
         className="h-10 w-auto sm:h-12"
       />
