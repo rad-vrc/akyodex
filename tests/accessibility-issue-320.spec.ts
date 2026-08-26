@@ -17,7 +17,7 @@ test.describe("Issue #320 accessibility regressions", () => {
     await page.keyboard.press("Enter");
     await expect(page.locator("main#main-content")).toBeFocused();
 
-    const firstCard = page.locator("article.akyo-card button[data-card-trigger='true']").first();
+    const firstCard = page.locator("article.akyo-card button.detail-button").first();
     await firstCard.focus();
     await expect(firstCard).toBeFocused();
 

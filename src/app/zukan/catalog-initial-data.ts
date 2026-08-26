@@ -1,9 +1,9 @@
 import {
-  getAkyoSourceUrl,
   getDisplaySerialNumber,
+  getPublicDisplayId,
   resolveEntryType,
 } from "@/lib/akyo-entry";
-import type { AkyoData, AkyoEntryType } from "@/types/akyo";
+import type { AkyoData } from "@/types/akyo";
 
 export const INITIAL_CATALOG_ITEM_COUNT = 12;
 
@@ -17,21 +17,9 @@ export interface CatalogTotals {
 
 export interface InitialCatalogPayload {
   items: AkyoData[];
-  previewItems: CatalogPreviewItem[];
   totals: CatalogTotals;
   complete: false;
-}
-
-export interface CatalogPreviewItem {
-  id: string;
-  entryType: AkyoEntryType;
-  displaySerial?: string;
-  nickname: string;
-  avatarName: string;
-  category: string;
-  author: string;
-  sourceUrl?: string;
-  boothUrl?: string;
+  sharedEntryId?: string;
 }
 
 function getCatalogSortNumber(item: AkyoData): number {
@@ -59,54 +47,42 @@ export function summarizeCatalog(items: readonly AkyoData[]): CatalogTotals {
   );
 }
 
-function createCatalogPreviewItem(item: AkyoData): CatalogPreviewItem {
-  const entryType = resolveEntryType(item);
-  return {
-    id: item.id,
-    entryType,
-    displaySerial: item.displaySerial,
-    nickname: item.nickname,
-    avatarName: item.avatarName,
-    category: item.category || item.attribute,
-    author: item.author || item.creator,
-    // Avatar thumbnails use the stable catalog ID. Keep only world source URLs,
-    // which are required to resolve live world thumbnails before full data loads.
-    sourceUrl:
-      entryType === "world" ? getAkyoSourceUrl(item) || undefined : undefined,
-    boothUrl: item.boothUrl || undefined,
-  };
-}
+function findSharedCatalogEntry(
+  items: readonly AkyoData[],
+  requestedId: string | undefined,
+): AkyoData | undefined {
+  const normalized = requestedId?.trim().replace(/^#/, "").toLowerCase();
+  if (!normalized) return undefined;
 
-export function expandCatalogPreviewItems(
-  items: readonly CatalogPreviewItem[],
-): AkyoData[] {
-  return items.map((item) => ({
-    id: item.id,
-    entryType: item.entryType,
-    displaySerial: item.displaySerial,
-    appearance: "",
-    nickname: item.nickname,
-    avatarName: item.avatarName,
-    category: item.category,
-    comment: "",
-    author: item.author,
-    attribute: item.category,
-    notes: "",
-    creator: item.author,
-    sourceUrl: item.sourceUrl,
-    boothUrl: item.boothUrl,
-    avatarUrl: item.sourceUrl ?? "",
-  }));
+  const numericId = /^\d{1,4}$/.test(normalized)
+    ? normalized.padStart(4, "0")
+    : normalized;
+  return items.find(
+    (item) =>
+      item.id.toLowerCase() === numericId ||
+      getPublicDisplayId(item).toLowerCase() === normalized,
+  );
 }
 
 export function createInitialCatalogPayload(
   items: readonly AkyoData[],
+  requestedId?: string,
 ): InitialCatalogPayload {
   const sortedItems = sortCatalogForDisplay(items);
+  const sharedEntry = findSharedCatalogEntry(sortedItems, requestedId);
+  const initialItems = sortedItems.slice(0, INITIAL_CATALOG_ITEM_COUNT);
+  if (
+    sharedEntry &&
+    !initialItems.some((item) => item.id === sharedEntry.id)
+  ) {
+    initialItems.unshift(sharedEntry);
+    initialItems.pop();
+  }
+
   return {
-    items: sortedItems.slice(0, INITIAL_CATALOG_ITEM_COUNT),
-    previewItems: sortedItems.map(createCatalogPreviewItem),
+    items: initialItems,
     totals: summarizeCatalog(items),
     complete: false,
+    ...(sharedEntry ? { sharedEntryId: sharedEntry.id } : {}),
   };
 }

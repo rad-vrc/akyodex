@@ -37,11 +37,10 @@ import {
   loadCompleteCatalogData,
 } from "./catalog-data-loader";
 import {
-  expandCatalogPreviewItems,
   summarizeCatalog,
-  type CatalogPreviewItem,
   type CatalogTotals,
 } from "./catalog-initial-data";
+import { resolveClientCatalogUrl } from "./catalog-language";
 import {
   getNextFilterPanelOpenState,
   resolveFilterPanelOpenState,
@@ -54,13 +53,21 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import type { MouseEvent as ReactMouseEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 export interface ZukanClientProps {
   initialData: AkyoData[];
-  initialPreviewData: CatalogPreviewItem[];
   initialTotals: CatalogTotals;
   initialDataComplete: boolean;
+  catalogUrl: string;
+  sharedEntryId?: string;
 
   // 新フィールド
   categories: string[];
@@ -180,9 +187,10 @@ function extractTaxonomy(
 
 export function ZukanClient({
   initialData,
-  initialPreviewData,
   initialTotals,
   initialDataComplete,
+  catalogUrl,
+  sharedEntryId,
   categories,
   authors,
   attributes,
@@ -191,21 +199,6 @@ export function ZukanClient({
 }: ZukanClientProps) {
   // Client-side language detection
   const { lang, isReady } = useLanguage(serverLang);
-  const previewData = useMemo(
-    () => {
-      const completeInitialItems = new Map(
-        initialData.map((item) => [item.id, item]),
-      );
-      return expandCatalogPreviewItems(initialPreviewData).map(
-        (item) => completeInitialItems.get(item.id) ?? item,
-      );
-    },
-    [initialData, initialPreviewData],
-  );
-  const initialCompleteIds = useMemo(
-    () => new Set(initialData.map((item) => item.id)),
-    [initialData],
-  );
 
   const {
     data,
@@ -258,7 +251,6 @@ export function ZukanClient({
     initialDataComplete,
   );
   const [droppedCatalogEntryCount, setDroppedCatalogEntryCount] = useState(0);
-  const [isPreviewDataActive, setIsPreviewDataActive] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
 
   const languageDatasetCacheRef = useRef<
@@ -272,6 +264,7 @@ export function ZukanClient({
   const filteredLengthRef = useRef(0);
   const mainContentRef = useRef<HTMLElement | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
+  const sharedEntryHandledRef = useRef(false);
 
   // — Derived values —
   const stats = useMemo(() => {
@@ -303,15 +296,7 @@ export function ZukanClient({
     .replace("{avatars}", String(initialTotals.avatars))
     .replace("{worlds}", String(initialTotals.worlds))
     .replace("{products}", String(initialTotals.products));
-  const canShowDisplayedBreakdown =
-    isCurrentDatasetComplete ||
-    (isPreviewDataActive && searchQuery.trim().length > 0);
-  const isSelectedPreviewDetailUnavailable = Boolean(
-    refetchError &&
-      selectedAkyo &&
-      isPreviewDataActive &&
-      !initialCompleteIds.has(selectedAkyo.id),
-  );
+  const canShowDisplayedBreakdown = isCurrentDatasetComplete;
 
   const activeFilterCount = useMemo(
     () =>
@@ -372,7 +357,6 @@ export function ZukanClient({
       setCurrentAuthors(immediateDataset.authors);
       setIsCurrentDatasetComplete(true);
       setDroppedCatalogEntryCount(immediateDataset.droppedCount);
-      setIsPreviewDataActive(false);
       setRefetchError(null);
       setError(null);
       setLoading(false);
@@ -384,7 +368,6 @@ export function ZukanClient({
     setError(null);
     setRefetchError(null);
     setDroppedCatalogEntryCount(0);
-    setIsPreviewDataActive(false);
 
     const coordinator = requestCoordinatorRef.current;
     if (!coordinator) return;
@@ -394,6 +377,7 @@ export function ZukanClient({
       try {
         const result = await loadCompleteCatalogData({
           lang,
+          catalogUrl: resolveClientCatalogUrl(catalogUrl, serverLang, lang),
           r2BaseUrl:
             process.env.NEXT_PUBLIC_R2_BASE || DEFAULT_R2_BASE_URL,
           signal: request.signal,
@@ -409,16 +393,17 @@ export function ZukanClient({
           droppedCount: result.droppedCount,
         });
         languageDatasetCacheRef.current.set(lang, completedDataset);
-        refetchWithNewData(completedDataset.items);
-        setCurrentCategories(taxonomy.categories);
-        setCurrentAuthors(taxonomy.authors);
-        setSelectedAttributes([]);
-        setSelectedCreators([]);
-        setIsCurrentDatasetComplete(true);
-        setDroppedCatalogEntryCount(result.droppedCount);
-        setIsPreviewDataActive(false);
-        setRefetchError(null);
-        setError(null);
+        startTransition(() => {
+          refetchWithNewData(completedDataset.items);
+          setCurrentCategories(taxonomy.categories);
+          setCurrentAuthors(taxonomy.authors);
+          setSelectedAttributes([]);
+          setSelectedCreators([]);
+          setIsCurrentDatasetComplete(true);
+          setDroppedCatalogEntryCount(result.droppedCount);
+          setRefetchError(null);
+          setError(null);
+        });
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
         if (!coordinator.isCurrent(request.generation)) return;
@@ -440,6 +425,7 @@ export function ZukanClient({
   }, [
     isReady,
     lang,
+    catalogUrl,
     serverLang,
     serverDataset,
     retryNonce,
@@ -481,6 +467,20 @@ export function ZukanClient({
     setIsModalOpen(false);
     setSelectedAkyo(null);
   };
+
+  useEffect(() => {
+    if (!sharedEntryId || sharedEntryHandledRef.current) return;
+    const sharedEntry = data.find((item) => item.id === sharedEntryId);
+    if (!sharedEntry) {
+      if (isCurrentDatasetComplete) sharedEntryHandledRef.current = true;
+      return;
+    }
+
+    sharedEntryHandledRef.current = true;
+    modalTriggerRef.current = null;
+    setSelectedAkyo(sharedEntry);
+    setIsModalOpen(true);
+  }, [data, isCurrentDatasetComplete, sharedEntryId]);
 
   const handleModalFavoriteToggle = (id: string) => {
     toggleFavorite(id);
@@ -547,26 +547,7 @@ export function ZukanClient({
 
   // フィルター適用
   useEffect(() => {
-    if (!isCurrentDatasetComplete) {
-      if (lang === serverLang && previewData.length > 0) {
-        if (searchQuery.trim()) {
-          if (!isPreviewDataActive) {
-            refetchWithNewData(previewData);
-            setIsPreviewDataActive(true);
-            return;
-          }
-          filterData({ searchQuery }, sortAscending);
-        } else if (isPreviewDataActive) {
-          refetchWithNewData(serverDataset.items);
-          setIsPreviewDataActive(false);
-        }
-        return;
-      }
-
-      // Non-server languages have no embedded preview dataset. After terminal
-      // failure, retain searchable access to whichever rows remain available.
-      if (!refetchError) return;
-    }
+    if (!isCurrentDatasetComplete) return;
 
     if (randomMode) {
       // ランダム表示中はエントリ種別フィルターのみ反映して再シャッフル
@@ -609,13 +590,6 @@ export function ZukanClient({
     entryTypeFilter,
     filterData,
     isCurrentDatasetComplete,
-    isPreviewDataActive,
-    lang,
-    previewData,
-    refetchError,
-    refetchWithNewData,
-    serverDataset.items,
-    serverLang,
   ]);
 
   // ソート切替
@@ -833,6 +807,7 @@ export function ZukanClient({
             placeholder={t("search.placeholder", lang)}
             ariaLabel={t("search.ariaLabel", lang)}
             clearAriaLabel={t("search.clearAriaLabel", lang)}
+            disabled={catalogControlsDisabled}
           />
         </div>
 
@@ -1018,7 +993,6 @@ export function ZukanClient({
         onToggleFavorite={handleModalFavoriteToggle}
         lang={lang}
         returnFocusRef={modalTriggerRef}
-        isPreviewDetailUnavailable={isSelectedPreviewDetailUnavailable}
       />
 
       {/* Language Toggle Button - Top */}
@@ -1041,6 +1015,8 @@ export function ZukanClient({
       <div
         id="dify-chatbot-container"
         className="fixed bottom-6 right-6 z-[2147483647]"
+        role="complementary"
+        aria-label={t("chatbot.ariaLabel", lang)}
       />
     </div>
   );

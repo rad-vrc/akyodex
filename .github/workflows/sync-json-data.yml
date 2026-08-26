@@ -242,7 +242,7 @@ jobs:
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ env.SITE_URL }}/api/revalidate" \
             -H "Content-Type: application/json" \
             -H "x-revalidate-secret: $REVALIDATE_SECRET" \
-            -d '{"paths": ["/", "/en", "/ko"], "tags": ["akyo-data", "akyo-data-ja", "akyo-data-en", "akyo-data-ko"], "updateKV": true}' \
+            -d '{"paths": ["/", "/en", "/ko", "/zukan"], "tags": ["akyo-data", "akyo-data-ja", "akyo-data-en", "akyo-data-ko"], "updateKV": true}' \
             --max-time 60)
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | sed '$d')
@@ -258,7 +258,7 @@ jobs:
         run: |
           echo "### Cache Invalidation (Phase 5a + 5b)" >> $GITHUB_STEP_SUMMARY
             echo "- ISR revalidation triggered for instant page updates" >> $GITHUB_STEP_SUMMARY
-            echo "- KV cache updated for edge-side data access (~5ms)" >> $GITHUB_STEP_SUMMARY
+            echo "- Legacy and CatalogPayloadV1 KV caches updated for edge-side data access" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.json-changes.outputs.changed }}" == "true" ]; then
             echo "✅ JSON files updated and uploaded to R2" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY

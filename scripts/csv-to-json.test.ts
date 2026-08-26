@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
+import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 const SCRIPT_PATH = path.resolve("scripts/csv-to-json.ts");
-const TEMP_ROOT = path.resolve("scripts", ".tmp-tests");
 
 function buildCsv(rows: string[][]): string {
   return `${rows
@@ -14,8 +14,10 @@ function buildCsv(rows: string[][]): string {
 }
 
 test("parseCsvToAkyoData normalizes EntryType before validating it", async () => {
-  await mkdir(TEMP_ROOT, { recursive: true });
-  const tempDir = await mkdtemp(path.join(TEMP_ROOT, "csv-to-json-test-"));
+  const tempModulePath = path.resolve(
+    "scripts",
+    `.csv-to-json.testable-${randomUUID()}.ts`,
+  );
 
   try {
     const originalSource = await readFile(SCRIPT_PATH, "utf8");
@@ -23,7 +25,6 @@ test("parseCsvToAkyoData normalizes EntryType before validating it", async () =>
       /\/\/ Run if executed directly[\s\S]*$/,
       "",
     )}\nexport { parseCsvToAkyoData };\n`;
-    const tempModulePath = path.join(tempDir, "csv-to-json.testable.ts");
     await writeFile(tempModulePath, patchedSource, "utf8");
 
     const imported = (await import(pathToFileURL(tempModulePath).href)) as {
@@ -75,6 +76,6 @@ test("parseCsvToAkyoData normalizes EntryType before validating it", async () =>
     assert.equal(parsed[0]?.entryType, "world");
     assert.equal(parsed[1]?.entryType, "avatar");
   } finally {
-    await rm(tempDir, { recursive: true, force: true });
+    await rm(tempModulePath, { force: true });
   }
 });

@@ -1,5 +1,6 @@
 import { detectVrcEntryTypeFromUrl } from "@/lib/akyo-entry";
 import type { SupportedLanguage } from "@/lib/i18n";
+import { CATALOG_SCHEMA_VERSION } from "@/lib/catalog-payload";
 import type { AkyoData, AkyoEntryType } from "@/types/akyo";
 
 const DEFAULT_CATALOG_FETCH_TIMEOUT_MS = 15_000;
@@ -7,7 +8,7 @@ const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 
 export interface CompleteCatalogResult {
   items: AkyoData[];
-  source: "api" | "r2";
+  source: "api" | "r2" | "snapshot";
   droppedCount: number;
 }
 
@@ -18,6 +19,7 @@ interface ParsedCatalogPayload {
 
 interface LoadCompleteCatalogDataOptions {
   lang: SupportedLanguage;
+  catalogUrl: string;
   r2BaseUrl: string;
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
@@ -116,7 +118,10 @@ function normalizeCatalogItem(item: unknown): AkyoData | undefined {
     creator: author,
     sourceUrl,
     boothUrl: boothUrl || undefined,
-    avatarUrl: typeof raw.avatarUrl === "string" ? raw.avatarUrl : "",
+    avatarUrl:
+      typeof raw.avatarUrl === "string" && raw.avatarUrl.trim()
+        ? raw.avatarUrl.trim()
+        : sourceUrl,
     isFavorite:
       typeof raw.isFavorite === "boolean" ? raw.isFavorite : undefined,
     parsedCategory:
@@ -153,13 +158,43 @@ function parseCatalogPayload(payload: unknown): ParsedCatalogPayload {
   return { items, droppedCount };
 }
 
+function validateVersionedCatalogPayload(
+  payload: unknown,
+  expectedLanguage: SupportedLanguage,
+): void {
+  if (!payload || typeof payload !== "object") return;
+  const raw = payload as Record<string, unknown>;
+  if (!("schemaVersion" in raw)) return;
+
+  if (raw.schemaVersion !== CATALOG_SCHEMA_VERSION) {
+    throw new Error("Unsupported catalog schema version");
+  }
+  if (raw.language !== expectedLanguage) {
+    throw new Error("Catalog payload language does not match the request");
+  }
+  if (typeof raw.revision !== "string" || !/^[a-f0-9]{64}$/.test(raw.revision)) {
+    throw new Error("Catalog payload revision is invalid");
+  }
+  if (!Array.isArray(raw.data) || raw.count !== raw.data.length) {
+    throw new Error("Catalog payload count is invalid");
+  }
+}
+
+class CatalogDeadlineError extends Error {
+  constructor(timeoutMs: number) {
+    super(`Catalog deadline exceeded after ${timeoutMs}ms`);
+    this.name = "CatalogDeadlineError";
+  }
+}
+
 async function fetchCatalogSource(args: {
   url: string;
   signal?: AbortSignal;
   fetchImpl: typeof fetch;
   timeoutMs: number;
+  expectedLanguage: SupportedLanguage;
 }): Promise<ParsedCatalogPayload> {
-  const { url, signal, fetchImpl, timeoutMs } = args;
+  const { url, signal, fetchImpl, timeoutMs, expectedLanguage } = args;
   if (signal?.aborted) throw createAbortError();
 
   const requestController = new AbortController();
@@ -174,16 +209,17 @@ async function fetchCatalogSource(args: {
   try {
     const response = await fetchImpl(url, {
       signal: requestController.signal,
-      headers: { Accept: "application/json" },
     });
     if (!response.ok) {
       throw new Error(`Catalog request failed with HTTP ${response.status}`);
     }
-    return parseCatalogPayload(await response.json());
+    const payload: unknown = await response.json();
+    validateVersionedCatalogPayload(payload, expectedLanguage);
+    return parseCatalogPayload(payload);
   } catch (error) {
     if (signal?.aborted) throw createAbortError();
     if (timedOut) {
-      throw new Error(`Catalog request timed out after ${timeoutMs}ms`);
+      throw new CatalogDeadlineError(timeoutMs);
     }
     throw error;
   } finally {
@@ -197,49 +233,49 @@ export async function loadCompleteCatalogData(
 ): Promise<CompleteCatalogResult> {
   const {
     lang,
+    catalogUrl,
     r2BaseUrl,
     signal,
     fetchImpl = fetch,
     timeoutMs = DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
   } = options;
-  const apiUrl = `/api/akyo-data?lang=${encodeURIComponent(lang)}`;
-
-  let apiError: unknown;
-  try {
-    const parsed = await fetchCatalogSource({
-      url: apiUrl,
-      signal,
-      fetchImpl,
-      timeoutMs,
-    });
-    return {
-      ...parsed,
-      source: "api",
-    };
-  } catch (error) {
-    if (signal?.aborted) throw createAbortError();
-    apiError = error;
-  }
-
   const normalizedR2BaseUrl = r2BaseUrl.replace(/\/$/, "");
   const r2Url = `${normalizedR2BaseUrl}/data/akyo-data-${lang}.json`;
-  try {
-    const parsed = await fetchCatalogSource({
-      url: r2Url,
-      signal,
-      fetchImpl,
-      timeoutMs,
-    });
-    return {
-      ...parsed,
-      source: "r2",
-    };
-  } catch (r2Error) {
-    if (signal?.aborted) throw createAbortError();
-    throw new Error("API and R2 catalog requests failed", {
-      cause: new AggregateError([apiError, r2Error]),
-    });
+  const sources = [
+    { source: "api" as const, url: catalogUrl },
+    { source: "r2" as const, url: r2Url },
+    { source: "snapshot" as const, url: `/catalog/catalog-v1-${lang}.json` },
+  ];
+  const deadline = Date.now() + timeoutMs;
+  const errors: unknown[] = [];
+
+  for (const source of sources) {
+    const remainingMs = deadline - Date.now();
+    if (remainingMs <= 0) {
+      throw new CatalogDeadlineError(timeoutMs);
+    }
+
+    try {
+      const parsed = await fetchCatalogSource({
+        url: source.url,
+        signal,
+        fetchImpl,
+        timeoutMs: remainingMs,
+        expectedLanguage: lang,
+      });
+      return { ...parsed, source: source.source };
+    } catch (error) {
+      if (signal?.aborted) throw createAbortError();
+      if (error instanceof CatalogDeadlineError) {
+        throw new CatalogDeadlineError(timeoutMs);
+      }
+      errors.push(error);
+    }
   }
+
+  throw new Error("All complete catalog sources failed", {
+    cause: new AggregateError(errors),
+  });
 }
 
 export class CatalogRequestCoordinator {
