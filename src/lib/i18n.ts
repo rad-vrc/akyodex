@@ -556,6 +556,16 @@ export const UI_TEXTS = {
     en: "VRChat Avatar URL",
     ko: "VRChat 아바타 URL",
   },
+  "modal.vrchatWorldUrl": {
+    ja: "VRChat ワールドURL",
+    en: "VRChat World URL",
+    ko: "VRChat 월드 URL",
+  },
+  "modal.previewUnavailable": {
+    ja: "詳細データを読み込めませんでした。表示できる情報のみを掲載しています。",
+    en: "Detailed data could not be loaded. Only the available information is shown.",
+    ko: "상세 데이터를 불러오지 못했습니다. 현재 이용 가능한 정보만 표시합니다.",
+  },
   "modal.boothUrl": {
     ja: "BOOTH URL",
     en: "BOOTH URL",

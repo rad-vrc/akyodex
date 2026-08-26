@@ -136,6 +136,76 @@ test.describe("Deferred full catalog loading", () => {
     ).toBeVisible();
   });
 
+  test("shows the filtered count while preview search results are visible", async ({
+    page,
+  }) => {
+    const apiRoutePromise = waitForApiRoute(page);
+    await page.goto("/zukan");
+    const apiRoute = await apiRoutePromise;
+
+    await page.locator("input.search-input").fill("スーパーワープAkyo");
+    await expect(page.locator("article.akyo-card")).toHaveCount(1);
+    await expect(
+      page
+        .locator("header dl > div")
+        .filter({ hasText: "表示" }),
+    ).toContainText("表示1件");
+
+    await apiRoute.fulfill({ json: { data: catalog.data } });
+  });
+
+  test("refreshes an open preview modal when complete data arrives", async ({
+    page,
+  }) => {
+    const apiRoutePromise = waitForApiRoute(page);
+    await page.goto("/zukan");
+    const apiRoute = await apiRoutePromise;
+
+    await page.locator("input.search-input").fill("スーパーワープAkyo");
+    const previewCard = page
+      .locator("article.akyo-card")
+      .filter({ hasText: "スーパーワープAkyo" });
+    await previewCard.locator(".detail-button").click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText("VRChat アバターURL", { exact: true }),
+    ).toHaveCount(0);
+
+    await apiRoute.fulfill({ json: { data: catalog.data } });
+
+    await expect(
+      dialog.getByText("VRChat アバターURL", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByText(
+        "ワープを覚えたAkyo。Questの場合はPCユーザーにおんぶしてもらうとワープできる",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "VRChatで見る" })).toBeVisible();
+  });
+
+  test("labels a preview world link as a VRChat world URL", async ({
+    page,
+  }) => {
+    const apiRoutePromise = waitForApiRoute(page);
+    await page.goto("/zukan");
+    const apiRoute = await apiRoutePromise;
+
+    await page.locator("input.search-input").fill("こなちるーむ -day-");
+    const previewCard = page
+      .locator("article.akyo-card")
+      .filter({ hasText: "こなちるーむ -day-" });
+    await previewCard.locator(".detail-button").click();
+
+    await expect(
+      page.getByRole("dialog").getByText("VRChat ワールドURL", { exact: true }),
+    ).toBeVisible();
+
+    await apiRoute.fulfill({ json: { data: catalog.data } });
+  });
+
   test("shows favorite loading state until the complete catalog is available", async ({
     page,
   }) => {
@@ -214,6 +284,13 @@ test.describe("Deferred full catalog loading", () => {
 
     await searchInput.fill("スーパーワープAkyo");
     await expect(page.locator("article.akyo-card")).toHaveCount(1);
+    await page.locator("article.akyo-card .detail-button").click();
+    await expect(
+      page
+        .getByRole("dialog")
+        .getByText("詳細データを読み込めませんでした。表示できる情報のみを掲載しています。"),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
 
     await retryButton.click();
 

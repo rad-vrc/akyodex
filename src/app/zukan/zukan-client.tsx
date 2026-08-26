@@ -202,6 +202,10 @@ export function ZukanClient({
     },
     [initialData, initialPreviewData],
   );
+  const initialCompleteIds = useMemo(
+    () => new Set(initialData.map((item) => item.id)),
+    [initialData],
+  );
 
   const {
     data,
@@ -299,6 +303,15 @@ export function ZukanClient({
     .replace("{avatars}", String(initialTotals.avatars))
     .replace("{worlds}", String(initialTotals.worlds))
     .replace("{products}", String(initialTotals.products));
+  const canShowDisplayedBreakdown =
+    isCurrentDatasetComplete ||
+    (isPreviewDataActive && searchQuery.trim().length > 0);
+  const isSelectedPreviewDetailUnavailable = Boolean(
+    refetchError &&
+      selectedAkyo &&
+      isPreviewDataActive &&
+      !initialCompleteIds.has(selectedAkyo.id),
+  );
 
   const activeFilterCount = useMemo(
     () =>
@@ -483,7 +496,7 @@ export function ZukanClient({
     setSelectedAkyo((prev) => {
       if (!prev) return prev;
       const latest = data.find((a) => a.id === prev.id);
-      if (latest && latest.isFavorite !== prev.isFavorite) return latest;
+      if (latest && latest !== prev) return latest;
       return prev;
     });
   }, [data, isModalOpen]);
@@ -743,7 +756,7 @@ export function ZukanClient({
             <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.displayedLabel", lang)}：</dt>
               <dd className="min-w-0 text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap">
-                {isCurrentDatasetComplete
+                {canShowDisplayedBreakdown
                   ? displayedBreakdownText
                   : (
                       <span className="relative block">
@@ -1005,6 +1018,7 @@ export function ZukanClient({
         onToggleFavorite={handleModalFavoriteToggle}
         lang={lang}
         returnFocusRef={modalTriggerRef}
+        isPreviewDetailUnavailable={isSelectedPreviewDetailUnavailable}
       />
 
       {/* Language Toggle Button - Top */}

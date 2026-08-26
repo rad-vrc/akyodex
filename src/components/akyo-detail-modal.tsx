@@ -78,6 +78,8 @@ interface AkyoDetailModalProps {
   lang?: SupportedLanguage;
   /** Element to restore focus to after closing the modal */
   returnFocusRef?: RefObject<HTMLElement | null>;
+  /** Whether this entry is missing details because the complete catalog could not be loaded */
+  isPreviewDetailUnavailable?: boolean;
 }
 
 /**
@@ -95,6 +97,7 @@ export function AkyoDetailModal({
   onToggleFavorite,
   lang = 'ja',
   returnFocusRef,
+  isPreviewDetailUnavailable = false,
 }: AkyoDetailModalProps) {
   const [localAkyo, setLocalAkyo] = useState<AkyoData | null>(akyo);
   const sourceUrl = localAkyo ? getAkyoSourceUrl(localAkyo) : undefined;
@@ -693,11 +696,20 @@ export function AkyoDetailModal({
                   </div>
                 </div>
 
+                {isPreviewDetailUnavailable && (
+                  <p
+                    role="status"
+                    className="border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                  >
+                    {t('modal.previewUnavailable', lang)}
+                  </p>
+                )}
+
                 {/* VRChat URL Section */}
                 {safeSourceUrl && (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-500 mb-2">
-                      {t('modal.vrchatUrl', lang)}
+                      {t(isWorldEntry ? 'modal.vrchatWorldUrl' : 'modal.vrchatUrl', lang)}
                     </h3>
                     <div className="bg-blue-50 rounded-lg p-4">
                       <a
