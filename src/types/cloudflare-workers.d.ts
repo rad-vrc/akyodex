@@ -18,3 +18,17 @@ interface SubtleCrypto {
    */
   timingSafeEqual(a: ArrayBuffer | ArrayBufferView, b: ArrayBuffer | ArrayBufferView): boolean;
 }
+
+interface CloudflareImageTransformOptions {
+  width?: number;
+  fit?: "scale-down";
+  quality?: number;
+  format?: "avif" | "webp";
+}
+
+interface RequestInit {
+  /** Cloudflare Workers fetch extensions used by Images Transformations. */
+  cf?: {
+    image?: CloudflareImageTransformOptions;
+  };
+}

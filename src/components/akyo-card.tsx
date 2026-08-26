@@ -43,9 +43,12 @@ export function shouldBypassImageOptimization(src: string): boolean {
   return src.startsWith("/api/") || src.startsWith("/images/");
 }
 
-export function getCatalogCardImageRequestWidth(_entryType: string): number {
-  // モバイル画面 (320-414px) を考慮して384pxに統一（旧: アバター512px）
-  return 384;
+export function getCatalogCardImageRequestWidth(entryType: string): number {
+  return entryType === "world" ? 512 : 384;
+}
+
+export function shouldPrioritizeCatalogCardImage(index: number): boolean {
+  return index === 0;
 }
 
 export function getCatalogCardPrimaryImageSrc(

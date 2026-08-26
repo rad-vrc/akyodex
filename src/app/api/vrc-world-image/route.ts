@@ -8,7 +8,10 @@ import { getApiErrorResponse, jsonError } from "@/lib/api-helpers";
 import { VRCHAT_WORLD_ID_PATTERN } from "@/lib/akyo-entry";
 import { fetchVRChatWorldPage } from "@/lib/vrchat-utils";
 import {
+  fetchVRChatWorldImageWithFallback,
+  getPreferredCloudflareImageFormat,
   getVRChatWorldImageRequestParams,
+  getVRChatWorldImageResponseHeaders,
   resolveVRChatWorldImageUrlFromHtml,
 } from "@/lib/vrchat-world-image";
 
@@ -38,21 +41,16 @@ export async function GET(request: Request) {
       return jsonError("Valid image not found", 404);
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
     try {
-      const imageResponse = await fetch(imageUrl, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-          Accept: "image/webp,image/png,image/*,*/*",
-        },
-        signal: controller.signal,
-        next: { revalidate: 3600 },
-      } as RequestInit);
-
-      clearTimeout(timeoutId);
+      const format = getPreferredCloudflareImageFormat(
+        request.headers.get("Accept"),
+      );
+      const { response: imageResponse, transformed } =
+        await fetchVRChatWorldImageWithFallback({
+          imageUrl,
+          width,
+          format,
+        });
 
       if (!imageResponse.ok) {
         return jsonError(
@@ -62,17 +60,15 @@ export async function GET(request: Request) {
       }
 
       const imageData = await imageResponse.arrayBuffer();
+      const responseHeaders = getVRChatWorldImageResponseHeaders(
+        imageResponse.headers.get("Content-Type") || "image/png",
+      );
+      responseHeaders.set("X-Image-Transformed", String(transformed));
       return new Response(imageData, {
         status: 200,
-        headers: {
-          "Content-Type":
-            imageResponse.headers.get("Content-Type") || "image/webp",
-          "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
-          "X-Image-Source": "vrchat-world-ogp",
-        },
+        headers: responseHeaders,
       });
     } catch (imageFetchError) {
-      clearTimeout(timeoutId);
       if (
         imageFetchError instanceof Error &&
         imageFetchError.name === "AbortError"
