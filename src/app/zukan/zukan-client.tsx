@@ -40,6 +40,7 @@ import {
   summarizeCatalog,
   type CatalogTotals,
 } from "./catalog-initial-data";
+import { resolveClientCatalogUrl } from "./catalog-language";
 import {
   getNextFilterPanelOpenState,
   resolveFilterPanelOpenState,
@@ -373,7 +374,7 @@ export function ZukanClient({
       try {
         const result = await loadCompleteCatalogData({
           lang,
-          catalogUrl,
+          catalogUrl: resolveClientCatalogUrl(catalogUrl, serverLang, lang),
           r2BaseUrl:
             process.env.NEXT_PUBLIC_R2_BASE || DEFAULT_R2_BASE_URL,
           signal: request.signal,

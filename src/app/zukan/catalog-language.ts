@@ -9,3 +9,13 @@ export function resolveCatalogLanguage(
 ): SupportedLanguage {
   return value && isValidLanguage(value) ? value : DEFAULT_LANGUAGE;
 }
+
+export function resolveClientCatalogUrl(
+  serverCatalogUrl: string,
+  serverLanguage: SupportedLanguage,
+  clientLanguage: SupportedLanguage,
+): string {
+  return clientLanguage === serverLanguage
+    ? serverCatalogUrl
+    : `/api/catalog/${clientLanguage}`;
+}
