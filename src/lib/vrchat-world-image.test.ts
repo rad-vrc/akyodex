@@ -20,6 +20,41 @@ const resolveVRChatWorldImageUrlFromHtml =
   vrchatWorldImageModule.resolveVRChatWorldImageUrlFromHtml as
   | ((html: string, width: number) => string)
   | undefined;
+const getPreferredCloudflareImageFormat =
+  vrchatWorldImageModule.getPreferredCloudflareImageFormat as
+  | ((accept: string | null) => 'avif' | 'webp' | null)
+  | undefined;
+const createVRChatWorldImageFetchInit =
+  vrchatWorldImageModule.createVRChatWorldImageFetchInit as
+  | ((args: {
+      width: number;
+      format: 'avif' | 'webp' | null;
+      signal: AbortSignal;
+    }) => RequestInit & {
+      cf?: {
+        image?: {
+          width?: number;
+          fit?: string;
+          quality?: number;
+          format?: string;
+        };
+      };
+    })
+  | undefined;
+const fetchVRChatWorldImageWithFallback =
+  vrchatWorldImageModule.fetchVRChatWorldImageWithFallback as
+  | ((args: {
+      imageUrl: string;
+      width: number;
+      format: 'avif' | 'webp' | null;
+      fetchFn: typeof fetch;
+      timeoutMs?: number;
+    }) => Promise<{ response: Response; transformed: boolean }>)
+  | undefined;
+const getVRChatWorldImageResponseHeaders =
+  vrchatWorldImageModule.getVRChatWorldImageResponseHeaders as
+  | ((contentType: string) => Headers)
+  | undefined;
 
 test('normalizeVRChatImageWidth clamps world image widths like the avatar proxy', () => {
   assert.equal(typeof normalizeVRChatImageWidth, 'function');
@@ -106,4 +141,130 @@ test('resolveVRChatWorldImageUrlFromHtml keeps apostrophes inside double-quoted 
     resolveVRChatWorldImageUrlFromHtml?.(html, 96),
     "https://vrchat.com/og?title=Builder's+World"
   );
+});
+
+test('getPreferredCloudflareImageFormat prefers AVIF, then WebP, then the original format', () => {
+  assert.equal(typeof getPreferredCloudflareImageFormat, 'function');
+
+  assert.equal(
+    getPreferredCloudflareImageFormat?.('image/webp,image/avif,image/*'),
+    'avif'
+  );
+  assert.equal(getPreferredCloudflareImageFormat?.('image/webp,image/*'), 'webp');
+  assert.equal(getPreferredCloudflareImageFormat?.('image/png,image/*'), null);
+  assert.equal(getPreferredCloudflareImageFormat?.(null), null);
+});
+
+test('createVRChatWorldImageFetchInit applies the Cloudflare image transformation', () => {
+  assert.equal(typeof createVRChatWorldImageFetchInit, 'function');
+
+  const controller = new AbortController();
+  const init = createVRChatWorldImageFetchInit?.({
+    width: 512,
+    format: 'avif',
+    signal: controller.signal,
+  });
+
+  assert.deepEqual(init?.cf?.image, {
+    width: 512,
+    fit: 'scale-down',
+    quality: 80,
+    format: 'avif',
+  });
+  assert.equal(init?.signal, controller.signal);
+});
+
+test('fetchVRChatWorldImageWithFallback retries without Cloudflare transformation', async () => {
+  assert.equal(typeof fetchVRChatWorldImageWithFallback, 'function');
+
+  const calls: Array<RequestInit | undefined> = [];
+  const fetchFn = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    calls.push(init);
+    if (calls.length === 1) {
+      return new Response('transform unavailable', { status: 500 });
+    }
+    return new Response('original image', {
+      status: 200,
+      headers: { 'Content-Type': 'image/png' },
+    });
+  }) as typeof fetch;
+
+  const result = await fetchVRChatWorldImageWithFallback?.({
+    imageUrl: 'https://api.vrchat.cloud/api/1/image/file_test/1/512',
+    width: 512,
+    format: 'webp',
+    fetchFn,
+  });
+
+  assert.equal(calls.length, 2);
+  assert.ok('cf' in (calls[0] ?? {}));
+  assert.equal('cf' in (calls[1] ?? {}), false);
+  assert.equal(result?.response.status, 200);
+  assert.equal(result?.transformed, false);
+});
+
+test('fetchVRChatWorldImageWithFallback skips transformation for unsupported clients', async () => {
+  assert.equal(typeof fetchVRChatWorldImageWithFallback, 'function');
+
+  const calls: Array<RequestInit | undefined> = [];
+  const fetchFn = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    calls.push(init);
+    return new Response('original image', { status: 200 });
+  }) as typeof fetch;
+
+  const result = await fetchVRChatWorldImageWithFallback?.({
+    imageUrl: 'https://api.vrchat.cloud/api/1/image/file_test/1/512',
+    width: 512,
+    format: null,
+    fetchFn,
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal('cf' in (calls[0] ?? {}), false);
+  assert.equal(result?.transformed, false);
+});
+
+test('fetchVRChatWorldImageWithFallback retries the original after a transform timeout', async () => {
+  assert.equal(typeof fetchVRChatWorldImageWithFallback, 'function');
+
+  let callCount = 0;
+  const fetchFn = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    callCount += 1;
+    if (callCount === 1) {
+      return await new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('Aborted', 'AbortError')),
+          { once: true }
+        );
+      });
+    }
+    return new Response('original image', { status: 200 });
+  }) as typeof fetch;
+
+  const result = await fetchVRChatWorldImageWithFallback?.({
+    imageUrl: 'https://api.vrchat.cloud/api/1/image/file_test/1/512',
+    width: 512,
+    format: 'avif',
+    fetchFn,
+    timeoutMs: 5,
+  });
+
+  assert.equal(callCount, 2);
+  assert.equal(result?.response.status, 200);
+  assert.equal(result?.transformed, false);
+});
+
+test('getVRChatWorldImageResponseHeaders varies by Accept and applies the long cache policy', () => {
+  assert.equal(typeof getVRChatWorldImageResponseHeaders, 'function');
+
+  const headers = getVRChatWorldImageResponseHeaders?.('image/avif');
+
+  assert.equal(headers?.get('Content-Type'), 'image/avif');
+  assert.equal(headers?.get('Vary'), 'Accept');
+  assert.equal(
+    headers?.get('Cache-Control'),
+    'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000'
+  );
+  assert.equal(headers?.get('X-Image-Source'), 'vrchat-world-ogp');
 });

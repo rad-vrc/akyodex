@@ -1,12 +1,22 @@
 const DEFAULT_VRCHAT_IMAGE_WIDTH = 512;
 const MIN_VRCHAT_IMAGE_WIDTH = 32;
 const MAX_VRCHAT_IMAGE_WIDTH = 4096;
+const VRCHAT_IMAGE_FETCH_TIMEOUT_MS = 30000;
+const VRCHAT_IMAGE_CACHE_CONTROL =
+  'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000';
 const ALLOWED_IMAGE_HOSTS = new Set([
   'api.vrchat.cloud',
   'files.vrchat.cloud',
   'images.vrchat.cloud',
   'vrchat.com',
 ]);
+
+export type CloudflareImageFormat = 'avif' | 'webp';
+
+interface VRChatWorldImageFetchResult {
+  response: Response;
+  transformed: boolean;
+}
 
 function isAllowedImageUrl(url: string): boolean {
   try {
@@ -47,6 +57,127 @@ export function normalizeVRChatImageWidth(value: string | number | null | undefi
   }
 
   return Math.max(MIN_VRCHAT_IMAGE_WIDTH, Math.min(MAX_VRCHAT_IMAGE_WIDTH, parsedWidth));
+}
+
+export function getPreferredCloudflareImageFormat(
+  accept: string | null
+): CloudflareImageFormat | null {
+  const normalizedAccept = accept?.toLowerCase() ?? '';
+  if (normalizedAccept.includes('image/avif')) {
+    return 'avif';
+  }
+  if (normalizedAccept.includes('image/webp')) {
+    return 'webp';
+  }
+  return null;
+}
+
+export function createVRChatWorldImageFetchInit(args: {
+  width: number;
+  format: CloudflareImageFormat | null;
+  signal: AbortSignal;
+}): RequestInit {
+  const { width, format, signal } = args;
+  const init: RequestInit = {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      Accept: format
+        ? `image/${format},image/webp,image/png,image/*,*/*`
+        : 'image/png,image/*,*/*',
+    },
+    signal,
+    next: { revalidate: 3600 },
+  };
+
+  if (format) {
+    init.cf = {
+      image: {
+        width: normalizeVRChatImageWidth(width),
+        fit: 'scale-down',
+        quality: 80,
+        format,
+      },
+    };
+  }
+
+  return init;
+}
+
+async function fetchVRChatWorldImageAttempt(args: {
+  imageUrl: string;
+  width: number;
+  format: CloudflareImageFormat | null;
+  fetchFn: typeof fetch;
+  timeoutMs: number;
+}): Promise<Response> {
+  const { imageUrl, width, format, fetchFn, timeoutMs } = args;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetchFn(
+      imageUrl,
+      createVRChatWorldImageFetchInit({
+        width,
+        format,
+        signal: controller.signal,
+      })
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+export async function fetchVRChatWorldImageWithFallback(args: {
+  imageUrl: string;
+  width: number;
+  format: CloudflareImageFormat | null;
+  fetchFn?: typeof fetch;
+  timeoutMs?: number;
+}): Promise<VRChatWorldImageFetchResult> {
+  const {
+    imageUrl,
+    width,
+    format,
+    fetchFn = fetch,
+    timeoutMs = VRCHAT_IMAGE_FETCH_TIMEOUT_MS,
+  } = args;
+
+  if (format) {
+    try {
+      const transformedResponse = await fetchVRChatWorldImageAttempt({
+        imageUrl,
+        width,
+        format,
+        fetchFn,
+        timeoutMs,
+      });
+      if (transformedResponse.ok) {
+        return { response: transformedResponse, transformed: true };
+      }
+    } catch {
+      // Retry once without Images Transformations below.
+    }
+  }
+
+  const response = await fetchVRChatWorldImageAttempt({
+    imageUrl,
+    width,
+    format: null,
+    fetchFn,
+    timeoutMs,
+  });
+  return { response, transformed: false };
+}
+
+export function getVRChatWorldImageResponseHeaders(contentType: string): Headers {
+  return new Headers({
+    'Content-Type': contentType,
+    'Cache-Control': VRCHAT_IMAGE_CACHE_CONTROL,
+    Vary: 'Accept',
+    'X-Image-Source': 'vrchat-world-ogp',
+  });
 }
 
 export function getSizedVRChatWorldImageUrl(imageUrl: string, width: number): string {

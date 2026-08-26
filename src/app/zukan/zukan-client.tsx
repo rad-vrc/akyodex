@@ -11,7 +11,10 @@
  * - Virtual scrolling (performance optimization)
  */
 
-import { AkyoCard } from "@/components/akyo-card";
+import {
+  AkyoCard,
+  shouldPrioritizeCatalogCardImage,
+} from "@/components/akyo-card";
 import { AkyoDetailModal } from "@/components/akyo-detail-modal";
 import { AkyoList } from "@/components/akyo-list";
 import { FilterPanel } from "@/components/filter-panel";
@@ -79,7 +82,6 @@ const MOBILE_BREAKPOINT = 768;
 const DESKTOP_RENDER_LIMIT = 20;
 const MOBILE_RENDER_LIMIT = 12;
 const RENDER_CHUNK = 30;
-const PRIORITY_CARD_COUNT = 2;
 const MINI_AKYO_BG_DELAY_MS = 2500;
 
 function useResponsiveLayout() {
@@ -1033,7 +1035,7 @@ export function ZukanClient({
                 lang={lang}
                 onToggleFavorite={toggleFavorite}
                 onShowDetail={handleShowDetail}
-                priority={index < PRIORITY_CARD_COUNT}
+                priority={shouldPrioritizeCatalogCardImage(index)}
               />
             ))}
           </div>
