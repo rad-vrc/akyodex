@@ -5,17 +5,20 @@ export interface LanguageDatasetCacheEntry {
   items: AkyoData[];
   categories: string[];
   authors: string[];
+  complete: boolean;
 }
 
 export function createLanguageDatasetCacheEntry(args: {
   items: AkyoData[];
   categories: string[];
   authors: string[];
+  complete: boolean;
 }): LanguageDatasetCacheEntry {
   return {
     items: args.items,
     categories: args.categories,
     authors: args.authors,
+    complete: args.complete,
   };
 }
 

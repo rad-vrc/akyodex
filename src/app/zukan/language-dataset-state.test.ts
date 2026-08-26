@@ -28,6 +28,7 @@ test("resolveImmediateLanguageDataset restores the server dataset when returning
     items: [createAkyo("0001")],
     categories: ["ja-category"],
     authors: ["ja-author"],
+    complete: false,
   });
 
   const resolved = resolveImmediateLanguageDataset({
@@ -37,6 +38,7 @@ test("resolveImmediateLanguageDataset restores the server dataset when returning
   });
 
   assert.deepEqual(resolved, serverDataset);
+  assert.equal(resolved?.complete, false);
 });
 
 test("resolveImmediateLanguageDataset uses cached language datasets for non-server languages", () => {
@@ -44,11 +46,13 @@ test("resolveImmediateLanguageDataset uses cached language datasets for non-serv
     items: [createAkyo("0001")],
     categories: ["ja-category"],
     authors: ["ja-author"],
+    complete: false,
   });
   const cachedDataset = createLanguageDatasetCacheEntry({
     items: [createAkyo("0002")],
     categories: ["en-category"],
     authors: ["en-author"],
+    complete: true,
   });
 
   const resolved = resolveImmediateLanguageDataset({
@@ -59,6 +63,7 @@ test("resolveImmediateLanguageDataset uses cached language datasets for non-serv
   });
 
   assert.deepEqual(resolved, cachedDataset);
+  assert.equal(resolved?.complete, true);
 });
 
 test("resolveImmediateLanguageDataset returns null when a non-server language is uncached", () => {
@@ -66,6 +71,7 @@ test("resolveImmediateLanguageDataset returns null when a non-server language is
     items: [createAkyo("0001")],
     categories: ["ja-category"],
     authors: ["ja-author"],
+    complete: false,
   });
 
   const resolved = resolveImmediateLanguageDataset({

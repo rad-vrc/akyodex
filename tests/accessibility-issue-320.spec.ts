@@ -5,6 +5,7 @@ test.describe("Issue #320 accessibility regressions", () => {
     page,
   }) => {
     await page.goto("/zukan");
+    await expect(page.locator("input.search-input")).toBeEnabled();
 
     await page.keyboard.press("Tab");
     const skipLink = page.getByRole("link", {
@@ -44,6 +45,7 @@ test.describe("Issue #320 accessibility regressions", () => {
     page,
   }) => {
     await page.goto("/zukan");
+    await expect(page.locator("input.search-input")).toBeEnabled();
 
     await expect(page.getByRole("navigation")).toHaveCount(1);
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -106,6 +108,7 @@ test.describe("Issue #320 accessibility regressions", () => {
     page,
   }) => {
     await page.goto("/zukan");
+    await expect(page.locator("input.search-input")).toBeEnabled();
 
     await expect(page.getByRole("button", { name: /カード|Card|카드/i })).toHaveAttribute(
       "aria-pressed",

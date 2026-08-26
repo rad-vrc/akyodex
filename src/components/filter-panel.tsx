@@ -42,6 +42,7 @@ interface FilterPanelProps {
   sortAscending: boolean;
   randomMode: boolean;
   lang?: SupportedLanguage;
+  disabled?: boolean;
 }
 
 export function FilterPanel({
@@ -66,6 +67,7 @@ export function FilterPanel({
   sortAscending,
   randomMode,
   lang = 'ja',
+  disabled = false,
 }: FilterPanelProps) {
   const [categoryQuery, setCategoryQuery] = useState('');
   const [authorQuery, setAuthorQuery] = useState('');
@@ -269,7 +271,11 @@ export function FilterPanel({
   };
 
   return (
-    <div className="space-y-4">
+    <fieldset
+      disabled={disabled}
+      aria-busy={disabled}
+      className={`space-y-4 ${disabled ? 'opacity-60' : ''}`}
+    >
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -366,7 +372,12 @@ export function FilterPanel({
             )}
           </div>
 
-          <div className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2">
+          <div
+            className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2"
+            data-loading-scroll-region={disabled ? 'true' : undefined}
+            tabIndex={disabled ? 0 : undefined}
+            aria-label={disabled ? t('filter.category', lang) : undefined}
+          >
             {filteredCategories.length === 0 ? (
               <div className="px-2 py-3 text-xs text-[var(--text-secondary)]">
                 {t('filter.noCategoryMatch', lang)}
@@ -464,7 +475,12 @@ export function FilterPanel({
             )}
           </div>
 
-          <div className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2">
+          <div
+            className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2"
+            data-loading-scroll-region={disabled ? 'true' : undefined}
+            tabIndex={disabled ? 0 : undefined}
+            aria-label={disabled ? t('filter.author', lang) : undefined}
+          >
             {filteredAuthors.length === 0 ? (
               <div className="px-2 py-3 text-xs text-[var(--text-secondary)]">
                 {t('filter.noAuthorMatch', lang)}
@@ -553,6 +569,6 @@ export function FilterPanel({
           <IconHeart size="w-4 h-4" /> {t('filter.favorites', lang)}
         </button>
       </div>
-    </div>
+    </fieldset>
   );
 }

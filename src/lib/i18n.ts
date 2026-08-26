@@ -153,6 +153,11 @@ export const UI_TEXTS = {
     en: "Language data is currently unavailable. Keeping the current view.",
     ko: "언어 데이터를 사용할 수 없어 현재 화면을 유지합니다.",
   },
+  "error.catalogUnavailable": {
+    ja: "全データを取得できませんでした。先頭のデータを表示しています。",
+    en: "The full catalog could not be loaded. Showing the initial entries.",
+    ko: "전체 데이터를 불러오지 못했습니다. 첫 항목을 표시하고 있습니다.",
+  },
   "loading.text": {
     ja: "データを読み込んでいます...",
     en: "Loading data...",
@@ -162,6 +167,16 @@ export const UI_TEXTS = {
     ja: "言語データを切り替え中...",
     en: "Switching language data...",
     ko: "언어 데이터를 전환 중...",
+  },
+  "loading.catalog": {
+    ja: "図鑑の全データを読み込んでいます...",
+    en: "Loading the complete catalog...",
+    ko: "도감 전체 데이터를 불러오는 중입니다...",
+  },
+  "loading.retry": {
+    ja: "再試行",
+    en: "Retry",
+    ko: "다시 시도",
   },
   "logo.alt": {
     ja: "Akyoずかんロゴ",
@@ -229,14 +244,19 @@ export const UI_TEXTS = {
     ko: "현재 표시 항목",
   },
   "stats.totalBreakdown": {
-    ja: "全{avatars}アバター / {worlds}ワールド / {products}商品",
-    en: "Total {avatars} avatars / {worlds} worlds / {products} products",
-    ko: "전체 {avatars}개 아바타 / {worlds}개 월드 / {products}개 상품",
+    ja: "全{count}件：{avatars}アバター / {worlds}ワールド / {products}商品",
+    en: "{count} total: {avatars} avatars / {worlds} worlds / {products} products",
+    ko: "전체 {count}건: 아바타 {avatars}개 / 월드 {worlds}개 / 상품 {products}개",
   },
   "stats.displayedBreakdown": {
-    ja: "表示{avatars}アバター / {worlds}ワールド / {products}商品",
-    en: "Showing {avatars} avatars / {worlds} worlds / {products} products",
-    ko: "{avatars}개 아바타 / {worlds}개 월드 / {products}개 상품 표시",
+    ja: "表示{count}件：{avatars}アバター / {worlds}ワールド / {products}商品",
+    en: "Showing {count}: {avatars} avatars / {worlds} worlds / {products} products",
+    ko: "{count}건 표시: 아바타 {avatars}개 / 월드 {worlds}개 / 상품 {products}개",
+  },
+  "stats.displayedLoading": {
+    ja: "表示データを読み込み中...",
+    en: "Loading displayed entries...",
+    ko: "표시할 데이터를 불러오는 중...",
   },
   "stats.favoritesLabel": {
     ja: "お気に入り",
