@@ -35,7 +35,8 @@ test("FilterPanel disables its complete control group while the full catalog loa
 
   assert.match(markup, /<fieldset[^>]*disabled=""[^>]*aria-busy="true"/);
   assert.equal(
-    markup.match(/data-loading-scroll-region="true" tabindex="0"/g)?.length,
+    markup.match(/max-h-52[^\"]*overflow-hidden/g)?.length,
     2,
   );
+  assert.doesNotMatch(markup, /data-loading-scroll-region/);
 });

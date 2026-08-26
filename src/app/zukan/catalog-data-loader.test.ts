@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 import type { AkyoData } from "@/types/akyo";
 import {
   CatalogRequestCoordinator,
   loadCompleteCatalogData,
-  scheduleAfterPageLoad,
 } from "./catalog-data-loader";
 
 function createAkyo(id: string): AkyoData {
@@ -73,7 +74,28 @@ test("loadCompleteCatalogData falls back to R2 after an API HTTP error", async (
   ]);
 });
 
-test("loadCompleteCatalogData rejects a malformed API payload before using R2", async () => {
+test("loadCompleteCatalogData keeps valid API entries and reports dropped rows", async () => {
+  const requestedUrls: string[] = [];
+  const fetchImpl: typeof fetch = async (input) => {
+    requestedUrls.push(String(input));
+    return jsonResponse({
+      data: [createAkyo("0003"), { id: "", avatarName: "invalid" }],
+    });
+  };
+
+  const result = await loadCompleteCatalogData({
+    lang: "ko",
+    r2BaseUrl: "https://images.example.com",
+    fetchImpl,
+  });
+
+  assert.equal(result.source, "api");
+  assert.deepEqual(result.items.map((item) => item.id), ["0003"]);
+  assert.equal(result.droppedCount, 1);
+  assert.deepEqual(requestedUrls, ["/api/akyo-data?lang=ko"]);
+});
+
+test("loadCompleteCatalogData falls back when every API entry is invalid", async () => {
   const payloads = [
     { data: [{ id: "", avatarName: "invalid" }] },
     { data: [createAkyo("0003")] },
@@ -94,6 +116,7 @@ test("loadCompleteCatalogData rejects a malformed API payload before using R2", 
   assert.equal(call, 2);
   assert.equal(result.source, "r2");
   assert.equal(result.items[0]?.id, "0003");
+  assert.equal(result.droppedCount, 0);
 });
 
 test("loadCompleteCatalogData reports failure when both API and R2 fail", async () => {
@@ -176,49 +199,27 @@ test("CatalogRequestCoordinator aborts stale language requests and unmount work"
   assert.equal(coordinator.isCurrent(english.generation), false);
 });
 
-test("scheduleAfterPageLoad waits for load or queues the callback when already complete", () => {
-  let loadListener: (() => void) | undefined;
-  let queued: (() => void) | undefined;
-  let runs = 0;
-  const loadingCleanup = scheduleAfterPageLoad({
-    readyState: "loading",
-    addLoadListener: (listener) => {
-      loadListener = listener;
-    },
-    removeLoadListener: (listener) => {
-      if (loadListener === listener) loadListener = undefined;
-    },
-    queueTask: (task) => {
-      queued = task;
-      return 1;
-    },
-    cancelTask: () => {},
-    callback: () => {
-      runs += 1;
-    },
-  });
+test("all checked-in language catalogs pass client validation without dropped rows", async () => {
+  for (const lang of ["ja", "en", "ko"] as const) {
+    const payload = JSON.parse(
+      readFileSync(
+        path.join(process.cwd(), "data", `akyo-data-${lang}.json`),
+        "utf8",
+      ),
+    ) as { data: unknown[] };
+    const fetchImpl: typeof fetch = async () => jsonResponse(payload);
 
-  assert.equal(runs, 0);
-  loadListener?.();
-  assert.equal(runs, 1);
-  loadingCleanup();
+    const result = await loadCompleteCatalogData({
+      lang,
+      r2BaseUrl: "https://images.example.com",
+      fetchImpl,
+    });
 
-  const completeCleanup = scheduleAfterPageLoad({
-    readyState: "complete",
-    addLoadListener: () => {},
-    removeLoadListener: () => {},
-    queueTask: (task) => {
-      queued = task;
-      return 2;
-    },
-    cancelTask: () => {},
-    callback: () => {
-      runs += 1;
-    },
-  });
-
-  assert.equal(runs, 1);
-  queued?.();
-  assert.equal(runs, 2);
-  completeCleanup();
+    assert.equal(
+      result.items.length,
+      payload.data.length,
+      `${lang} catalog entry count`,
+    );
+    assert.equal(result.droppedCount, 0, `${lang} dropped entry count`);
+  }
 });

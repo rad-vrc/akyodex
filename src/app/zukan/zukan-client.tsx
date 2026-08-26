@@ -35,7 +35,6 @@ import {
 import {
   CatalogRequestCoordinator,
   loadCompleteCatalogData,
-  scheduleAfterPageLoad,
 } from "./catalog-data-loader";
 import {
   summarizeCatalog,
@@ -239,7 +238,7 @@ export function ZukanClient({
   const [isCurrentDatasetComplete, setIsCurrentDatasetComplete] = useState(
     initialDataComplete,
   );
-  const [isPageLoadComplete, setIsPageLoadComplete] = useState(false);
+  const [droppedCatalogEntryCount, setDroppedCatalogEntryCount] = useState(0);
   const [retryNonce, setRetryNonce] = useState(0);
 
   const languageDatasetCacheRef = useRef<
@@ -298,26 +297,16 @@ export function ZukanClient({
     ? refetchError
     : catalogControlsDisabled
       ? t("loading.catalog", lang)
-      : null;
+      : droppedCatalogEntryCount > 0
+        ? t("warning.catalogEntriesDropped", lang).replace(
+            "{count}",
+            String(droppedCatalogEntryCount),
+          )
+        : null;
   const resolvedIsFilterPanelOpen = resolveFilterPanelOpenState({
     isFilterPanelOpen,
     isMobile,
   });
-
-  useEffect(
-    () =>
-      scheduleAfterPageLoad({
-        readyState: document.readyState,
-        addLoadListener: (listener) =>
-          window.addEventListener("load", listener, { once: true }),
-        removeLoadListener: (listener) =>
-          window.removeEventListener("load", listener),
-        queueTask: (task) => window.setTimeout(task, 0),
-        cancelTask: (taskId) => window.clearTimeout(taskId),
-        callback: () => setIsPageLoadComplete(true),
-      }),
-    [],
-  );
 
   // Sync the server payload without replacing a completed in-memory dataset.
   useEffect(() => {
@@ -338,9 +327,9 @@ export function ZukanClient({
     });
   }, [isMobile]);
 
-  // Load the complete current-language catalog after the initial page load.
+  // Start loading the complete catalog as soon as the client is hydrated.
   useEffect(() => {
-    if (!isReady || !isPageLoadComplete) return;
+    if (!isReady) return;
 
     const immediateDataset = resolveImmediateLanguageDataset({
       lang,
@@ -353,6 +342,7 @@ export function ZukanClient({
       setCurrentCategories(immediateDataset.categories);
       setCurrentAuthors(immediateDataset.authors);
       setIsCurrentDatasetComplete(true);
+      setDroppedCatalogEntryCount(immediateDataset.droppedCount);
       setRefetchError(null);
       setError(null);
       setLoading(false);
@@ -363,6 +353,7 @@ export function ZukanClient({
     setLoading(true);
     setError(null);
     setRefetchError(null);
+    setDroppedCatalogEntryCount(0);
 
     const coordinator = requestCoordinatorRef.current;
     if (!coordinator) return;
@@ -384,6 +375,7 @@ export function ZukanClient({
           categories: taxonomy.categories,
           authors: taxonomy.authors,
           complete: true,
+          droppedCount: result.droppedCount,
         });
         languageDatasetCacheRef.current.set(lang, completedDataset);
         refetchWithNewData(completedDataset.items);
@@ -392,6 +384,7 @@ export function ZukanClient({
         setSelectedAttributes([]);
         setSelectedCreators([]);
         setIsCurrentDatasetComplete(true);
+        setDroppedCatalogEntryCount(result.droppedCount);
         setRefetchError(null);
         setError(null);
       } catch (err) {
@@ -414,7 +407,6 @@ export function ZukanClient({
     };
   }, [
     isReady,
-    isPageLoadComplete,
     lang,
     serverLang,
     serverDataset,
@@ -523,6 +515,10 @@ export function ZukanClient({
 
   // フィルター適用
   useEffect(() => {
+    // Accept search input immediately, but keep the initial 12 cards stable until
+    // the complete dataset arrives. After terminal failure, search the fallback.
+    if (!isCurrentDatasetComplete && !refetchError) return;
+
     if (randomMode) {
       // ランダム表示中はエントリ種別フィルターのみ反映して再シャッフル
       filterData(
@@ -563,6 +559,8 @@ export function ZukanClient({
     randomMode,
     entryTypeFilter,
     filterData,
+    isCurrentDatasetComplete,
+    refetchError,
   ]);
 
   // ソート切替
@@ -719,9 +717,18 @@ export function ZukanClient({
             </div>
             <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.favoritesLabel", lang)}：</dt>
-              <dd className="min-w-0 text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap flex items-center gap-1">
+              <dd className="min-w-[5ch] text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap flex items-center gap-1">
                 <span aria-hidden="true">❤️</span>
-                {stats.favorites}
+                {isCurrentDatasetComplete ? (
+                  stats.favorites
+                ) : (
+                  <>
+                    <span aria-hidden="true">…</span>
+                    <span className="sr-only">
+                      {t("stats.favoritesLoading", lang)}
+                    </span>
+                  </>
+                )}
               </dd>
             </div>
           </dl>
@@ -732,7 +739,7 @@ export function ZukanClient({
         <div className="fixed bottom-4 left-4 right-24 z-[80] sm:left-auto sm:right-6 sm:w-[420px]">
           <div
             className={`flex flex-col items-stretch justify-between gap-3 rounded-xl px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center ${
-              refetchError
+              refetchError || droppedCatalogEntryCount > 0
                 ? "border border-amber-300 bg-amber-50/95 text-amber-900"
                 : "border border-sky-300 bg-sky-50/95 text-sky-900"
             }`}
@@ -771,7 +778,6 @@ export function ZukanClient({
             placeholder={t("search.placeholder", lang)}
             ariaLabel={t("search.ariaLabel", lang)}
             clearAriaLabel={t("search.clearAriaLabel", lang)}
-            disabled={catalogControlsDisabled}
           />
         </div>
 

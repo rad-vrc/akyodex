@@ -19,6 +19,7 @@ test.describe('Accessibility (a11y) Checks', () => {
     // Wait for cards to ensure data is loaded and rendered
     await page.waitForSelector('.akyo-card', { state: 'attached' });
     await expect(page.locator('input.search-input')).toBeEnabled();
+    await expect(page.locator('#zukan-filter-panel > fieldset')).toBeEnabled();
 
     // Run axe-core accessibility scan
     // We specifically target WCAG 2.1 AA which is the standard goal
@@ -43,6 +44,7 @@ test.describe('Accessibility (a11y) Checks', () => {
     await page.goto('/zukan');
     await page.waitForSelector('.akyo-card', { state: 'attached' });
     await expect(page.locator('input.search-input')).toBeEnabled();
+    await expect(page.locator('#zukan-filter-panel > fieldset')).toBeEnabled();
 
     // Open the first card's modal using the dedicated trigger button
     // (We recently added data-card-trigger to the specific overlay button)

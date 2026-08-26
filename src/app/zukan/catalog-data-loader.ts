@@ -8,6 +8,12 @@ const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 export interface CompleteCatalogResult {
   items: AkyoData[];
   source: "api" | "r2";
+  droppedCount: number;
+}
+
+interface ParsedCatalogPayload {
+  items: AkyoData[];
+  droppedCount: number;
 }
 
 interface LoadCompleteCatalogDataOptions {
@@ -120,7 +126,7 @@ function normalizeCatalogItem(item: unknown): AkyoData | undefined {
   };
 }
 
-function parseCatalogPayload(payload: unknown): AkyoData[] {
+function parseCatalogPayload(payload: unknown): ParsedCatalogPayload {
   const wrappedData =
     payload && typeof payload === "object"
       ? (payload as Record<string, unknown>).data
@@ -130,11 +136,21 @@ function parseCatalogPayload(payload: unknown): AkyoData[] {
   }
 
   const normalizedItems = wrappedData.map(normalizeCatalogItem);
-  if (normalizedItems.some((item) => item === undefined)) {
-    throw new Error("Catalog payload contains an invalid entry");
+  const items = normalizedItems.filter(
+    (item): item is AkyoData => item !== undefined,
+  );
+  const droppedCount = wrappedData.length - items.length;
+  if (items.length === 0) {
+    throw new Error("Catalog payload contains no valid entries");
   }
 
-  return normalizedItems as AkyoData[];
+  if (droppedCount > 0) {
+    console.warn(
+      `[catalog-data-loader] Dropped ${droppedCount} invalid catalog entries`,
+    );
+  }
+
+  return { items, droppedCount };
 }
 
 async function fetchCatalogSource(args: {
@@ -142,7 +158,7 @@ async function fetchCatalogSource(args: {
   signal?: AbortSignal;
   fetchImpl: typeof fetch;
   timeoutMs: number;
-}): Promise<AkyoData[]> {
+}): Promise<ParsedCatalogPayload> {
   const { url, signal, fetchImpl, timeoutMs } = args;
   if (signal?.aborted) throw createAbortError();
 
@@ -190,13 +206,14 @@ export async function loadCompleteCatalogData(
 
   let apiError: unknown;
   try {
+    const parsed = await fetchCatalogSource({
+      url: apiUrl,
+      signal,
+      fetchImpl,
+      timeoutMs,
+    });
     return {
-      items: await fetchCatalogSource({
-        url: apiUrl,
-        signal,
-        fetchImpl,
-        timeoutMs,
-      }),
+      ...parsed,
       source: "api",
     };
   } catch (error) {
@@ -207,13 +224,14 @@ export async function loadCompleteCatalogData(
   const normalizedR2BaseUrl = r2BaseUrl.replace(/\/$/, "");
   const r2Url = `${normalizedR2BaseUrl}/data/akyo-data-${lang}.json`;
   try {
+    const parsed = await fetchCatalogSource({
+      url: r2Url,
+      signal,
+      fetchImpl,
+      timeoutMs,
+    });
     return {
-      items: await fetchCatalogSource({
-        url: r2Url,
-        signal,
-        fetchImpl,
-        timeoutMs,
-      }),
+      ...parsed,
       source: "r2",
     };
   } catch (r2Error) {
@@ -247,30 +265,4 @@ export class CatalogRequestCoordinator {
     this.controller = null;
     this.generation += 1;
   }
-}
-
-export function scheduleAfterPageLoad(args: {
-  readyState: DocumentReadyState;
-  addLoadListener: (listener: () => void) => void;
-  removeLoadListener: (listener: () => void) => void;
-  queueTask: (task: () => void) => number;
-  cancelTask: (taskId: number) => void;
-  callback: () => void;
-}): () => void {
-  const {
-    readyState,
-    addLoadListener,
-    removeLoadListener,
-    queueTask,
-    cancelTask,
-    callback,
-  } = args;
-
-  if (readyState === "complete") {
-    const taskId = queueTask(callback);
-    return () => cancelTask(taskId);
-  }
-
-  addLoadListener(callback);
-  return () => removeLoadListener(callback);
 }

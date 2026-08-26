@@ -38,7 +38,7 @@ test.describe("Deferred full catalog loading", () => {
     const apiRoute = await apiRoutePromise;
 
     await expect(page.locator("article.akyo-card")).toHaveCount(12);
-    await expect(page.locator("input.search-input")).toBeDisabled();
+    await expect(page.locator("input.search-input")).toBeEnabled();
     const filterFieldset = page.locator("#zukan-filter-panel > fieldset");
     const categorySearch = filterFieldset.locator('input[type="text"]').first();
     await expect(filterFieldset).toHaveAttribute("disabled", "");
@@ -89,6 +89,91 @@ test.describe("Deferred full catalog loading", () => {
     await expect(page.getByText("スーパーワープAkyo", { exact: true })).toBeVisible();
   });
 
+  test("starts the full catalog request before the window load event", async ({
+    page,
+  }) => {
+    let releaseLogo = () => {};
+    const logoGate = new Promise<void>((resolve) => {
+      releaseLogo = resolve;
+    });
+    await page.route("**/images/logo-*.webp", async (route) => {
+      await logoGate;
+      await route.continue();
+    });
+
+    const apiRequest = page
+      .waitForRequest("**/api/akyo-data?lang=ja")
+      .then(() => true);
+    await page.goto("/zukan", { waitUntil: "domcontentloaded" });
+    const requestedBeforeLoad = await Promise.race([
+      apiRequest,
+      page.waitForTimeout(1_500).then(() => false),
+    ]);
+    releaseLogo();
+
+    expect(requestedBeforeLoad).toBe(true);
+  });
+
+  test("queues a search entered while the complete catalog is loading", async ({
+    page,
+  }) => {
+    const apiRoutePromise = waitForApiRoute(page);
+    await page.goto("/zukan");
+    const apiRoute = await apiRoutePromise;
+    const searchInput = page.locator("input.search-input");
+
+    await expect(searchInput).toBeEnabled();
+    await searchInput.fill("スーパーワープAkyo");
+    await page.waitForTimeout(300);
+    await expect(page.locator("article.akyo-card")).toHaveCount(12);
+
+    await apiRoute.fulfill({ json: { data: catalog.data } });
+    await expect(page.locator("article.akyo-card")).toHaveCount(1);
+    await expect(
+      page.getByText("スーパーワープAkyo", { exact: true }),
+    ).toBeVisible();
+  });
+
+  test("shows favorite loading state until the complete catalog is available", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "akyoFavorites",
+        JSON.stringify(["0500", "0600", "0700"]),
+      );
+    });
+    const apiRoutePromise = waitForApiRoute(page);
+    await page.goto("/zukan");
+    const apiRoute = await apiRoutePromise;
+    const favoriteStat = page
+      .locator("header dl > div")
+      .filter({ hasText: "お気に入り" });
+
+    await expect(favoriteStat).toContainText("…");
+    await apiRoute.fulfill({ json: { data: catalog.data } });
+    await expect(favoriteStat).toContainText("3");
+  });
+
+  test("keeps valid rows searchable when a catalog row is malformed", async ({
+    page,
+  }) => {
+    await page.route("**/api/akyo-data?lang=ja", async (route) => {
+      await route.fulfill({
+        json: {
+          data: [...catalog.data, { id: "", avatarName: "invalid" }],
+        },
+      });
+    });
+
+    await page.goto("/zukan");
+
+    await expect(page.locator("input.search-input")).toBeEnabled();
+    await expect(page.getByText(/1件のデータを読み込めませんでした/)).toBeVisible();
+    await page.locator("input.search-input").fill("スーパーワープAkyo");
+    await expect(page.locator("article.akyo-card")).toHaveCount(1);
+  });
+
   test("uses R2 without showing an error when the API fails", async ({ page }) => {
     await page.route("**/api/akyo-data?lang=ja", async (route) => {
       await route.fulfill({ status: 503, json: { error: "unavailable" } });
@@ -120,9 +205,13 @@ test.describe("Deferred full catalog loading", () => {
     await page.goto("/zukan");
 
     await expect(page.locator("article.akyo-card")).toHaveCount(12);
-    await expect(page.locator("input.search-input")).toBeDisabled();
+    const searchInput = page.locator("input.search-input");
+    await expect(searchInput).toBeEnabled();
     const retryButton = page.getByRole("button", { name: /再試行/ });
     await expect(retryButton).toBeVisible();
+
+    await searchInput.fill("オリジンAkyo");
+    await expect(page.locator("article.akyo-card")).toHaveCount(1);
 
     await retryButton.click();
 
@@ -166,8 +255,12 @@ test.describe("Deferred full catalog loading", () => {
       ]);
       await page.goto("/zukan");
       await expect(page.locator("input.search-input")).toBeEnabled();
+      await expect(page.locator("#zukan-filter-panel > fieldset")).toBeEnabled();
+      await expect
+        .poll(() => requestedLanguages.includes(lang))
+        .toBe(true);
       expect(
-        await page.locator("header").evaluate(
+        await page.locator("header").last().evaluate(
           (header) => header.scrollWidth <= header.clientWidth,
         ),
       ).toBe(true);

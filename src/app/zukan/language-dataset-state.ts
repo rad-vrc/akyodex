@@ -6,6 +6,7 @@ export interface LanguageDatasetCacheEntry {
   categories: string[];
   authors: string[];
   complete: boolean;
+  droppedCount: number;
 }
 
 export function createLanguageDatasetCacheEntry(args: {
@@ -13,12 +14,14 @@ export function createLanguageDatasetCacheEntry(args: {
   categories: string[];
   authors: string[];
   complete: boolean;
+  droppedCount?: number;
 }): LanguageDatasetCacheEntry {
   return {
     items: args.items,
     categories: args.categories,
     authors: args.authors,
     complete: args.complete,
+    droppedCount: args.droppedCount ?? 0,
   };
 }
 

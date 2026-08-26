@@ -30,6 +30,7 @@ test.describe("Search input focus styling", () => {
     await expect(globalSearch).toBeEnabled();
     await expect(globalSearch).toBeVisible();
     await expect(authorSearch).toBeVisible();
+    await expect(authorSearch).toBeEnabled();
 
     const readFocusStyles = async (selector: typeof globalSearch) => {
       await selector.focus();

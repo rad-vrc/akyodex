@@ -154,9 +154,14 @@ export const UI_TEXTS = {
     ko: "언어 데이터를 사용할 수 없어 현재 화면을 유지합니다.",
   },
   "error.catalogUnavailable": {
-    ja: "全データを取得できませんでした。先頭のデータを表示しています。",
-    en: "The full catalog could not be loaded. Showing the initial entries.",
-    ko: "전체 데이터를 불러오지 못했습니다. 첫 항목을 표시하고 있습니다.",
+    ja: "全データを取得できませんでした。先頭のデータ内で検索できます。",
+    en: "The full catalog could not be loaded. You can search the initial entries.",
+    ko: "전체 데이터를 불러오지 못했습니다. 첫 항목에서 검색할 수 있습니다.",
+  },
+  "warning.catalogEntriesDropped": {
+    ja: "{count}件のデータを読み込めませんでした。残りのデータを表示しています。",
+    en: "{count} catalog entries could not be loaded. Showing the remaining entries.",
+    ko: "{count}개의 데이터를 불러오지 못했습니다. 나머지 항목을 표시합니다.",
   },
   "loading.text": {
     ja: "データを読み込んでいます...",
@@ -262,6 +267,11 @@ export const UI_TEXTS = {
     ja: "お気に入り",
     en: "Favorites",
     ko: "즐겨찾기",
+  },
+  "stats.favoritesLoading": {
+    ja: "お気に入り数を読み込み中",
+    en: "Loading favorite count",
+    ko: "즐겨찾기 수를 불러오는 중",
   },
   "search.placeholder": {
     ja: "名前・通称・作者で検索...",

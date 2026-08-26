@@ -373,9 +373,7 @@ export function FilterPanel({
           </div>
 
           <div
-            className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2"
-            data-loading-scroll-region={disabled ? 'true' : undefined}
-            tabIndex={disabled ? 0 : undefined}
+            className={`max-h-52 rounded-xl border border-gray-200 bg-white p-2 ${disabled ? 'overflow-hidden' : 'overflow-y-auto'}`}
             aria-label={disabled ? t('filter.category', lang) : undefined}
           >
             {filteredCategories.length === 0 ? (
@@ -476,9 +474,7 @@ export function FilterPanel({
           </div>
 
           <div
-            className="max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white p-2"
-            data-loading-scroll-region={disabled ? 'true' : undefined}
-            tabIndex={disabled ? 0 : undefined}
+            className={`max-h-52 rounded-xl border border-gray-200 bg-white p-2 ${disabled ? 'overflow-hidden' : 'overflow-y-auto'}`}
             aria-label={disabled ? t('filter.author', lang) : undefined}
           >
             {filteredAuthors.length === 0 ? (
