@@ -9,18 +9,18 @@ export function LoadingAnnouncement({ text }: LoadingAnnouncementProps) {
     'div',
     {
       className:
-        'fixed bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-full shadow-lg p-4 flex items-center gap-3 z-50',
+        'inline-flex items-center gap-3 rounded-full bg-white px-4 py-2 text-sm shadow-sm',
       role: 'status',
       'aria-live': 'polite',
       'aria-atomic': 'true',
     },
     createElement('div', {
-      className: 'animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-red-500',
+      className: 'h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600',
       'aria-hidden': 'true',
     }),
     createElement(
       'span',
-      { className: 'text-sm font-medium text-gray-700' },
+      { className: 'font-medium text-gray-700' },
       text,
     ),
   );

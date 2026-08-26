@@ -15,9 +15,7 @@ import {
   AkyoCard,
   shouldPrioritizeCatalogCardImage,
 } from "@/components/akyo-card";
-import { AkyoDetailModal } from "@/components/akyo-detail-modal";
 import { AkyoList } from "@/components/akyo-list";
-import { FilterPanel } from "@/components/filter-panel";
 import {
   IconCog,
   IconGlobe,
@@ -36,6 +34,10 @@ import {
   CatalogRequestCoordinator,
   loadCompleteCatalogData,
 } from "./catalog-data-loader";
+import {
+  CatalogLoadPerformance,
+  reportCatalogLoadToSentry,
+} from "./catalog-performance";
 import {
   summarizeCatalog,
   type CatalogTotals,
@@ -95,6 +97,27 @@ const DEFAULT_R2_BASE_URL = "https://images.akyodex.com";
 const DeferredMiniAkyoBg = dynamic(
   () => import("@/components/mini-akyo-bg").then((mod) => mod.MiniAkyoBg),
   { ssr: false },
+);
+const DeferredAkyoDetailModal = dynamic(
+  () =>
+    import("@/components/akyo-detail-modal").then(
+      (mod) => mod.AkyoDetailModal,
+    ),
+  { ssr: false },
+);
+const DeferredFilterPanel = dynamic(
+  () => import("@/components/filter-panel").then((mod) => mod.FilterPanel),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-24 items-center justify-center text-sm text-[var(--text-secondary)]"
+        role="status"
+      >
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600" />
+      </div>
+    ),
+  },
 );
 
 // Virtual scrolling constants
@@ -243,6 +266,7 @@ export function ZukanClient({
   );
   const [selectedAkyo, setSelectedAkyo] = useState<AkyoData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [shouldRenderDetailModal, setShouldRenderDetailModal] = useState(false);
   const [renderLimit, setRenderLimit] = useState(MOBILE_RENDER_LIMIT);
   const { isMobile, gridCols } = useResponsiveLayout();
   const [isMiniAkyoBgEnabled, setIsMiniAkyoBgEnabled] = useState(false);
@@ -265,6 +289,7 @@ export function ZukanClient({
   const mainContentRef = useRef<HTMLElement | null>(null);
   const modalTriggerRef = useRef<HTMLElement | null>(null);
   const sharedEntryHandledRef = useRef(false);
+  const catalogPerformanceRef = useRef<CatalogLoadPerformance | null>(null);
 
   // — Derived values —
   const stats = useMemo(() => {
@@ -352,6 +377,7 @@ export function ZukanClient({
       serverDataset,
     });
     if (immediateDataset?.complete) {
+      catalogPerformanceRef.current = null;
       refetchWithNewData(immediateDataset.items);
       setCurrentCategories(immediateDataset.categories);
       setCurrentAuthors(immediateDataset.authors);
@@ -372,6 +398,8 @@ export function ZukanClient({
     const coordinator = requestCoordinatorRef.current;
     if (!coordinator) return;
     const request = coordinator.begin();
+    const catalogPerformance = new CatalogLoadPerformance(lang);
+    catalogPerformanceRef.current = catalogPerformance;
 
     const fetchCompleteData = async () => {
       try {
@@ -383,6 +411,7 @@ export function ZukanClient({
           signal: request.signal,
         });
         if (!coordinator.isCurrent(request.generation)) return;
+        catalogPerformance.markResponse(result.source);
 
         const taxonomy = extractTaxonomy(result.items);
         const completedDataset = createLanguageDatasetCacheEntry({
@@ -407,6 +436,11 @@ export function ZukanClient({
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
         if (!coordinator.isCurrent(request.generation)) return;
+        const telemetry = catalogPerformance.markFailure(err);
+        if (telemetry) void reportCatalogLoadToSentry(telemetry);
+        if (catalogPerformanceRef.current === catalogPerformance) {
+          catalogPerformanceRef.current = null;
+        }
         console.error("[ZukanClient] Failed to load complete catalog:", err);
         setRefetchError(t("error.catalogUnavailable", lang));
       } finally {
@@ -434,6 +468,16 @@ export function ZukanClient({
     setError,
   ]);
 
+  useEffect(() => {
+    if (!isCurrentDatasetComplete) return;
+    const catalogPerformance = catalogPerformanceRef.current;
+    if (!catalogPerformance) return;
+
+    const telemetry = catalogPerformance.markReady();
+    catalogPerformanceRef.current = null;
+    if (telemetry) void reportCatalogLoadToSentry(telemetry);
+  }, [isCurrentDatasetComplete]);
+
   // Initial mount optimizations: responsive render limit and defer heavy bg
   useEffect(() => {
     // Delay or disable MiniAkyoBg depending on device
@@ -459,6 +503,7 @@ export function ZukanClient({
     triggerElement: HTMLElement | null = document.activeElement as HTMLElement | null,
   ) => {
     modalTriggerRef.current = triggerElement;
+    setShouldRenderDetailModal(true);
     setSelectedAkyo(akyo);
     setIsModalOpen(true);
   };
@@ -478,6 +523,7 @@ export function ZukanClient({
 
     sharedEntryHandledRef.current = true;
     modalTriggerRef.current = null;
+    setShouldRenderDetailModal(true);
     setSelectedAkyo(sharedEntry);
     setIsModalOpen(true);
   }, [data, isCurrentDatasetComplete, sharedEntryId]);
@@ -854,32 +900,46 @@ export function ZukanClient({
                 : resolvedIsFilterPanelOpen ? "block" : "hidden"
             }
           >
-            <FilterPanel
-              // 動的に更新されるカテゴリ/作者を使用
-              categories={currentCategories}
-              authors={currentAuthors}
-              // TODO: Remove legacy props once FilterPanel fully drops attribute/creator support.
-              attributes={currentCategories}
-              creators={currentAuthors}
-              selectedAttributes={selectedAttributes}
-              selectedCreators={selectedCreators}
-              categoryMatchMode={categoryMatchMode}
-              selectedCreator={selectedCreators[0] || ""}
-              onAttributesChange={setSelectedAttributes}
-              onCreatorsChange={setSelectedCreators}
-              onCategoryMatchModeChange={setCategoryMatchMode}
-              onCreatorChange={(creator) =>
-                setSelectedCreators(creator ? [creator] : [])
-              }
-              onSortToggle={handleSortToggle}
-              onRandomClick={handleRandomClick}
-              onFavoritesClick={handleFavoritesClick}
-              favoritesOnly={favoritesOnly}
-              sortAscending={sortAscending}
-              randomMode={randomMode}
-              lang={lang}
-              disabled={catalogControlsDisabled}
-            />
+            {isCurrentDatasetComplete ? (
+              <DeferredFilterPanel
+                // 動的に更新されるカテゴリ/作者を使用
+                categories={currentCategories}
+                authors={currentAuthors}
+                // TODO: Remove legacy props once FilterPanel fully drops attribute/creator support.
+                attributes={currentCategories}
+                creators={currentAuthors}
+                selectedAttributes={selectedAttributes}
+                selectedCreators={selectedCreators}
+                categoryMatchMode={categoryMatchMode}
+                selectedCreator={selectedCreators[0] || ""}
+                onAttributesChange={setSelectedAttributes}
+                onCreatorsChange={setSelectedCreators}
+                onCategoryMatchModeChange={setCategoryMatchMode}
+                onCreatorChange={(creator) =>
+                  setSelectedCreators(creator ? [creator] : [])
+                }
+                onSortToggle={handleSortToggle}
+                onRandomClick={handleRandomClick}
+                onFavoritesClick={handleFavoritesClick}
+                favoritesOnly={favoritesOnly}
+                sortAscending={sortAscending}
+                randomMode={randomMode}
+                lang={lang}
+                disabled={catalogControlsDisabled}
+              />
+            ) : (
+              <fieldset
+                disabled
+                aria-busy="true"
+                className="flex min-h-24 items-center justify-center"
+              >
+                <legend className="sr-only">{t("loading.catalog", lang)}</legend>
+                <span
+                  className="h-5 w-5 animate-spin rounded-full border-2 border-orange-200 border-t-orange-600"
+                  aria-hidden="true"
+                />
+              </fieldset>
+            )}
           </div>
 
           {/* ビュー切替 & エントリ種別フィルター */}
@@ -986,14 +1046,16 @@ export function ZukanClient({
       </main>
 
       {/* Detail Modal */}
-      <AkyoDetailModal
-        akyo={selectedAkyo}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onToggleFavorite={handleModalFavoriteToggle}
-        lang={lang}
-        returnFocusRef={modalTriggerRef}
-      />
+      {shouldRenderDetailModal ? (
+        <DeferredAkyoDetailModal
+          akyo={selectedAkyo}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onToggleFavorite={handleModalFavoriteToggle}
+          lang={lang}
+          returnFocusRef={modalTriggerRef}
+        />
+      ) : null}
 
       {/* Language Toggle Button - Top */}
       <LanguageToggle initialLang={lang} />

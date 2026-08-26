@@ -117,6 +117,20 @@ test.describe("Complete catalog loading", () => {
     expect(requestedBeforeLoad).toBe(true);
     await expect(page.locator("input.search-input")).toBeEnabled();
     await expect.poll(() => catalogRequestCount).toBe(1);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          performance
+            .getEntriesByType("mark")
+            .map((entry) => entry.name)
+            .filter((name) => name.startsWith("catalog-")),
+        ),
+      )
+      .toEqual([
+        "catalog-fetch-start",
+        "catalog-response",
+        "catalog-ready",
+      ]);
   });
 
   test("opens a complete legacy shared entry before the full catalog arrives", async ({

@@ -39,8 +39,16 @@ interface AkyoCardProps {
   priority?: boolean;
 }
 
-export function shouldBypassImageOptimization(src: string): boolean {
-  return src.startsWith("/api/") || src.startsWith("/images/");
+export function shouldBypassImageOptimization(
+  src: string,
+  r2BaseUrl = "https://images.akyodex.com",
+): boolean {
+  const normalizedR2BaseUrl = r2BaseUrl.replace(/\/$/, "");
+  return (
+    src.startsWith("/api/") ||
+    src.startsWith("/images/") ||
+    src.startsWith(`${normalizedR2BaseUrl}/`)
+  );
 }
 
 export function getCatalogCardImageRequestWidth(entryType: string): number {
@@ -169,7 +177,7 @@ export function AkyoCard({
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-cover"
-          unoptimized={shouldBypassImageOptimization(imageSrc)}
+          unoptimized={shouldBypassImageOptimization(imageSrc, r2BaseUrl)}
           loading={priority ? "eager" : "lazy"}
           fetchPriority={priority ? "high" : "auto"}
           placeholder="blur"

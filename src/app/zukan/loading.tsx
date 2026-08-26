@@ -1,13 +1,31 @@
 import { DEFAULT_LANGUAGE, detectLanguageFromHeader, isValidLanguage, t, type SupportedLanguage } from '@/lib/i18n';
 import { cookies, headers } from 'next/headers';
+import Image from 'next/image';
 import { LoadingAnnouncement } from './loading-announcement';
 
-/**
- * Zukan Loading State
- * 
- * Displays an instant loading skeleton while fetching Akyo data.
- * Uses React Suspense boundary automatically.
- */
+const LOGO_BY_LANG: Record<SupportedLanguage, string> = {
+  ja: '/images/logo-mobile.webp',
+  en: '/images/logo-US-mobile.webp',
+  ko: '/images/logo-KO-mobile.webp',
+};
+
+export function ZukanLoadingView({ lang }: { lang: SupportedLanguage }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6">
+      <h1 className="sr-only">{t('page.title', lang)}</h1>
+      <Image
+        src={LOGO_BY_LANG[lang]}
+        alt={t('logo.alt', lang)}
+        width={454}
+        height={70}
+        priority
+        sizes="(max-width: 640px) 260px, 454px"
+        className="h-10 w-auto sm:h-12"
+      />
+      <LoadingAnnouncement text={t('loading.text', lang)} />
+    </div>
+  );
+}
 
 export default async function ZukanLoading() {
   const cookieStore = await cookies();
@@ -18,69 +36,5 @@ export default async function ZukanLoading() {
       ? cookieLang
       : detectLanguageFromHeader(headerStore.get('accept-language')) || DEFAULT_LANGUAGE;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
-      {/* Header Skeleton */}
-      <header className="sticky top-0 z-50 p-4 sm:p-6 bg-white/80 backdrop-blur-sm shadow-sm">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-8 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
-            <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
-          </div>
-          
-          {/* Search Bar Skeleton */}
-          <div className="w-full h-12 bg-gray-200 rounded-xl animate-pulse"></div>
-        </div>
-      </header>
-
-      {/* Content Skeleton */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <h1 className="sr-only">{t('loading.text', lang)}</h1>
-        {/* Filter Section Skeleton */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-6">
-          <div className="flex flex-wrap gap-2">
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="h-8 w-24 bg-gray-200 rounded-full animate-pulse"
-                style={{ animationDelay: `${i * 100}ms` }}
-              ></div>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats Skeleton */}
-        <div className="flex gap-4">
-          <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-6 w-24 bg-gray-200 rounded animate-pulse"></div>
-        </div>
-
-        {/* Cards Grid Skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[...Array(12)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden animate-pulse"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              {/* Image Skeleton */}
-              <div className="aspect-[3/2] bg-gray-200"></div>
-              
-              {/* Content Skeleton */}
-              <div className="p-4 space-y-3">
-                <div className="h-6 w-3/4 bg-gray-200 rounded"></div>
-                <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
-                <div className="flex gap-2">
-                  <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
-                  <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </main>
-
-      <LoadingAnnouncement text={t('loading.text', lang)} />
-    </div>
-  );
+  return <ZukanLoadingView lang={lang} />;
 }
