@@ -47,6 +47,7 @@ const DEFAULT_PATHS = [
   '/', // Japanese home
   '/en', // English home
   '/ko', // Korean home
+  '/zukan', // Complete catalog initial payload
 ];
 
 // Default tags to revalidate

@@ -6,19 +6,28 @@ interface CatalogFixture {
   data: Array<Record<string, unknown>>;
 }
 
-const catalog = JSON.parse(
-  readFileSync(path.join(process.cwd(), "data", "akyo-data-ja.json"), "utf8"),
-) as CatalogFixture;
+function readCatalog(language: "ja" | "en" | "ko"): CatalogFixture {
+  return JSON.parse(
+    readFileSync(
+      path.join(process.cwd(), "data", `akyo-data-${language}.json`),
+      "utf8",
+    ),
+  ) as CatalogFixture;
+}
 
-function waitForApiRoute(page: Page): Promise<Route> {
+const catalog = readCatalog("ja");
+
+function waitForApiRoute(page: Page, language = "ja"): Promise<Route> {
   return new Promise((resolve) => {
-    void page.route("**/api/akyo-data?lang=ja", async (route) => {
+    void page.route(`**/api/catalog/${language}`, async (route) => {
       resolve(route);
     });
   });
 }
 
-test.describe("Deferred full catalog loading", () => {
+test.describe("Complete catalog loading", () => {
+  test.use({ serviceWorkers: "block" });
+
   test.beforeEach(async ({ context }) => {
     await context.addCookies([
       {
@@ -29,7 +38,7 @@ test.describe("Deferred full catalog loading", () => {
     ]);
   });
 
-  test("keeps 12 initial cards interactive while filters wait for the full catalog", async ({
+  test("keeps 12 complete initial cards interactive while catalog controls wait", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1350, height: 940 });
@@ -38,29 +47,25 @@ test.describe("Deferred full catalog loading", () => {
     const apiRoute = await apiRoutePromise;
 
     await expect(page.locator("article.akyo-card")).toHaveCount(12);
-    await expect(page.locator("input.search-input")).toBeEnabled();
+    await expect(page.locator("input.search-input")).toBeDisabled();
     const filterFieldset = page.locator("#zukan-filter-panel > fieldset");
-    const categorySearch = filterFieldset.locator('input[type="text"]').first();
     await expect(filterFieldset).toHaveAttribute("disabled", "");
-    await expect(categorySearch).toBeDisabled();
     await expect(page.getByText(/表示データを読み込み中/)).toBeVisible();
     await expect(page.getByRole("button", { name: "カード表示" })).toBeEnabled();
     await expect(page.getByRole("button", { name: "リスト表示" })).toBeEnabled();
     await expect(page.getByRole("button", { name: "アバターのみ表示" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "ワールドのみ表示" })).toBeDisabled();
-    await expect(page.getByRole("button", { name: "BOOTH商品のみ表示" })).toBeDisabled();
-    const headerHeightWhileLoading = await page
-      .locator("header")
-      .evaluate((header) => header.getBoundingClientRect().height);
 
     const firstCard = page.locator("article.akyo-card").first();
     const favoriteButton = firstCard.locator(".favorite-btn");
-    await expect(favoriteButton).toBeEnabled();
     await favoriteButton.click();
     await expect(favoriteButton).toHaveAccessibleName(/お気に入り解除/);
 
     await firstCard.locator(".detail-button").click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText("すべてのはじまり", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("VRChat アバターURL", { exact: true })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "VRChatで見る" })).toBeVisible();
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "リスト表示" }).click();
@@ -69,12 +74,6 @@ test.describe("Deferred full catalog loading", () => {
     await apiRoute.fulfill({ json: { data: catalog.data } });
     await expect(page.locator("input.search-input")).toBeEnabled();
     await expect(filterFieldset).not.toHaveAttribute("disabled", "");
-    await expect(categorySearch).toBeEnabled();
-    expect(
-      await page
-        .locator("header")
-        .evaluate((header) => header.getBoundingClientRect().height),
-    ).toBe(headerHeightWhileLoading);
     await expect(page.locator(".list-view-table")).toBeVisible();
     await page.getByRole("button", { name: "カード表示" }).click();
     await expect(
@@ -89,7 +88,7 @@ test.describe("Deferred full catalog loading", () => {
     await expect(page.getByText("スーパーワープAkyo", { exact: true })).toBeVisible();
   });
 
-  test("starts the full catalog request before the window load event", async ({
+  test("preloads the exact complete catalog URL before the window load event", async ({
     page,
   }) => {
     let releaseLogo = () => {};
@@ -101,12 +100,10 @@ test.describe("Deferred full catalog loading", () => {
       await route.continue();
     });
 
-    const apiRequest = page
-      .waitForRequest("**/api/akyo-data?lang=ja")
-      .then(() => true);
+    const catalogRequest = page.waitForRequest("**/api/catalog/ja").then(() => true);
     await page.goto("/zukan", { waitUntil: "domcontentloaded" });
     const requestedBeforeLoad = await Promise.race([
-      apiRequest,
+      catalogRequest,
       page.waitForTimeout(1_500).then(() => false),
     ]);
     releaseLogo();
@@ -114,96 +111,22 @@ test.describe("Deferred full catalog loading", () => {
     expect(requestedBeforeLoad).toBe(true);
   });
 
-  test("uses the lightweight preview data while the complete catalog is loading", async ({
+  test("does not expose entries after the first 12 until complete data arrives", async ({
     page,
   }) => {
     const apiRoutePromise = waitForApiRoute(page);
     await page.goto("/zukan");
     const apiRoute = await apiRoutePromise;
-    const searchInput = page.locator("input.search-input");
 
+    const searchInput = page.locator("input.search-input");
+    await expect(searchInput).toBeDisabled();
+    await expect(page.getByText("スーパーワープAkyo", { exact: true })).toHaveCount(0);
+
+    await apiRoute.fulfill({ json: { data: catalog.data } });
     await expect(searchInput).toBeEnabled();
     await searchInput.fill("スーパーワープAkyo");
     await expect(page.locator("article.akyo-card")).toHaveCount(1);
-    await expect(
-      page.getByText("スーパーワープAkyo", { exact: true }),
-    ).toBeVisible();
-
-    await apiRoute.fulfill({ json: { data: catalog.data } });
-    await expect(page.locator("article.akyo-card")).toHaveCount(1);
-    await expect(
-      page.getByText("スーパーワープAkyo", { exact: true }),
-    ).toBeVisible();
-  });
-
-  test("shows the filtered count while preview search results are visible", async ({
-    page,
-  }) => {
-    const apiRoutePromise = waitForApiRoute(page);
-    await page.goto("/zukan");
-    const apiRoute = await apiRoutePromise;
-
-    await page.locator("input.search-input").fill("スーパーワープAkyo");
-    await expect(page.locator("article.akyo-card")).toHaveCount(1);
-    await expect(
-      page
-        .locator("header dl > div")
-        .filter({ hasText: "表示" }),
-    ).toContainText("表示1件");
-
-    await apiRoute.fulfill({ json: { data: catalog.data } });
-  });
-
-  test("refreshes an open preview modal when complete data arrives", async ({
-    page,
-  }) => {
-    const apiRoutePromise = waitForApiRoute(page);
-    await page.goto("/zukan");
-    const apiRoute = await apiRoutePromise;
-
-    await page.locator("input.search-input").fill("スーパーワープAkyo");
-    const previewCard = page
-      .locator("article.akyo-card")
-      .filter({ hasText: "スーパーワープAkyo" });
-    await previewCard.locator(".detail-button").click();
-    const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await expect(
-      dialog.getByText("VRChat アバターURL", { exact: true }),
-    ).toHaveCount(0);
-
-    await apiRoute.fulfill({ json: { data: catalog.data } });
-
-    await expect(
-      dialog.getByText("VRChat アバターURL", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      dialog.getByText(
-        "ワープを覚えたAkyo。Questの場合はPCユーザーにおんぶしてもらうとワープできる",
-        { exact: true },
-      ),
-    ).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "VRChatで見る" })).toBeVisible();
-  });
-
-  test("labels a preview world link as a VRChat world URL", async ({
-    page,
-  }) => {
-    const apiRoutePromise = waitForApiRoute(page);
-    await page.goto("/zukan");
-    const apiRoute = await apiRoutePromise;
-
-    await page.locator("input.search-input").fill("こなちるーむ -day-");
-    const previewCard = page
-      .locator("article.akyo-card")
-      .filter({ hasText: "こなちるーむ -day-" });
-    await previewCard.locator(".detail-button").click();
-
-    await expect(
-      page.getByRole("dialog").getByText("VRChat ワールドURL", { exact: true }),
-    ).toBeVisible();
-
-    await apiRoute.fulfill({ json: { data: catalog.data } });
+    await expect(page.getByText("スーパーワープAkyo", { exact: true })).toBeVisible();
   });
 
   test("shows favorite loading state until the complete catalog is available", async ({
@@ -227,10 +150,10 @@ test.describe("Deferred full catalog loading", () => {
     await expect(favoriteStat).toContainText("3");
   });
 
-  test("keeps valid rows searchable when a catalog row is malformed", async ({
+  test("keeps valid rows searchable when one complete catalog row is malformed", async ({
     page,
   }) => {
-    await page.route("**/api/akyo-data?lang=ja", async (route) => {
+    await page.route("**/api/catalog/ja", async (route) => {
       await route.fulfill({
         json: {
           data: [...catalog.data, { id: "", avatarName: "invalid" }],
@@ -246,8 +169,10 @@ test.describe("Deferred full catalog loading", () => {
     await expect(page.locator("article.akyo-card")).toHaveCount(1);
   });
 
-  test("uses R2 without showing an error when the API fails", async ({ page }) => {
-    await page.route("**/api/akyo-data?lang=ja", async (route) => {
+  test("uses R2 without showing an error when the catalog API fails", async ({
+    page,
+  }) => {
+    await page.route("**/api/catalog/ja", async (route) => {
       await route.fulfill({ status: 503, json: { error: "unavailable" } });
     });
     await page.route("**/data/akyo-data-ja.json", async (route) => {
@@ -260,9 +185,25 @@ test.describe("Deferred full catalog loading", () => {
     await expect(page.getByRole("button", { name: /再試行/ })).toHaveCount(0);
   });
 
-  test("keeps initial cards and retries after both sources fail", async ({ page }) => {
+  test("uses the bundled snapshot after API and R2 both fail", async ({ page }) => {
+    await page.route("**/api/catalog/ja", async (route) => {
+      await route.fulfill({ status: 503, json: { error: "unavailable" } });
+    });
+    await page.route("**/data/akyo-data-ja.json", async (route) => {
+      await route.fulfill({ status: 503, json: { error: "unavailable" } });
+    });
+
+    await page.goto("/zukan");
+
+    await expect(page.locator("input.search-input")).toBeEnabled();
+    await expect(page.getByRole("button", { name: /再試行/ })).toHaveCount(0);
+  });
+
+  test("keeps complete initial cards and retries after all sources fail", async ({
+    page,
+  }) => {
     let apiAttempts = 0;
-    await page.route("**/api/akyo-data?lang=ja", async (route) => {
+    await page.route("**/api/catalog/ja", async (route) => {
       apiAttempts += 1;
       if (apiAttempts === 1) {
         await route.fulfill({ status: 503, json: { error: "unavailable" } });
@@ -273,28 +214,30 @@ test.describe("Deferred full catalog loading", () => {
     await page.route("**/data/akyo-data-ja.json", async (route) => {
       await route.fulfill({ status: 503, json: { error: "unavailable" } });
     });
+    await page.route("**/catalog/catalog-v1-ja.json", async (route) => {
+      await route.fulfill({ status: 503, json: { error: "unavailable" } });
+    });
 
     await page.goto("/zukan");
 
     await expect(page.locator("article.akyo-card")).toHaveCount(12);
     const searchInput = page.locator("input.search-input");
-    await expect(searchInput).toBeEnabled();
+    await expect(searchInput).toBeDisabled();
     const retryButton = page.getByRole("button", { name: /再試行/ });
     await expect(retryButton).toBeVisible();
 
-    await searchInput.fill("スーパーワープAkyo");
-    await expect(page.locator("article.akyo-card")).toHaveCount(1);
-    await page.locator("article.akyo-card .detail-button").click();
+    await page.locator("article.akyo-card").first().locator(".detail-button").click();
     await expect(
-      page
-        .getByRole("dialog")
-        .getByText("詳細データを読み込めませんでした。表示できる情報のみを掲載しています。"),
+      page.getByRole("dialog").getByText("すべてのはじまり", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("dialog").getByRole("button", { name: "VRChatで見る" }),
     ).toBeVisible();
     await page.keyboard.press("Escape");
 
     await retryButton.click();
 
-    await expect(page.locator("input.search-input")).toBeEnabled();
+    await expect(searchInput).toBeEnabled();
     expect(apiAttempts).toBe(2);
   });
 
@@ -304,40 +247,32 @@ test.describe("Deferred full catalog loading", () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const fixtures = {
-      ja: JSON.parse(
-        readFileSync(path.join(process.cwd(), "data", "akyo-data-ja.json"), "utf8"),
-      ) as CatalogFixture,
-      en: JSON.parse(
-        readFileSync(path.join(process.cwd(), "data", "akyo-data-en.json"), "utf8"),
-      ) as CatalogFixture,
-      ko: JSON.parse(
-        readFileSync(path.join(process.cwd(), "data", "akyo-data-ko.json"), "utf8"),
-      ) as CatalogFixture,
+      ja: readCatalog("ja"),
+      en: readCatalog("en"),
+      ko: readCatalog("ko"),
     };
     const requestedLanguages: string[] = [];
-    await page.route("**/api/akyo-data?lang=*", async (route) => {
-      const lang = new URL(route.request().url()).searchParams.get("lang") ?? "ja";
-      requestedLanguages.push(lang);
+    await page.route("**/api/catalog/*", async (route) => {
+      const language = new URL(route.request().url()).pathname.split("/").at(-1) ?? "ja";
+      requestedLanguages.push(language);
       await route.fulfill({
-        json: { data: fixtures[lang as keyof typeof fixtures].data },
+        json: { data: fixtures[language as keyof typeof fixtures].data },
       });
     });
 
-    for (const lang of ["ja", "en", "ko"] as const) {
+    for (const language of ["ja", "en", "ko"] as const) {
       await context.clearCookies();
       await context.addCookies([
         {
           name: "AKYO_LANG",
-          value: lang,
+          value: language,
           url: "http://localhost:3000",
         },
       ]);
       await page.goto("/zukan");
       await expect(page.locator("input.search-input")).toBeEnabled();
       await expect(page.locator("#zukan-filter-panel > fieldset")).toBeEnabled();
-      await expect
-        .poll(() => requestedLanguages.includes(lang))
-        .toBe(true);
+      await expect.poll(() => requestedLanguages.includes(language)).toBe(true);
       expect(
         await page.locator("header").last().evaluate(
           (header) => header.scrollWidth <= header.clientWidth,

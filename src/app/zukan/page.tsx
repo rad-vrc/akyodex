@@ -11,11 +11,13 @@
  */
 
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 // Phase 4: Using unified data module with JSON support
 import { getAkyoData, getAllCategories, getAllAuthors } from '@/lib/akyo-data';
 import { ZukanClient } from './zukan-client';
-import { DEFAULT_LANGUAGE } from '@/lib/i18n';
 import { createInitialCatalogPayload } from './catalog-initial-data';
+import { resolveCatalogLanguage } from './catalog-language';
+import { CatalogPreload } from './catalog-preload';
 
 // Dynamic metadata
 export const metadata: Metadata = {
@@ -49,9 +51,9 @@ export const metadata: Metadata = {
  * - Client handles language detection and refetching if needed
  */
 export default async function ZukanPage() {
-  // Use default language for initial render
-  // Client component will detect user's language and refetch if needed
-  const lang = DEFAULT_LANGUAGE;
+  const requestHeaders = await headers();
+  const lang = resolveCatalogLanguage(requestHeaders.get('x-akyo-lang'));
+  const catalogUrl = `/api/catalog/${lang}`;
 
   // Parallel data fetching with React cache() deduplication
   const [data, categories, authors] = await Promise.all([
@@ -62,17 +64,20 @@ export default async function ZukanPage() {
   const initialCatalog = createInitialCatalogPayload(data);
 
   return (
-    <ZukanClient
-      initialData={initialCatalog.items}
-      initialPreviewData={initialCatalog.previewItems}
-      initialTotals={initialCatalog.totals}
-      initialDataComplete={initialCatalog.complete}
-      categories={categories}
-      authors={authors}
-      // 互換性のため旧プロップスも渡す
-      attributes={categories}
-      creators={authors}
-      serverLang={lang}
-    />
+    <>
+      <CatalogPreload href={catalogUrl} />
+      <ZukanClient
+        initialData={initialCatalog.items}
+        initialTotals={initialCatalog.totals}
+        initialDataComplete={initialCatalog.complete}
+        catalogUrl={catalogUrl}
+        categories={categories}
+        authors={authors}
+        // 互換性のため旧プロップスも渡す
+        attributes={categories}
+        creators={authors}
+        serverLang={lang}
+      />
+    </>
   );
 }

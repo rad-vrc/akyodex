@@ -28,6 +28,11 @@ import type { KVMetadata, KVNamespace } from '@/types/kv';
 import { KV_KEYS } from '@/types/kv';
 import { cache } from 'react';
 import { hydrateAkyoDataset } from './akyo-entry';
+import {
+  getCatalogKVKey,
+  serializeCatalogPayload,
+  writeCatalogPayloadToKV,
+} from './catalog-payload';
 
 /**
  * Get KV namespace from Cloudflare context
@@ -74,6 +79,20 @@ const KV_KEY_MAP: Record<SupportedLanguage, string> = {
 function getKVKey(lang: SupportedLanguage): string {
   return KV_KEY_MAP[lang];
 }
+
+export const getCatalogPayloadFromKVOnly = cache(
+  async (lang: SupportedLanguage): Promise<string | null> => {
+    const kv = await getKVNamespace();
+    if (!kv) return null;
+
+    try {
+      return await kv.get(getCatalogKVKey(lang));
+    } catch (error) {
+      console.error('[KV] Error fetching completed catalog payload:', error);
+      return null;
+    }
+  }
+);
 
 /**
  * Result type for KV data fetching
@@ -199,9 +218,14 @@ export async function updateKVCache(
   const key = getKVKey(lang);
 
   try {
-    // Store data as JSON string
-    await kv.put(key, JSON.stringify(data));
-    console.log(`[KV] Updated ${key} with ${data.length} avatars`);
+    const catalogPayload = await serializeCatalogPayload(lang, data);
+    await Promise.all([
+      kv.put(key, JSON.stringify(data)),
+      writeCatalogPayloadToKV(kv, lang, catalogPayload.text),
+    ]);
+    console.log(
+      `[KV] Updated ${key} and ${getCatalogKVKey(lang)} with ${data.length} entries`
+    );
 
     // Skip metadata update if called from updateKVCacheAll
     if (skipMetadata) {

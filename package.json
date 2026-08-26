@@ -6,10 +6,10 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "next:build": "next build",
-    "next:build:opennext": "next build && node scripts/fix-opennext-instrumentation.js",
-    "build": "opennextjs-cloudflare build && node scripts/prepare-cloudflare-pages.js",
+    "dev": "npm run catalog:snapshots && next dev --turbopack",
+    "next:build": "npm run catalog:snapshots && next build",
+    "next:build:opennext": "npm run catalog:snapshots && next build && node scripts/fix-opennext-instrumentation.js",
+    "build": "npm run catalog:snapshots && opennextjs-cloudflare build && node scripts/prepare-cloudflare-pages.js",
     "start": "next start",
     "lint": "eslint",
     "verify:dify-csp-hash": "node scripts/verify-dify-csp-hash.js",
@@ -25,6 +25,7 @@
     "build:worker": "wrangler deploy --dry-run --config workers/akyo-search-worker/wrangler.jsonc",
     "test:csv": "node scripts/test-csv-quality.js",
     "data:convert": "npx tsx scripts/csv-to-json.ts",
+    "catalog:snapshots": "tsx scripts/generate-catalog-snapshots.ts",
     "generate-ko-data": "node scripts/generate-ko-data.js",
     "push:check-pr": "node scripts/push-and-check-pr-conflicts.js",
     "hooks:install": "git config --local core.hooksPath .githooks"

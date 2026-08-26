@@ -81,7 +81,10 @@ const routesConfig = {
     "/sw.js",
 
     // All images (wildcard matches any depth)
-    "/images/*"
+    "/images/*",
+
+    // Build-bundled complete catalog fallback
+    "/catalog/*"
   ]
 };
 
