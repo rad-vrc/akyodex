@@ -10,6 +10,12 @@
     "next:build": "npm run catalog:snapshots && next build",
     "next:build:opennext": "npm run catalog:snapshots && next build && node scripts/fix-opennext-instrumentation.js",
     "build": "npm run catalog:snapshots && opennextjs-cloudflare build && node scripts/prepare-cloudflare-pages.js",
+    "build:workers": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare build --config wrangler.workers.jsonc",
+    "preview:workers": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare preview --config wrangler.workers.jsonc",
+    "deploy:workers:staging": "npm run build:workers && opennextjs-cloudflare deploy --config wrangler.workers.jsonc",
+    "dry-run:workers": "wrangler deploy --dry-run --config wrangler.workers.jsonc",
+    "types:workers": "wrangler types cloudflare-env.d.ts --config wrangler.workers.jsonc --include-runtime false --env-interface CloudflareWorkerBindings --strict-vars false",
+    "check:types:workers": "npm run types:workers -- --check",
     "start": "next start",
     "lint": "eslint",
     "verify:dify-csp-hash": "node scripts/verify-dify-csp-hash.js",
@@ -31,11 +37,11 @@
     "hooks:install": "git config --local core.hooksPath .githooks"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.17.1",
+    "@opennextjs/cloudflare": "1.20.3",
     "@sentry/nextjs": "^10.66.0",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.6.0",
-    "next": "16.1.7",
+    "next": "16.3.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sanitize-html": "^2.17.6"
@@ -59,14 +65,15 @@
     "@types/node": "^20.19.24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.7",
+    "eslint-config-next": "16.3.3",
     "knip": "^5.66.4",
-    "postcss": "^8.5.19",
-    "sharp": "^0.34.5",
+    "postcss": "^8.5.23",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
-    "wrangler": "^4.112.0"
+    "wrangler": "^4.126.0"
   }
 }

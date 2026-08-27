@@ -79,6 +79,10 @@ const SCRIPT_SRC = [
   'https://fonts.googleapis.com',
 ];
 
+// React development diagnostics reconstruct stack traces with eval(). Keep this
+// development-only so the production policy never permits evaluated scripts.
+const DEVELOPMENT_SCRIPT_SRC = process.env.NODE_ENV === 'production' ? [] : ["'unsafe-eval'"];
+
 /**
  * Note: 'unsafe-inline' is required for style-src because:
  * 1. React's inline 'style={{...}}' attributes are used extensively throughout the app.
@@ -187,7 +191,7 @@ export function middleware(request: NextRequest) {
 
   const cspHeader = `
     default-src 'self';
-    script-src ${SCRIPT_SRC.join(' ')} 'nonce-${nonce}' ${difyHash};
+    script-src ${[...SCRIPT_SRC, ...DEVELOPMENT_SCRIPT_SRC].join(' ')} 'nonce-${nonce}' ${difyHash};
     style-src ${STYLE_SRC.join(' ')};
     img-src ${IMG_SRC.join(' ')};
     font-src ${FONT_SRC.join(' ')};

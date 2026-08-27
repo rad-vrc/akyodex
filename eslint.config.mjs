@@ -13,6 +13,7 @@ const eslintConfig = [
       "public/sw.js",
       "sw.js",
       "next-env.d.ts",
+      "cloudflare-env.d.ts",
       "scripts/**",
       "playwright-report/**",
       "test-results/**",
