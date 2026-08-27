@@ -44,7 +44,12 @@ function commitMatches(expectedSha, source) {
 }
 
 function validatePagesDeploymentUrl(rawUrl) {
-  const url = new URL(rawUrl);
+  let url;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new Error(`Invalid Pages deployment URL: ${rawUrl}`);
+  }
   if (url.protocol !== 'https:' || !url.hostname.endsWith('.pages.dev')) {
     throw new Error(`Pages deployment URL must use HTTPS on pages.dev: ${rawUrl}`);
   }

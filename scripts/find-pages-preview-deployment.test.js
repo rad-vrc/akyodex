@@ -86,3 +86,20 @@ test('rejects deployment URLs outside pages.dev', () => {
     /pages\.dev/
   );
 });
+
+test('rejects malformed deployment URLs with a descriptive error', () => {
+  assert.throws(
+    () =>
+      findPagesPreviewDeployment(
+        [
+          {
+            ...deployments[0],
+            Deployment: 'not-a-url',
+          },
+        ],
+        'aa9050fd1234567890abcdef1234567890abcdef',
+        'pr-441'
+      ),
+    /Invalid Pages deployment URL: not-a-url/
+  );
+});
