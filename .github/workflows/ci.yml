@@ -141,7 +141,10 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Verify generated Workers binding types
-        run: npm run check:types:workers
+        run: |
+          npm run types:workers
+          git diff -- cloudflare-env.d.ts
+          git diff --exit-code -- cloudflare-env.d.ts
 
       - name: Verify Workers build output
         run: |
