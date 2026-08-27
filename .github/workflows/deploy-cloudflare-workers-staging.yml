@@ -120,7 +120,7 @@ jobs:
             if verify_response "/zukan" "text/html" "text/html" /tmp/zukan-headers /tmp/zukan-body && \
               verify_response "/api/catalog/ja" "application/json" "application/json" /tmp/catalog-headers /tmp/catalog-body && \
               verify_response "/api/avatar-image?id=0001&w=768" "image/avif,image/webp,image/*,*/*" "image/avif" /tmp/avatar-headers /tmp/avatar-body && \
-              grep --ignore-case --quiet '^x-image-transformed:[[:space:]]*true\r\{0,1\}$' /tmp/avatar-headers; then
+              awk 'tolower($0) ~ /^x-image-transformed:[[:space:]]*true\r?$/ { found=1 } END { exit found ? 0 : 1 }' /tmp/avatar-headers; then
               echo "Workers staging is serving ${GITHUB_SHA} and all runtime checks passed."
               exit 0
             fi

@@ -24,6 +24,7 @@ test('Workers staging CI deploys a tagged version and verifies that exact revisi
   assert.match(workflow, /x-akyodex-worker-tag/);
   assert.match(workflow, /tolower\(\$0\)/);
   assert.doesNotMatch(workflow, /IGNORECASE/);
+  assert.doesNotMatch(workflow, /grep --ignore-case/);
 });
 
 test('Pages remains a manual rollback target during the Workers migration', async () => {
