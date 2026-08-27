@@ -41,6 +41,10 @@ test('Pages remains a manual rollback target during the Workers migration', asyn
 
   assert.doesNotMatch(deployWorkflow, /^\s{2}push:/m);
   assert.match(deployWorkflow, /github\.ref_name == 'pages-rollback'/);
+  assert.match(
+    deployWorkflow,
+    /--branch=\$\{\{ env\.CF_PAGES_PRODUCTION_BRANCH \}\}/
+  );
   assert.match(rollbackGate, /https:\/\/akyodex\.pages\.dev/);
 });
 

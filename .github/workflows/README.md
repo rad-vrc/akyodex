@@ -122,7 +122,7 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 2. `npm ci`
 3. `npm run build`
 4. `.open-next`、`_worker.js`、`_routes.json`、`_next/` の存在を検証
-5. `cloudflare/wrangler-action@v3` で `pages deploy .open-next --project-name=${CF_PAGES_PROJECT}`
+5. `cloudflare/wrangler-action@v3` で `pages deploy .open-next --project-name=${CF_PAGES_PROJECT} --branch=${CF_PAGES_PRODUCTION_BRANCH}`
 6. deployment URL に対して HTTP ヘルスチェック
 7. Step Summary に deploy 結果を記録
 
@@ -145,6 +145,7 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 ### 実装上の注意点
 
 - workflow は `CF_PAGES_PROJECT=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'akyodex' }}` を使います。
+- `CF_PAGES_PRODUCTION_BRANCH=${{ vars.CLOUDFLARE_PAGES_PRODUCTION_BRANCH || 'main' }}` を明示し、`pages-rollback`のチェックアウト名がPreview branchとして推測されないようにします。
 - build step では `DEFAULT_ADMIN_PASSWORD_HASH` / `DEFAULT_OWNER_PASSWORD_HASH` / `DEFAULT_JWT_SECRET` 由来の legacy fallback をまだ export しています。
 - ただし runtime code が読むのは `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, `SESSION_SECRET` です。workflow 側の legacy defaults は runtime source of truth ではありません。
 - workflow ファイルには PR コメント step がありますが、現在の trigger は `push` と `workflow_dispatch` のみなので、その step は通常到達しません。
