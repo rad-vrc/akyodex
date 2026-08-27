@@ -51,7 +51,9 @@ test.describe('Accessibility (a11y) Checks', () => {
     await page.click('button[data-card-trigger="true"]');
     
     // Wait for the modal dialog to appear
-    await page.waitForSelector('div[role="dialog"]');
+    const dialog = page.locator('div[role="dialog"]');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveCSS('opacity', '1');
 
     // Run scan, limited to the modal to avoid background interference
     // Axe can scan specific includes if needed

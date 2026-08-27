@@ -88,6 +88,28 @@ test.describe("Complete catalog loading", () => {
     await expect(page.getByText("スーパーワープAkyo", { exact: true })).toBeVisible();
   });
 
+  test("loads avatar cards through the fixed-width transformation API", async ({
+    page,
+  }) => {
+    await page.goto("/zukan");
+
+    const firstCardImage = page.locator("article.akyo-card img").first();
+    await expect(firstCardImage).toHaveAttribute(
+      "src",
+      /\/api\/avatar-image\?id=0001&w=768$/,
+    );
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          performance
+            .getEntriesByType("resource")
+            .map((entry) => entry.name)
+            .filter((url) => url.includes("/_next/image")),
+        ),
+      )
+      .toEqual([]);
+  });
+
   test("preloads the exact complete catalog URL before the window load event", async ({
     page,
   }) => {

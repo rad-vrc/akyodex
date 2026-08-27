@@ -16,6 +16,10 @@ const shouldPrioritizeCatalogCardImage =
   akyoCardModule.shouldPrioritizeCatalogCardImage as
   | ((index: number) => boolean)
   | undefined;
+const getCatalogAvatarCardImageSrc =
+  akyoCardModule.getCatalogAvatarCardImageSrc as
+  | ((akyo: Pick<AkyoData, "id">) => string)
+  | undefined;
 
 test("shouldBypassImageOptimization bypasses local API, placeholder, and direct R2 paths", () => {
   assert.equal(shouldBypassImageOptimization("/api/vrc-world-image?wrld=wrld_x&w=512"), true);
@@ -31,8 +35,8 @@ test("shouldBypassImageOptimization bypasses local API, placeholder, and direct 
   );
 });
 
-test("getCatalogCardImageRequestWidth keeps avatars at 384 and requests worlds at 512", () => {
-  assert.equal(getCatalogCardImageRequestWidth("avatar"), 384);
+test("getCatalogCardImageRequestWidth requests avatars at 768 and worlds at 512", () => {
+  assert.equal(getCatalogCardImageRequestWidth("avatar"), 768);
   assert.equal(getCatalogCardImageRequestWidth("world"), 512);
 });
 
@@ -49,5 +53,13 @@ test("getCatalogCardPrimaryImageSrc uses the stable Akyo id instead of displaySe
   assert.equal(
     getCatalogCardPrimaryImageSrc(akyo, false, "https://images.akyodex.com"),
     "https://images.akyodex.com/0826.webp",
+  );
+});
+
+test("getCatalogAvatarCardImageSrc requests the fixed 768px transformation by stable id", () => {
+  assert.equal(typeof getCatalogAvatarCardImageSrc, "function");
+  assert.equal(
+    getCatalogAvatarCardImageSrc?.({ id: "0826" }),
+    "/api/avatar-image?id=0826&w=768",
   );
 });

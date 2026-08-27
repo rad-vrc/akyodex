@@ -15,6 +15,12 @@
 import { connection } from 'next/server';
 import { jsonError } from '@/lib/api-helpers';
 import { VRCHAT_AVATAR_ID_PATTERN, extractVRChatAvatarIdFromUrl } from '@/lib/akyo-entry';
+import {
+  fetchAvatarCardImageWithFallback,
+  getAvatarCardImageResponseHeaders,
+  getPreferredAvatarCardImageFormat,
+  shouldTransformAvatarCardImage,
+} from '@/lib/avatar-card-image';
 
 /**
  * Fetch CSV data and find avtr ID for given Akyo ID
@@ -73,6 +79,7 @@ export async function GET(request: Request) {
   let avtr = searchParams.get('avtr');
   const id = searchParams.get('id');
   const widthParam = searchParams.get('w');
+  const bypassCloudflare = searchParams.get('bypassCloudflare') === '1';
 
   // Parse width with proper fallback handling
   let width = 512; // Default width
@@ -123,42 +130,33 @@ export async function GET(request: Request) {
       const r2Url = `${r2BaseUrl}/${normalizedId}.webp`;
 
       try {
-        // Create AbortController for 5-second timeout (shorter for faster fallback)
-        const r2Controller = new AbortController();
-        const r2TimeoutId = setTimeout(() => r2Controller.abort(), 5000);
-
-        try {
-          const r2Response = await fetch(r2Url, {
-            signal: r2Controller.signal,
-            next: { revalidate: 3600 }, // Cache for 1 hour
+        const transformCardImage = shouldTransformAvatarCardImage({
+          width,
+          bypassCloudflare,
+        });
+        const format = transformCardImage
+          ? getPreferredAvatarCardImageFormat(request.headers.get('Accept'))
+          : null;
+        const { response: r2Response, transformed } =
+          await fetchAvatarCardImageWithFallback({
+            imageUrl: r2Url,
+            format,
           });
 
-          clearTimeout(r2TimeoutId);
-
-          if (r2Response.ok) {
-            // Stream the image through
-            const imageData = await r2Response.arrayBuffer();
-            return new Response(imageData, {
-              status: 200,
-              headers: {
-                'Content-Type': r2Response.headers.get('Content-Type') || 'image/webp',
-                'Cache-Control': 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000',
-                'X-Image-Source': 'r2',
-              },
-            });
-          } else {
-            console.log(
-              `[avatar-image] R2 returned ${r2Response.status} for ${id}, trying VRChat fallback`
-            );
-          }
-        } catch (fetchError) {
-          clearTimeout(r2TimeoutId);
-          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-            console.log(`[avatar-image] R2 fetch timeout for ${id}, trying VRChat fallback`);
-          } else {
-            console.log(`[avatar-image] R2 fetch error for ${id}:`, fetchError);
-          }
+        if (r2Response.ok) {
+          const imageData = await r2Response.arrayBuffer();
+          return new Response(imageData, {
+            status: 200,
+            headers: getAvatarCardImageResponseHeaders(
+              r2Response.headers.get('Content-Type') || 'image/webp',
+              transformed,
+            ),
+          });
         }
+
+        console.log(
+          `[avatar-image] R2 returned ${r2Response.status} for ${id}, trying VRChat fallback`
+        );
       } catch (error) {
         console.log(`[avatar-image] R2 fetch failed for ${id}, trying VRChat fallback:`, error);
       }

@@ -52,7 +52,7 @@ export function shouldBypassImageOptimization(
 }
 
 export function getCatalogCardImageRequestWidth(entryType: string): number {
-  return entryType === "world" ? 512 : 384;
+  return entryType === "world" ? 512 : 768;
 }
 
 export function shouldPrioritizeCatalogCardImage(index: number): boolean {
@@ -67,6 +67,12 @@ export function getCatalogCardPrimaryImageSrc(
   return cloudflareImagesEnabled
     ? `/${akyo.id}.webp`
     : `${r2BaseUrl}/${akyo.id}.webp`;
+}
+
+export function getCatalogAvatarCardImageSrc(
+  akyo: Pick<AkyoData, "id">,
+): string {
+  return `/api/avatar-image?id=${encodeURIComponent(akyo.id)}&w=768`;
 }
 
 /**
@@ -97,18 +103,18 @@ export function AkyoCard({
     sourceUrl,
     getCatalogCardImageRequestWidth(entryType),
   );
-  const apiFallbackImageSrc = `${apiImageSrc}&bypassCloudflare=1`;
   const isWorldEntry = entryType === "world";
-  const primaryImageSrc = getCatalogCardPrimaryImageSrc(
+  const directImageSrc = getCatalogCardPrimaryImageSrc(
     akyo,
     cloudflareImagesEnabled,
     r2BaseUrl,
   );
+  const initialImageSrc = isWorldEntry
+    ? apiImageSrc
+    : getCatalogAvatarCardImageSrc(akyo);
   const placeholderImageSrc = "/images/placeholder.webp";
   // ワールドの場合はVRChat APIから最新のサムネイルを取得する（R2には古い画像が残っている可能性があるため）
-  const [imageSrc, setImageSrc] = useState(
-    isWorldEntry ? apiImageSrc : primaryImageSrc,
-  );
+  const [imageSrc, setImageSrc] = useState(initialImageSrc);
   const detailButtonRef = useRef<HTMLButtonElement | null>(null);
 
   /**
@@ -188,19 +194,16 @@ export function AkyoCard({
               // bypassCloudflare パラメータは vrc-world-image では無視されるため、
               // 冗長な再試行を避けてR2画像にフォールバックする
               if (imageSrc === apiImageSrc) {
-                setImageSrc(primaryImageSrc);
+                setImageSrc(directImageSrc);
                 return;
               }
               if (imageSrc !== placeholderImageSrc) {
                 setImageSrc(placeholderImageSrc);
               }
             } else {
-              // アバター: R2画像 → API(bypassCloudflare) → placeholder
-              if (
-                imageSrc !== apiFallbackImageSrc &&
-                imageSrc !== placeholderImageSrc
-              ) {
-                setImageSrc(apiFallbackImageSrc);
+              // アバター: 768px変換API → R2原画像 → placeholder
+              if (imageSrc === initialImageSrc) {
+                setImageSrc(directImageSrc);
                 return;
               }
               if (imageSrc !== placeholderImageSrc) {
