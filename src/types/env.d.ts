@@ -11,7 +11,18 @@ type MinimalR2BucketBinding = {
   delete: (key: string) => Promise<void>;
 };
 
+type WorkerVersionMetadataBinding = {
+  id: string;
+  tag: string;
+  timestamp: string;
+};
+
 declare global {
+  interface CloudflareExecutionContext {
+    waitUntil(promise: Promise<unknown>): void;
+    passThroughOnException(): void;
+  }
+
   namespace NodeJS {
     interface ProcessEnv {
       // Public環境変数
@@ -41,6 +52,7 @@ declare global {
 
   interface CloudflareEnv {
     AKYO_BUCKET?: MinimalR2BucketBinding;
+    CF_VERSION_METADATA?: WorkerVersionMetadataBinding;
   }
 }
 

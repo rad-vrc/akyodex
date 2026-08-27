@@ -1,9 +1,6 @@
-name: Deploy to Cloudflare Pages
+name: Deploy Cloudflare Pages Rollback
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       environment:
@@ -22,7 +19,8 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to Cloudflare Pages
+    name: Deploy known-good Pages rollback
+    if: github.ref_name == 'pages-rollback'
     runs-on: ubuntu-latest
     env:
       # Keep deployment target aligned with preview-gate fallback behavior.

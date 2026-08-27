@@ -35,6 +35,7 @@
   ],
   "ignoreExportsUsedInFile": true,
   "ignoreIssues": {
+    "cloudflare-worker.ts": ["exports"],
     "src/lib/akyo-entry.ts": ["exports"]
   }
 }

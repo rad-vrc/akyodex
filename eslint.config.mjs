@@ -5,18 +5,24 @@ const eslintConfig = [
   {
     ignores: [
       "node_modules/**",
+      ".claude/**",
       ".next/**",
       ".open-next/**",
+      ".open-next-*/**",
+      ".playwright-mcp/**",
       ".vercel/**",
       "out/**",
       "build/**",
       "public/sw.js",
       "sw.js",
       "next-env.d.ts",
+      "cloudflare-env.d.ts",
       "scripts/**",
       "playwright-report/**",
       "test-results/**",
       "coverage/**",
+      "output/**",
+      "package/**",
       ".cache/**",
       ".turbo/**",
       ".serena/**",
@@ -24,6 +30,7 @@ const eslintConfig = [
     ],
   },
   {
+    files: ["**/*.{js,jsx,mjs,ts,tsx,mts,cts}"],
     // Downgrade new React 19.2 compiler lint rules from error -> warn.
     // These flag pre-existing patterns (setState in useEffect, Math.random in useRef)
     // that are valid in this codebase. TODO: Refactor to satisfy these rules.

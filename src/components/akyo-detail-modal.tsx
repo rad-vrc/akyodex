@@ -122,7 +122,7 @@ export function AkyoDetailModal({
   // 三面図（PNG）優先、WebPフォールバック用の状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
 
   // ズーム機能の状態
@@ -591,27 +591,29 @@ export function AkyoDetailModal({
                         transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
                       }}
                     >
-                      <Image
-                        src={imageUrl}
-                        alt={imageLoadAttempt >= 2 ? "" : displayName}
-                        role={imageLoadAttempt >= 2 ? "presentation" : undefined}
-                        width={800}
-                        height={533}
-                        className="w-full h-full object-contain rounded-2xl"
-                        unoptimized
-                        draggable={false}
-                        onError={(e) => {
-                          handleImageError();
-                          if (imageLoadAttempt >= 1) {
-                            setImageLoadAttempt(2);
-                          }
-                          const target = e.target as HTMLImageElement;
-                          target.style.background = `linear-gradient(135deg, ${categoryColor}, ${categoryColor}66)`;
-                          // Temporarily mutate DOM while React updates state
-                          target.alt = "";
-                          target.setAttribute('role', 'presentation');
-                        }}
-                      />
+                      {imageUrl && (
+                        <Image
+                          src={imageUrl}
+                          alt={imageLoadAttempt >= 2 ? "" : displayName}
+                          role={imageLoadAttempt >= 2 ? "presentation" : undefined}
+                          width={800}
+                          height={533}
+                          className="w-full h-full object-contain rounded-2xl"
+                          unoptimized
+                          draggable={false}
+                          onError={(e) => {
+                            handleImageError();
+                            if (imageLoadAttempt >= 1) {
+                              setImageLoadAttempt(2);
+                            }
+                            const target = e.target as HTMLImageElement;
+                            target.style.background = `linear-gradient(135deg, ${categoryColor}, ${categoryColor}66)`;
+                            // Temporarily mutate DOM while React updates state
+                            target.alt = "";
+                            target.setAttribute('role', 'presentation');
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
 

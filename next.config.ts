@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import { shouldApplyNextSentryBuildConfig } from "./src/lib/sentry-runtime";
 
 const nextConfig: NextConfig = {
   // Cloudflare Pages compatibility settings
@@ -174,6 +175,9 @@ const nextConfig: NextConfig = {
 
   // Environment variable validation
   env: {
+    // This non-secret build target must be inlined so Pages does not attempt
+    // to load the Node-oriented Next.js Sentry server SDK at runtime.
+    CLOUDFLARE_DEPLOY_TARGET: process.env.CLOUDFLARE_DEPLOY_TARGET || '',
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://akyodex.com',
     NEXT_PUBLIC_R2_BASE: process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com',
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN || '',
@@ -190,8 +194,11 @@ const nextConfig: NextConfig = {
 
 };
 
-const hasSentryBuildConfig = Boolean(
-  process.env.SENTRY_ORG && process.env.SENTRY_PROJECT && process.env.SENTRY_AUTH_TOKEN
+const hasSentryBuildConfig = shouldApplyNextSentryBuildConfig(
+  process.env.CLOUDFLARE_DEPLOY_TARGET,
+  process.env.SENTRY_ORG,
+  process.env.SENTRY_PROJECT,
+  process.env.SENTRY_AUTH_TOKEN
 );
 
 const sentryWrappedConfig = hasSentryBuildConfig
