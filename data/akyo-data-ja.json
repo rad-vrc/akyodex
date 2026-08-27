@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-26T17:08:55.935Z",
-  "count": 935,
+  "updatedAt": "2026-08-27T10:46:47.888Z",
+  "count": 936,
   "data": [
     {
       "id": "0001",
@@ -10672,6 +10672,18 @@
       "author": "kitsune_tsuki",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b24d92f1-4f6a-4dbe-be96-bedcfe51e882",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b24d92f1-4f6a-4dbe-be96-bedcfe51e882"
+    },
+    {
+      "id": "0936",
+      "entryType": "world",
+      "displaySerial": "0106",
+      "nickname": "安心安全ハウス -Safe and Secure House-",
+      "avatarName": "",
+      "category": "ワールド",
+      "comment": "",
+      "author": "Lo-rem",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_028f1098-00e1-41b2-b619-920b929f6317/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_028f1098-00e1-41b2-b619-920b929f6317/"
     }
   ]
 }
