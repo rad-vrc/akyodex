@@ -13,3 +13,28 @@ test('Workers runtime selects the Workers OpenNext cache adapters', async () => 
 
   assert.equal(config.vars?.CLOUDFLARE_DEPLOY_TARGET, 'workers');
 });
+
+test('Workers staging CI deploys a tagged version and verifies that exact revision', async () => {
+  const workflow = await readFile(
+    path.join(process.cwd(), '.github', 'workflows', 'deploy-cloudflare-workers-staging.yml'),
+    'utf8'
+  );
+
+  assert.match(workflow, /wrangler deploy --config wrangler\.workers\.jsonc --tag "\$\{GITHUB_SHA\}"/);
+  assert.match(workflow, /x-akyodex-worker-tag/);
+});
+
+test('Pages remains a manual rollback target during the Workers migration', async () => {
+  const deployWorkflow = await readFile(
+    path.join(process.cwd(), '.github', 'workflows', 'deploy-cloudflare-pages.yml'),
+    'utf8'
+  );
+  const rollbackGate = await readFile(
+    path.join(process.cwd(), '.github', 'workflows', 'cloudflare-pages-preview-gate.yml'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(deployWorkflow, /^\s{2}push:/m);
+  assert.match(deployWorkflow, /github\.ref_name == 'pages-rollback'/);
+  assert.match(rollbackGate, /https:\/\/akyodex\.pages\.dev/);
+});

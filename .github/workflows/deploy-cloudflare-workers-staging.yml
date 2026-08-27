@@ -1,0 +1,146 @@
+name: Deploy Cloudflare Workers Staging
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-workers-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy-workers-staging:
+    name: Deploy and verify Workers staging
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_SITE_URL: https://staging.akyodex.com
+      NEXT_PUBLIC_APP_URL: https://staging.akyodex.com
+      NEXT_PUBLIC_R2_BASE: ${{ vars.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com' }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+      SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cloudflare credentials
+        run: npx wrangler whoami
+
+      - name: Build Workers artifact
+        run: npm run build:workers
+
+      - name: Deploy tagged Workers version
+        run: |
+          GITHUB_SHA="${PR_HEAD_SHA}"
+          npx wrangler deploy --config wrangler.workers.jsonc --tag "${GITHUB_SHA}" --message "PR staging ${GITHUB_SHA}"
+
+      - name: Verify deployed revision and runtime
+        run: |
+          set -euo pipefail
+
+          GITHUB_SHA="${PR_HEAD_SHA}"
+          base_url="https://staging.akyodex.com"
+          max_attempts=12
+          retry_seconds=5
+
+          verify_response() {
+            local path="$1"
+            local accept="$2"
+            local expected_content_type="$3"
+            local headers_file="$4"
+            local body_file="$5"
+
+            local status
+            status="$(curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --header "Accept: ${accept}" \
+              --dump-header "${headers_file}" \
+              --output "${body_file}" \
+              --write-out "%{http_code}" \
+              "${base_url}${path}" || echo "000")"
+
+            if [ "${status}" != "200" ]; then
+              echo "${path} returned HTTP ${status}."
+              return 1
+            fi
+
+            local deployed_tag
+            deployed_tag="$(awk 'BEGIN { IGNORECASE=1 } /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+            if [ "${deployed_tag}" != "${GITHUB_SHA}" ]; then
+              echo "${path} returned Worker tag '${deployed_tag}', expected '${GITHUB_SHA}'."
+              return 1
+            fi
+
+            if [ -n "${expected_content_type}" ]; then
+              local content_type
+              content_type="$(awk 'BEGIN { IGNORECASE=1 } /^content-type:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+              if [[ "${content_type}" != "${expected_content_type}"* ]]; then
+                echo "${path} returned Content-Type '${content_type}', expected '${expected_content_type}'."
+                return 1
+              fi
+            fi
+
+            return 0
+          }
+
+          for attempt in $(seq 1 "${max_attempts}"); do
+            if verify_response "/zukan" "text/html" "text/html" /tmp/zukan-headers /tmp/zukan-body && \
+              verify_response "/api/catalog/ja" "application/json" "application/json" /tmp/catalog-headers /tmp/catalog-body && \
+              verify_response "/api/avatar-image?id=0001&w=768" "image/avif,image/webp,image/*,*/*" "image/avif" /tmp/avatar-headers /tmp/avatar-body && \
+              grep --ignore-case --quiet '^x-image-transformed:[[:space:]]*true\r\{0,1\}$' /tmp/avatar-headers; then
+              echo "Workers staging is serving ${GITHUB_SHA} and all runtime checks passed."
+              exit 0
+            fi
+
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              echo "Runtime verification failed on attempt ${attempt}/${max_attempts}; retrying in ${retry_seconds}s."
+              sleep "${retry_seconds}"
+            fi
+          done
+
+          echo "::error::Workers staging did not serve the expected revision or runtime responses."
+          exit 1
+
+      - name: Publish staging summary
+        if: always()
+        run: |
+          {
+            echo "## Cloudflare Workers staging"
+            echo ""
+            echo "- Revision: ${PR_HEAD_SHA}"
+            echo "- URL: https://staging.akyodex.com"
+            echo "- Result: ${{ job.status }}"
+          } >> "${GITHUB_STEP_SUMMARY}"
