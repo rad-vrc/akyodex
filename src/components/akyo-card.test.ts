@@ -17,11 +17,18 @@ const shouldPrioritizeCatalogCardImage =
   | ((index: number) => boolean)
   | undefined;
 
-test("shouldBypassImageOptimization bypasses local API and placeholder paths", () => {
+test("shouldBypassImageOptimization bypasses local API, placeholder, and direct R2 paths", () => {
   assert.equal(shouldBypassImageOptimization("/api/vrc-world-image?wrld=wrld_x&w=512"), true);
   assert.equal(shouldBypassImageOptimization("/api/avatar-image?id=0001&w=512"), true);
   assert.equal(shouldBypassImageOptimization("/images/placeholder.webp"), true);
-  assert.equal(shouldBypassImageOptimization("https://images.akyodex.com/0001.webp"), false);
+  assert.equal(shouldBypassImageOptimization("https://images.akyodex.com/0001.webp"), true);
+  assert.equal(
+    shouldBypassImageOptimization(
+      "https://catalog-assets.example/0001.webp",
+      "https://catalog-assets.example/",
+    ),
+    true,
+  );
 });
 
 test("getCatalogCardImageRequestWidth keeps avatars at 384 and requests worlds at 512", () => {

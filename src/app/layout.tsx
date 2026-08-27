@@ -91,22 +91,6 @@ export default async function RootLayout({
         {children}
 
         {/* Dynamic features and metadata */}
-        <style
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-              #dify-chatbot-bubble-button {
-                background-color: #EE7800 !important;
-              }
-              #dify-chatbot-bubble-window {
-                width: 24rem !important;
-                height: 40rem !important;
-                position: fixed !important;
-                inset: auto 1rem 1rem auto !important;
-              }
-            `,
-          }}
-        />
         <StructuredData nonce={nonce} />
         <RuntimeFeatures difyToken={difyToken} />
       </body>

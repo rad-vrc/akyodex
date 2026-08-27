@@ -15,4 +15,6 @@ test("CatalogPreload emits an anonymous fetch preload for the exact catalog URL"
   assert.match(markup, /as="fetch"/);
   assert.match(markup, /crossorigin=""/);
   assert.match(markup, /type="application\/json"/);
+  assert.match(markup, /rel="preconnect"/);
+  assert.match(markup, /href="https:\/\/images\.akyodex\.com"/);
 });
