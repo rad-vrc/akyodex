@@ -1,15 +1,33 @@
+import { withSentry } from '@sentry/cloudflare';
 import openNextWorker from './.open-next/worker.js';
 
 export { DOQueueHandler } from './.open-next/worker.js';
 
-interface CloudflareWorkerHandler {
+interface WorkersRuntimeEnv extends CloudflareWorkerBindings {
+  SENTRY_DSN?: string;
+}
+
+interface CloudflareWorkerHandler<Env> {
   fetch(
     request: Request,
-    env: CloudflareWorkerBindings,
+    env: Env,
     ctx: CloudflareExecutionContext
   ): Response | Promise<Response>;
 }
 
-export default {
+const handler = {
   fetch: openNextWorker.fetch,
-} satisfies CloudflareWorkerHandler;
+} satisfies CloudflareWorkerHandler<WorkersRuntimeEnv>;
+
+export default withSentry<WorkersRuntimeEnv>(
+  (env) =>
+    env.SENTRY_DSN
+      ? {
+          dsn: env.SENTRY_DSN,
+          environment: env.SENTRY_ENVIRONMENT,
+          sendDefaultPii: false,
+          tracesSampleRate: 0.1,
+        }
+      : undefined,
+  handler
+);

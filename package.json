@@ -12,7 +12,8 @@
     "build": "npm run catalog:snapshots && opennextjs-cloudflare build && node scripts/prepare-cloudflare-pages.js",
     "build:workers": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare build --config wrangler.workers.jsonc",
     "preview:workers": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare preview --config wrangler.workers.jsonc",
-    "deploy:workers:staging": "npm run build:workers && opennextjs-cloudflare deploy --config wrangler.workers.jsonc",
+    "deploy:workers:built": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare deploy --config wrangler.workers.jsonc",
+    "deploy:workers:staging": "npm run build:workers && npm run deploy:workers:built",
     "dry-run:workers": "wrangler deploy --dry-run --config wrangler.workers.jsonc",
     "types:workers": "wrangler types cloudflare-env.d.ts --config wrangler.workers.jsonc --env-file wrangler-types.env --include-runtime false --env-interface CloudflareWorkerBindings --strict-vars false",
     "check:types:workers": "npm run types:workers -- --check",
@@ -38,6 +39,7 @@
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.3",
+    "@sentry/cloudflare": "^10.66.0",
     "@sentry/nextjs": "^10.66.0",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.6.0",

@@ -25,20 +25,22 @@
     }
   ],
   "vars": {
+    "CLOUDFLARE_DEPLOY_TARGET": "workers",
     "NEXT_PUBLIC_APP_URL": "https://staging.akyodex.com",
     "NEXT_PUBLIC_SITE_URL": "https://staging.akyodex.com",
     "NEXT_PUBLIC_R2_BASE": "https://images.akyodex.com",
     "NEXT_PUBLIC_USE_JSON_DATA": "true",
     "NEXT_PUBLIC_USE_KV_DATA": "true",
+    "SENTRY_ENVIRONMENT": "staging",
     "GITHUB_REPO_OWNER": "rad-vrc",
     "GITHUB_REPO_NAME": "Akyodex",
-    "GITHUB_BRANCH": "main",
+    "GITHUB_BRANCH": "workers-staging-data",
     "GITHUB_CSV_PATH_JA": "data/akyo-data-ja.csv"
   },
   "kv_namespaces": [
     {
       "binding": "AKYO_KV",
-      "id": "42b435eff5ca4de9a33d70faff6c6abc"
+      "id": "6ba03820093a45bf8c69c65c5b0b399f"
     }
   ],
   "r2_buckets": [
@@ -48,7 +50,7 @@
     },
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "akyo-images"
+      "bucket_name": "akyodex-workers-staging-cache"
     }
   ],
   "d1_databases": [

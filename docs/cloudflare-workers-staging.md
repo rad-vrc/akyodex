@@ -11,16 +11,26 @@ rollback target throughout this stage.
 - Entry point: `cloudflare-worker.ts`, which delegates to the generated
   `.open-next/worker.js`
 - Static assets: `.open-next/assets`
-- Application data: existing `AKYO_KV` and `akyo-images` R2 bucket
-- OpenNext incremental cache: regional long-lived cache backed by R2
+- Application data: dedicated `akyodex-workers-staging-kv`; public avatar
+  images remain read-only through `images.akyodex.com`
+- Admin GitHub writes: dedicated `workers-staging-data` branch
+- OpenNext incremental cache: regional long-lived cache backed by the dedicated
+  `akyodex-workers-staging-cache` R2 bucket
 - OpenNext tag cache: dedicated D1 database `akyodex-next-tag-cache`
 - OpenNext revalidation queue: `DOQueueHandler` Durable Object
 - Additional bindings: self-reference service binding, Images binding, and
   `CF_VERSION_METADATA`
 
 The Pages build keeps its existing R2/KV/direct-queue configuration. Setting
-`CLOUDFLARE_DEPLOY_TARGET=workers` selects the Workers-only D1 and Durable
-Object configuration.
+`CLOUDFLARE_DEPLOY_TARGET=workers` during the build and as a Worker runtime
+binding selects the Workers-only D1 and Durable Object configuration. Both are
+required because the generated OpenNext configuration resolves the adapters at
+request time.
+
+The browser and Pages server keep `@sentry/nextjs`. The Workers entry point is
+wrapped with `@sentry/cloudflare`, while the Node-oriented Next.js server
+instrumentation is skipped only for the Workers target. This avoids loading
+Node OpenTelemetry hooks in workerd and keeps Worker exceptions observable.
 
 HTML is not stored in `caches.default` during this stage. The application still
 uses request-specific CSP nonces, so sharing a cached HTML response between
@@ -72,8 +82,13 @@ repository data used by the admin workflow.
 After a successful Linux build, deploy the generated output with:
 
 ```bash
-npx opennextjs-cloudflare deploy --config wrangler.workers.jsonc
+npm run deploy:workers:built
 ```
+
+The deploy command keeps `CLOUDFLARE_DEPLOY_TARGET=workers` set while OpenNext
+populates caches and invokes Wrangler. Running the OpenNext deploy command
+without that target would reload the Pages direct-queue fallback and emit an
+incorrect production-queue warning.
 
 Verify at least the following before production routing is considered:
 
@@ -84,7 +99,7 @@ Verify at least the following before production routing is considered:
 4. Catalog preload is coalesced with the fetch, and catalog loading, search,
    filters, shared `?id=` links, favorites, and the detail modal work.
 5. Admin login and a reversible CRUD operation work after staging secrets are
-   configured.
+   configured. Confirm that the commit lands only on `workers-staging-data`.
 6. Service Worker, Sentry reporting, CSP, AI UI, KV, R2, D1, and Durable Object
    logs show no regression.
 
