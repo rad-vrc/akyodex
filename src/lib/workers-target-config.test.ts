@@ -63,6 +63,14 @@ test('Pages PR previews are deployed independently without unfreezing Pages prod
   assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
   assert.doesNotMatch(workflow, /pull_request_target:/);
   assert.match(workflow, /npm run build/);
+  assert.match(
+    workflow,
+    /CLOUDFLARE_PAGES_PREVIEW_PROJECT \|\| 'akyodex-pr-preview'/
+  );
+  assert.doesNotMatch(
+    workflow,
+    /CF_PAGES_PROJECT: \$\{\{ vars\.CLOUDFLARE_PAGES_PROJECT \|\| 'akyodex' \}\}/
+  );
   assert.match(workflow, /test -f \.open-next\/_worker\.js/);
   assert.match(workflow, /wrangler pages deploy \.open-next/);
   assert.match(workflow, /--branch="pr-\$\{PR_NUMBER\}"/);

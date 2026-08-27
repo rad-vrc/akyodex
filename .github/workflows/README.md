@@ -61,6 +61,7 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 ### 何をしているか
 
 - non-draftかつ同一リポジトリのPRだけを対象にし、forkとDependabotではSecretsを使用しません。
+- 公開Previewは専用Pages project `akyodex-pr-preview`へデプロイし、Production/rollback用の`akyodex`から分離します。
 - `npm run build`で`prepare-cloudflare-pages.js`まで実行し、Pages用`_worker.js`を生成します。
 - `wrangler pages deploy --branch=pr-N --commit-hash=SHA`で明示的にPreviewへアップロードします。
 - `pages deployment list --json`からbranchとSHAが一致するデプロイを探し、Cloudflare採番の不変URLを取得します。
@@ -73,6 +74,7 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 ### 責務分担
 
 - Pages Previewは画面、検索、フィルター、モーダル、公開読み取りAPIの独立レビュー用です。
+- `akyodex-pr-preview`のProduction branchは実在しない`__unused__`で、`pr-N`は必ずPreview deploymentになります。
 - `wrangler.toml`の`env.preview`は専用KV/R2へ接続し、本番データから分離します。
 - `PAGES_PREVIEW_READ_ONLY=true`のWorker入口が`GET`/`HEAD`/`OPTIONS`以外をOpenNext到達前に`403`で拒否します。
 - Preview応答には`X-Robots-Tag: noindex, nofollow, noarchive`を付与します。
@@ -100,7 +102,7 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 
 Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認してください。
 
-1. `CLOUDFLARE_PAGES_PROJECT` が実際の Pages project 名と一致しているか。
+1. `CLOUDFLARE_PAGES_PREVIEW_PROJECT` が実際の Pages project 名と一致しているか（既定値は`akyodex-pr-preview`）。
 2. `preview_deployment_setting=none`は維持し、Actionsログで直接アップロード自体が成功しているか。
 3. Cloudflare Pages側で`pr-N`と対象commitのPreview deploymentが作成されているか。
 4. `npm run build`後に`.open-next/_worker.js`が生成されているか。
@@ -246,6 +248,7 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 | `CLOUDFLARE_API_TOKEN` | Deploy / Preview Gate | Yes |
 | `CLOUDFLARE_ACCOUNT_ID` | Deploy / Preview Gate | Yes |
 | `CLOUDFLARE_PAGES_PROJECT` | Deploy / Preview Gate の project 解決 | Recommended |
+| `CLOUDFLARE_PAGES_PREVIEW_PROJECT` | 公開read-only PR Preview project の解決 | Recommended |
 | `NEXT_PUBLIC_SITE_URL` | build-time fallback | Optional |
 | `NEXT_PUBLIC_R2_BASE` | build-time fallback | Optional |
 | `DEFAULT_ADMIN_PASSWORD_HASH` | legacy build fallback | Optional |
@@ -279,7 +282,7 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 
 ### Pages PR Preview がtimeout / failedになった
 
-1. `CLOUDFLARE_PAGES_PROJECT` の値を確認する
+1. `CLOUDFLARE_PAGES_PREVIEW_PROJECT` の値を確認する（既定値は`akyodex-pr-preview`）
 2. Cloudflare PagesのPreview deployment一覧で`pr-N`と対象commitを探す
 3. `preview_deployment_setting=none`が直接アップロードを拒否していないかActionsログを確認する
 4. 不変URLの`/zukan`、完全カタログAPI、画像APIを個別に確認する
