@@ -98,7 +98,7 @@ jobs:
             fi
 
             local deployed_tag
-            deployed_tag="$(awk 'BEGIN { IGNORECASE=1 } /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+            deployed_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
             if [ "${deployed_tag}" != "${GITHUB_SHA}" ]; then
               echo "${path} returned Worker tag '${deployed_tag}', expected '${GITHUB_SHA}'."
               return 1
@@ -106,7 +106,7 @@ jobs:
 
             if [ -n "${expected_content_type}" ]; then
               local content_type
-              content_type="$(awk 'BEGIN { IGNORECASE=1 } /^content-type:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+              content_type="$(awk 'tolower($0) ~ /^content-type:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
               if [[ "${content_type}" != "${expected_content_type}"* ]]; then
                 echo "${path} returned Content-Type '${content_type}', expected '${expected_content_type}'."
                 return 1
