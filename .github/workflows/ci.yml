@@ -108,6 +108,7 @@ jobs:
         with:
           name: build-output
           path: .open-next/
+          include-hidden-files: true
           retention-days: 7
 
   workers-build-validation:
@@ -158,6 +159,7 @@ jobs:
         with:
           name: workers-build-output
           path: .open-next/
+          include-hidden-files: true
           retention-days: 7
           
   # Job 3: Security Scanning
