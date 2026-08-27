@@ -9,7 +9,7 @@
     "dev": "npm run catalog:snapshots && next dev --turbopack",
     "next:build": "npm run catalog:snapshots && next build",
     "next:build:opennext": "npm run catalog:snapshots && next build && node scripts/fix-opennext-instrumentation.js",
-    "build": "npm run catalog:snapshots && opennextjs-cloudflare build && node scripts/prepare-cloudflare-pages.js",
+    "build": "npm run catalog:snapshots && cross-env CLOUDFLARE_DEPLOY_TARGET=pages opennextjs-cloudflare build && node scripts/prepare-cloudflare-pages.js",
     "build:workers": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare build --config wrangler.workers.jsonc",
     "preview:workers": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare preview --config wrangler.workers.jsonc",
     "deploy:workers:built": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare deploy --config wrangler.workers.jsonc",
