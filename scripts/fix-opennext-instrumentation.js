@@ -36,7 +36,7 @@ function mirrorIfMissing(sourcePath, targetPath, label) {
     console.log(`[fix-opennext-instrumentation] copied: ${label}`);
   } catch (error) {
     console.error(
-      `[fix-opennext-instrumentation] failed to copy ${fileName}: ${sourcePath} -> ${targetPath}`
+      `[fix-opennext-instrumentation] failed to copy ${label}: ${sourcePath} -> ${targetPath}`
     );
     console.error(error instanceof Error ? error.stack ?? error.message : error);
     process.exit(1);

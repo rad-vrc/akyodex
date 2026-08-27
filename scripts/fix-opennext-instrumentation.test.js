@@ -39,3 +39,13 @@ test('mirrors local files traced by the instrumentation NFT manifest', async () 
     await rm(fixtureRoot, { recursive: true, force: true });
   }
 });
+
+test('copy failures identify the mirror label without referencing loop-local state', async () => {
+  const script = await readFile(
+    path.join(process.cwd(), 'scripts', 'fix-opennext-instrumentation.js'),
+    'utf8'
+  );
+
+  assert.match(script, /failed to copy \$\{label\}/);
+  assert.doesNotMatch(script, /failed to copy \$\{fileName\}/);
+});
