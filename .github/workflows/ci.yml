@@ -128,9 +128,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify generated Workers binding types
-        run: npm run check:types:workers
-
       - name: Build for Cloudflare Workers
         run: npm run build:workers
         env:
@@ -142,6 +139,9 @@ jobs:
           SENTRY_ORG: ${{ vars.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Verify generated Workers binding types
+        run: npm run check:types:workers
 
       - name: Verify Workers build output
         run: |

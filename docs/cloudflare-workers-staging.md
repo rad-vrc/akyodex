@@ -34,10 +34,15 @@ build itself succeeds.
 
 ```bash
 npm ci
-npm run check:types:workers
 npm run build:workers
+npm run check:types:workers
 npm run dry-run:workers
 ```
+
+The type check intentionally runs after the OpenNext build. The typed custom
+entry point re-exports `.open-next/worker.js`, so a clean checkout must generate
+that module before Wrangler can resolve the Durable Object and self-service
+binding types deterministically.
 
 The `Workers Build Validation` GitHub Actions job runs these commands and keeps
 the `.open-next` output as the `workers-build-output` artifact for seven days.
