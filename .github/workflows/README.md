@@ -66,6 +66,9 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 - `pages deployment list --json`からbranchとSHAが一致するデプロイを探し、Cloudflare採番の不変URLを取得します。
 - `/zukan`、完全カタログAPI、AVIFアバター画像を不変URLに対して検証します。
 - PRコメントには不変URLと`pr-N`エイリアスの両方を掲載します。
+- Cloudflare Freeの月500デプロイ枠に対して、workflow 1実行を1デプロイとして保守的に管理します。同一PRへの追加pushも新しい不変デプロイを1件作成します。
+
+`preview_deployment_setting=none`はGit連携の自動Preview buildを停止しますが、`wrangler pages deploy --branch=pr-N`による直接アップロードは利用できます。2026-08-27に実プロジェクトで、無効設定を変更せず2回連続で成功することを確認しています。
 
 ### 責務分担
 
@@ -95,7 +98,7 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認してください。
 
 1. `CLOUDFLARE_PAGES_PROJECT` が実際の Pages project 名と一致しているか。
-2. `preview_deployment_setting=none`のまま直接アップロードが許可されているか。
+2. `preview_deployment_setting=none`は維持し、Actionsログで直接アップロード自体が成功しているか。
 3. Cloudflare Pages側で`pr-N`と対象commitのPreview deploymentが作成されているか。
 4. `npm run build`後に`.open-next/_worker.js`が生成されているか。
 5. forkまたはDependabot PRではないか。該当する場合はskipが正常です。
