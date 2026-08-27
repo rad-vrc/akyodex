@@ -14,7 +14,7 @@
     "preview:workers": "cross-env CLOUDFLARE_DEPLOY_TARGET=workers opennextjs-cloudflare preview --config wrangler.workers.jsonc",
     "deploy:workers:staging": "npm run build:workers && opennextjs-cloudflare deploy --config wrangler.workers.jsonc",
     "dry-run:workers": "wrangler deploy --dry-run --config wrangler.workers.jsonc",
-    "types:workers": "wrangler types cloudflare-env.d.ts --config wrangler.workers.jsonc --include-runtime false --env-interface CloudflareWorkerBindings --strict-vars false",
+    "types:workers": "wrangler types cloudflare-env.d.ts --config wrangler.workers.jsonc --env-file wrangler-types.env --include-runtime false --env-interface CloudflareWorkerBindings --strict-vars false",
     "check:types:workers": "npm run types:workers -- --check",
     "start": "next start",
     "lint": "eslint",
