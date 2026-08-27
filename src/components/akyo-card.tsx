@@ -52,7 +52,7 @@ export function shouldBypassImageOptimization(
 }
 
 export function getCatalogCardImageRequestWidth(entryType: string): number {
-  return entryType === "world" ? 512 : 384;
+  return entryType === "world" ? 512 : 768;
 }
 
 export function shouldPrioritizeCatalogCardImage(index: number): boolean {
@@ -72,7 +72,7 @@ export function getCatalogCardPrimaryImageSrc(
 export function getCatalogAvatarCardImageSrc(
   akyo: Pick<AkyoData, "id">,
 ): string {
-  return `/api/avatar-image?id=${encodeURIComponent(akyo.id)}&w=384`;
+  return `/api/avatar-image?id=${encodeURIComponent(akyo.id)}&w=768`;
 }
 
 /**
@@ -201,7 +201,7 @@ export function AkyoCard({
                 setImageSrc(placeholderImageSrc);
               }
             } else {
-              // アバター: 384px変換API → R2原画像 → placeholder
+              // アバター: 768px変換API → R2原画像 → placeholder
               if (imageSrc === initialImageSrc) {
                 setImageSrc(directImageSrc);
                 return;

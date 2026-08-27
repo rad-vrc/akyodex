@@ -96,7 +96,7 @@ test.describe("Complete catalog loading", () => {
     const firstCardImage = page.locator("article.akyo-card img").first();
     await expect(firstCardImage).toHaveAttribute(
       "src",
-      /\/api\/avatar-image\?id=0001&w=384$/,
+      /\/api\/avatar-image\?id=0001&w=768$/,
     );
     await expect
       .poll(() =>

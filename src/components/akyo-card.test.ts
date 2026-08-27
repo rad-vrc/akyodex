@@ -35,8 +35,8 @@ test("shouldBypassImageOptimization bypasses local API, placeholder, and direct 
   );
 });
 
-test("getCatalogCardImageRequestWidth keeps avatars at 384 and requests worlds at 512", () => {
-  assert.equal(getCatalogCardImageRequestWidth("avatar"), 384);
+test("getCatalogCardImageRequestWidth requests avatars at 768 and worlds at 512", () => {
+  assert.equal(getCatalogCardImageRequestWidth("avatar"), 768);
   assert.equal(getCatalogCardImageRequestWidth("world"), 512);
 });
 
@@ -56,10 +56,10 @@ test("getCatalogCardPrimaryImageSrc uses the stable Akyo id instead of displaySe
   );
 });
 
-test("getCatalogAvatarCardImageSrc requests the fixed 384px transformation by stable id", () => {
+test("getCatalogAvatarCardImageSrc requests the fixed 768px transformation by stable id", () => {
   assert.equal(typeof getCatalogAvatarCardImageSrc, "function");
   assert.equal(
     getCatalogAvatarCardImageSrc?.({ id: "0826" }),
-    "/api/avatar-image?id=0826&w=384",
+    "/api/avatar-image?id=0826&w=768",
   );
 });

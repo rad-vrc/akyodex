@@ -1,4 +1,4 @@
-const AVATAR_CARD_IMAGE_WIDTH = 384;
+const AVATAR_CARD_IMAGE_WIDTH = 768;
 const AVATAR_CARD_IMAGE_FETCH_TIMEOUT_MS = 5000;
 const AVATAR_CARD_IMAGE_CACHE_CONTROL =
   "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000";
@@ -150,6 +150,8 @@ export function getAvatarCardImageResponseHeaders(
   contentType: string,
   transformed: boolean,
 ): Headers {
+  // A future CDN Cache Rule must normalize Accept into the cache key. Caching
+  // this negotiated URL without that rule can serve AVIF to unsupported clients.
   return new Headers({
     "Content-Type": contentType,
     "Cache-Control": AVATAR_CARD_IMAGE_CACHE_CONTROL,

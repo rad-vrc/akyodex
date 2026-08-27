@@ -39,15 +39,16 @@ const avatarCardImageModule = (
   avatarCardImageModuleNs
 ) as AvatarCardImageModule;
 
-test("only the 384px card request is eligible for transformation", () => {
+test("only the 768px card request is eligible for transformation", () => {
   const shouldTransform = avatarCardImageModule.shouldTransformAvatarCardImage;
   assert.equal(typeof shouldTransform, "function");
   if (!shouldTransform) return;
 
-  assert.equal(shouldTransform({ width: 384, bypassCloudflare: false }), true);
-  assert.equal(shouldTransform({ width: 383, bypassCloudflare: false }), false);
+  assert.equal(shouldTransform({ width: 768, bypassCloudflare: false }), true);
+  assert.equal(shouldTransform({ width: 384, bypassCloudflare: false }), false);
+  assert.equal(shouldTransform({ width: 767, bypassCloudflare: false }), false);
   assert.equal(shouldTransform({ width: 800, bypassCloudflare: false }), false);
-  assert.equal(shouldTransform({ width: 384, bypassCloudflare: true }), false);
+  assert.equal(shouldTransform({ width: 768, bypassCloudflare: true }), false);
 });
 
 test("prefers AVIF, then WebP, and leaves other clients untransformed", () => {
@@ -64,7 +65,7 @@ test("prefers AVIF, then WebP, and leaves other clients untransformed", () => {
   assert.equal(getPreferredFormat("image/png,image/*,*/*"), null);
 });
 
-test("uses one fixed 384px Cloudflare transformation", () => {
+test("uses one fixed 768px Cloudflare transformation", () => {
   const createFetchInit = avatarCardImageModule.createAvatarCardImageFetchInit;
   assert.equal(typeof createFetchInit, "function");
   if (!createFetchInit) return;
@@ -72,7 +73,7 @@ test("uses one fixed 384px Cloudflare transformation", () => {
   const signal = new AbortController().signal;
   const transformedInit = createFetchInit({ format: "avif", signal });
   assert.deepEqual(transformedInit.cf?.image, {
-    width: 384,
+    width: 768,
     fit: "scale-down",
     quality: 80,
     format: "avif",
@@ -94,7 +95,7 @@ test("returns a confirmed transformed response without refetching", async () => 
     return new Response("avif", {
       headers: {
         "Content-Type": "image/avif",
-        "Cf-Resized": "quality=80,width=384,format=avif",
+        "Cf-Resized": "quality=80,width=768,format=avif",
       },
     });
   };
@@ -107,7 +108,7 @@ test("returns a confirmed transformed response without refetching", async () => 
 
   assert.equal(result.transformed, true);
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].cf?.image?.width, 384);
+  assert.equal(calls[0].cf?.image?.width, 768);
 });
 
 test("refetches the original when Cloudflare silently ignores the transform", async () => {
