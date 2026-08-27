@@ -161,12 +161,36 @@ jobs:
             fi
           }
 
+          verify_preview_guards() {
+            if ! awk 'tolower($0) ~ /^x-robots-tag:.*noindex/ { found=1 } END { exit found ? 0 : 1 }' /tmp/zukan-headers; then
+              echo "/zukan did not return the required x-robots-tag noindex policy."
+              return 1
+            fi
+
+            local status
+            status="$(curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --request POST \
+              --header "Content-Type: application/json" \
+              --data '{}' \
+              --output /tmp/admin-login-body \
+              --write-out "%{http_code}" \
+              "${DEPLOYMENT_URL}/api/admin/login" || echo "000")"
+
+            if [ "${status}" != "403" ]; then
+              echo "/api/admin/login returned HTTP ${status}; expected HTTP 403 from the read-only preview guard."
+              return 1
+            fi
+          }
+
           for attempt in $(seq 1 "${max_attempts}"); do
             if verify_response "/zukan" "text/html" "text/html" /tmp/zukan-headers /tmp/zukan-body && \
               verify_response "/api/catalog/ja" "application/json" "application/json" /tmp/catalog-headers /tmp/catalog-body && \
               verify_response "/api/avatar-image?id=0001&w=768" "image/avif,image/webp,image/*,*/*" "image/avif" /tmp/avatar-headers /tmp/avatar-body && \
               node -e 'const payload = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); if (payload.schemaVersion !== 1 || !Array.isArray(payload.data) || payload.count !== payload.data.length || payload.count === 0) process.exit(1);' /tmp/catalog-body && \
-              awk 'tolower($0) ~ /^x-image-transformed:[[:space:]]*true\r?$/ { found=1 } END { exit found ? 0 : 1 }' /tmp/avatar-headers; then
+              awk 'tolower($0) ~ /^x-image-transformed:[[:space:]]*true\r?$/ { found=1 } END { exit found ? 0 : 1 }' /tmp/avatar-headers && \
+              verify_preview_guards; then
               echo "Pages PR preview is healthy at ${DEPLOYMENT_URL}."
               exit 0
             fi
@@ -196,7 +220,7 @@ jobs:
             echo "- Immutable URL: ${DEPLOYMENT_URL:-unavailable}"
             echo "- PR alias: ${DEPLOYMENT_ALIAS_URL:-unavailable}"
             echo ""
-            echo "> Pages Preview is read-only. Do not sign in to /admin or run any write, migration, upload, or cache mutation operation."
+            echo "> Pages Preview is mechanically read-only: mutating HTTP methods are rejected before OpenNext, and Preview uses dedicated KV/R2 resources."
             echo "> Workers-specific behavior and server-side Sentry must be verified at https://staging.akyodex.com."
           } >> "${GITHUB_STEP_SUMMARY}"
 
@@ -222,7 +246,7 @@ jobs:
                   `- PR alias: ${process.env.DEPLOYMENT_ALIAS_URL}`,
                   `- Deployment ID: \`${process.env.DEPLOYMENT_ID}\``,
                   '',
-                  '> **Read-only review environment:** do not sign in to `/admin` or run write, migration, upload, or cache mutation operations.',
+                  '> **Mechanically read-only review environment:** mutating HTTP methods are rejected before OpenNext, and Preview uses dedicated KV/R2 resources.',
                   '> Durable Objects, service bindings, Workers caches, `cf.image`, Workers Sentry, and final performance must be verified at https://staging.akyodex.com.',
                   '> Pages server-side Sentry is disabled, so a clean Pages preview is not proof that server errors are absent.'
                 ].join('\n')

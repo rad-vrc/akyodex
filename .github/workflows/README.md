@@ -64,16 +64,19 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 - `npm run build`で`prepare-cloudflare-pages.js`まで実行し、Pages用`_worker.js`を生成します。
 - `wrangler pages deploy --branch=pr-N --commit-hash=SHA`で明示的にPreviewへアップロードします。
 - `pages deployment list --json`からbranchとSHAが一致するデプロイを探し、Cloudflare採番の不変URLを取得します。
-- `/zukan`、完全カタログAPI、AVIFアバター画像を不変URLに対して検証します。
+- `/zukan`、完全カタログAPI、AVIFアバター画像、`noindex`、書き込み拒否を不変URLに対して検証します。
 - PRコメントには不変URLと`pr-N`エイリアスの両方を掲載します。
-- Cloudflare Freeの月500デプロイ枠に対して、workflow 1実行を1デプロイとして保守的に管理します。同一PRへの追加pushも新しい不変デプロイを1件作成します。
+- Cloudflare Freeの公式上限は月500 **builds** です。このworkflowはGitHub Actionsでビルドした成果物を直接アップロードするため、そのbuild枠を消費するかは公式資料だけでは確定できません。Usageを監視しつつ、同一PRへの追加pushごとに新しい不変デプロイが1件作成されることは前提にします。
 
 `preview_deployment_setting=none`はGit連携の自動Preview buildを停止しますが、`wrangler pages deploy --branch=pr-N`による直接アップロードは利用できます。2026-08-27に実プロジェクトで、無効設定を変更せず2回連続で成功することを確認しています。
 
 ### 責務分担
 
 - Pages Previewは画面、検索、フィルター、モーダル、公開読み取りAPIの独立レビュー用です。
-- Pages Previewでは`/admin`へログインせず、書き込み、移行、アップロード、キャッシュ変更を行いません。
+- `wrangler.toml`の`env.preview`は専用KV/R2へ接続し、本番データから分離します。
+- `PAGES_PREVIEW_READ_ONLY=true`のWorker入口が`GET`/`HEAD`/`OPTIONS`以外をOpenNext到達前に`403`で拒否します。
+- Preview応答には`X-Robots-Tag: noindex, nofollow, noarchive`を付与します。
+- Pages Previewでは`/admin`へログインせず、書き込み、移行、アップロード、キャッシュ変更を行いません。HTTPガードとリソース分離に加えた運用上の第三防御です。
 - Durable Object、Service Binding、Workers cache、`cf.image`、Workers Sentry、性能は共有`staging.akyodex.com`を正とします。
 - Pages側のサーバーSentryは無効なので、Pages Previewの成功だけではサーバーエラー不在を保証しません。
 - `akyodex.pages.dev`は`pages-rollback`に固定したロールバック先であり、PR Previewとは別です。

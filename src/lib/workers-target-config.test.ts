@@ -49,6 +49,11 @@ test('Pages PR previews are deployed independently without unfreezing Pages prod
     path.join(process.cwd(), '.github', 'workflows', 'deploy-cloudflare-pages-preview.yml'),
     'utf8'
   );
+  const pagesConfig = await readFile(path.join(process.cwd(), 'wrangler.toml'), 'utf8');
+  const prepareScript = await readFile(
+    path.join(process.cwd(), 'scripts', 'prepare-cloudflare-pages.js'),
+    'utf8'
+  );
 
   assert.match(workflow, /cloudflare-pages-preview-\$\{\{ github\.event\.pull_request\.number \}\}/);
   assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
@@ -62,6 +67,15 @@ test('Pages PR previews are deployed independently without unfreezing Pages prod
   assert.match(workflow, /find-pages-preview-deployment\.js/);
   assert.match(workflow, /actions\/github-script@v9/);
   assert.match(workflow, /github\.paginate\(github\.rest\.issues\.listComments/);
-  assert.match(workflow, /Pages Preview is read-only/);
+  assert.match(workflow, /Pages Preview is mechanically read-only/);
   assert.match(workflow, /staging\.akyodex\.com/);
+  assert.match(workflow, /x-robots-tag/);
+  assert.match(workflow, /\/api\/admin\/login/);
+  assert.match(workflow, /expected HTTP 403/);
+  assert.match(pagesConfig, /\[env\.preview\]/);
+  assert.match(pagesConfig, /PAGES_PREVIEW_READ_ONLY\s*=\s*"true"/);
+  assert.match(pagesConfig, /id\s*=\s*"4bb2a26d80ba4389b8f470c1a4926788"/);
+  assert.match(pagesConfig, /bucket_name\s*=\s*"akyodex-pages-preview-data"/);
+  assert.match(pagesConfig, /bucket_name\s*=\s*"akyodex-pages-preview-cache"/);
+  assert.match(prepareScript, /cloudflare-pages-worker-entry\.mjs/);
 });
