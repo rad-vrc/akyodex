@@ -22,6 +22,8 @@ test('Workers staging CI deploys a tagged version and verifies that exact revisi
 
   assert.match(workflow, /wrangler deploy --config wrangler\.workers\.jsonc --tag "\$\{GITHUB_SHA\}"/);
   assert.match(workflow, /x-akyodex-worker-tag/);
+  assert.match(workflow, /actions\/checkout@v7/);
+  assert.match(workflow, /actions\/setup-node@v7/);
   assert.match(workflow, /tolower\(\$0\)/);
   assert.doesNotMatch(workflow, /IGNORECASE/);
   assert.doesNotMatch(workflow, /grep --ignore-case/);
