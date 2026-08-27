@@ -17,15 +17,20 @@ const openNextDir = path.join(__dirname, '../.open-next');
 const assetsDir = path.join(openNextDir, 'assets');
 const workerSrc = path.join(openNextDir, 'worker.js');
 const workerDest = path.join(openNextDir, '_worker.js');
+const workerEntrySrc = path.join(
+  __dirname,
+  'cloudflare-pages-worker-entry.mjs'
+);
 
 console.log('📦 Preparing OpenNext output for Cloudflare Pages...');
 
-// Copy worker.js to _worker.js
-if (fs.existsSync(workerSrc)) {
-  fs.copyFileSync(workerSrc, workerDest);
-  console.log('✅ Created _worker.js');
+// Keep worker.js as the OpenNext implementation and install the Pages entry
+// wrapper as _worker.js. Preview-only restrictions are selected at runtime.
+if (fs.existsSync(workerSrc) && fs.existsSync(workerEntrySrc)) {
+  fs.copyFileSync(workerEntrySrc, workerDest);
+  console.log('✅ Created guarded _worker.js');
 } else {
-  console.error('❌ worker.js not found!');
+  console.error('❌ worker.js or the Pages worker entry was not found!');
   process.exit(1);
 }
 

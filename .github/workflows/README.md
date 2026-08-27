@@ -19,8 +19,10 @@
 | ワークフロー | ファイル | トリガー | 主な役割 | 補足 |
 | ------------- | --------- | --------- | --------- | ---- |
 | CI | `ci.yml` | PR / push (`main`, `develop`) | 型チェック、Cloudflare Pages ビルド検証、Security Scan | ESLint と Dify CSP hash は advisory |
-| Deploy to Cloudflare Pages | `deploy-cloudflare-pages.yml` | `main` push / manual | 本番または手動環境への Pages デプロイ | URL ヘルスチェック付き |
-| Cloudflare Pages Preview Gate | `cloudflare-pages-preview-gate.yml` | non-draft PR (`main`, `develop`) | PR の preview 成否をゲート | Cloudflare API + GitHub check-run fallback |
+| Deploy Workers staging | `deploy-cloudflare-workers-staging.yml` | non-draft PR (`main`) | 最新PRを本番相当の共有Workers環境へデプロイ | `X-Akyodex-Worker-Tag`でSHAを照合 |
+| Deploy Pages PR Preview | `deploy-cloudflare-pages-preview.yml` | non-draft same-repository PR (`main`) | PRごとの独立した読み取り専用Previewを作成 | Dependabotとfork PRは対象外 |
+| Verify Pages rollback | `cloudflare-pages-preview-gate.yml` | non-draft PR (`main`) / manual | 固定したPagesロールバック先の健全性確認 | Previewの作成は行わない |
+| Deploy Pages rollback | `deploy-cloudflare-pages.yml` | `pages-rollback`からmanual | 既知の正常なPages版を手動再デプロイ | `main`からは実行不可 |
 | Conflict Check | `conflict-check.yml` | PR to `main`, push to `main` | `main` との競合をコメントで通知 | 競合解消時は古いコメントを削除 |
 | Sync JSON Data from CSV | `sync-json-data.yml` | `main` push (CSV変更時) / manual | CSV→JSON 変換、R2 アップロード、ISR 再検証 | GitHub へ自動コミットも行う |
 | Weekly Security Audit | `security-audit.yml` | weekly / manual | `npm audit`、Snyk、CodeQL、Issue 作成 | Snyk は token がある場合のみ有効 |
@@ -32,10 +34,12 @@
 
 ### 推奨 Required Checks
 
-Branch protection で最低限 Required にしたいのは次の 2 つです。
+Branch protection で最低限 Required にしたいのは次のチェックです。
 
 - `CI - Continuous Integration / Build Validation`
-- `Cloudflare Pages Preview Gate / Verify Cloudflare Pages Preview`
+- `Deploy Cloudflare Workers Staging / Deploy and verify Workers staging`
+- `Deploy Cloudflare Pages PR Preview / Deploy and verify Pages PR preview`
+- `Verify Cloudflare Pages Rollback / Verify Cloudflare Pages rollback`
 
 `Conflict Check` は有用ですが、補助的なコメント通知として扱うのが実運用に合っています。
 
@@ -45,63 +49,74 @@ Branch protection で最低限 Required にしたいのは次の 2 つです。
 2. `git push` する。
 3. PowerShell では repo 既定の wrapper が push 後に PR 状態を確認する。
 4. それ以外の shell では `npm run push:check-pr -- -u origin HEAD` を使うと push と PR 状態確認をまとめて実行できる。
-5. PR を開くと `CI` と `Cloudflare Pages Preview Gate` が走る。
-6. `main` にマージされると `Deploy to Cloudflare Pages` が走る。
-7. CSV を更新した commit が `main` に入ると `Sync JSON Data from CSV` が追加で走る。
+5. PR を開くと `CI`、共有Workers staging、PR別Pages Preview、Pages rollback確認が走る。
+6. Pages Previewで表示を確認し、Workers固有機能は`staging.akyodex.com`で確認する。
+7. `main`へのマージではPages本番を更新しない。Workers本番切替前はPagesをロールバック先として固定する。
+8. CSV を更新したcommitが`main`に入ると`Sync JSON Data from CSV`が追加で走る。
 
-## Cloudflare Pages Preview Gate
+## Cloudflare Pages PR Preview
 
-**ファイル**: `cloudflare-pages-preview-gate.yml`
+**ファイル**: `deploy-cloudflare-pages-preview.yml`
 
 ### 何をしているか
 
-- non-draft PR が `main` または `develop` を向いているときだけ実行します。
-- fork PR では Cloudflare secrets にアクセスできないため、明示的に skip します。
-- `vars.CLOUDFLARE_PAGES_PROJECT` を第 1 候補、`akyodex` を fallback 候補として preview deployment を探します。
-- Cloudflare API の deployment metadata から `PR_HEAD_SHA` と branch を一致させて preview を特定します。
-- Cloudflare 側 metadata に commit 情報が載らない場合は、GitHub の check run `Cloudflare Pages` を fallback として参照します。
+- non-draftかつ同一リポジトリのPRだけを対象にし、forkとDependabotではSecretsを使用しません。
+- 公開Previewは専用Pages project `akyodex-pr-preview`へデプロイし、Production/rollback用の`akyodex`から分離します。
+- `npm run build`で`prepare-cloudflare-pages.js`まで実行し、Pages用`_worker.js`を生成します。
+- `wrangler pages deploy --branch=pr-N --commit-hash=SHA`で明示的にPreviewへアップロードします。
+- `pages deployment list --json`からbranchとSHAが一致するデプロイを探し、Cloudflare採番の不変URLを取得します。
+- `/zukan`、完全カタログAPI、AVIFアバター画像、`noindex`、書き込み拒否を不変URLに対して検証します。
+- PRコメントには不変URLと`pr-N`エイリアスの両方を掲載します。
+- Cloudflare Freeの公式上限は月500 **builds** です。このworkflowはGitHub Actionsでビルドした成果物を直接アップロードするため、そのbuild枠を消費するかは公式資料だけでは確定できません。Usageを監視しつつ、同一PRへの追加pushごとに新しい不変デプロイが1件作成されることは前提にします。
+
+`preview_deployment_setting=none`はGit連携の自動Preview buildを停止しますが、`wrangler pages deploy --branch=pr-N`による直接アップロードは利用できます。2026-08-27に実プロジェクトで、無効設定を変更せず2回連続で成功することを確認しています。
 
 ### 責務分担
 
-- PR preview の source of truth は Cloudflare Pages の Git-connected preview deployment です。
-- この workflow 自体は preview を作らず、出来上がった preview の成否を待って判定します。
-- production/manual deploy の source of truth は `deploy-cloudflare-pages.yml` の `wrangler pages deploy` です。
+- Pages Previewは画面、検索、フィルター、モーダル、公開読み取りAPIの独立レビュー用です。
+- `akyodex-pr-preview`のProduction branchは実在しない`__unused__`で、`pr-N`は必ずPreview deploymentになります。
+- `wrangler.toml`の`env.preview`は専用KV/R2へ接続し、本番データから分離します。
+- `PAGES_PREVIEW_READ_ONLY=true`のWorker入口が`GET`/`HEAD`/`OPTIONS`以外をOpenNext到達前に`403`で拒否します。
+- Preview応答には`X-Robots-Tag: noindex, nofollow, noarchive`を付与します。
+- Pages Previewでは`/admin`へログインせず、書き込み、移行、アップロード、キャッシュ変更を行いません。HTTPガードとリソース分離に加えた運用上の第三防御です。
+- Durable Object、Service Binding、Workers cache、`cf.image`、Workers Sentry、性能は共有`staging.akyodex.com`を正とします。
+- Pages側のサーバーSentryは無効なので、Pages Previewの成功だけではサーバーエラー不在を保証しません。
+- `akyodex.pages.dev`は`pages-rollback`に固定したロールバック先であり、PR Previewとは別です。
 
 ### 待機ポリシー
 
-- 最大 36 回ポーリング
-- 前半は 5 秒間隔、中盤は 10 秒間隔、後半は 20 秒間隔
-- job 自体の timeout は 15 分
+- デプロイメタデータは最大12回、5秒間隔で検索します。
+- runtime healthも最大12回、5秒間隔で確認します。
+- job全体のtimeoutは25分です。
 
 ### 成功時の見え方
 
-- Step Summary に deployment ID と preview URL を出力します。
-- Cloudflare API で preview が見つかった場合も、GitHub check-run fallback で成功した場合も success 扱いです。
+- Step SummaryとPRコメントにdeployment ID、不変URL、PR aliasを出力します。
+- PRへの追加pushでは同じ`pr-N`エイリアスが更新され、不変URLはコミットごとに残ります。
 
 ### 失敗時の見え方
 
-- PR に失敗コメントを自動投稿または更新します。
-- コメントには Actions run URL が含まれます。
+- PRコメントを失敗状態へ更新し、Actions run URLを掲載します。
 
 ### Runbook
 
-Preview Gate が失敗または timeout したら、次を上から順に確認してください。
+Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認してください。
 
-1. `CLOUDFLARE_PAGES_PROJECT` が実際の Pages project 名と一致しているか。
-2. Cloudflare Pages 側で対象 commit の preview deployment が作成されているか。
-3. GitHub checks に `Cloudflare Pages` という check run が出ているか。
-4. fork PR ではないか。fork PR なら secrets 非公開のため gate は skip が正常です。
+1. `CLOUDFLARE_PAGES_PREVIEW_PROJECT` が実際の Pages project 名と一致しているか（既定値は`akyodex-pr-preview`）。
+2. `preview_deployment_setting=none`は維持し、Actionsログで直接アップロード自体が成功しているか。
+3. Cloudflare Pages側で`pr-N`と対象commitのPreview deploymentが作成されているか。
+4. `npm run build`後に`.open-next/_worker.js`が生成されているか。
+5. forkまたはDependabot PRではないか。該当する場合はskipが正常です。
 
-## Deploy to Cloudflare Pages
+## Deploy Pages Rollback
 
 **ファイル**: `deploy-cloudflare-pages.yml`
 
 ### トリガー
 
-- `push` to `main`
-- `workflow_dispatch` with `environment=production|staging`
+- `pages-rollback`ブランチからの`workflow_dispatch`
 
-`environment=staging` は GitHub Actions の environment label を切り替えるだけです。Pages project、R2、KV、runtime secrets を分離したい場合は、workflow input とは別に Cloudflare 側の project / binding / secret 設計を分けてください。
+`main`へのpushでは起動せず、`github.ref_name == 'pages-rollback'`のguardを満たさない手動実行もskipします。
 
 ### 実行フロー
 
@@ -109,7 +124,7 @@ Preview Gate が失敗または timeout したら、次を上から順に確認�
 2. `npm ci`
 3. `npm run build`
 4. `.open-next`、`_worker.js`、`_routes.json`、`_next/` の存在を検証
-5. `cloudflare/wrangler-action@v3` で `pages deploy .open-next --project-name=${CF_PAGES_PROJECT}`
+5. `cloudflare/wrangler-action@v3` で `pages deploy .open-next --project-name=${CF_PAGES_PROJECT} --branch=${CF_PAGES_PRODUCTION_BRANCH}`
 6. deployment URL に対して HTTP ヘルスチェック
 7. Step Summary に deploy 結果を記録
 
@@ -132,6 +147,7 @@ Preview Gate が失敗または timeout したら、次を上から順に確認�
 ### 実装上の注意点
 
 - workflow は `CF_PAGES_PROJECT=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'akyodex' }}` を使います。
+- `CF_PAGES_PRODUCTION_BRANCH=${{ vars.CLOUDFLARE_PAGES_PRODUCTION_BRANCH || 'main' }}` を明示し、`pages-rollback`のチェックアウト名がPreview branchとして推測されないようにします。
 - build step では `DEFAULT_ADMIN_PASSWORD_HASH` / `DEFAULT_OWNER_PASSWORD_HASH` / `DEFAULT_JWT_SECRET` 由来の legacy fallback をまだ export しています。
 - ただし runtime code が読むのは `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, `SESSION_SECRET` です。workflow 側の legacy defaults は runtime source of truth ではありません。
 - workflow ファイルには PR コメント step がありますが、現在の trigger は `push` と `workflow_dispatch` のみなので、その step は通常到達しません。
@@ -232,6 +248,7 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 | `CLOUDFLARE_API_TOKEN` | Deploy / Preview Gate | Yes |
 | `CLOUDFLARE_ACCOUNT_ID` | Deploy / Preview Gate | Yes |
 | `CLOUDFLARE_PAGES_PROJECT` | Deploy / Preview Gate の project 解決 | Recommended |
+| `CLOUDFLARE_PAGES_PREVIEW_PROJECT` | 公開read-only PR Preview project の解決 | Recommended |
 | `NEXT_PUBLIC_SITE_URL` | build-time fallback | Optional |
 | `NEXT_PUBLIC_R2_BASE` | build-time fallback | Optional |
 | `DEFAULT_ADMIN_PASSWORD_HASH` | legacy build fallback | Optional |
@@ -257,18 +274,19 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 
 ## トラブルシューティング
 
-### Preview Gate が skip された
+### Pages PR Preview がskipされた
 
-- fork PR か確認してください。
-- fork PR なら `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` が読めないため skip が正常です。
+- fork、Dependabot、Draft PRか確認してください。
+- forkとDependabotでは`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`を使用しないためskipが正常です。
 - fork PR の author が自力で確認できるのは GitHub 上の CI と一般的なアプリ動作までです。Cloudflare preview / secrets 依存の確認は maintainer 側で行う必要があります。
 
-### Preview Gate が timeout / failed した
+### Pages PR Preview がtimeout / failedになった
 
-1. `CLOUDFLARE_PAGES_PROJECT` の値を確認する
-2. Cloudflare Pages の preview deployment 一覧で対象 commit を探す
-3. GitHub checks の `Cloudflare Pages` を確認する
-4. 必要なら rerun する
+1. `CLOUDFLARE_PAGES_PREVIEW_PROJECT` の値を確認する（既定値は`akyodex-pr-preview`）
+2. Cloudflare PagesのPreview deployment一覧で`pr-N`と対象commitを探す
+3. `preview_deployment_setting=none`が直接アップロードを拒否していないかActionsログを確認する
+4. 不変URLの`/zukan`、完全カタログAPI、画像APIを個別に確認する
+5. 必要ならrerunする
 
 ### Deploy workflow が `missing_url` になった
 
@@ -277,10 +295,11 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 
 ### ロールバックしたい
 
-最短経路は、問題を起こした commit を `main` で revert し、`Deploy to Cloudflare Pages` を再度走らせることです。
+Workers本番切替後の最短経路は、`akyodex.com/*`のWorker routeを外し、固定済みPagesへ戻すことです。Pagesを再ビルドする必要がある場合だけ、`pages-rollback`ブランチから`Deploy Cloudflare Pages Rollback`を手動実行します。
 
-- アプリコードの rollback: revert commit を `main` に push する
-- CSV / JSON 変更を含む rollback: revert 後に `sync-json-data.yml` が期待通り `data/akyo-data-*.json` と R2 を戻しているか確認する
+- Worker routeのrollback: routeを外して`akyodex.pages.dev`と同じ固定Pagesへ戻す
+- Workersコードのrollback: WranglerまたはDashboardから既知の正常なWorker versionへ戻す
+- データ変更のrollback: KV、R2、D1、GitHub上のCSV/JSONをコードversionとは別に確認する
 
 ### `npm run push:check-pr` が失敗した
 

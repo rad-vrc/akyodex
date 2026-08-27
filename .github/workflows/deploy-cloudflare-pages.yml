@@ -25,6 +25,7 @@ jobs:
     env:
       # Keep deployment target aligned with preview-gate fallback behavior.
       CF_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'akyodex' }}
+      CF_PAGES_PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PAGES_PRODUCTION_BRANCH || 'main' }}
     
     permissions:
       contents: read
@@ -126,7 +127,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .open-next --project-name=${{ env.CF_PAGES_PROJECT }}
+          command: pages deploy .open-next --project-name=${{ env.CF_PAGES_PROJECT }} --branch=${{ env.CF_PAGES_PRODUCTION_BRANCH }}
 
       - name: Verify deployment health
         id: health_check

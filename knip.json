@@ -7,6 +7,7 @@
     "sw.js",
     "src/**/*.test.ts",
     "scripts/convert-akyo-data.js",
+    "scripts/cloudflare-pages-worker-entry.mjs",
     "scripts/csv-to-json.test.ts",
     "scripts/generate-vectorize-payload.js",
     "scripts/update-categories-en-v3.js",
