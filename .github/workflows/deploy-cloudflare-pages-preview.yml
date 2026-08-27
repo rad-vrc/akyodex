@@ -202,7 +202,7 @@ jobs:
 
       - name: Update PR preview comment
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           JOB_STATUS: ${{ job.status }}
           DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}

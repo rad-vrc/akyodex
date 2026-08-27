@@ -60,6 +60,7 @@ test('Pages PR previews are deployed independently without unfreezing Pages prod
   assert.match(workflow, /--commit-hash="\$\{PR_HEAD_SHA\}"/);
   assert.match(workflow, /pages deployment list/);
   assert.match(workflow, /find-pages-preview-deployment\.js/);
+  assert.match(workflow, /actions\/github-script@v9/);
   assert.match(workflow, /Pages Preview is read-only/);
   assert.match(workflow, /staging\.akyodex\.com/);
 });
