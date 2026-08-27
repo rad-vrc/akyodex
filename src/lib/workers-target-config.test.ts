@@ -61,6 +61,7 @@ test('Pages PR previews are deployed independently without unfreezing Pages prod
   assert.match(workflow, /pages deployment list/);
   assert.match(workflow, /find-pages-preview-deployment\.js/);
   assert.match(workflow, /actions\/github-script@v9/);
+  assert.match(workflow, /github\.paginate\(github\.rest\.issues\.listComments/);
   assert.match(workflow, /Pages Preview is read-only/);
   assert.match(workflow, /staging\.akyodex\.com/);
 });
