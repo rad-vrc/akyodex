@@ -63,7 +63,8 @@ function findPagesPreviewDeployment(deployments, expectedSha, expectedBranch) {
       (deployment) =>
         deployment.environment.toLowerCase() === 'preview' &&
         deployment.branch === expectedBranch &&
-        commitMatches(expectedSha, deployment.source)
+        commitMatches(expectedSha, deployment.source) &&
+        deployment.url.length > 0
     );
 
   if (!match) return undefined;

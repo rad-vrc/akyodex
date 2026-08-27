@@ -54,6 +54,22 @@ test('does not accept a deployment from another branch or commit', () => {
   );
 });
 
+test('ignores matching deployment metadata until its immutable URL is available', () => {
+  assert.equal(
+    findPagesPreviewDeployment(
+      [
+        {
+          ...deployments[0],
+          Deployment: '',
+        },
+      ],
+      'aa9050fd1234567890abcdef1234567890abcdef',
+      'pr-441'
+    ),
+    undefined
+  );
+});
+
 test('rejects deployment URLs outside pages.dev', () => {
   assert.throws(
     () =>
