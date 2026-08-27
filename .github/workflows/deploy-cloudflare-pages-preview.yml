@@ -1,0 +1,261 @@
+name: Deploy Cloudflare Pages PR Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+  deployments: write
+  pull-requests: write
+
+concurrency:
+  group: cloudflare-pages-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-pages-preview:
+    name: Deploy and verify Pages PR preview
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      CF_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'akyodex' }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_R2_BASE: ${{ vars.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com' }}
+      NEXT_PUBLIC_DIFY_CHATBOT_TOKEN: ${{ vars.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.PR_HEAD_SHA }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure preview URLs
+        run: |
+          set -euo pipefail
+          preview_branch="pr-${PR_NUMBER}"
+          preview_alias_url="https://${preview_branch}.${CF_PAGES_PROJECT}.pages.dev"
+          echo "PREVIEW_BRANCH=${preview_branch}" >> "${GITHUB_ENV}"
+          echo "PREVIEW_ALIAS_URL=${preview_alias_url}" >> "${GITHUB_ENV}"
+
+      - name: Verify Cloudflare credentials
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID}"
+          npx wrangler whoami
+
+      - name: Build Cloudflare Pages artifact
+        run: |
+          set -euo pipefail
+          export NEXT_PUBLIC_SITE_URL="${PREVIEW_ALIAS_URL}"
+          export NEXT_PUBLIC_APP_URL="${PREVIEW_ALIAS_URL}"
+          npm run build
+
+      - name: Verify Pages build output
+        run: |
+          set -euo pipefail
+          test -f .open-next/_worker.js
+          test -f .open-next/_routes.json
+          test -d .open-next/_next
+          du -sh .open-next
+
+      - name: Deploy explicit Pages preview
+        run: |
+          set -euo pipefail
+          npx wrangler pages deploy .open-next \
+            --project-name="${CF_PAGES_PROJECT}" \
+            --branch="pr-${PR_NUMBER}" \
+            --commit-hash="${PR_HEAD_SHA}" \
+            --commit-message="GitHub PR #${PR_NUMBER} preview"
+
+      - name: Locate immutable Pages deployment URL
+        id: deployment
+        run: |
+          set -euo pipefail
+          max_attempts=12
+          retry_seconds=5
+
+          for attempt in $(seq 1 "${max_attempts}"); do
+            npx wrangler pages deployment list \
+              --project-name="${CF_PAGES_PROJECT}" \
+              --environment=preview \
+              --json > /tmp/pages-preview-deployments.json
+
+            if node scripts/find-pages-preview-deployment.js \
+              /tmp/pages-preview-deployments.json \
+              "${PR_HEAD_SHA}" \
+              "${PREVIEW_BRANCH}" > /tmp/pages-preview-outputs; then
+              cat /tmp/pages-preview-outputs >> "${GITHUB_OUTPUT}"
+              echo "deployment_alias_url=${PREVIEW_ALIAS_URL}" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              echo "Pages deployment metadata is not available yet (${attempt}/${max_attempts}); retrying."
+              sleep "${retry_seconds}"
+            fi
+          done
+
+          echo "::error::Could not locate a Pages preview matching ${PR_HEAD_SHA} on ${PREVIEW_BRANCH}."
+          exit 1
+
+      - name: Verify immutable Pages preview runtime
+        env:
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}
+        run: |
+          set -euo pipefail
+          max_attempts=12
+          retry_seconds=5
+
+          verify_response() {
+            local path="$1"
+            local accept="$2"
+            local expected_content_type="$3"
+            local headers_file="$4"
+            local body_file="$5"
+
+            local status
+            status="$(curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --header "Accept: ${accept}" \
+              --dump-header "${headers_file}" \
+              --output "${body_file}" \
+              --write-out "%{http_code}" \
+              "${DEPLOYMENT_URL}${path}" || echo "000")"
+
+            if [ "${status}" != "200" ]; then
+              echo "${path} returned HTTP ${status}."
+              return 1
+            fi
+
+            local content_type
+            content_type="$(awk 'tolower($0) ~ /^content-type:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+            if [[ "${content_type}" != "${expected_content_type}"* ]]; then
+              echo "${path} returned Content-Type '${content_type}', expected '${expected_content_type}'."
+              return 1
+            fi
+          }
+
+          for attempt in $(seq 1 "${max_attempts}"); do
+            if verify_response "/zukan" "text/html" "text/html" /tmp/zukan-headers /tmp/zukan-body && \
+              verify_response "/api/catalog/ja" "application/json" "application/json" /tmp/catalog-headers /tmp/catalog-body && \
+              verify_response "/api/avatar-image?id=0001&w=768" "image/avif,image/webp,image/*,*/*" "image/avif" /tmp/avatar-headers /tmp/avatar-body && \
+              node -e 'const payload = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); if (payload.schemaVersion !== 1 || !Array.isArray(payload.data) || payload.count !== payload.data.length || payload.count === 0) process.exit(1);' /tmp/catalog-body && \
+              awk 'tolower($0) ~ /^x-image-transformed:[[:space:]]*true\r?$/ { found=1 } END { exit found ? 0 : 1 }' /tmp/avatar-headers; then
+              echo "Pages PR preview is healthy at ${DEPLOYMENT_URL}."
+              exit 0
+            fi
+
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              echo "Pages runtime verification failed (${attempt}/${max_attempts}); retrying."
+              sleep "${retry_seconds}"
+            fi
+          done
+
+          echo "::error::Pages PR preview runtime verification failed."
+          exit 1
+
+      - name: Publish Pages preview summary
+        if: always()
+        env:
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}
+          DEPLOYMENT_ALIAS_URL: ${{ steps.deployment.outputs.deployment_alias_url }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
+        run: |
+          {
+            echo "## Cloudflare Pages PR Preview"
+            echo ""
+            echo "- Result: ${{ job.status }}"
+            echo "- Revision: ${PR_HEAD_SHA}"
+            echo "- Deployment ID: ${DEPLOYMENT_ID:-unavailable}"
+            echo "- Immutable URL: ${DEPLOYMENT_URL:-unavailable}"
+            echo "- PR alias: ${DEPLOYMENT_ALIAS_URL:-unavailable}"
+            echo ""
+            echo "> Pages Preview is read-only. Do not sign in to /admin or run any write, migration, upload, or cache mutation operation."
+            echo "> Workers-specific behavior and server-side Sentry must be verified at https://staging.akyodex.com."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Update PR preview comment
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          JOB_STATUS: ${{ job.status }}
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}
+          DEPLOYMENT_ALIAS_URL: ${{ steps.deployment.outputs.deployment_alias_url }}
+          DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
+        with:
+          script: |
+            const header = '## Cloudflare Pages PR Preview';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const succeeded = process.env.JOB_STATUS === 'success';
+            const body = succeeded
+              ? [
+                  header,
+                  '',
+                  `- Revision: \`${process.env.PR_HEAD_SHA}\``,
+                  `- Immutable URL: ${process.env.DEPLOYMENT_URL}`,
+                  `- PR alias: ${process.env.DEPLOYMENT_ALIAS_URL}`,
+                  `- Deployment ID: \`${process.env.DEPLOYMENT_ID}\``,
+                  '',
+                  '> **Read-only review environment:** do not sign in to `/admin` or run write, migration, upload, or cache mutation operations.',
+                  '> Durable Objects, service bindings, Workers caches, `cf.image`, Workers Sentry, and final performance must be verified at https://staging.akyodex.com.',
+                  '> Pages server-side Sentry is disabled, so a clean Pages preview is not proof that server errors are absent.'
+                ].join('\n')
+              : [
+                  header,
+                  '',
+                  `Preview deployment or verification failed for \`${process.env.PR_HEAD_SHA}\`.`,
+                  `- Actions log: ${runUrl}`
+                ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100
+            });
+            const existing = comments.find((comment) =>
+              comment.body?.includes(header) &&
+              (comment.user?.login === 'github-actions[bot]' || comment.user?.type === 'Bot')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }

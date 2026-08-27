@@ -43,3 +43,23 @@ test('Pages remains a manual rollback target during the Workers migration', asyn
   assert.match(deployWorkflow, /github\.ref_name == 'pages-rollback'/);
   assert.match(rollbackGate, /https:\/\/akyodex\.pages\.dev/);
 });
+
+test('Pages PR previews are deployed independently without unfreezing Pages production', async () => {
+  const workflow = await readFile(
+    path.join(process.cwd(), '.github', 'workflows', 'deploy-cloudflare-pages-preview.yml'),
+    'utf8'
+  );
+
+  assert.match(workflow, /cloudflare-pages-preview-\$\{\{ github\.event\.pull_request\.number \}\}/);
+  assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+  assert.doesNotMatch(workflow, /pull_request_target:/);
+  assert.match(workflow, /npm run build/);
+  assert.match(workflow, /test -f \.open-next\/_worker\.js/);
+  assert.match(workflow, /wrangler pages deploy \.open-next/);
+  assert.match(workflow, /--branch="pr-\$\{PR_NUMBER\}"/);
+  assert.match(workflow, /--commit-hash="\$\{PR_HEAD_SHA\}"/);
+  assert.match(workflow, /pages deployment list/);
+  assert.match(workflow, /find-pages-preview-deployment\.js/);
+  assert.match(workflow, /Pages Preview is read-only/);
+  assert.match(workflow, /staging\.akyodex\.com/);
+});
