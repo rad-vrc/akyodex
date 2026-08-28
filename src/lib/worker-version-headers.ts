@@ -3,6 +3,10 @@ interface WorkerVersionIdentity {
   tag?: string;
 }
 
+function normalizeServerTimingDescription(value: string): string {
+  return value.replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 128);
+}
+
 function createWorkerHeaders(
   response: Response,
   version: WorkerVersionIdentity
@@ -13,6 +17,14 @@ function createWorkerHeaders(
   if (version.tag) {
     headers.set('X-Akyodex-Worker-Tag', version.tag);
   }
+
+  const observableVersion = normalizeServerTimingDescription(
+    version.tag || version.id
+  );
+  headers.append(
+    'Server-Timing',
+    `akyodex-version;desc="${observableVersion}"`
+  );
 
   return headers;
 }

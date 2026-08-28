@@ -20,6 +20,7 @@
 | ------------- | --------- | --------- | --------- | ---- |
 | CI | `ci.yml` | PR / push (`main`, `develop`) | 型チェック、Cloudflare Pages ビルド検証、Security Scan | ESLint と Dify CSP hash は advisory |
 | Deploy Workers staging | `deploy-cloudflare-workers-staging.yml` | non-draft PR (`main`) | 最新PRを本番相当の共有Workers環境へデプロイ | `X-Akyodex-Worker-Tag`でSHAを照合 |
+| Lighthouse CI | `lighthouse-ci.yml` | PR (`main`) / manual | Lighthouse 13.4.1のモバイルsimulated計測を3回実行 | 中央値を記録し、重大な性能退行だけを予算で停止 |
 | Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / manual | 本番候補のupload、手動activate、Pagesへのrollback | `main` pushだけでは本番routeを変更しない |
 | Deploy Pages PR Preview | `deploy-cloudflare-pages-preview.yml` | non-draft same-repository PR (`main`) | PRごとの独立した読み取り専用Previewを作成 | Dependabotとfork PRは対象外 |
 | Verify Pages rollback | `cloudflare-pages-preview-gate.yml` | non-draft PR (`main`) / manual | 固定したPagesロールバック先の健全性確認 | Previewの作成は行わない |
