@@ -49,6 +49,7 @@ jobs:
       NEXT_PUBLIC_R2_BASE: ${{ vars.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com' }}
       NEXT_PUBLIC_DIFY_CHATBOT_TOKEN: ${{ vars.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN }}
       NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: production
       SENTRY_ORG: ${{ vars.SENTRY_ORG }}
       SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

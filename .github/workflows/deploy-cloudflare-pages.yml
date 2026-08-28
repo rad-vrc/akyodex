@@ -26,6 +26,7 @@ jobs:
       # Keep deployment target aligned with preview-gate fallback behavior.
       CF_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'akyodex' }}
       CF_PAGES_PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PAGES_PRODUCTION_BRANCH || 'main' }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: production
     
     permissions:
       contents: read

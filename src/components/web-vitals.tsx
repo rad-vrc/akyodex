@@ -1,32 +1,47 @@
 'use client';
 
-import { captureMessageSafely } from '@/lib/sentry-browser';
+import {
+  captureDistributionSafely,
+  captureMessageSafely,
+} from '@/lib/sentry-browser';
+import {
+  createWebVitalDistribution,
+  getWorkerVersionFromNavigation,
+} from '@/lib/web-vitals-reporting';
 import { useReportWebVitals } from 'next/web-vitals';
 
 /**
  * WebVitals Component
- * Monitors core web vitals (CLS, FID, FCP, LCP, TTFB) and reports them
- * to Sentry in production environments.
+ * Reports LCP, INP, and CLS distributions plus poor-metric alerts to Sentry.
  * 
  * @returns null (behavior-only component)
  */
-export function WebVitals() {
-  useReportWebVitals((metric) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Web Vitals]', {
-        name: metric.name,
-        value: metric.value,
-        rating: metric.rating,
-        navigationType: metric.navigationType,
-      });
-      return;
-    }
+type ReportWebVitalsCallback = Parameters<typeof useReportWebVitals>[0];
 
-    // ノイズ削減: 悪化(poor)のみをSentryに送る
-    if (metric.rating !== 'poor') {
-      return;
-    }
+const reportWebVitals: ReportWebVitalsCallback = (metric) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[Web Vitals]', {
+      name: metric.name,
+      value: metric.value,
+      rating: metric.rating,
+      navigationType: metric.navigationType,
+    });
+    return;
+  }
 
+  const distribution = createWebVitalDistribution(metric, {
+    language: document.documentElement.lang,
+    pathname: window.location.pathname,
+    workerVersion: getWorkerVersionFromNavigation(performance),
+  });
+  if (distribution) {
+    captureDistributionSafely(distribution.name, distribution.value, {
+      unit: distribution.unit,
+      attributes: distribution.attributes,
+    });
+  }
+
+  if (metric.rating === 'poor') {
     captureMessageSafely(`Web Vitals degraded: ${metric.name}`, {
       level: 'warning',
       tags: {
@@ -39,7 +54,11 @@ export function WebVitals() {
         navigationType: metric.navigationType,
       },
     });
-  });
+  }
+};
+
+export function WebVitals() {
+  useReportWebVitals(reportWebVitals);
 
   return null;
 }

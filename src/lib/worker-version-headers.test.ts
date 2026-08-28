@@ -24,6 +24,10 @@ test('withWorkerVersionHeaders preserves the response and exposes deployment ide
   assert.equal(result.headers.get('cache-control'), 'public, max-age=60');
   assert.equal(result.headers.get('x-akyodex-worker-version'), 'version-id');
   assert.equal(result.headers.get('x-akyodex-worker-tag'), 'git-sha');
+  assert.match(
+    result.headers.get('server-timing') ?? '',
+    /akyodex-version;desc="git-sha"/,
+  );
 });
 
 test('withWorkerVersionHeaders omits an unavailable version tag', () => {
@@ -31,6 +35,10 @@ test('withWorkerVersionHeaders omits an unavailable version tag', () => {
 
   assert.equal(result.headers.get('x-akyodex-worker-version'), 'version-id');
   assert.equal(result.headers.has('x-akyodex-worker-tag'), false);
+  assert.match(
+    result.headers.get('server-timing') ?? '',
+    /akyodex-version;desc="version-id"/,
+  );
 });
 
 test('Workers staging responses prevent search indexing without affecting production', () => {

@@ -5,6 +5,9 @@ type SentryCaptureContext = NonNullable<
 type SentryMessageCaptureContext = NonNullable<
   Parameters<typeof Sentry.captureMessage>[1]
 >;
+type SentryDistributionOptions = NonNullable<
+  Parameters<typeof Sentry.metrics.distribution>[2]
+>;
 
 type PendingEvent =
   | {
@@ -17,6 +20,13 @@ type PendingEvent =
     type: 'message';
     message: string;
     captureContext?: SentryMessageCaptureContext;
+    attempts: number;
+  }
+  | {
+    type: 'distribution';
+    name: string;
+    value: number;
+    options?: SentryDistributionOptions;
     attempts: number;
   };
 
@@ -60,6 +70,19 @@ function flushPendingEvents(): void {
     return;
   }
 
+  if (!Sentry.getClient()) {
+    pendingEvents = pendingEvents.flatMap((event) => {
+      const attempts = event.attempts + 1;
+      return attempts < MAX_RETRY_ATTEMPTS
+        ? [{ ...event, attempts }]
+        : [];
+    });
+    if (pendingEvents.length > 0) {
+      scheduleRetryFlush();
+    }
+    return;
+  }
+
   const nextQueue: PendingEvent[] = [];
   const pushRetry = (event: PendingEvent): void => {
     const attempts = event.attempts + 1;
@@ -72,8 +95,10 @@ function flushPendingEvents(): void {
     try {
       if (event.type === 'exception') {
         Sentry.captureException(event.error, event.captureContext);
-      } else {
+      } else if (event.type === 'message') {
         Sentry.captureMessage(event.message, event.captureContext);
+      } else {
+        Sentry.metrics.distribution(event.name, event.value, event.options);
       }
     } catch {
       pushRetry(event);
@@ -125,6 +150,43 @@ export function captureMessageSafely(
       type: 'message',
       message,
       captureContext,
+      attempts: 1,
+    });
+  }
+}
+
+export function captureDistributionSafely(
+  name: string,
+  value: number,
+  options?: SentryDistributionOptions
+): void {
+  if (!HAS_BROWSER_SENTRY_DSN) {
+    return;
+  }
+
+  flushPendingEvents();
+
+  // A future delayed Sentry initialization must keep this queue window long
+  // enough for INP values that finalize during an early pagehide.
+  if (!Sentry.getClient()) {
+    enqueuePendingEvent({
+      type: 'distribution',
+      name,
+      value,
+      options,
+      attempts: 1,
+    });
+    return;
+  }
+
+  try {
+    Sentry.metrics.distribution(name, value, options);
+  } catch {
+    enqueuePendingEvent({
+      type: 'distribution',
+      name,
+      value,
+      options,
       attempts: 1,
     });
   }
