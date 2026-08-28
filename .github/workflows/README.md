@@ -130,8 +130,8 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 
 1. `main`へのマージ後、`Upload production Worker candidate`が成功したことを確認する。
 2. Cloudflare Worker `akyodex-workers-production`へ、`ADMIN_PASSWORD_OWNER`、`ADMIN_PASSWORD_ADMIN`、`GITHUB_TOKEN`をsecretとして設定する。管理者の運用を変えないため、管理者パスワードはPages本番と同じ値を使う。
-3. Actionsから`Deploy Cloudflare Workers Production`を開き、`configure-secrets`を手動実行する。既存のActions `REVALIDATE_SECRET`とSentry DSNを値を表示せずWorkerへ転送し、`SESSION_SECRET`が未設定の場合だけ安全なランダム値を生成する。
-4. `upload`を手動実行し、6つのsecretを保持した同じ`main`の候補versionを再作成する。secret設定用versionがdeployされても本番routeはまだ無いため、利用者の通信はPagesのままです。
+3. Actionsから`Deploy Cloudflare Workers Production`を開き、`configure-secrets`を手動実行する。既存のActions `REVALIDATE_SECRET`とSentry DSNを値を表示せずWorkerへ転送し、`SESSION_SECRET`が未設定の場合だけ安全なランダム値を生成する。この操作には未デプロイ候補を直接更新できる`wrangler versions secret bulk`を使い、routeもtrafficも変更しない。
+4. `upload`を手動実行し、6つのsecretを保持した同じ`main`の候補versionを再作成する。`activate`はこの正確なSHAタグの候補versionに6つのsecret bindingがあることを確認してから進みます。
 5. `activate`を手動実行し、最新候補versionを有効化してから本番routeを付ける。
 6. workflowのruntime検証に加え、管理画面ログイン、図鑑更新、リンク色、カテゴリ階層、3言語、Sentryを確認する。
 7. 重大な不具合、データ件数不一致、または性能の明確な後退があれば、同workflowの`rollback-pages`を実行する。
