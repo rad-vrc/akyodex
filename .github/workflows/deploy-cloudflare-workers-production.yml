@@ -1,0 +1,331 @@
+name: Deploy Cloudflare Workers Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Production action'
+        required: true
+        default: 'upload'
+        type: choice
+        options:
+          - upload
+          - activate
+          - rollback-pages
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-workers-production
+  cancel-in-progress: false
+
+env:
+  WORKERS_CONFIG: wrangler.workers.production.jsonc
+  WORKERS_ROLLBACK_CONFIG: wrangler.workers.production-rollback.jsonc
+  WORKERS_NAME: akyodex-workers-production
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  prepare-version:
+    name: Upload production Worker candidate
+    if: >-
+      github.ref_name == 'main' &&
+      (github.event_name == 'push' ||
+      inputs.action == 'upload' ||
+      inputs.action == 'activate')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITHUB_SHA: ${{ github.sha }}
+      NEXT_PUBLIC_SITE_URL: https://akyodex.com
+      NEXT_PUBLIC_APP_URL: https://akyodex.com
+      NEXT_PUBLIC_R2_BASE: ${{ vars.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com' }}
+      NEXT_PUBLIC_DIFY_CHATBOT_TOKEN: ${{ vars.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+    steps:
+      - name: Checkout main revision
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cloudflare credentials
+        run: npx wrangler whoami
+
+      - name: Build production Workers artifact
+        run: npm run build:workers:production
+
+      - name: Verify Workers build output
+        run: |
+          set -euo pipefail
+          test -f .open-next/worker.js
+          test -d .open-next/assets
+
+      - name: Upload tagged production candidate without routing traffic
+        run: |
+          set -euo pipefail
+          npx wrangler versions upload --config wrangler.workers.production.jsonc \
+            --tag "${GITHUB_SHA}" \
+            --message "Production candidate ${GITHUB_SHA}"
+
+      - name: Publish candidate summary
+        run: |
+          {
+            echo "## Workers production candidate"
+            echo ""
+            echo "- Revision: ${GITHUB_SHA}"
+            echo "- Worker: ${WORKERS_NAME}"
+            echo "- Traffic: 0% until the manual activate action"
+            echo "- Pages production remains active"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  activate-production:
+    name: Activate production Worker route
+    needs: prepare-version
+    if: >-
+      github.ref_name == 'main' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.action == 'activate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://akyodex.com
+    env:
+      GITHUB_SHA: ${{ github.sha }}
+      REQUIRED_WORKER_SECRETS: ADMIN_PASSWORD_OWNER,ADMIN_PASSWORD_ADMIN,SESSION_SECRET,GITHUB_TOKEN,REVALIDATE_SECRET,SENTRY_DSN
+
+    steps:
+      - name: Checkout main revision
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cloudflare credentials
+        run: npx wrangler whoami
+
+      - name: Verify fixed Pages rollback before activation
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --output /tmp/pages-rollback-body \
+            --write-out "%{http_code}" \
+            "https://akyodex.pages.dev/zukan")"
+          if [ "${status}" != "200" ]; then
+            echo "::error::Pages rollback returned HTTP ${status}."
+            exit 1
+          fi
+
+      - name: Verify required production Worker secrets
+        run: |
+          set -euo pipefail
+          npx wrangler secret list --config wrangler.workers.production.jsonc \
+            --name "${WORKERS_NAME}" \
+            --format json > /tmp/worker-secrets.json
+          node -e 'const fs=require("node:fs");const configured=JSON.parse(fs.readFileSync("/tmp/worker-secrets.json","utf8"));const names=new Set(configured.map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
+
+      - name: Deploy candidate version to 100 percent
+        id: deploy-version
+        run: |
+          set -euo pipefail
+          npx wrangler versions deploy --config wrangler.workers.production.jsonc \
+            --version-tag "${GITHUB_SHA}@100%" \
+            --message "Activate production ${GITHUB_SHA}" \
+            --yes
+
+      - name: Attach akyodex.com Worker route
+        id: activate-route
+        run: npx wrangler triggers deploy --config wrangler.workers.production.jsonc
+
+      - name: Verify production runtime
+        id: verify-production
+        run: |
+          set -euo pipefail
+          base_url="https://akyodex.com"
+          max_attempts=12
+          retry_seconds=5
+
+          verify_response() {
+            local path="$1"
+            local accept="$2"
+            local expected_content_type="$3"
+            local headers_file="$4"
+            local body_file="$5"
+
+            local status
+            status="$(curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --header "Accept: ${accept}" \
+              --dump-header "${headers_file}" \
+              --output "${body_file}" \
+              --write-out "%{http_code}" \
+              "${base_url}${path}" || echo "000")"
+            if [ "${status}" != "200" ]; then
+              echo "${path} returned HTTP ${status}."
+              return 1
+            fi
+
+            local deployed_tag
+            deployed_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+            if [ "${deployed_tag}" != "${GITHUB_SHA}" ]; then
+              echo "${path} returned Worker tag '${deployed_tag}', expected '${GITHUB_SHA}'."
+              return 1
+            fi
+
+            if awk 'tolower($0) ~ /^x-robots-tag:/' "${headers_file}" | grep -q .; then
+              echo "${path} unexpectedly returned X-Robots-Tag in production."
+              return 1
+            fi
+
+            if [ -n "${expected_content_type}" ]; then
+              local content_type
+              content_type="$(awk 'tolower($0) ~ /^content-type:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "${headers_file}")"
+              if [[ "${content_type}" != "${expected_content_type}"* ]]; then
+                echo "${path} returned Content-Type '${content_type}', expected '${expected_content_type}'."
+                return 1
+              fi
+            fi
+          }
+
+          for attempt in $(seq 1 "${max_attempts}"); do
+            if verify_response "/zukan" "text/html" "text/html" /tmp/zukan-headers /tmp/zukan-body && \
+              verify_response "/api/catalog/ja" "application/json" "application/json" /tmp/catalog-headers /tmp/catalog-body && \
+              verify_response "/api/avatar-image?id=0001&w=768" "image/avif,image/webp,image/*,*/*" "image/avif" /tmp/avatar-headers /tmp/avatar-body && \
+              awk 'tolower($0) ~ /^x-image-transformed:[[:space:]]*true\r?$/ { found=1 } END { exit found ? 0 : 1 }' /tmp/avatar-headers; then
+              if CATALOG_PATH=/tmp/catalog-body node -e 'const fs=require("node:fs");const catalog=JSON.parse(fs.readFileSync(process.env.CATALOG_PATH,"utf8"));if(catalog.schemaVersion!==1||catalog.count!==catalog.data.length||catalog.count===0)throw new Error("Production catalog schema or count is invalid");const categories=new Set(catalog.data.flatMap(({category})=>String(category||"").split(",")));for(const expected of ["自然/岩石","形状・触り心地/小さい","グッズ"]){if(!categories.has(expected))throw new Error(`Missing category: ${expected}`)}'
+              then
+                en_html="$(curl --silent --show-error \
+                  --connect-timeout 10 \
+                  --max-time 30 \
+                  --header "Cookie: AKYO_LANG=en" \
+                  "${base_url}/zukan")"
+                if [[ "${en_html}" == *'<html lang="en"'* ]]; then
+                  echo "Workers production is serving ${GITHUB_SHA}; all checks passed."
+                  exit 0
+                fi
+                echo "English response did not render html lang=en."
+              fi
+            fi
+
+            if [ "${attempt}" -lt "${max_attempts}" ]; then
+              echo "Production verification failed on attempt ${attempt}/${max_attempts}; retrying in ${retry_seconds}s."
+              sleep "${retry_seconds}"
+            fi
+          done
+
+          echo "::error::Production Worker did not pass runtime verification."
+          exit 1
+
+      - name: Remove Worker route after failed activation
+        if: ${{ (failure() || cancelled()) && steps.deploy-version.outcome == 'success' }}
+        run: npx wrangler triggers deploy --config wrangler.workers.production-rollback.jsonc
+
+      - name: Publish activation summary
+        if: always()
+        run: |
+          {
+            echo "## Workers production activation"
+            echo ""
+            echo "- Revision: ${GITHUB_SHA}"
+            echo "- URL: https://akyodex.com"
+            echo "- Result: ${{ job.status }}"
+            echo "- Rollback: remove the Worker route with the rollback-pages action"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  rollback-to-pages:
+    name: Remove Worker route and restore Pages
+    if: >-
+      github.ref_name == 'main' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.action == 'rollback-pages'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: https://akyodex.com
+
+    steps:
+      - name: Checkout main revision
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Cloudflare credentials
+        run: npx wrangler whoami
+
+      - name: Remove akyodex.com Worker route
+        run: npx wrangler triggers deploy --config wrangler.workers.production-rollback.jsonc
+
+      - name: Verify Pages serves production again
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            status="$(curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --dump-header /tmp/production-headers \
+              --output /tmp/production-body \
+              --write-out "%{http_code}" \
+              "https://akyodex.com/zukan" || echo "000")"
+            pages_status="$(curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --output /dev/null \
+              --write-out "%{http_code}" \
+              "https://akyodex.pages.dev/zukan" || echo "000")"
+            worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { print; exit }' /tmp/production-headers)"
+            if [ "${status}" = "200" ] && [ "${pages_status}" = "200" ] && [ -z "${worker_tag}" ]; then
+              echo "Pages is serving akyodex.com again."
+              exit 0
+            fi
+
+            if [ "${attempt}" -lt 12 ]; then
+              sleep 5
+            fi
+          done
+
+          echo "::error::Pages rollback verification failed."
+          exit 1
+
+      - name: Publish rollback summary
+        if: always()
+        run: |
+          {
+            echo "## Pages rollback"
+            echo ""
+            echo "- URL: https://akyodex.com"
+            echo "- Result: ${{ job.status }}"
+            echo "- Fixed Pages origin: https://akyodex.pages.dev"
+          } >> "${GITHUB_STEP_SUMMARY}"

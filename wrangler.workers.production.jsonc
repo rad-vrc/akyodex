@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "akyodex-workers-staging",
+  "name": "akyodex-workers-production",
   "main": "cloudflare-worker.ts",
   "compatibility_date": "2026-08-27",
   "compatibility_flags": [
@@ -10,8 +10,8 @@
   "workers_dev": false,
   "routes": [
     {
-      "pattern": "staging.akyodex.com",
-      "custom_domain": true
+      "pattern": "akyodex.com/*",
+      "zone_name": "akyodex.com"
     }
   ],
   "assets": {
@@ -21,44 +21,44 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "akyodex-workers-staging"
+      "service": "akyodex-workers-production"
     }
   ],
   "vars": {
     "CLOUDFLARE_DEPLOY_TARGET": "workers",
-    "NEXT_PUBLIC_APP_URL": "https://staging.akyodex.com",
-    "NEXT_PUBLIC_SITE_URL": "https://staging.akyodex.com",
+    "NEXT_PUBLIC_APP_URL": "https://akyodex.com",
+    "NEXT_PUBLIC_SITE_URL": "https://akyodex.com",
     "NEXT_PUBLIC_R2_BASE": "https://images.akyodex.com",
     "NEXT_PUBLIC_USE_JSON_DATA": "true",
     "NEXT_PUBLIC_USE_KV_DATA": "true",
-    "AKYODEX_DEPLOYMENT_ENVIRONMENT": "staging",
-    "SENTRY_ENVIRONMENT": "staging",
+    "AKYODEX_DEPLOYMENT_ENVIRONMENT": "production",
+    "SENTRY_ENVIRONMENT": "production",
     "GITHUB_REPO_OWNER": "rad-vrc",
     "GITHUB_REPO_NAME": "Akyodex",
-    "GITHUB_BRANCH": "workers-staging-data",
+    "GITHUB_BRANCH": "main",
     "GITHUB_CSV_PATH_JA": "data/akyo-data-ja.csv"
   },
   "kv_namespaces": [
     {
       "binding": "AKYO_KV",
-      "id": "6ba03820093a45bf8c69c65c5b0b399f"
+      "id": "42b435eff5ca4de9a33d70faff6c6abc"
     }
   ],
   "r2_buckets": [
     {
       "binding": "AKYO_BUCKET",
-      "bucket_name": "akyodex-workers-staging-data"
+      "bucket_name": "akyo-images"
     },
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "akyodex-workers-staging-cache"
+      "bucket_name": "akyodex-workers-production-cache"
     }
   ],
   "d1_databases": [
     {
       "binding": "NEXT_TAG_CACHE_D1",
-      "database_name": "akyodex-next-tag-cache",
-      "database_id": "1484cf52-987d-4861-9590-99d77cd40390"
+      "database_name": "akyodex-next-tag-cache-production",
+      "database_id": "e7415ce9-4544-4bec-bb4b-f944df17d153"
     }
   ],
   "durable_objects": {
