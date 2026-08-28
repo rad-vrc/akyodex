@@ -95,3 +95,38 @@ test("aligns the detail action to the bottom of stretched catalog cards", () => 
   assert.match(markup, /class="flex flex-1 flex-col gap-2 p-4"/);
   assert.match(markup, /class="detail-button[^\"]*\bmt-auto\b/);
 });
+
+test("orders author metadata before categories and the detail action", () => {
+  const akyo: AkyoData = {
+    id: "0001",
+    entryType: "avatar",
+    appearance: "",
+    nickname: "Test Akyo",
+    avatarName: "Test Avatar",
+    sourceUrl: "https://vrchat.com/home/avatar/avtr_test",
+    category: "動物,動物/きつね",
+    comment: "",
+    author: "Test Author",
+    attribute: "動物,動物/きつね",
+    notes: "",
+    creator: "Test Author",
+    avatarUrl: "https://vrchat.com/home/avatar/avtr_test",
+  };
+
+  const markup = renderToStaticMarkup(
+    createElement(AkyoCard, {
+      akyo,
+      lang: "ja",
+    }),
+  );
+
+  const authorPosition = markup.indexOf("Test Author");
+  const categoryPosition = markup.indexOf("attribute-badge");
+  const detailPosition = markup.indexOf("detail-button");
+
+  assert.notEqual(authorPosition, -1);
+  assert.notEqual(categoryPosition, -1);
+  assert.notEqual(detailPosition, -1);
+  assert.ok(authorPosition < categoryPosition);
+  assert.ok(categoryPosition < detailPosition);
+});
