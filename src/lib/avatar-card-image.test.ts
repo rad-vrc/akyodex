@@ -65,6 +65,23 @@ test("prefers AVIF, then WebP, and leaves other clients untransformed", () => {
   assert.equal(getPreferredFormat("image/png,image/*,*/*"), null);
 });
 
+test("honors Accept quality values and never selects a rejected format", () => {
+  const getPreferredFormat =
+    avatarCardImageModule.getPreferredAvatarCardImageFormat;
+  assert.equal(typeof getPreferredFormat, "function");
+  if (!getPreferredFormat) return;
+
+  assert.equal(
+    getPreferredFormat("image/avif;q=0,image/webp;q=1"),
+    "webp",
+  );
+  assert.equal(
+    getPreferredFormat("image/avif;q=0.2,image/webp;q=0.8"),
+    "webp",
+  );
+  assert.equal(getPreferredFormat("image/avif;q=0,image/webp;q=0"), null);
+});
+
 test("uses one fixed 768px Cloudflare transformation", () => {
   const createFetchInit = avatarCardImageModule.createAvatarCardImageFetchInit;
   assert.equal(typeof createFetchInit, "function");

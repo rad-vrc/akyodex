@@ -1,6 +1,6 @@
 import { withSentry } from '@sentry/cloudflare';
 import openNextWorker from './.open-next/worker.js';
-import { withWorkerVersionHeaders } from './src/lib/worker-version-headers';
+import { withWorkerResponseHeaders } from './src/lib/worker-version-headers';
 
 export { DOQueueHandler } from './.open-next/worker.js';
 
@@ -19,7 +19,11 @@ interface CloudflareWorkerHandler<Env> {
 const handler = {
   async fetch(request, env, ctx) {
     const response = await openNextWorker.fetch(request, env, ctx);
-    return withWorkerVersionHeaders(response, env.CF_VERSION_METADATA);
+    return withWorkerResponseHeaders(
+      response,
+      env.CF_VERSION_METADATA,
+      request.url
+    );
   },
 } satisfies CloudflareWorkerHandler<WorkersRuntimeEnv>;
 

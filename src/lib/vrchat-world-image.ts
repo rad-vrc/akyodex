@@ -1,3 +1,5 @@
+import { getPreferredImageFormat } from './accept-image-format';
+
 const DEFAULT_VRCHAT_IMAGE_WIDTH = 512;
 const MIN_VRCHAT_IMAGE_WIDTH = 32;
 const MAX_VRCHAT_IMAGE_WIDTH = 4096;
@@ -74,14 +76,7 @@ export function snapVRChatImageWidth(
 export function getPreferredCloudflareImageFormat(
   accept: string | null
 ): CloudflareImageFormat | null {
-  const normalizedAccept = accept?.toLowerCase() ?? '';
-  if (normalizedAccept.includes('image/avif')) {
-    return 'avif';
-  }
-  if (normalizedAccept.includes('image/webp')) {
-    return 'webp';
-  }
-  return null;
+  return getPreferredImageFormat(accept);
 }
 
 export function createVRChatWorldImageFetchInit(args: {

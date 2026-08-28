@@ -20,3 +20,23 @@ export function withWorkerVersionHeaders(
     headers,
   });
 }
+
+export function withWorkerResponseHeaders(
+  response: Response,
+  version: WorkerVersionIdentity,
+  requestUrl: string
+): Response {
+  const versionedResponse = withWorkerVersionHeaders(response, version);
+  if (new URL(requestUrl).hostname !== 'staging.akyodex.com') {
+    return versionedResponse;
+  }
+
+  const headers = new Headers(versionedResponse.headers);
+  headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+
+  return new Response(versionedResponse.body, {
+    status: versionedResponse.status,
+    statusText: versionedResponse.statusText,
+    headers,
+  });
+}

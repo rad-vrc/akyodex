@@ -1,5 +1,6 @@
 import { RuntimeFeatures } from '@/components/runtime-features';
 import { StructuredData } from '@/components/structured-data';
+import { resolveCatalogLanguage } from '@/app/zukan/catalog-language';
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { connection } from 'next/server';
@@ -82,10 +83,11 @@ export default async function RootLayout({
   await connection();
   const headersList = await headers();
   const nonce = headersList.get('x-nonce') || undefined;
+  const lang = resolveCatalogLanguage(headersList.get('x-akyo-lang'));
   const difyToken = process.env.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN;
 
   return (
-    <html lang="ja" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head suppressHydrationWarning />
       <body className="antialiased">
         {children}

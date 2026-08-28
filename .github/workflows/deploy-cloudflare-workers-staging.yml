@@ -118,6 +118,7 @@ jobs:
 
           for attempt in $(seq 1 "${max_attempts}"); do
             if verify_response "/zukan" "text/html" "text/html" /tmp/zukan-headers /tmp/zukan-body && \
+              awk 'tolower($0) ~ /^x-robots-tag:.*noindex/ { found=1 } END { exit found ? 0 : 1 }' /tmp/zukan-headers && \
               verify_response "/api/catalog/ja" "application/json" "application/json" /tmp/catalog-headers /tmp/catalog-body && \
               verify_response "/api/avatar-image?id=0001&w=768" "image/avif,image/webp,image/*,*/*" "image/avif" /tmp/avatar-headers /tmp/avatar-body && \
               awk 'tolower($0) ~ /^x-image-transformed:[[:space:]]*true\r?$/ { found=1 } END { exit found ? 0 : 1 }' /tmp/avatar-headers; then

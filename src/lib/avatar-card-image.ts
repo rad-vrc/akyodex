@@ -1,3 +1,5 @@
+import { getPreferredImageFormat } from "./accept-image-format";
+
 const AVATAR_CARD_IMAGE_WIDTH = 768;
 const AVATAR_CARD_IMAGE_FETCH_TIMEOUT_MS = 5000;
 const AVATAR_CARD_IMAGE_CACHE_CONTROL =
@@ -20,10 +22,7 @@ export function shouldTransformAvatarCardImage(args: {
 export function getPreferredAvatarCardImageFormat(
   accept: string | null,
 ): AvatarCardImageFormat | null {
-  const normalizedAccept = accept?.toLowerCase() ?? "";
-  if (normalizedAccept.includes("image/avif")) return "avif";
-  if (normalizedAccept.includes("image/webp")) return "webp";
-  return null;
+  return getPreferredImageFormat(accept);
 }
 
 export function createAvatarCardImageFetchInit(args: {
