@@ -129,10 +129,12 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 ### 初回切替手順
 
 1. `main`へのマージ後、`Upload production Worker candidate`が成功したことを確認する。
-2. Cloudflare Worker `akyodex-workers-production`へ、下表の6つのsecretを設定する。管理者の運用を変えないため、管理者パスワードはPages本番と同じ値を使う。この操作でsecret用versionがdeployされても本番routeはまだ無いため、利用者の通信はPagesのままです。
-3. Actionsから`Deploy Cloudflare Workers Production`を開き、`activate`を手動実行する。workflowはsecret設定後の同じ`main`を再uploadし、secretを保持した候補versionを有効化します。
-4. workflowのruntime検証に加え、管理画面ログイン、図鑑更新、リンク色、カテゴリ階層、3言語、Sentryを確認する。
-5. 重大な不具合、データ件数不一致、または性能の明確な後退があれば、同workflowの`rollback-pages`を実行する。
+2. Cloudflare Worker `akyodex-workers-production`へ、`ADMIN_PASSWORD_OWNER`、`ADMIN_PASSWORD_ADMIN`、`GITHUB_TOKEN`をsecretとして設定する。管理者の運用を変えないため、管理者パスワードはPages本番と同じ値を使う。
+3. Actionsから`Deploy Cloudflare Workers Production`を開き、`configure-secrets`を手動実行する。既存のActions `REVALIDATE_SECRET`とSentry DSNを値を表示せずWorkerへ転送し、`SESSION_SECRET`が未設定の場合だけ安全なランダム値を生成する。
+4. `upload`を手動実行し、6つのsecretを保持した同じ`main`の候補versionを再作成する。secret設定用versionがdeployされても本番routeはまだ無いため、利用者の通信はPagesのままです。
+5. `activate`を手動実行し、最新候補versionを有効化してから本番routeを付ける。
+6. workflowのruntime検証に加え、管理画面ログイン、図鑑更新、リンク色、カテゴリ階層、3言語、Sentryを確認する。
+7. 重大な不具合、データ件数不一致、または性能の明確な後退があれば、同workflowの`rollback-pages`を実行する。
 
 ### 本番Worker secrets
 
@@ -140,12 +142,12 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 | ---- | ---- |
 | `ADMIN_PASSWORD_OWNER` | 既存ownerログイン。Pages本番と同じ値を設定 |
 | `ADMIN_PASSWORD_ADMIN` | 既存adminログイン。Pages本番と同じ値を設定 |
-| `SESSION_SECRET` | session HMAC signing。Pages本番と同じ値を設定 |
+| `SESSION_SECRET` | session HMAC signing。`configure-secrets`が未設定時だけ生成し、既存値は保持 |
 | `GITHUB_TOKEN` | 管理画面から`main`へ図鑑データを反映 |
 | `REVALIDATE_SECRET` | データ更新後の再検証 |
 | `SENTRY_DSN` | Workersサーバーエラー送信 |
 
-secretの値はGitHubやPagesから読み戻せません。`activate`前にCloudflare Dashboardまたは`wrangler secret put --config wrangler.workers.production.jsonc`で設定し、値自体はリポジトリやActionsログへ出力しないでください。
+管理者パスワードとGitHub tokenの値はGitHubやPagesから読み戻せないため、`activate`前にCloudflare Dashboardから設定してください。残る3件は`configure-secrets`が安全に設定し、値自体をリポジトリやActionsログへ出力しません。
 
 ## Deploy Pages Rollback
 

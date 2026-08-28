@@ -165,6 +165,28 @@ test('Workers production workflow separates upload, activation, and Pages rollba
   assert.deepEqual(rollbackConfig.routes, []);
 });
 
+test('Workers production workflow configures managed secrets without activating traffic', async () => {
+  const workflow = await readFile(
+    path.join(
+      process.cwd(),
+      '.github',
+      'workflows',
+      'deploy-cloudflare-workers-production.yml'
+    ),
+    'utf8'
+  );
+
+  assert.match(workflow, /- configure-secrets/);
+  assert.match(workflow, /inputs\.action == 'configure-secrets'/);
+  assert.match(workflow, /REVALIDATE_SECRET_VALUE: \$\{\{ secrets\.REVALIDATE_SECRET \}\}/);
+  assert.match(workflow, /SENTRY_DSN_VALUE: \$\{\{ vars\.NEXT_PUBLIC_SENTRY_DSN \}\}/);
+  assert.match(workflow, /randomBytes\(48\)\.toString\("base64url"\)/);
+  assert.match(workflow, /wrangler secret put SESSION_SECRET/);
+  assert.match(workflow, /wrangler secret put REVALIDATE_SECRET/);
+  assert.match(workflow, /wrangler secret put SENTRY_DSN/);
+  assert.match(workflow, /Managed production Worker secrets are configured/);
+});
+
 test('CI builds and dry-runs the production Workers target on Linux', async () => {
   const workflow = await readFile(
     path.join(process.cwd(), '.github', 'workflows', 'ci.yml'),

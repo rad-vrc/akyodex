@@ -13,6 +13,7 @@ on:
         type: choice
         options:
           - upload
+          - configure-secrets
           - activate
           - rollback-pages
 
@@ -140,6 +141,103 @@ jobs:
             echo "- Traffic: 0% until the manual activate action"
             echo "- Pages production remains active"
           } >> "${GITHUB_STEP_SUMMARY}"
+
+  configure-managed-secrets:
+    name: Configure managed production Worker secrets
+    if: >-
+      github.ref_name == 'main' &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.action == 'configure-secrets'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: https://akyodex.com
+    env:
+      REQUIRED_WORKER_SECRETS: ADMIN_PASSWORD_OWNER,ADMIN_PASSWORD_ADMIN,SESSION_SECRET,GITHUB_TOKEN,REVALIDATE_SECRET,SENTRY_DSN
+
+    steps:
+      - name: Checkout main revision
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify managed secret sources
+        env:
+          REVALIDATE_SECRET_VALUE: ${{ secrets.REVALIDATE_SECRET }}
+          SENTRY_DSN_VALUE: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${REVALIDATE_SECRET_VALUE}" ]; then
+            echo "::error::GitHub Actions REVALIDATE_SECRET is not configured."
+            exit 1
+          fi
+          if [ -z "${SENTRY_DSN_VALUE}" ]; then
+            echo "::error::GitHub Actions NEXT_PUBLIC_SENTRY_DSN variable is not configured."
+            exit 1
+          fi
+
+      - name: Preserve or generate the session signing secret
+        run: |
+          set -euo pipefail
+          npx wrangler secret list --config "${WORKERS_CONFIG}" \
+            --name "${WORKERS_NAME}" \
+            --format json > /tmp/worker-secrets-before.json
+          if SECRET_LIST_PATH=/tmp/worker-secrets-before.json node -e 'const fs=require("node:fs");const secrets=JSON.parse(fs.readFileSync(process.env.SECRET_LIST_PATH,"utf8"));process.exit(secrets.some(({name})=>name==="SESSION_SECRET")?0:1)'; then
+            echo "SESSION_SECRET is already configured; preserving the existing value."
+          else
+            node -e 'process.stdout.write(require("node:crypto").randomBytes(48).toString("base64url"))' | \
+              npx wrangler secret put SESSION_SECRET --config "${WORKERS_CONFIG}" --name "${WORKERS_NAME}"
+          fi
+
+      - name: Copy revalidation and Sentry secrets without exposing values
+        env:
+          REVALIDATE_SECRET_VALUE: ${{ secrets.REVALIDATE_SECRET }}
+          SENTRY_DSN_VALUE: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${REVALIDATE_SECRET_VALUE}" | \
+            npx wrangler secret put REVALIDATE_SECRET --config "${WORKERS_CONFIG}" --name "${WORKERS_NAME}"
+          printf '%s' "${SENTRY_DSN_VALUE}" | \
+            npx wrangler secret put SENTRY_DSN --config "${WORKERS_CONFIG}" --name "${WORKERS_NAME}"
+
+      - name: Verify all production Worker secret names
+        run: |
+          set -euo pipefail
+          npx wrangler secret list --config "${WORKERS_CONFIG}" \
+            --name "${WORKERS_NAME}" \
+            --format json > /tmp/worker-secrets-after.json
+          SECRET_LIST_PATH=/tmp/worker-secrets-after.json node -e 'const fs=require("node:fs");const configured=JSON.parse(fs.readFileSync(process.env.SECRET_LIST_PATH,"utf8"));const names=new Set(configured.map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
+          echo "Managed production Worker secrets are configured."
+
+      - name: Verify Pages remains the production route
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --dump-header /tmp/production-headers \
+            --output /tmp/production-body \
+            --write-out "%{http_code}" \
+            "https://akyodex.com/zukan")"
+          pages_status="$(curl --silent --show-error \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --output /dev/null \
+            --write-out "%{http_code}" \
+            "https://akyodex.pages.dev/zukan")"
+          worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { print; exit }' /tmp/production-headers)"
+          if [ "${status}" != "200" ] || [ "${pages_status}" != "200" ] || [ -n "${worker_tag}" ]; then
+            echo "::error::Pages is no longer the verified production route after secret configuration."
+            exit 1
+          fi
 
   activate-production:
     name: Activate production Worker route
