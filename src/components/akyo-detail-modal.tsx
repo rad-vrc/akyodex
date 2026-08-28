@@ -720,7 +720,7 @@ export function AkyoDetailModal({
                           e.preventDefault();
                           handleVRChatOpen();
                         }}
-                        className="text-blue-950 hover:text-blue-950 text-sm break-all cursor-pointer"
+                        className="text-blue-600 hover:text-blue-800 focus-visible:text-blue-800 text-sm underline decoration-1 underline-offset-2 break-all cursor-pointer"
                       >
                         <IconExternalLink size="w-3.5 h-3.5" className="mr-1" />
                         {safeSourceUrl}
@@ -740,7 +740,7 @@ export function AkyoDetailModal({
                         href={localAkyo.boothUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-950 hover:text-blue-950 text-sm break-all cursor-pointer"
+                        className="text-blue-600 hover:text-blue-800 focus-visible:text-blue-800 text-sm underline decoration-1 underline-offset-2 break-all cursor-pointer"
                       >
                         <IconExternalLink size="w-3.5 h-3.5" className="mr-1" />
                         {localAkyo.boothUrl}
