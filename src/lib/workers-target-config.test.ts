@@ -5,6 +5,10 @@ import test from 'node:test';
 
 interface WorkersWranglerConfig {
   vars?: Record<string, string>;
+  r2_buckets?: Array<{
+    binding: string;
+    bucket_name: string;
+  }>;
 }
 
 test('Workers runtime selects the Workers OpenNext cache adapters', async () => {
@@ -12,6 +16,15 @@ test('Workers runtime selects the Workers OpenNext cache adapters', async () => 
   const config = JSON.parse(await readFile(configPath, 'utf8')) as WorkersWranglerConfig;
 
   assert.equal(config.vars?.CLOUDFLARE_DEPLOY_TARGET, 'workers');
+});
+
+test('Workers staging keeps admin image mutations out of the production R2 bucket', async () => {
+  const configPath = path.join(process.cwd(), 'wrangler.workers.jsonc');
+  const config = JSON.parse(await readFile(configPath, 'utf8')) as WorkersWranglerConfig;
+  const imageBucket = config.r2_buckets?.find(({ binding }) => binding === 'AKYO_BUCKET');
+
+  assert.equal(imageBucket?.bucket_name, 'akyodex-workers-staging-data');
+  assert.notEqual(imageBucket?.bucket_name, 'akyo-images');
 });
 
 test('Workers staging CI deploys a tagged version and verifies that exact revision', async () => {

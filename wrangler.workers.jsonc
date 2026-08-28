@@ -46,7 +46,7 @@
   "r2_buckets": [
     {
       "binding": "AKYO_BUCKET",
-      "bucket_name": "akyo-images"
+      "bucket_name": "akyodex-workers-staging-data"
     },
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",

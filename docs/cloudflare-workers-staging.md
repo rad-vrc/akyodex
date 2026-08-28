@@ -11,8 +11,9 @@ rollback target throughout this stage.
 - Entry point: `cloudflare-worker.ts`, which delegates to the generated
   `.open-next/worker.js`
 - Static assets: `.open-next/assets`
-- Application data: dedicated `akyodex-workers-staging-kv`; public avatar
-  images remain read-only through `images.akyodex.com`
+- Application data: dedicated `akyodex-workers-staging-kv`; admin image
+  mutations use the dedicated `akyodex-workers-staging-data` R2 bucket, while
+  public avatar images remain read-only through `images.akyodex.com`
 - Admin GitHub writes: dedicated `workers-staging-data` branch
 - OpenNext incremental cache: regional long-lived cache backed by the dedicated
   `akyodex-workers-staging-cache` R2 bucket
@@ -99,7 +100,10 @@ Verify at least the following before production routing is considered:
 4. Catalog preload is coalesced with the fetch, and catalog loading, search,
    filters, shared `?id=` links, favorites, and the detail modal work.
 5. Admin login and a reversible CRUD operation work after staging secrets are
-   configured. Confirm that the commit lands only on `workers-staging-data`.
+   configured. Confirm that the commit lands only on `workers-staging-data` and
+   image mutations land only in `akyodex-workers-staging-data`. The next-ID
+   route falls back to the public R2 CSV and GitHub when the staging bucket does
+   not contain a CSV snapshot.
 6. Service Worker, Sentry reporting, CSP, AI UI, KV, R2, D1, and Durable Object
    logs show no regression.
 
