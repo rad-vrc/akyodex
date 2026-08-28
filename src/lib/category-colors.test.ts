@@ -60,3 +60,18 @@ test('Nature and its translated hierarchies retain the established plant green',
     assert.equal(getCategoryColor(category), '#5a8a1a');
   }
 });
+
+test('goods and its translated hierarchies use cyan instead of fallback green', () => {
+  const goodsCategories = [
+    'グッズ',
+    'グッズ/揺れ物',
+    'Goods',
+    'Goods/Dangling Accessory',
+    '굿즈',
+    '굿즈/흔들리는 액세서리',
+  ];
+
+  for (const category of goodsCategories) {
+    assert.equal(getCategoryColor(category), '#00acc1');
+  }
+});
