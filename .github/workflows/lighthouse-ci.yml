@@ -1,0 +1,110 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse-mobile:
+    name: Lighthouse Mobile Median
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_R2_BASE: ${{ vars.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com' }}
+      NEXT_PUBLIC_DIFY_CHATBOT_TOKEN: ${{ vars.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+      NEXT_PUBLIC_SENTRY_ENVIRONMENT: lighthouse-ci
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Lighthouse and Chrome versions
+        run: |
+          set -euo pipefail
+          npx lighthouse --version | grep -Fx '13.4.1'
+          google-chrome --version
+
+      - name: Build the Next.js server
+        run: npm run next:build
+
+      - name: Start the Next.js server
+        run: |
+          set -euo pipefail
+          mkdir -p lighthouse-results
+          npm start > lighthouse-results/server.log 2>&1 &
+          echo "SERVER_PID=$!" >> "${GITHUB_ENV}"
+
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/zukan > /dev/null; then
+              exit 0
+            fi
+            if [ "${attempt}" -eq 60 ]; then
+              cat lighthouse-results/server.log
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Run three simulated mobile audits
+        run: |
+          set -euo pipefail
+          mkdir -p lighthouse-results
+
+          for run in 1 2 3; do
+            npx lighthouse http://127.0.0.1:3000/zukan \
+              --only-categories=performance \
+              --form-factor=mobile \
+              --throttling-method=simulate \
+              --chrome-flags="--headless=new --no-sandbox --disable-dev-shm-usage" \
+              --max-wait-for-load=45000 \
+              --output=json \
+              --output-path="lighthouse-results/run-${run}.json" \
+              --quiet
+          done
+
+      - name: Evaluate median performance budgets
+        env:
+          LIGHTHOUSE_SUMMARY_PATH: lighthouse-results/summary.json
+        run: >-
+          node scripts/lighthouse-summary.js
+          lighthouse-results/run-1.json
+          lighthouse-results/run-2.json
+          lighthouse-results/run-3.json
+
+      - name: Stop the Next.js server
+        if: always()
+        run: |
+          if [ -n "${SERVER_PID:-}" ]; then
+            kill "${SERVER_PID}" 2>/dev/null || true
+          fi
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-mobile-reports
+          path: |
+            lighthouse-results/
+          if-no-files-found: warn
+          retention-days: 14
