@@ -154,6 +154,7 @@ jobs:
       name: production
       url: https://akyodex.com
     env:
+      GITHUB_SHA: ${{ github.sha }}
       REQUIRED_WORKER_SECRETS: ADMIN_PASSWORD_OWNER,ADMIN_PASSWORD_ADMIN,SESSION_SECRET,GITHUB_TOKEN,REVALIDATE_SECRET,SENTRY_DSN
 
     steps:
@@ -184,37 +185,60 @@ jobs:
             exit 1
           fi
 
-      - name: Preserve or generate the session signing secret
+      - name: Inspect the latest uploaded Worker version
         run: |
           set -euo pipefail
-          npx wrangler secret list --config "${WORKERS_CONFIG}" \
+          npx wrangler versions list --config "${WORKERS_CONFIG}" \
             --name "${WORKERS_NAME}" \
-            --format json > /tmp/worker-secrets-before.json
-          if SECRET_LIST_PATH=/tmp/worker-secrets-before.json node -e 'const fs=require("node:fs");const secrets=JSON.parse(fs.readFileSync(process.env.SECRET_LIST_PATH,"utf8"));process.exit(secrets.some(({name})=>name==="SESSION_SECRET")?0:1)'; then
-            echo "SESSION_SECRET is already configured; preserving the existing value."
-          else
-            node -e 'process.stdout.write(require("node:crypto").randomBytes(48).toString("base64url"))' | \
-              npx wrangler secret put SESSION_SECRET --config "${WORKERS_CONFIG}" --name "${WORKERS_NAME}"
-          fi
+            --json > /tmp/worker-versions-before.json
+          latest_version_id="$(VERSION_LIST_PATH=/tmp/worker-versions-before.json node -e 'const fs=require("node:fs");const versions=JSON.parse(fs.readFileSync(process.env.VERSION_LIST_PATH,"utf8"));if(!Array.isArray(versions)||versions.length===0)throw new Error("No uploaded Worker versions found");versions.sort((a,b)=>Date.parse(b.metadata.created_on)-Date.parse(a.metadata.created_on));process.stdout.write(versions[0].id)')"
+          npx wrangler versions view "${latest_version_id}" \
+            --config "${WORKERS_CONFIG}" \
+            --name "${WORKERS_NAME}" \
+            --json > /tmp/worker-version-before.json
 
-      - name: Copy revalidation and Sentry secrets without exposing values
+      - name: Create a route-less version with managed secrets
         env:
           REVALIDATE_SECRET_VALUE: ${{ secrets.REVALIDATE_SECRET }}
           SENTRY_DSN_VALUE: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
         run: |
           set -euo pipefail
-          printf '%s' "${REVALIDATE_SECRET_VALUE}" | \
-            npx wrangler secret put REVALIDATE_SECRET --config "${WORKERS_CONFIG}" --name "${WORKERS_NAME}"
-          printf '%s' "${SENTRY_DSN_VALUE}" | \
-            npx wrangler secret put SENTRY_DSN --config "${WORKERS_CONFIG}" --name "${WORKERS_NAME}"
+          SECRET_VERSION_PATH=/tmp/worker-version-before.json node <<'NODE' | \
+            npx wrangler versions secret bulk \
+              --config "${WORKERS_CONFIG}" \
+              --name "${WORKERS_NAME}" \
+              --tag "${GITHUB_SHA}-managed-secrets" \
+              --message "Configure managed production secrets for ${GITHUB_SHA}"
+          const fs = require('node:fs');
+          const { randomBytes } = require('node:crypto');
+          const version = JSON.parse(fs.readFileSync(process.env.SECRET_VERSION_PATH, 'utf8'));
+          const existingNames = new Set(
+            (version.resources?.bindings ?? [])
+              .filter(({ type }) => type === 'secret_text')
+              .map(({ name }) => name)
+          );
+          const secrets = {
+            REVALIDATE_SECRET: process.env.REVALIDATE_SECRET_VALUE,
+            SENTRY_DSN: process.env.SENTRY_DSN_VALUE,
+          };
+          if (!existingNames.has('SESSION_SECRET')) {
+            secrets.SESSION_SECRET = randomBytes(48).toString('base64url');
+          }
+          process.stdout.write(JSON.stringify(secrets));
+          NODE
 
-      - name: Verify all production Worker secret names
+      - name: Verify all secret bindings on the latest Worker version
         run: |
           set -euo pipefail
-          npx wrangler secret list --config "${WORKERS_CONFIG}" \
+          npx wrangler versions list --config "${WORKERS_CONFIG}" \
             --name "${WORKERS_NAME}" \
-            --format json > /tmp/worker-secrets-after.json
-          SECRET_LIST_PATH=/tmp/worker-secrets-after.json node -e 'const fs=require("node:fs");const configured=JSON.parse(fs.readFileSync(process.env.SECRET_LIST_PATH,"utf8"));const names=new Set(configured.map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
+            --json > /tmp/worker-versions-after.json
+          latest_version_id="$(VERSION_LIST_PATH=/tmp/worker-versions-after.json node -e 'const fs=require("node:fs");const versions=JSON.parse(fs.readFileSync(process.env.VERSION_LIST_PATH,"utf8"));if(!Array.isArray(versions)||versions.length===0)throw new Error("No uploaded Worker versions found");versions.sort((a,b)=>Date.parse(b.metadata.created_on)-Date.parse(a.metadata.created_on));process.stdout.write(versions[0].id)')"
+          npx wrangler versions view "${latest_version_id}" \
+            --config "${WORKERS_CONFIG}" \
+            --name "${WORKERS_NAME}" \
+            --json > /tmp/worker-version-after.json
+          SECRET_VERSION_PATH=/tmp/worker-version-after.json node -e 'const fs=require("node:fs");const version=JSON.parse(fs.readFileSync(process.env.SECRET_VERSION_PATH,"utf8"));const names=new Set((version.resources?.bindings??[]).filter(({type})=>type==="secret_text").map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
           echo "Managed production Worker secrets are configured."
 
       - name: Verify Pages remains the production route
@@ -288,10 +312,15 @@ jobs:
       - name: Verify required production Worker secrets
         run: |
           set -euo pipefail
-          npx wrangler secret list --config wrangler.workers.production.jsonc \
+          npx wrangler versions list --config "${WORKERS_CONFIG}" \
             --name "${WORKERS_NAME}" \
-            --format json > /tmp/worker-secrets.json
-          node -e 'const fs=require("node:fs");const configured=JSON.parse(fs.readFileSync("/tmp/worker-secrets.json","utf8"));const names=new Set(configured.map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
+            --json > /tmp/worker-versions.json
+          candidate_version_id="$(VERSION_LIST_PATH=/tmp/worker-versions.json CANDIDATE_TAG="${GITHUB_SHA}" node -e 'const fs=require("node:fs");const versions=JSON.parse(fs.readFileSync(process.env.VERSION_LIST_PATH,"utf8"));const candidates=versions.filter(({annotations})=>annotations?.["workers/tag"]===process.env.CANDIDATE_TAG).sort((a,b)=>Date.parse(b.metadata.created_on)-Date.parse(a.metadata.created_on));if(candidates.length===0)throw new Error(`No Worker version found for tag ${process.env.CANDIDATE_TAG}`);process.stdout.write(candidates[0].id)')"
+          npx wrangler versions view "${candidate_version_id}" \
+            --config "${WORKERS_CONFIG}" \
+            --name "${WORKERS_NAME}" \
+            --json > /tmp/worker-candidate-version.json
+          SECRET_VERSION_PATH=/tmp/worker-candidate-version.json node -e 'const fs=require("node:fs");const version=JSON.parse(fs.readFileSync(process.env.SECRET_VERSION_PATH,"utf8"));const names=new Set((version.resources?.bindings??[]).filter(({type})=>type==="secret_text").map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
 
       - name: Deploy candidate version to 100 percent
         id: deploy-version

@@ -180,10 +180,13 @@ test('Workers production workflow configures managed secrets without activating 
   assert.match(workflow, /inputs\.action == 'configure-secrets'/);
   assert.match(workflow, /REVALIDATE_SECRET_VALUE: \$\{\{ secrets\.REVALIDATE_SECRET \}\}/);
   assert.match(workflow, /SENTRY_DSN_VALUE: \$\{\{ vars\.NEXT_PUBLIC_SENTRY_DSN \}\}/);
-  assert.match(workflow, /randomBytes\(48\)\.toString\("base64url"\)/);
-  assert.match(workflow, /wrangler secret put SESSION_SECRET/);
-  assert.match(workflow, /wrangler secret put REVALIDATE_SECRET/);
-  assert.match(workflow, /wrangler secret put SENTRY_DSN/);
+  assert.match(workflow, /randomBytes\(48\)\.toString\('base64url'\)/);
+  assert.match(workflow, /wrangler versions secret bulk/);
+  assert.match(workflow, /wrangler versions view/);
+  assert.match(workflow, /REVALIDATE_SECRET: process\.env\.REVALIDATE_SECRET_VALUE/);
+  assert.match(workflow, /SENTRY_DSN: process\.env\.SENTRY_DSN_VALUE/);
+  assert.doesNotMatch(workflow, /\bnpx wrangler secret put\b/);
+  assert.match(workflow, /annotations\?\.\["workers\/tag"\]===process\.env\.CANDIDATE_TAG/);
   assert.match(workflow, /Managed production Worker secrets are configured/);
 });
 
