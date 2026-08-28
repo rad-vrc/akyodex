@@ -44,3 +44,19 @@ test('nested categories inherit the top-level category color', () => {
     }
   }
 });
+
+test('Nature and its translated hierarchies retain the established plant green', () => {
+  const natureCategories = [
+    '自然',
+    '自然/植物',
+    '自然/植物/苔',
+    'Nature',
+    'Nature/Plant',
+    '자연',
+    '자연/식물',
+  ];
+
+  for (const category of natureCategories) {
+    assert.equal(getCategoryColor(category), '#5a8a1a');
+  }
+});
