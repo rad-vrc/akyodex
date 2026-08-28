@@ -242,7 +242,7 @@ jobs:
           exit 1
 
       - name: Remove Worker route after failed activation
-        if: ${{ failure() && steps.deploy-version.outcome == 'success' }}
+        if: ${{ (failure() || cancelled()) && steps.deploy-version.outcome == 'success' }}
         run: npx wrangler triggers deploy --config wrangler.workers.production-rollback.jsonc
 
       - name: Publish activation summary

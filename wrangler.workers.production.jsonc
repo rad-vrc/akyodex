@@ -57,8 +57,8 @@
   "d1_databases": [
     {
       "binding": "NEXT_TAG_CACHE_D1",
-      "database_name": "akyodex-next-tag-cache",
-      "database_id": "1484cf52-987d-4861-9590-99d77cd40390"
+      "database_name": "akyodex-next-tag-cache-production",
+      "database_id": "e7415ce9-4544-4bec-bb4b-f944df17d153"
     }
   ],
   "durable_objects": {

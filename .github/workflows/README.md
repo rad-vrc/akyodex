@@ -118,9 +118,10 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 - `main`へのpushでは、SHA付きWorker versionをuploadするだけでトラフィックを切り替えません。
 - 本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。
 - `activate`は固定Pagesの健全性とWorker secretsを確認し、対象SHAを100%へdeployしてから最後に`akyodex.com/*` routeを付けます。
-- runtime検証に失敗した場合はrouteを自動で外し、固定Pagesへ戻します。
+- runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合はrouteを自動で外し、固定Pagesへ戻します。
 - `rollback-pages`はWorker routeだけを外します。Pagesの再ビルドは不要です。
 - routeの付け外しにはVersions運用向けの`wrangler triggers deploy`を使います。このコマンドはWrangler 4.126時点でexperimentalのため、手動activation、runtime検証、自動route解除を必須の防御として維持します。
+- productionの`NEXT_TAG_CACHE_D1`は`akyodex-next-tag-cache-production`を使用し、stagingのタグ無効化が本番キャッシュへ波及しないよう分離します。
 
 ### 初回切替手順
 

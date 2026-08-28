@@ -20,6 +20,11 @@ interface WorkersWranglerConfig {
     binding: string;
     id: string;
   }>;
+  d1_databases?: Array<{
+    binding: string;
+    database_name: string;
+    database_id: string;
+  }>;
   r2_buckets?: Array<{
     binding: string;
     bucket_name: string;
@@ -41,6 +46,9 @@ test('Workers production config uses production data and an explicit route', asy
   const cacheBucket = config.r2_buckets?.find(
     ({ binding }) => binding === 'NEXT_INC_CACHE_R2_BUCKET'
   );
+  const tagCache = config.d1_databases?.find(
+    ({ binding }) => binding === 'NEXT_TAG_CACHE_D1'
+  );
 
   assert.equal(config.name, 'akyodex-workers-production');
   assert.deepEqual(route, {
@@ -54,6 +62,8 @@ test('Workers production config uses production data and an explicit route', asy
   assert.equal(dataNamespace?.id, '42b435eff5ca4de9a33d70faff6c6abc');
   assert.equal(imageBucket?.bucket_name, 'akyo-images');
   assert.equal(cacheBucket?.bucket_name, 'akyodex-workers-production-cache');
+  assert.equal(tagCache?.database_name, 'akyodex-next-tag-cache-production');
+  assert.notEqual(tagCache?.database_id, '1484cf52-987d-4861-9590-99d77cd40390');
 });
 
 test('Workers production workflow separates upload, activation, and Pages rollback', async () => {
@@ -99,6 +109,10 @@ test('Workers production workflow separates upload, activation, and Pages rollba
   );
   assert.match(workflow, /x-akyodex-worker-tag/);
   assert.match(workflow, /x-robots-tag/);
+  assert.match(
+    workflow,
+    /\(failure\(\) \|\| cancelled\(\)\) && steps\.deploy-version\.outcome == 'success'/
+  );
   assert.deepEqual(rollbackConfig.routes, []);
 });
 
