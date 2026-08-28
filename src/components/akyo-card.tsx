@@ -300,6 +300,20 @@ export function AkyoCard({
           {displayName}
         </h3>
 
+        {/* 作者情報 - 元の実装と同じ形式 (改行あり、:付き) */}
+        <p className="text-xs text-gray-600 mb-2 whitespace-pre-line">
+          {!isWorldEntry &&
+            akyo.nickname &&
+            akyo.avatarName &&
+            akyo.nickname !== akyo.avatarName && (
+              <>
+                {t("card.avatarName", lang)}: {akyo.avatarName}
+                {"\n"}
+              </>
+            )}
+          {t("card.author", lang)}: {author}
+        </p>
+
         {/* 属性バッジ */}
         {category && (
           <div className="flex flex-wrap gap-1 mb-2">
@@ -321,20 +335,6 @@ export function AkyoCard({
             })}
           </div>
         )}
-
-        {/* 作者情報 - 元の実装と同じ形式 (改行あり、:付き) */}
-        <p className="text-xs text-gray-600 mb-2 whitespace-pre-line">
-          {!isWorldEntry &&
-            akyo.nickname &&
-            akyo.avatarName &&
-            akyo.nickname !== akyo.avatarName && (
-              <>
-                {t("card.avatarName", lang)}: {akyo.avatarName}
-                {"\n"}
-              </>
-            )}
-          {t("card.author", lang)}: {author}
-        </p>
 
         {/* くわしく見るボタン */}
         <button
