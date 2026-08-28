@@ -164,6 +164,7 @@ function createCategoryProcessor(definitions) {
 
     // Plant
     if (matches(PLANT_KEYWORDS, nickname)) {
+      addCat(CONFIG.plantParentCategory);
       addCat(CONFIG.plantCategory);
     }
 

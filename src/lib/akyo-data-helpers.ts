@@ -86,7 +86,7 @@ export function findAkyoById(data: AkyoData[], id: string): AkyoData | null {
  * カテゴリ名 → 色の定数マッピング
  *
  * 黄色系は白背景で黄土色に見えるため、食べ物・きつねを深いオレンジに調整済み。
- * 低コントラストだった植物色も WCAG 1.4.3 準拠のために暗めに調整済み。
+ * 低コントラストだった自然色も WCAG 1.4.3 準拠のために暗めに調整済み。
  */
 const CATEGORY_COLOR_MAP: Record<string, string> = {
   チョコミント: '#00bfa5',
@@ -102,6 +102,9 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   ドラゴン: '#d32f2f',
   ロボット: '#757575',
   食べ物: '#d84315',
+  自然: '#5a8a1a',
+  Nature: '#5a8a1a',
+  자연: '#5a8a1a',
   植物: '#5a8a1a',
   宇宙: '#3f51b5',
   和風: '#d32f2f',
