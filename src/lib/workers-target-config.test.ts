@@ -6,6 +6,9 @@ import test from 'node:test';
 
 interface WorkersWranglerConfig {
   name?: string;
+  main?: string;
+  workers_dev?: boolean;
+  preview_urls?: boolean;
   routes?: Array<{
     pattern: string;
     zone_name?: string;
@@ -77,17 +80,41 @@ test('Workers production workflow separates upload, activation, and Pages rollba
     process.cwd(),
     'wrangler.workers.production-rollback.jsonc'
   );
+  const bootstrapConfigPath = path.join(
+    process.cwd(),
+    'wrangler.workers.production-bootstrap.jsonc'
+  );
 
   assert.equal(existsSync(workflowPath), true, 'production Workers workflow must exist');
   assert.equal(existsSync(rollbackConfigPath), true, 'route rollback config must exist');
-  if (!existsSync(workflowPath) || !existsSync(rollbackConfigPath)) return;
+  assert.equal(existsSync(bootstrapConfigPath), true, 'bootstrap config must exist');
+  if (
+    !existsSync(workflowPath) ||
+    !existsSync(rollbackConfigPath) ||
+    !existsSync(bootstrapConfigPath)
+  ) {
+    return;
+  }
 
   const workflow = await readFile(workflowPath, 'utf8');
+  const bootstrapConfig = JSON.parse(
+    await readFile(bootstrapConfigPath, 'utf8')
+  ) as WorkersWranglerConfig;
   const rollbackConfig = JSON.parse(
     await readFile(rollbackConfigPath, 'utf8')
   ) as WorkersWranglerConfig;
 
   assert.match(workflow, /github\.ref_name == 'main'/);
+  assert.match(workflow, /wrangler deployments list/);
+  assert.match(workflow, /code: 10007/);
+  assert.match(
+    workflow,
+    /wrangler deploy --config "\$\{WORKERS_BOOTSTRAP_CONFIG\}"/
+  );
+  assert.ok(
+    workflow.indexOf('wrangler deployments list') <
+      workflow.indexOf('wrangler versions upload')
+  );
   assert.match(workflow, /wrangler versions upload --config wrangler\.workers\.production\.jsonc/);
   assert.match(workflow, /wrangler versions deploy --config wrangler\.workers\.production\.jsonc/);
   assert.match(workflow, /--version-tag "\$\{GITHUB_SHA\}@100%"/);
@@ -113,6 +140,11 @@ test('Workers production workflow separates upload, activation, and Pages rollba
     workflow,
     /\(failure\(\) \|\| cancelled\(\)\) && steps\.deploy-version\.outcome == 'success'/
   );
+  assert.equal(bootstrapConfig.name, 'akyodex-workers-production');
+  assert.equal(bootstrapConfig.main, 'cloudflare-worker-bootstrap.ts');
+  assert.equal(bootstrapConfig.workers_dev, false);
+  assert.equal(bootstrapConfig.preview_urls, false);
+  assert.deepEqual(bootstrapConfig.routes, []);
   assert.deepEqual(rollbackConfig.routes, []);
 });
 
