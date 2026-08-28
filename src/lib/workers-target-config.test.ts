@@ -302,3 +302,19 @@ test('Pages PR previews are deployed independently without unfreezing Pages prod
   assert.match(pagesConfig, /bucket_name\s*=\s*"akyodex-pages-preview-cache"/);
   assert.match(prepareScript, /cloudflare-pages-worker-entry\.mjs/);
 });
+
+test('fingerprinted Next.js static assets use immutable browser caching', async () => {
+  const headersPath = path.join(process.cwd(), 'public', '_headers');
+
+  assert.equal(existsSync(headersPath), true);
+
+  const headers = await readFile(headersPath, 'utf8');
+
+  assert.match(headers, /^\/_next\/static\/\*$/m);
+  assert.match(
+    headers,
+    /^\s+Cache-Control:\s*public,\s*max-age=31536000,\s*immutable$/m
+  );
+  assert.doesNotMatch(headers, /^\/\*$/m);
+  assert.doesNotMatch(headers, /^\/api\//m);
+});

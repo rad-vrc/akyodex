@@ -9,7 +9,7 @@ export function CatalogPreload({ href }: { href: string }) {
   preload(href, {
     as: "fetch",
     crossOrigin: "anonymous",
-    fetchPriority: "auto",
+    fetchPriority: "high",
     type: "application/json",
   });
   return null;
