@@ -1,21 +1,123 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
 interface WorkersWranglerConfig {
+  name?: string;
+  routes?: Array<{
+    pattern: string;
+    zone_name?: string;
+    custom_domain?: boolean;
+  }>;
+  services?: Array<{
+    binding: string;
+    service: string;
+  }>;
   vars?: Record<string, string>;
+  kv_namespaces?: Array<{
+    binding: string;
+    id: string;
+  }>;
   r2_buckets?: Array<{
     binding: string;
     bucket_name: string;
   }>;
 }
 
+test('Workers production config uses production data and an explicit route', async () => {
+  const configPath = path.join(process.cwd(), 'wrangler.workers.production.jsonc');
+  assert.equal(existsSync(configPath), true, 'production Workers config must exist');
+  if (!existsSync(configPath)) return;
+
+  const config = JSON.parse(await readFile(configPath, 'utf8')) as WorkersWranglerConfig;
+  const route = config.routes?.[0];
+  const selfReference = config.services?.find(
+    ({ binding }) => binding === 'WORKER_SELF_REFERENCE'
+  );
+  const dataNamespace = config.kv_namespaces?.find(({ binding }) => binding === 'AKYO_KV');
+  const imageBucket = config.r2_buckets?.find(({ binding }) => binding === 'AKYO_BUCKET');
+  const cacheBucket = config.r2_buckets?.find(
+    ({ binding }) => binding === 'NEXT_INC_CACHE_R2_BUCKET'
+  );
+
+  assert.equal(config.name, 'akyodex-workers-production');
+  assert.deepEqual(route, {
+    pattern: 'akyodex.com/*',
+    zone_name: 'akyodex.com',
+  });
+  assert.equal(selfReference?.service, 'akyodex-workers-production');
+  assert.equal(config.vars?.AKYODEX_DEPLOYMENT_ENVIRONMENT, 'production');
+  assert.equal(config.vars?.SENTRY_ENVIRONMENT, 'production');
+  assert.equal(config.vars?.GITHUB_BRANCH, 'main');
+  assert.equal(dataNamespace?.id, '42b435eff5ca4de9a33d70faff6c6abc');
+  assert.equal(imageBucket?.bucket_name, 'akyo-images');
+  assert.equal(cacheBucket?.bucket_name, 'akyodex-workers-production-cache');
+});
+
+test('Workers production workflow separates upload, activation, and Pages rollback', async () => {
+  const workflowPath = path.join(
+    process.cwd(),
+    '.github',
+    'workflows',
+    'deploy-cloudflare-workers-production.yml'
+  );
+  const rollbackConfigPath = path.join(
+    process.cwd(),
+    'wrangler.workers.production-rollback.jsonc'
+  );
+
+  assert.equal(existsSync(workflowPath), true, 'production Workers workflow must exist');
+  assert.equal(existsSync(rollbackConfigPath), true, 'route rollback config must exist');
+  if (!existsSync(workflowPath) || !existsSync(rollbackConfigPath)) return;
+
+  const workflow = await readFile(workflowPath, 'utf8');
+  const rollbackConfig = JSON.parse(
+    await readFile(rollbackConfigPath, 'utf8')
+  ) as WorkersWranglerConfig;
+
+  assert.match(workflow, /github\.ref_name == 'main'/);
+  assert.match(workflow, /wrangler versions upload --config wrangler\.workers\.production\.jsonc/);
+  assert.match(workflow, /wrangler versions deploy --config wrangler\.workers\.production\.jsonc/);
+  assert.match(workflow, /--version-tag "\$\{GITHUB_SHA\}@100%"/);
+  assert.match(workflow, /wrangler triggers deploy --config wrangler\.workers\.production\.jsonc/);
+  assert.match(
+    workflow,
+    /wrangler triggers deploy --config wrangler\.workers\.production-rollback\.jsonc/
+  );
+  assert.match(workflow, /https:\/\/akyodex\.pages\.dev\/zukan/);
+  assert.match(workflow, /ADMIN_PASSWORD_OWNER/);
+  assert.match(workflow, /ADMIN_PASSWORD_ADMIN/);
+  assert.match(workflow, /SESSION_SECRET/);
+  assert.match(workflow, /GITHUB_TOKEN/);
+  assert.match(workflow, /REVALIDATE_SECRET/);
+  assert.match(workflow, /SENTRY_DSN/);
+  assert.match(
+    workflow,
+    /NEXT_PUBLIC_DIFY_CHATBOT_TOKEN: \$\{\{ vars\.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN \}\}/
+  );
+  assert.match(workflow, /x-akyodex-worker-tag/);
+  assert.match(workflow, /x-robots-tag/);
+  assert.deepEqual(rollbackConfig.routes, []);
+});
+
+test('CI builds and dry-runs the production Workers target on Linux', async () => {
+  const workflow = await readFile(
+    path.join(process.cwd(), '.github', 'workflows', 'ci.yml'),
+    'utf8'
+  );
+
+  assert.match(workflow, /run: npm run build:workers:production/);
+  assert.match(workflow, /run: npm run dry-run:workers:production/);
+});
+
 test('Workers runtime selects the Workers OpenNext cache adapters', async () => {
   const configPath = path.join(process.cwd(), 'wrangler.workers.jsonc');
   const config = JSON.parse(await readFile(configPath, 'utf8')) as WorkersWranglerConfig;
 
   assert.equal(config.vars?.CLOUDFLARE_DEPLOY_TARGET, 'workers');
+  assert.equal(config.vars?.AKYODEX_DEPLOYMENT_ENVIRONMENT, 'staging');
 });
 
 test('Workers staging keeps admin image mutations out of the production R2 bucket', async () => {

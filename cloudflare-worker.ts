@@ -22,7 +22,7 @@ const handler = {
     return withWorkerResponseHeaders(
       response,
       env.CF_VERSION_METADATA,
-      request.url
+      env.AKYODEX_DEPLOYMENT_ENVIRONMENT
     );
   },
 } satisfies CloudflareWorkerHandler<WorkersRuntimeEnv>;
