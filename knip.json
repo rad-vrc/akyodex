@@ -2,6 +2,7 @@
   "$schema": "https://unpkg.com/knip@^5/schema.json",
   "ignore": [
     "open-next.config.ts",
+    "cloudflare-worker-bootstrap.ts",
     "next.config.test.ts",
     "public/sw.js",
     "sw.js",
