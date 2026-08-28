@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import type { AkyoData } from "@/types/akyo";
 import {
+  AkyoCard,
   getCatalogCardPrimaryImageSrc,
   getCatalogCardImageRequestWidth,
   shouldBypassImageOptimization,
@@ -62,4 +65,33 @@ test("getCatalogAvatarCardImageSrc requests the fixed 768px transformation by st
     getCatalogAvatarCardImageSrc?.({ id: "0826" }),
     "/api/avatar-image?id=0826&w=768",
   );
+});
+
+test("aligns the detail action to the bottom of stretched catalog cards", () => {
+  const akyo: AkyoData = {
+    id: "0001",
+    entryType: "avatar",
+    appearance: "",
+    nickname: "Test Akyo",
+    avatarName: "Test Avatar",
+    sourceUrl: "https://vrchat.com/home/avatar/avtr_test",
+    category: "動物,動物/きつね",
+    comment: "",
+    author: "Test Author",
+    attribute: "動物,動物/きつね",
+    notes: "",
+    creator: "Test Author",
+    avatarUrl: "https://vrchat.com/home/avatar/avtr_test",
+  };
+
+  const markup = renderToStaticMarkup(
+    createElement(AkyoCard, {
+      akyo,
+      lang: "ja",
+    }),
+  );
+
+  assert.match(markup, /class="akyo-card relative flex h-full flex-col"/);
+  assert.match(markup, /class="flex flex-1 flex-col gap-2 p-4"/);
+  assert.match(markup, /class="detail-button[^\"]*\bmt-auto\b/);
 });

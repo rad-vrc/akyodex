@@ -165,7 +165,10 @@ export function AkyoCard({
   const cardLabel = `${formatDisplayId(akyo)} ${displayName} ${t("card.detail", lang)}`;
 
   return (
-    <article className="akyo-card relative" aria-labelledby={`card-title-${akyo.id}`}>
+    <article
+      className="akyo-card relative flex h-full flex-col"
+      aria-labelledby={`card-title-${akyo.id}`}
+    >
       <button
         type="button"
         data-card-trigger="true"
@@ -233,7 +236,7 @@ export function AkyoCard({
       </div>
 
       {/* カード情報 */}
-      <div className="p-4 space-y-2">
+      <div className="flex flex-1 flex-col gap-2 p-4">
         {/* VRChatリンク と 三面図DLボタン */}
         <div className="relative z-20 flex items-center mb-1">
           {sourceUrl && (
@@ -338,7 +341,7 @@ export function AkyoCard({
           ref={detailButtonRef}
           type="button"
           onClick={(e) => handleCardClick(e.currentTarget)}
-          className="detail-button relative z-20 w-full flex items-center justify-center gap-2"
+          className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
           aria-haspopup="dialog"
         >
           <span className="animate-bounce" aria-hidden="true">🌟</span>
