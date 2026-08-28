@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
 
 test.describe("Issue #320 accessibility regressions", () => {
   test("P0: skip link, keyboard-open card, and modal focus management work on /zukan", async ({
@@ -93,6 +93,40 @@ test.describe("Issue #320 accessibility regressions", () => {
 
     expect(scopeValues.length).toBeGreaterThan(0);
     expect(scopeValues.every((scopeValue) => scopeValue === "col")).toBeTruthy();
+  });
+
+  test("P1: avatar, world, and BOOTH URLs retain conventional link styling", async ({
+    page,
+  }) => {
+    const expectConventionalLinkStyle = async (link: Locator) => {
+      await expect(link).toHaveClass(/\btext-blue-600\b/);
+      await expect(link).toHaveClass(/\bhover:text-blue-800\b/);
+      await expect(link).toHaveClass(/\bunderline\b/);
+      await expect(link).not.toHaveClass(/\btext-blue-950\b/);
+    };
+
+    await page.goto("/zukan?id=Avatar0002");
+    const avatarDialog = page.getByRole("dialog");
+    await expect(avatarDialog).toBeVisible();
+    await expect(
+      avatarDialog.getByText(/VRChat (アバターURL|Avatar URL|아바타 URL)/, { exact: true }),
+    ).toBeVisible();
+    await expectConventionalLinkStyle(
+      avatarDialog.locator('a[href*="vrchat.com/home/avatar/"]'),
+    );
+    await expectConventionalLinkStyle(
+      avatarDialog.locator('a[href*="booth.pm/"]'),
+    );
+
+    await page.goto("/zukan?id=World0001");
+    const worldDialog = page.getByRole("dialog");
+    await expect(worldDialog).toBeVisible();
+    await expect(
+      worldDialog.getByText(/VRChat (ワールドURL|World URL|월드 URL)/, { exact: true }),
+    ).toBeVisible();
+    await expectConventionalLinkStyle(
+      worldDialog.locator('a[href*="vrchat.com/home/world/"]'),
+    );
   });
 
   test("P1: offline and admin login controls expose proper semantics", async ({ page }) => {
