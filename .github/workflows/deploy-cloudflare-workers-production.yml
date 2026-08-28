@@ -310,6 +310,7 @@ jobs:
           fi
 
       - name: Verify required production Worker secrets
+        id: candidate-version
         run: |
           set -euo pipefail
           npx wrangler versions list --config "${WORKERS_CONFIG}" \
@@ -321,13 +322,15 @@ jobs:
             --name "${WORKERS_NAME}" \
             --json > /tmp/worker-candidate-version.json
           SECRET_VERSION_PATH=/tmp/worker-candidate-version.json node -e 'const fs=require("node:fs");const version=JSON.parse(fs.readFileSync(process.env.SECRET_VERSION_PATH,"utf8"));const names=new Set((version.resources?.bindings??[]).filter(({type})=>type==="secret_text").map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
+          echo "version-id=${candidate_version_id}" >> "${GITHUB_OUTPUT}"
 
       - name: Deploy candidate version to 100 percent
         id: deploy-version
         run: |
           set -euo pipefail
           npx wrangler versions deploy --config wrangler.workers.production.jsonc \
-            --version-tag "${GITHUB_SHA}@100%" \
+            --version-id "${{ steps.candidate-version.outputs.version-id }}" \
+            --percentage 100 \
             --message "Activate production ${GITHUB_SHA}" \
             --yes
 

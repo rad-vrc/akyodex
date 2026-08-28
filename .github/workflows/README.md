@@ -120,7 +120,7 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 - 候補upload用configには本番routeを含めません。`akyodex.com/*`はroute専用configを使う手動`activate`だけが設定できます。
 - Workers本番切替後にDurable Object migrationを追加した場合、この初回専用経路はPages確認で停止します。稼働中Workerへmigrationを適用する手順を別途レビューし、手動で実行してください。
 - 本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。
-- `activate`は固定Pagesの健全性とWorker secretsを確認し、対象SHAを100%へdeployしてから最後に`akyodex.com/*` routeを付けます。
+- `activate`は固定Pagesの健全性とWorker secretsを確認し、同じSHAタグが複数存在しても最新の候補version IDを一意に選んで100%へdeployしてから、最後に`akyodex.com/*` routeを付けます。
 - runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合はrouteを自動で外し、固定Pagesへ戻します。
 - `rollback-pages`はWorker routeだけを外します。Pagesの再ビルドは不要です。
 - routeの付け外しにはVersions運用向けの`wrangler triggers deploy`を使います。このコマンドはWrangler 4.126時点でexperimentalのため、手動activation、runtime検証、自動route解除を必須の防御として維持します。
