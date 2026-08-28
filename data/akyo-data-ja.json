@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-27T10:46:47.888Z",
-  "count": 936,
+  "updatedAt": "2026-08-28T09:11:57.230Z",
+  "count": 937,
   "data": [
     {
       "id": "0001",
@@ -10684,6 +10684,18 @@
       "author": "Lo-rem",
       "sourceUrl": "https://vrchat.com/home/world/wrld_028f1098-00e1-41b2-b619-920b929f6317/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_028f1098-00e1-41b2-b619-920b929f6317/"
+    },
+    {
+      "id": "0937",
+      "entryType": "avatar",
+      "displaySerial": "0831",
+      "nickname": "ぷらぷらAkyoストラップAkyo",
+      "avatarName": "ぷらぷらAkyoストラップAkyo",
+      "category": "チョコミント類,ローポリ,小さい,グッズ,グッズ/揺れ物",
+      "comment": "【作者コメント】\nFketReal2026Sで作成、販売された「ぷらぷらAkyoストラップ」がバーチャルにもやってきた！ぷらぷらというよりびよんびよん。わっか状の物にフィズボーン入れてきれいに動かしたいと思うと労力がやべえぞ！",
+      "author": "nekononomicon",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_c4d2fce7-efbb-434e-931b-3a92e4f0a5c5",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c4d2fce7-efbb-434e-931b-3a92e4f0a5c5"
     }
   ]
 }
