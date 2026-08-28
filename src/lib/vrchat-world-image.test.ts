@@ -177,6 +177,23 @@ test('getPreferredCloudflareImageFormat prefers AVIF, then WebP, then the origin
   assert.equal(getPreferredCloudflareImageFormat?.(null), null);
 });
 
+test('getPreferredCloudflareImageFormat honors Accept quality values', () => {
+  assert.equal(typeof getPreferredCloudflareImageFormat, 'function');
+
+  assert.equal(
+    getPreferredCloudflareImageFormat?.('image/avif;q=0,image/webp;q=1'),
+    'webp'
+  );
+  assert.equal(
+    getPreferredCloudflareImageFormat?.('image/avif;q=0.2,image/webp;q=0.8'),
+    'webp'
+  );
+  assert.equal(
+    getPreferredCloudflareImageFormat?.('image/avif;q=0,image/webp;q=0'),
+    null
+  );
+});
+
 test('createVRChatWorldImageFetchInit applies the Cloudflare image transformation', () => {
   assert.equal(typeof createVRChatWorldImageFetchInit, 'function');
 

@@ -73,6 +73,10 @@ test.describe("Complete catalog loading", () => {
 
     await apiRoute.fulfill({ json: { data: catalog.data } });
     await expect(page.locator("input.search-input")).toBeEnabled();
+    await expect(page.locator("#catalog-status-announcement")).toContainText(
+      "図鑑の読み込みが完了しました",
+    );
+    await expect(page.getByLabel("カテゴリを検索...")).toBeVisible();
     await expect(filterFieldset).not.toHaveAttribute("disabled", "");
     await expect(page.locator(".list-view-table")).toBeVisible();
     await page.getByRole("button", { name: "カード表示" }).click();
@@ -195,6 +199,9 @@ test.describe("Complete catalog loading", () => {
     await expect(dialog.getByRole("button", { name: "VRChatで見る" })).toBeVisible();
     await expect(page.locator("input.search-input")).toBeDisabled();
 
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#main-content")).toBeFocused();
+
     await apiRoute.fulfill({ json: { data: catalog.data } });
   });
 
@@ -251,7 +258,9 @@ test.describe("Complete catalog loading", () => {
     await page.goto("/zukan");
 
     await expect(page.locator("input.search-input")).toBeEnabled();
-    await expect(page.getByText(/1件のデータを読み込めませんでした/)).toBeVisible();
+    await expect(
+      page.getByText(/1件のデータを読み込めませんでした/).last(),
+    ).toBeVisible();
     await page.locator("input.search-input").fill("スーパーワープAkyo");
     await expect(page.locator("article.akyo-card")).toHaveCount(1);
   });
@@ -357,6 +366,7 @@ test.describe("Complete catalog loading", () => {
         },
       ]);
       await page.goto("/zukan");
+      await expect(page.locator("html")).toHaveAttribute("lang", language);
       await expect(page.locator("input.search-input")).toBeEnabled();
       await expect(page.locator("#zukan-filter-panel > fieldset")).toBeEnabled();
       await expect.poll(() => requestedLanguages.includes(language)).toBe(true);

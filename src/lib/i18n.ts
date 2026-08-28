@@ -178,6 +178,11 @@ export const UI_TEXTS = {
     en: "Loading the complete catalog...",
     ko: "도감 전체 데이터를 불러오는 중입니다...",
   },
+  "loading.catalogComplete": {
+    ja: "図鑑の読み込みが完了しました",
+    en: "The complete catalog is ready",
+    ko: "도감 불러오기가 완료되었습니다",
+  },
   "loading.retry": {
     ja: "再試行",
     en: "Retry",

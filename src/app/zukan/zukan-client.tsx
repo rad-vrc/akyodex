@@ -342,6 +342,8 @@ export function ZukanClient({
             String(droppedCatalogEntryCount),
           )
         : null;
+  const catalogStatusAnnouncement =
+    languageStatusMessage ?? t("loading.catalogComplete", lang);
   const resolvedIsFilterPanelOpen = resolveFilterPanelOpenState({
     isFilterPanelOpen,
     isMobile,
@@ -522,7 +524,7 @@ export function ZukanClient({
     }
 
     sharedEntryHandledRef.current = true;
-    modalTriggerRef.current = null;
+    modalTriggerRef.current = mainContentRef.current;
     setShouldRenderDetailModal(true);
     setSelectedAkyo(sharedEntry);
     setIsModalOpen(true);
@@ -810,6 +812,16 @@ export function ZukanClient({
         </nav>
       </header>
 
+      <div
+        id="catalog-status-announcement"
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {catalogStatusAnnouncement}
+      </div>
+
       {languageStatusMessage ? (
         <div className="fixed bottom-4 left-4 right-24 z-[80] sm:left-auto sm:right-6 sm:w-[420px]">
           <div
@@ -819,9 +831,7 @@ export function ZukanClient({
                 : "border border-sky-300 bg-sky-50/95 text-sky-900"
             }`}
           >
-            <div role="status" aria-live="polite" aria-atomic="true">
-              {languageStatusMessage}
-            </div>
+            <div>{languageStatusMessage}</div>
             {refetchError ? (
               <button
                 type="button"
