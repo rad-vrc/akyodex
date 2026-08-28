@@ -128,7 +128,14 @@ test('Workers production workflow separates upload, activation, and Pages rollba
   );
   assert.match(workflow, /wrangler versions upload --config wrangler\.workers\.production\.jsonc/);
   assert.match(workflow, /wrangler versions deploy --config wrangler\.workers\.production\.jsonc/);
-  assert.match(workflow, /--version-tag "\$\{GITHUB_SHA\}@100%"/);
+  assert.match(workflow, /id: candidate-version/);
+  assert.match(workflow, /version-id=\$\{candidate_version_id\}/);
+  assert.match(
+    workflow,
+    /--version-id "\$\{\{ steps\.candidate-version\.outputs\.version-id \}\}"/
+  );
+  assert.match(workflow, /--percentage 100/);
+  assert.doesNotMatch(workflow, /--version-tag "\$\{GITHUB_SHA\}@100%"/);
   assert.match(
     workflow,
     /WORKERS_ROUTE_CONFIG: wrangler\.workers\.production-route\.jsonc/
