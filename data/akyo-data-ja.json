@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-08-28T09:11:57.230Z",
-  "count": 937,
+  "updatedAt": "2026-08-28T09:32:08.859Z",
+  "count": 938,
   "data": [
     {
       "id": "0001",
@@ -10696,6 +10696,18 @@
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c4d2fce7-efbb-434e-931b-3a92e4f0a5c5",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_c4d2fce7-efbb-434e-931b-3a92e4f0a5c5"
+    },
+    {
+      "id": "0938",
+      "entryType": "avatar",
+      "displaySerial": "0832",
+      "nickname": "岩苔Akyo/Akyo法師",
+      "avatarName": "Akyo_Boshi",
+      "category": "形状・触り心地,形状・触り心地/硬い,植物,植物/苔,歴史,自然,自然/岩石",
+      "comment": "便宜上のニックネームは岩苔Akyoかな？\nなんでもいいと思う！",
+      "author": "カヤ（kaya）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6de920c0-a584-44e8-9f93-a18e74681044",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6de920c0-a584-44e8-9f93-a18e74681044"
     }
   ]
 }
