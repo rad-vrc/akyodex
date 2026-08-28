@@ -8,12 +8,8 @@
     "global_fetch_strictly_public"
   ],
   "workers_dev": false,
-  "routes": [
-    {
-      "pattern": "akyodex.com/*",
-      "zone_name": "akyodex.com"
-    }
-  ],
+  "preview_urls": false,
+  "routes": [],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

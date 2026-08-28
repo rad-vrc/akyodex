@@ -34,13 +34,20 @@ interface WorkersWranglerConfig {
   }>;
 }
 
-test('Workers production config uses production data and an explicit route', async () => {
+test('Workers production config uses production data without exposing a route', async () => {
   const configPath = path.join(process.cwd(), 'wrangler.workers.production.jsonc');
+  const routeConfigPath = path.join(
+    process.cwd(),
+    'wrangler.workers.production-route.jsonc'
+  );
   assert.equal(existsSync(configPath), true, 'production Workers config must exist');
-  if (!existsSync(configPath)) return;
+  assert.equal(existsSync(routeConfigPath), true, 'production route config must exist');
+  if (!existsSync(configPath) || !existsSync(routeConfigPath)) return;
 
   const config = JSON.parse(await readFile(configPath, 'utf8')) as WorkersWranglerConfig;
-  const route = config.routes?.[0];
+  const routeConfig = JSON.parse(
+    await readFile(routeConfigPath, 'utf8')
+  ) as WorkersWranglerConfig;
   const selfReference = config.services?.find(
     ({ binding }) => binding === 'WORKER_SELF_REFERENCE'
   );
@@ -54,10 +61,15 @@ test('Workers production config uses production data and an explicit route', asy
   );
 
   assert.equal(config.name, 'akyodex-workers-production');
-  assert.deepEqual(route, {
+  assert.equal(config.workers_dev, false);
+  assert.equal(config.preview_urls, false);
+  assert.deepEqual(config.routes, []);
+  assert.equal(routeConfig.name, 'akyodex-workers-production');
+  assert.equal(routeConfig.workers_dev, false);
+  assert.deepEqual(routeConfig.routes, [{
     pattern: 'akyodex.com/*',
     zone_name: 'akyodex.com',
-  });
+  }]);
   assert.equal(selfReference?.service, 'akyodex-workers-production');
   assert.equal(config.vars?.AKYODEX_DEPLOYMENT_ENVIRONMENT, 'production');
   assert.equal(config.vars?.SENTRY_ENVIRONMENT, 'production');
@@ -80,45 +92,51 @@ test('Workers production workflow separates upload, activation, and Pages rollba
     process.cwd(),
     'wrangler.workers.production-rollback.jsonc'
   );
-  const bootstrapConfigPath = path.join(
+  const routeConfigPath = path.join(
     process.cwd(),
-    'wrangler.workers.production-bootstrap.jsonc'
+    'wrangler.workers.production-route.jsonc'
   );
 
   assert.equal(existsSync(workflowPath), true, 'production Workers workflow must exist');
   assert.equal(existsSync(rollbackConfigPath), true, 'route rollback config must exist');
-  assert.equal(existsSync(bootstrapConfigPath), true, 'bootstrap config must exist');
+  assert.equal(existsSync(routeConfigPath), true, 'production route config must exist');
   if (
     !existsSync(workflowPath) ||
     !existsSync(rollbackConfigPath) ||
-    !existsSync(bootstrapConfigPath)
+    !existsSync(routeConfigPath)
   ) {
     return;
   }
 
   const workflow = await readFile(workflowPath, 'utf8');
-  const bootstrapConfig = JSON.parse(
-    await readFile(bootstrapConfigPath, 'utf8')
+  const routeConfig = JSON.parse(
+    await readFile(routeConfigPath, 'utf8')
   ) as WorkersWranglerConfig;
   const rollbackConfig = JSON.parse(
     await readFile(rollbackConfigPath, 'utf8')
   ) as WorkersWranglerConfig;
 
   assert.match(workflow, /github\.ref_name == 'main'/);
-  assert.match(workflow, /wrangler deployments list/);
-  assert.match(workflow, /code: 10007/);
+  assert.match(workflow, /code: \(10007\|10211\)/);
   assert.match(
     workflow,
-    /wrangler deploy --config "\$\{WORKERS_BOOTSTRAP_CONFIG\}"/
+    /wrangler deploy --config "\$\{WORKERS_CONFIG\}"/
   );
   assert.ok(
-    workflow.indexOf('wrangler deployments list') <
-      workflow.indexOf('wrangler versions upload')
+    workflow.indexOf('wrangler deploy --config "${WORKERS_CONFIG}"') <
+      workflow.lastIndexOf('upload_production_candidate')
   );
   assert.match(workflow, /wrangler versions upload --config wrangler\.workers\.production\.jsonc/);
   assert.match(workflow, /wrangler versions deploy --config wrangler\.workers\.production\.jsonc/);
   assert.match(workflow, /--version-tag "\$\{GITHUB_SHA\}@100%"/);
-  assert.match(workflow, /wrangler triggers deploy --config wrangler\.workers\.production\.jsonc/);
+  assert.match(
+    workflow,
+    /WORKERS_ROUTE_CONFIG: wrangler\.workers\.production-route\.jsonc/
+  );
+  assert.match(
+    workflow,
+    /wrangler triggers deploy --config "\$\{WORKERS_ROUTE_CONFIG\}"/
+  );
   assert.match(
     workflow,
     /wrangler triggers deploy --config wrangler\.workers\.production-rollback\.jsonc/
@@ -140,11 +158,10 @@ test('Workers production workflow separates upload, activation, and Pages rollba
     workflow,
     /\(failure\(\) \|\| cancelled\(\)\) && steps\.deploy-version\.outcome == 'success'/
   );
-  assert.equal(bootstrapConfig.name, 'akyodex-workers-production');
-  assert.equal(bootstrapConfig.main, 'cloudflare-worker-bootstrap.ts');
-  assert.equal(bootstrapConfig.workers_dev, false);
-  assert.equal(bootstrapConfig.preview_urls, false);
-  assert.deepEqual(bootstrapConfig.routes, []);
+  assert.deepEqual(routeConfig.routes, [{
+    pattern: 'akyodex.com/*',
+    zone_name: 'akyodex.com',
+  }]);
   assert.deepEqual(rollbackConfig.routes, []);
 });
 

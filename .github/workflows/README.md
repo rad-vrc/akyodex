@@ -116,7 +116,9 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 ### 安全境界
 
 - `main`へのpushでは、SHA付きWorker versionをuploadするだけでトラフィックを切り替えません。
-- production Workerがまだ存在しない初回だけ、`workers_dev=false`、Preview URL無効、routeなしの404 placeholderを作成してから本物の候補versionをuploadします。
+- 初回候補uploadがWorker未作成またはDurable Object migration未適用で失敗した場合だけ、Pagesが本番配信中であることを確認してから、`workers_dev=false`、Preview URL無効、routeなしの完全なWorkerを通常deployしてmigrationを適用します。その後、Pages配信を再確認して本物の候補versionをuploadします。
+- 候補upload用configには本番routeを含めません。`akyodex.com/*`はroute専用configを使う手動`activate`だけが設定できます。
+- Workers本番切替後にDurable Object migrationを追加した場合、この初回専用経路はPages確認で停止します。稼働中Workerへmigrationを適用する手順を別途レビューし、手動で実行してください。
 - 本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。
 - `activate`は固定Pagesの健全性とWorker secretsを確認し、対象SHAを100%へdeployしてから最後に`akyodex.com/*` routeを付けます。
 - runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合はrouteを自動で外し、固定Pagesへ戻します。
