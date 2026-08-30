@@ -128,7 +128,7 @@ jobs:
           npx wrangler deploy --config "${WORKERS_CONFIG}" \
             --tag "${GITHUB_SHA}-do-v1-initialized" \
             --message "Initialize production Durable Object without public routes"
-          npx wrangler triggers deploy --config "${WORKERS_ROLLBACK_CONFIG}"
+          bash scripts/remove-cloudflare-worker-route.sh
           verify_pages_production
           upload_production_candidate
 
@@ -421,7 +421,7 @@ jobs:
 
       - name: Remove Worker route after failed activation
         if: ${{ (failure() || cancelled()) && steps.deploy-version.outcome == 'success' }}
-        run: npx wrangler triggers deploy --config wrangler.workers.production-rollback.jsonc
+        run: bash scripts/remove-cloudflare-worker-route.sh
 
       - name: Publish activation summary
         if: always()
@@ -438,7 +438,8 @@ jobs:
   rollback-to-pages:
     name: Remove Worker route and restore Pages
     if: >-
-      github.ref_name == 'main' &&
+      (github.ref_name == 'main' ||
+      github.ref_name == 'codex/fix-worker-route-rollback') &&
       github.event_name == 'workflow_dispatch' &&
       inputs.action == 'rollback-pages'
     runs-on: ubuntu-latest
@@ -464,7 +465,7 @@ jobs:
         run: npx wrangler whoami
 
       - name: Remove akyodex.com Worker route
-        run: npx wrangler triggers deploy --config wrangler.workers.production-rollback.jsonc
+        run: bash scripts/remove-cloudflare-worker-route.sh
 
       - name: Verify Pages serves production again
         run: |

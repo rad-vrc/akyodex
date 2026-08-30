@@ -96,19 +96,27 @@ test('Workers production workflow separates upload, activation, and Pages rollba
     process.cwd(),
     'wrangler.workers.production-route.jsonc'
   );
+  const routeRemovalScriptPath = path.join(
+    process.cwd(),
+    'scripts',
+    'remove-cloudflare-worker-route.sh'
+  );
 
   assert.equal(existsSync(workflowPath), true, 'production Workers workflow must exist');
   assert.equal(existsSync(rollbackConfigPath), true, 'route rollback config must exist');
   assert.equal(existsSync(routeConfigPath), true, 'production route config must exist');
+  assert.equal(existsSync(routeRemovalScriptPath), true, 'route removal script must exist');
   if (
     !existsSync(workflowPath) ||
     !existsSync(rollbackConfigPath) ||
-    !existsSync(routeConfigPath)
+    !existsSync(routeConfigPath) ||
+    !existsSync(routeRemovalScriptPath)
   ) {
     return;
   }
 
   const workflow = await readFile(workflowPath, 'utf8');
+  const routeRemovalScript = await readFile(routeRemovalScriptPath, 'utf8');
   const routeConfig = JSON.parse(
     await readFile(routeConfigPath, 'utf8')
   ) as WorkersWranglerConfig;
@@ -144,10 +152,18 @@ test('Workers production workflow separates upload, activation, and Pages rollba
     workflow,
     /wrangler triggers deploy --config "\$\{WORKERS_ROUTE_CONFIG\}"/
   );
-  assert.match(
-    workflow,
-    /wrangler triggers deploy --config wrangler\.workers\.production-rollback\.jsonc/
+  assert.equal(
+    workflow.match(/bash scripts\/remove-cloudflare-worker-route\.sh/g)?.length,
+    3
   );
+  assert.doesNotMatch(
+    workflow,
+    /wrangler triggers deploy --config (?:"\$\{WORKERS_ROLLBACK_CONFIG\}"|wrangler\.workers\.production-rollback\.jsonc)/
+  );
+  assert.match(routeRemovalScript, /client\/v4\/zones/);
+  assert.match(routeRemovalScript, /workers\/routes/);
+  assert.match(routeRemovalScript, /\.pattern == \$pattern and \.script == \$script/);
+  assert.match(routeRemovalScript, /--request DELETE/);
   assert.match(workflow, /https:\/\/akyodex\.pages\.dev\/zukan/);
   assert.match(workflow, /ADMIN_PASSWORD_OWNER/);
   assert.match(workflow, /ADMIN_PASSWORD_ADMIN/);
