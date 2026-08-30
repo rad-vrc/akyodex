@@ -9,6 +9,7 @@ const { parse } = require('csv-parse/sync');
 const rootDir = path.resolve(__dirname, '..');
 const tanabataBonusComment = 'Akyoに願いを！';
 const canonicalKChanAuthor = '（Ｋ）けーちゃん';
+const canonicalAkyoPartyAuthor = 'KuibayMооre';
 
 function readDataFile(relativePath) {
   return fs.readFileSync(path.join(rootDir, relativePath), 'utf8');
@@ -102,6 +103,30 @@ test('keeps okinkin Akyo author spelling canonical in tracked data', () => {
         `${filePath} Avatar${id} author`,
       );
     }
+  }
+});
+
+test('keeps Akyo Party author spelling canonical in every language catalog', () => {
+  for (const language of ['ja', 'en', 'ko']) {
+    const csvPath = `data/akyo-data-${language}.csv`;
+    const rows = parse(readDataFile(csvPath), {
+      columns: true,
+      skip_empty_lines: true,
+      record_delimiter: ['\r\n', '\n', '\r'],
+    });
+    const csvRow = rows.find(
+      (record) => record.EntryType === 'world' && record.DisplaySerial === '0074',
+    );
+    assert.ok(csvRow, `${csvPath} should include World0074`);
+    assert.equal(csvRow.Author, canonicalAkyoPartyAuthor, `${csvPath} World0074 author`);
+
+    const jsonPath = `data/akyo-data-${language}.json`;
+    const payload = JSON.parse(readDataFile(jsonPath));
+    const jsonRow = payload.data.find(
+      (record) => record.entryType === 'world' && record.displaySerial === '0074',
+    );
+    assert.ok(jsonRow, `${jsonPath} should include World0074`);
+    assert.equal(jsonRow.author, canonicalAkyoPartyAuthor, `${jsonPath} World0074 author`);
   }
 });
 

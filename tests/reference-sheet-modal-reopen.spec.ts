@@ -103,4 +103,44 @@ test.describe("Reference sheet modal reopen", () => {
     await expect(fallbackImage).not.toHaveAttribute("role", "presentation");
     await expect(fallbackImage).not.toHaveAttribute("style", /linear-gradient/);
   });
+
+  test("retries the direct PNG when the same Akyo is reopened after all image stages fail", async ({
+    page,
+  }) => {
+    let pngRequestCount = 0;
+    await page.route("**/0001.png", (route) => {
+      pngRequestCount += 1;
+      if (pngRequestCount === 1) {
+        return route.fulfill({ status: 502, body: "temporary upstream failure" });
+      }
+
+      return route.fulfill({
+        status: 200,
+        contentType: "image/webp",
+        body: imageBody,
+      });
+    });
+    await page.route("**/api/avatar-image?id=0001**", (route) =>
+      route.fulfill({ status: 502, body: "temporary transform failure" }),
+    );
+
+    await page.goto("/zukan");
+
+    let dialog = await openFirstAvatarDetail(page);
+    const failedImage = dialog.locator('img[src*="/api/avatar-image?id=0001"]');
+    await expect(failedImage).toHaveAttribute("role", "presentation");
+    expect(pngRequestCount).toBe(1);
+
+    await dialog
+      .getByRole("button", { name: /閉じる|Close|닫기/i })
+      .click();
+    await expect(dialog).toBeHidden();
+
+    dialog = await openFirstAvatarDetail(page);
+    const recoveredImage = dialog.getByAltText("オリジンAkyo", { exact: true });
+    await expect(recoveredImage).toHaveAttribute("src", /\/0001\.png$/);
+    await expectImageLoaded(recoveredImage);
+    await expect(recoveredImage).not.toHaveAttribute("role", "presentation");
+    expect(pngRequestCount).toBe(2);
+  });
 });

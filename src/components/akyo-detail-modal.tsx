@@ -523,11 +523,11 @@ export function AkyoDetailModal({
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                className="transition-transform duration-300 hover:rotate-90"
+                className="text-rose-700 transition-transform duration-300 hover:rotate-90"
               >
                 <path
                   d="M18 6L6 18M6 6L18 18"
-                  stroke="#6b5b7b"
+                  stroke="currentColor"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -536,13 +536,7 @@ export function AkyoDetailModal({
             </button>
 
             {/* Modal Header */}
-            <div
-              className="rounded-t-3xl p-6 border-b-4 border-dotted border-purple-200"
-              style={{
-                background:
-                  'linear-gradient(to right, rgb(243 232 255), rgb(252 231 243), rgb(219 234 254))',
-              }}
-            >
+            <div className="rounded-t-3xl border-b-4 border-dotted border-orange-200 bg-gradient-to-r from-pink-100 via-rose-50 to-orange-100 p-6">
               <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center">
                 <Image
                   src="/images/profileIcon.webp"
@@ -559,12 +553,12 @@ export function AkyoDetailModal({
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 bg-gradient-to-b from-white to-blue-50">
+            <div className="bg-gradient-to-b from-white to-orange-50/60 p-6">
               <div className="space-y-6">
                 {/* Image Section with Zoom & Drag */}
                 <div className="relative">
                   <div
-                    className={`h-64 overflow-hidden rounded-3xl bg-gradient-to-br from-purple-100 to-blue-100 p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-300 focus-visible:ring-offset-2 ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                    className={`h-64 overflow-hidden rounded-3xl bg-gradient-to-br from-pink-100 to-orange-100 p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-300 focus-visible:ring-offset-2 ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
                       }`}
                     style={{ touchAction: isZoomed ? 'none' : 'auto' }}
                     role="button"
@@ -630,7 +624,7 @@ export function AkyoDetailModal({
                 {/* Info Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Name Card */}
-                  <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4">
+                  <div className="rounded-2xl bg-gradient-to-br from-pink-50 to-orange-50 p-4">
                     <h3 className="text-sm font-bold mb-2" style={{ color: '#FF6B9D' }}>
                       <IconTag size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.name', lang)}
@@ -744,7 +738,7 @@ export function AkyoDetailModal({
 
                 {/* Notes/Comment Section */}
                 {commentStr && (
-                  <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-3xl p-5">
+                  <div className="rounded-3xl bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 p-5">
                     <h3 className="text-lg font-bold text-gray-900 mb-3">
                       <IconGift size="w-4 h-4" className="mr-2" />
                       {t('modal.bonus', lang)}
@@ -788,7 +782,7 @@ export function AkyoDetailModal({
                       : t('modal.favorite.add', lang)}
                   </button>
 
-                  {/* VRChat Button - Orange Gradient (not purple!) */}
+                  {/* VRChat Button */}
                   {safeSourceUrl && (
                     <button
                       type="button"
