@@ -152,7 +152,6 @@ test("build workflows isolate browser telemetry by deployment environment", () =
     ["deploy-cloudflare-pages-preview.yml", "preview"],
     ["deploy-cloudflare-workers-staging.yml", "staging"],
     ["deploy-cloudflare-workers-production.yml", "production"],
-    ["deploy-cloudflare-pages.yml", "production"],
   ] as const;
 
   for (const [workflowName, environment] of workflowExpectations) {

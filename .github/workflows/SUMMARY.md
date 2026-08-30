@@ -1,8 +1,10 @@
 # CI/CD Workflows - Implementation Summary
 
+> この文書は初期Pages構成の履歴です。現行本番はWorkersのみで、運用手順は`README.md`を参照してください。
+
 ## 📋 概要
 
-Next.js 15 + Tailwind CSS + Cloudflare Pages に最適化された包括的な CI/CD ワークフローを実装しました。
+Next.js 15 + Tailwind CSS向けに初期Pages CI/CDワークフローを実装した時点の記録です。
 
 ## ✅ 実装完了
 
@@ -11,7 +13,8 @@ Next.js 15 + Tailwind CSS + Cloudflare Pages に最適化された包括的な C
 | ファイル | 目的 | トリガー |
 |---------|------|---------|
 | `ci.yml` | 継続的インテグレーション | PR, Push |
-| `deploy-cloudflare-pages.yml` | Cloudflare Pages デプロイ | Push to main, Manual |
+| `deploy-cloudflare-workers-production.yml` | Cloudflare Workers本番候補・activation・rollback | Push to main, Manual |
+| `deploy-cloudflare-pages-preview.yml` | 読み取り専用Pages PR Preview | Pull request |
 | `security-audit.yml` | セキュリティ監査 | Weekly, Manual |
 | `validate-cloudflare-resources.yml` | リソース検証 | Daily, Manual |
 | `reusable-build.yml` | 再利用可能ビルド | Workflow call |
@@ -252,7 +255,8 @@ KV: 1GB, 100K reads/day, 1K writes/day
 
 ```bash
 ✅ ci.yml: 有効
-✅ deploy-cloudflare-pages.yml: 有効
+✅ deploy-cloudflare-workers-production.yml: 有効
+✅ deploy-cloudflare-pages-preview.yml: 有効
 ✅ security-audit.yml: 有効
 ✅ validate-cloudflare-resources.yml: 有効
 ✅ reusable-build.yml: 有効

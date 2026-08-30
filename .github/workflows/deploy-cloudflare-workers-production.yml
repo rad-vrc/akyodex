@@ -15,7 +15,7 @@ on:
           - upload
           - configure-secrets
           - activate
-          - rollback-pages
+          - rollback-worker
 
 permissions:
   contents: read
@@ -27,7 +27,6 @@ concurrency:
 env:
   WORKERS_CONFIG: wrangler.workers.production.jsonc
   WORKERS_ROUTE_CONFIG: wrangler.workers.production-route.jsonc
-  WORKERS_ROLLBACK_CONFIG: wrangler.workers.production-rollback.jsonc
   WORKERS_NAME: akyodex-workers-production
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -82,55 +81,9 @@ jobs:
       - name: Upload tagged production candidate without routing traffic
         run: |
           set -euo pipefail
-
-          upload_production_candidate() {
-            npx wrangler versions upload --config wrangler.workers.production.jsonc \
-              --tag "${GITHUB_SHA}" \
-              --message "Production candidate ${GITHUB_SHA}"
-          }
-
-          verify_pages_production() {
-            local status
-            local pages_status
-            local worker_tag
-
-            status="$(curl --silent --show-error \
-              --connect-timeout 10 \
-              --max-time 30 \
-              --dump-header /tmp/production-headers \
-              --output /tmp/production-body \
-              --write-out "%{http_code}" \
-              "https://akyodex.com/zukan" || echo "000")"
-            pages_status="$(curl --silent --show-error \
-              --connect-timeout 10 \
-              --max-time 30 \
-              --output /dev/null \
-              --write-out "%{http_code}" \
-              "https://akyodex.pages.dev/zukan" || echo "000")"
-            worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { print; exit }' /tmp/production-headers)"
-
-            if [ "${status}" != "200" ] || [ "${pages_status}" != "200" ] || [ -n "${worker_tag}" ]; then
-              echo "::error::Refusing Worker initialization because Pages is not the verified production path."
-              return 1
-            fi
-          }
-
-          if upload_production_candidate 2>&1 | tee /tmp/production-candidate-upload.log; then
-            exit 0
-          fi
-
-          if ! grep -Eq 'code: (10007|10211)' /tmp/production-candidate-upload.log; then
-            echo "::error::Candidate upload failed for a reason that is not safe to initialize automatically."
-            exit 1
-          fi
-
-          verify_pages_production
-          npx wrangler deploy --config "${WORKERS_CONFIG}" \
-            --tag "${GITHUB_SHA}-do-v1-initialized" \
-            --message "Initialize production Durable Object without public routes"
-          npx wrangler triggers deploy --config "${WORKERS_ROLLBACK_CONFIG}"
-          verify_pages_production
-          upload_production_candidate
+          npx wrangler versions upload --config wrangler.workers.production.jsonc \
+            --tag "${GITHUB_SHA}" \
+            --message "Production candidate ${GITHUB_SHA}"
 
       - name: Publish candidate summary
         run: |
@@ -140,7 +93,7 @@ jobs:
             echo "- Revision: ${GITHUB_SHA}"
             echo "- Worker: ${WORKERS_NAME}"
             echo "- Traffic: 0% until the manual activate action"
-            echo "- Pages production remains active"
+            echo "- Current production Worker remains active"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   configure-managed-secrets:
@@ -242,7 +195,7 @@ jobs:
           SECRET_VERSION_PATH=/tmp/worker-version-after.json node -e 'const fs=require("node:fs");const version=JSON.parse(fs.readFileSync(process.env.SECRET_VERSION_PATH,"utf8"));const names=new Set((version.resources?.bindings??[]).filter(({type})=>type==="secret_text").map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
           echo "Managed production Worker secrets are configured."
 
-      - name: Verify Pages remains the production route
+      - name: Verify the current Worker remains the production route
         run: |
           set -euo pipefail
           status="$(curl --silent --show-error \
@@ -252,15 +205,9 @@ jobs:
             --output /tmp/production-body \
             --write-out "%{http_code}" \
             "https://akyodex.com/zukan")"
-          pages_status="$(curl --silent --show-error \
-            --connect-timeout 10 \
-            --max-time 30 \
-            --output /dev/null \
-            --write-out "%{http_code}" \
-            "https://akyodex.pages.dev/zukan")"
-          worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { print; exit }' /tmp/production-headers)"
-          if [ "${status}" != "200" ] || [ "${pages_status}" != "200" ] || [ -n "${worker_tag}" ]; then
-            echo "::error::Pages is no longer the verified production route after secret configuration."
+          worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' /tmp/production-headers)"
+          if [ "${status}" != "200" ] || [ -z "${worker_tag}" ]; then
+            echo "::error::The production Worker route is not healthy after secret configuration."
             exit 1
           fi
 
@@ -296,19 +243,22 @@ jobs:
       - name: Verify Cloudflare credentials
         run: npx wrangler whoami
 
-      - name: Verify fixed Pages rollback before activation
+      - name: Verify the current Worker before activation
         run: |
           set -euo pipefail
           status="$(curl --silent --show-error \
             --connect-timeout 10 \
             --max-time 30 \
-            --output /tmp/pages-rollback-body \
+            --dump-header /tmp/production-before-headers \
+            --output /tmp/production-before-body \
             --write-out "%{http_code}" \
-            "https://akyodex.pages.dev/zukan")"
-          if [ "${status}" != "200" ]; then
-            echo "::error::Pages rollback returned HTTP ${status}."
+            "https://akyodex.com/zukan")"
+          worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' /tmp/production-before-headers)"
+          if [ "${status}" != "200" ] || [ -z "${worker_tag}" ]; then
+            echo "::error::Refusing activation because the current production Worker is not healthy."
             exit 1
           fi
+          echo "Current production Worker tag: ${worker_tag}"
 
       - name: Verify required production Worker secrets
         id: candidate-version
@@ -335,7 +285,7 @@ jobs:
             --message "Activate production ${GITHUB_SHA}" \
             --yes
 
-      - name: Attach akyodex.com Worker route
+      - name: Attach akyodex.com Worker Custom Domain
         id: activate-route
         run: npx wrangler triggers deploy --config "${WORKERS_ROUTE_CONFIG}"
 
@@ -419,9 +369,41 @@ jobs:
           echo "::error::Production Worker did not pass runtime verification."
           exit 1
 
-      - name: Remove Worker route after failed activation
-        if: ${{ (failure() || cancelled()) && steps.deploy-version.outcome == 'success' }}
-        run: npx wrangler triggers deploy --config wrangler.workers.production-rollback.jsonc
+      - name: Roll back failed activation to the previous Worker
+        id: rollback-worker
+        if: ${{ always() && (failure() || cancelled()) && steps.deploy-version.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          npx wrangler rollback --config "${WORKERS_CONFIG}" \
+            --name "${WORKERS_NAME}" \
+            --message "Automatic rollback after failed activation ${GITHUB_SHA}" \
+            --yes
+
+      - name: Verify automatic Worker rollback
+        if: ${{ always() && steps.rollback-worker.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            status="$(curl --silent --show-error \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --dump-header /tmp/rollback-headers \
+              --output /tmp/rollback-body \
+              --write-out "%{http_code}" \
+              "https://akyodex.com/zukan" || echo "000")"
+            worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' /tmp/rollback-headers)"
+            if [ "${status}" = "200" ] && [ -n "${worker_tag}" ] && [ "${worker_tag}" != "${GITHUB_SHA}" ]; then
+              echo "Previous Worker ${worker_tag} is serving production again."
+              exit 0
+            fi
+
+            if [ "${attempt}" -lt 12 ]; then
+              sleep 5
+            fi
+          done
+
+          echo "::error::The previous Worker did not resume healthy production traffic."
+          exit 1
 
       - name: Publish activation summary
         if: always()
@@ -432,15 +414,15 @@ jobs:
             echo "- Revision: ${GITHUB_SHA}"
             echo "- URL: https://akyodex.com"
             echo "- Result: ${{ job.status }}"
-            echo "- Rollback: remove the Worker route with the rollback-pages action"
+            echo "- Rollback: previous Worker deployment; the Worker Custom Domain remains attached"
           } >> "${GITHUB_STEP_SUMMARY}"
 
-  rollback-to-pages:
-    name: Remove Worker route and restore Pages
+  rollback-worker:
+    name: Roll back to the previous Worker deployment
     if: >-
       github.ref_name == 'main' &&
       github.event_name == 'workflow_dispatch' &&
-      inputs.action == 'rollback-pages'
+      inputs.action == 'rollback-worker'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
@@ -463,10 +445,33 @@ jobs:
       - name: Verify Cloudflare credentials
         run: npx wrangler whoami
 
-      - name: Remove akyodex.com Worker route
-        run: npx wrangler triggers deploy --config wrangler.workers.production-rollback.jsonc
+      - name: Record the current production Worker
+        id: current-worker
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --dump-header /tmp/current-worker-headers \
+            --output /tmp/current-worker-body \
+            --write-out "%{http_code}" \
+            "https://akyodex.com/zukan")"
+          worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' /tmp/current-worker-headers)"
+          if [ "${status}" != "200" ] || [ -z "${worker_tag}" ]; then
+            echo "::error::Refusing rollback because production is not currently served by a healthy Worker."
+            exit 1
+          fi
+          echo "tag=${worker_tag}" >> "${GITHUB_OUTPUT}"
 
-      - name: Verify Pages serves production again
+      - name: Roll back to the previous Worker
+        run: |
+          set -euo pipefail
+          npx wrangler rollback --config "${WORKERS_CONFIG}" \
+            --name "${WORKERS_NAME}" \
+            --message "Manual production rollback from ${{ steps.current-worker.outputs.tag }}" \
+            --yes
+
+      - name: Verify the previous Worker serves production
         run: |
           set -euo pipefail
           for attempt in $(seq 1 12); do
@@ -477,15 +482,9 @@ jobs:
               --output /tmp/production-body \
               --write-out "%{http_code}" \
               "https://akyodex.com/zukan" || echo "000")"
-            pages_status="$(curl --silent --show-error \
-              --connect-timeout 10 \
-              --max-time 30 \
-              --output /dev/null \
-              --write-out "%{http_code}" \
-              "https://akyodex.pages.dev/zukan" || echo "000")"
-            worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { print; exit }' /tmp/production-headers)"
-            if [ "${status}" = "200" ] && [ "${pages_status}" = "200" ] && [ -z "${worker_tag}" ]; then
-              echo "Pages is serving akyodex.com again."
+            worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' /tmp/production-headers)"
+            if [ "${status}" = "200" ] && [ -n "${worker_tag}" ] && [ "${worker_tag}" != "${{ steps.current-worker.outputs.tag }}" ]; then
+              echo "Previous Worker ${worker_tag} is serving akyodex.com."
               exit 0
             fi
 
@@ -494,16 +493,16 @@ jobs:
             fi
           done
 
-          echo "::error::Pages rollback verification failed."
+          echo "::error::Worker rollback verification failed."
           exit 1
 
       - name: Publish rollback summary
         if: always()
         run: |
           {
-            echo "## Pages rollback"
+            echo "## Worker rollback"
             echo ""
             echo "- URL: https://akyodex.com"
             echo "- Result: ${{ job.status }}"
-            echo "- Fixed Pages origin: https://akyodex.pages.dev"
+            echo "- Custom Domain: remains attached to akyodex-workers-production"
           } >> "${GITHUB_STEP_SUMMARY}"
