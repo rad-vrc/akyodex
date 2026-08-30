@@ -38,7 +38,9 @@ import {
   CatalogLoadPerformance,
   reportCatalogLoadToSentry,
 } from "./catalog-performance";
+import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
 import {
+  sortCatalogForDisplay,
   summarizeCatalog,
   type CatalogTotals,
 } from "./catalog-initial-data";
@@ -411,19 +413,34 @@ export function ZukanClient({
           r2BaseUrl:
             process.env.NEXT_PUBLIC_R2_BASE || DEFAULT_R2_BASE_URL,
           signal: request.signal,
+          phaseRecorder: catalogPerformance,
         });
         if (!coordinator.isCurrent(request.generation)) return;
         catalogPerformance.markResponse(result.source);
 
-        const taxonomy = extractTaxonomy(result.items);
+        catalogPerformance.startPhase("search-index");
+        let preparedItems: AkyoData[];
+        try {
+          preparedItems = sortCatalogForDisplay(
+            await prepareCatalogItemsInChunks(result.items, {
+              signal: request.signal,
+            }),
+          );
+        } finally {
+          catalogPerformance.endPhase("search-index");
+        }
+        if (!coordinator.isCurrent(request.generation)) return;
+
+        const taxonomy = extractTaxonomy(preparedItems);
         const completedDataset = createLanguageDatasetCacheEntry({
-          items: result.items,
+          items: preparedItems,
           categories: taxonomy.categories,
           authors: taxonomy.authors,
           complete: true,
           droppedCount: result.droppedCount,
         });
         languageDatasetCacheRef.current.set(lang, completedDataset);
+        catalogPerformance.startPhase("state-apply");
         startTransition(() => {
           refetchWithNewData(completedDataset.items);
           setCurrentCategories(taxonomy.categories);
@@ -475,6 +492,7 @@ export function ZukanClient({
     const catalogPerformance = catalogPerformanceRef.current;
     if (!catalogPerformance) return;
 
+    catalogPerformance.endPhase("state-apply");
     const telemetry = catalogPerformance.markReady();
     catalogPerformanceRef.current = null;
     if (telemetry) void reportCatalogLoadToSentry(telemetry);
@@ -500,15 +518,18 @@ export function ZukanClient({
     };
   }, [isMobile]);
 
-  const handleShowDetail = (
-    akyo: AkyoData,
-    triggerElement: HTMLElement | null = document.activeElement as HTMLElement | null,
-  ) => {
-    modalTriggerRef.current = triggerElement;
-    setShouldRenderDetailModal(true);
-    setSelectedAkyo(akyo);
-    setIsModalOpen(true);
-  };
+  const handleShowDetail = useCallback(
+    (
+      akyo: AkyoData,
+      triggerElement: HTMLElement | null = document.activeElement as HTMLElement | null,
+    ) => {
+      modalTriggerRef.current = triggerElement;
+      setShouldRenderDetailModal(true);
+      setSelectedAkyo(akyo);
+      setIsModalOpen(true);
+    },
+    [],
+  );
 
   const handleCloseModal = () => {
     setIsModalOpen(false);

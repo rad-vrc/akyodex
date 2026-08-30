@@ -6,6 +6,15 @@ interface PerformanceClock {
   readonly timeOrigin: number;
   now(): number;
   mark(name: string): void;
+  measure(name: string, startMark: string, endMark: string): unknown;
+}
+
+export type CatalogLoadPhase = "normalize" | "search-index" | "state-apply";
+
+export interface CatalogPhaseDurations {
+  normalize: number;
+  searchIndex: number;
+  stateApply: number;
 }
 
 export interface CatalogLoadTelemetryEvent {
@@ -15,7 +24,32 @@ export interface CatalogLoadTelemetryEvent {
   failureReason: string | null;
   startedAtEpochMs: number;
   endedAtEpochMs: number;
+  phaseDurationsMs: CatalogPhaseDurations;
 }
+
+const PHASE_NAMES: Record<
+  CatalogLoadPhase,
+  { measure: string; start: string; end: string; duration: keyof CatalogPhaseDurations }
+> = {
+  normalize: {
+    measure: "catalog-normalize",
+    start: "catalog-normalize-start",
+    end: "catalog-normalize-end",
+    duration: "normalize",
+  },
+  "search-index": {
+    measure: "catalog-search-index",
+    start: "catalog-search-index-start",
+    end: "catalog-search-index-end",
+    duration: "searchIndex",
+  },
+  "state-apply": {
+    measure: "catalog-state-apply",
+    start: "catalog-state-apply-start",
+    end: "catalog-state-apply-end",
+    duration: "stateApply",
+  },
+};
 
 export function getCatalogFailureReason(error: unknown): string {
   return error instanceof Error && error.name ? error.name : "UnknownError";
@@ -25,6 +59,12 @@ export class CatalogLoadPerformance {
   private readonly startedAt: number;
   private source: CatalogLoadSource = "none";
   private ended = false;
+  private readonly phaseStartedAt = new Map<CatalogLoadPhase, number>();
+  private readonly phaseDurations: CatalogPhaseDurations = {
+    normalize: 0,
+    searchIndex: 0,
+    stateApply: 0,
+  };
 
   constructor(
     private readonly language: SupportedLanguage,
@@ -38,6 +78,26 @@ export class CatalogLoadPerformance {
     if (this.ended) return;
     this.source = source;
     this.clock.mark("catalog-response");
+  }
+
+  startPhase(phase: CatalogLoadPhase): void {
+    if (this.ended || this.phaseStartedAt.has(phase)) return;
+    const names = PHASE_NAMES[phase];
+    this.phaseStartedAt.set(phase, this.clock.now());
+    this.clock.mark(names.start);
+  }
+
+  endPhase(phase: CatalogLoadPhase): void {
+    if (this.ended) return;
+    const startedAt = this.phaseStartedAt.get(phase);
+    if (startedAt === undefined) return;
+
+    const names = PHASE_NAMES[phase];
+    const endedAt = this.clock.now();
+    this.phaseStartedAt.delete(phase);
+    this.phaseDurations[names.duration] += Math.max(0, endedAt - startedAt);
+    this.clock.mark(names.end);
+    this.clock.measure(names.measure, names.start, names.end);
   }
 
   markReady(): CatalogLoadTelemetryEvent | null {
@@ -61,6 +121,11 @@ export class CatalogLoadPerformance {
       failureReason,
       startedAtEpochMs: this.clock.timeOrigin + this.startedAt,
       endedAtEpochMs: this.clock.timeOrigin + endedAt,
+      phaseDurationsMs: {
+        normalize: Math.round(this.phaseDurations.normalize),
+        searchIndex: Math.round(this.phaseDurations.searchIndex),
+        stateApply: Math.round(this.phaseDurations.stateApply),
+      },
     };
   }
 }
@@ -82,6 +147,9 @@ export async function reportCatalogLoadToSentry(
         "catalog.source": event.source,
         "catalog.duration_ms": event.durationMs,
         "catalog.failure_reason": event.failureReason ?? "none",
+        "catalog.normalize_ms": event.phaseDurationsMs.normalize,
+        "catalog.search_index_ms": event.phaseDurationsMs.searchIndex,
+        "catalog.state_apply_ms": event.phaseDurationsMs.stateApply,
       },
     });
     span.setStatus({ code: event.failureReason ? 2 : 1 });

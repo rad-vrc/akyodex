@@ -2,59 +2,24 @@
 
 import type { AkyoData, AkyoFilterOptions } from "@/types/akyo";
 import {
-  formatDisplayId,
   getDisplaySerialNumber,
   resolveEntryType,
 } from "@/lib/akyo-entry";
+import {
+  applyFavoritesToPreparedCatalog,
+  buildCatalogSearchIndex,
+  haveSameCatalogItemReferences,
+  normalizeCatalogSearchValue,
+  parseCatalogMultiValueField,
+  prepareCatalogItems,
+} from "@/lib/catalog-preparation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /** localStorage のキー名 */
 const FAVORITES_STORAGE_KEY = "akyoFavorites";
-const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 const FAVORITE_PERSIST_RETRY_BASE_DELAY_MS = 1000;
 const FAVORITE_PERSIST_RETRY_MAX_DELAY_MS = 30000;
 export type FavoriteOverrides = Record<string, boolean>;
-
-function toHiragana(value: string): string {
-  return value.replace(/[\u30A1-\u30F6]/g, (char) =>
-    String.fromCharCode(char.charCodeAt(0) - 0x60),
-  );
-}
-
-function toKatakana(value: string): string {
-  return value.replace(/[\u3041-\u3096]/g, (char) =>
-    String.fromCharCode(char.charCodeAt(0) + 0x60),
-  );
-}
-
-function normalizeSearchValue(value: string | undefined): string[] {
-  const base = String(value || "")
-    .trim()
-    .normalize("NFC")
-    .toLowerCase();
-  if (!base) return [];
-
-  const variants = new Set([base, toHiragana(base), toKatakana(base)]);
-  return Array.from(variants);
-}
-
-/**
- * データ項目の検索用正規化テキストを事前計算する。
- * filterData() で毎回 normalizeSearchValue() を呼ぶ代わりに、
- * データ読み込み時に一度だけ計算してキャッシュする。
- */
-function buildSearchIndex(akyo: AkyoData): string[] {
-  const searchTargets = [
-    akyo.id || "",
-    formatDisplayId(akyo),
-    akyo.nickname || "",
-    akyo.avatarName || "",
-    akyo.category || akyo.attribute || "",
-    akyo.author || akyo.creator || "",
-    akyo.comment || akyo.notes || "",
-  ];
-  return searchTargets.flatMap((value) => normalizeSearchValue(value));
-}
 
 /**
  * Akyoデータを管理するカスタムフック (SSR対応版)
@@ -131,7 +96,6 @@ export function useAkyoData(initialData: AkyoData[] = []) {
           favoriteOverridesRef.current,
         ),
       );
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       dataRef.current = dataWithFavorites;
       filteredDataRef.current = dataWithFavorites;
       setData(dataWithFavorites);
@@ -239,6 +203,7 @@ export function useAkyoData(initialData: AkyoData[] = []) {
     const dataWithFavorites = applyFavoritesFromIds(
       newData,
       applyFavoriteOverrides(persistedFavorites, favoriteOverridesRef.current),
+      dataRef.current,
     );
     lastPersistedFavoritesRef.current = JSON.stringify(persistedFavorites);
     favoritesDirtyRef.current =
@@ -252,7 +217,9 @@ export function useAkyoData(initialData: AkyoData[] = []) {
   // フィルタリング機能
   const filterData = useCallback(
     (options: AkyoFilterOptions, sortAsc: boolean = true) => {
-      const normalizedQueryVariants = normalizeSearchValue(options.searchQuery);
+      const normalizedQueryVariants = normalizeCatalogSearchValue(
+        options.searchQuery,
+      );
       const targetCategory = options.category || options.attribute;
       const targetAuthor = options.author || options.creator;
       const createSelectedList = (
@@ -290,7 +257,7 @@ export function useAkyoData(initialData: AkyoData[] = []) {
         filtered = filtered.filter((akyo) => {
           const parsedCategories =
             akyo.parsedCategory ??
-            parseMultiValueField(akyo.category || akyo.attribute || "");
+            parseCatalogMultiValueField(akyo.category || akyo.attribute || "");
 
           if (categoryMatchMode === "and") {
             return selectedCategories.every((category) =>
@@ -308,7 +275,7 @@ export function useAkyoData(initialData: AkyoData[] = []) {
         filtered = filtered.filter((akyo) => {
           const parsedAuthors =
             akyo.parsedAuthor ??
-            parseMultiValueField(akyo.author || akyo.creator || "");
+            parseCatalogMultiValueField(akyo.author || akyo.creator || "");
           return selectedAuthors.some((author) =>
             parsedAuthors.includes(author),
           );
@@ -323,7 +290,8 @@ export function useAkyoData(initialData: AkyoData[] = []) {
       // Filter by search query (using pre-computed _searchIndex for performance)
       if (normalizedQueryVariants.length > 0) {
         filtered = filtered.filter((akyo) => {
-          const normalizedTargets = akyo._searchIndex ?? buildSearchIndex(akyo);
+          const normalizedTargets =
+            akyo._searchIndex ?? buildCatalogSearchIndex(akyo);
 
           return normalizedQueryVariants.some((query) =>
             normalizedTargets.some((target) => target.includes(query)),
@@ -349,8 +317,10 @@ export function useAkyoData(initialData: AkyoData[] = []) {
         });
       }
 
-      filteredDataRef.current = filtered;
-      setFilteredData(filtered);
+      if (!haveSameCatalogItemReferences(filteredDataRef.current, filtered)) {
+        filteredDataRef.current = filtered;
+        setFilteredData(filtered);
+      }
     },
     [data],
   );
@@ -464,20 +434,14 @@ function saveFavorites(ids: string[]): boolean {
 function applyFavoritesFromIds(
   items: AkyoData[],
   favoriteIds: readonly string[],
+  previousItems: readonly AkyoData[] = [],
 ): AkyoData[] {
   if (items.length === 0) return items;
-  const favoritesSet = new Set(normalizeFavoriteIds(favoriteIds));
-  return items.map((akyo) => ({
-    ...akyo,
-    parsedCategory:
-      akyo.parsedCategory ??
-      parseMultiValueField(akyo.category || akyo.attribute || ""),
-    parsedAuthor:
-      akyo.parsedAuthor ??
-      parseMultiValueField(akyo.author || akyo.creator || ""),
-    _searchIndex: akyo._searchIndex ?? buildSearchIndex(akyo),
-    isFavorite: favoritesSet.has(akyo.id),
-  }));
+  return applyFavoritesToPreparedCatalog(
+    prepareCatalogItems(items),
+    normalizeFavoriteIds(favoriteIds),
+    previousItems,
+  );
 }
 
 export function syncFavoriteCollections<T extends { id: string; isFavorite?: boolean }>(
@@ -567,11 +531,4 @@ export function reconcileFavoriteOverride(args: {
   }
 
   return pruneFavoriteOverrides(persistedFavoriteIds, nextOverrides);
-}
-
-function parseMultiValueField(value: string): string[] {
-  return value
-    .split(MULTI_VALUE_SPLIT_PATTERN)
-    .map((entry) => entry.trim())
-    .filter(Boolean);
 }

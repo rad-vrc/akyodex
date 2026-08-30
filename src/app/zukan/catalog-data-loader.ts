@@ -2,6 +2,7 @@ import { detectVrcEntryTypeFromUrl } from "@/lib/akyo-entry";
 import type { SupportedLanguage } from "@/lib/i18n";
 import { CATALOG_SCHEMA_VERSION } from "@/lib/catalog-payload";
 import type { AkyoData, AkyoEntryType } from "@/types/akyo";
+import type { CatalogLoadPhase } from "./catalog-performance";
 
 const DEFAULT_CATALOG_FETCH_TIMEOUT_MS = 15_000;
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
@@ -24,6 +25,10 @@ interface LoadCompleteCatalogDataOptions {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  phaseRecorder?: {
+    startPhase(phase: CatalogLoadPhase): void;
+    endPhase(phase: CatalogLoadPhase): void;
+  };
 }
 
 function createAbortError(): DOMException {
@@ -193,8 +198,16 @@ async function fetchCatalogSource(args: {
   fetchImpl: typeof fetch;
   timeoutMs: number;
   expectedLanguage: SupportedLanguage;
+  phaseRecorder?: LoadCompleteCatalogDataOptions["phaseRecorder"];
 }): Promise<ParsedCatalogPayload> {
-  const { url, signal, fetchImpl, timeoutMs, expectedLanguage } = args;
+  const {
+    url,
+    signal,
+    fetchImpl,
+    timeoutMs,
+    expectedLanguage,
+    phaseRecorder,
+  } = args;
   if (signal?.aborted) throw createAbortError();
 
   const requestController = new AbortController();
@@ -214,8 +227,13 @@ async function fetchCatalogSource(args: {
       throw new Error(`Catalog request failed with HTTP ${response.status}`);
     }
     const payload: unknown = await response.json();
-    validateVersionedCatalogPayload(payload, expectedLanguage);
-    return parseCatalogPayload(payload);
+    phaseRecorder?.startPhase("normalize");
+    try {
+      validateVersionedCatalogPayload(payload, expectedLanguage);
+      return parseCatalogPayload(payload);
+    } finally {
+      phaseRecorder?.endPhase("normalize");
+    }
   } catch (error) {
     if (signal?.aborted) throw createAbortError();
     if (timedOut) {
@@ -238,6 +256,7 @@ export async function loadCompleteCatalogData(
     signal,
     fetchImpl = fetch,
     timeoutMs = DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
+    phaseRecorder,
   } = options;
   const normalizedR2BaseUrl = r2BaseUrl.replace(/\/$/, "");
   const r2Url = `${normalizedR2BaseUrl}/data/akyo-data-${lang}.json`;
@@ -262,6 +281,7 @@ export async function loadCompleteCatalogData(
         fetchImpl,
         timeoutMs: remainingMs,
         expectedLanguage: lang,
+        phaseRecorder,
       });
       return { ...parsed, source: source.source };
     } catch (error) {
