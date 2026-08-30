@@ -31,13 +31,13 @@ export const metadata: Metadata = {
     description: 'VRChatに潜むなぞ生物アバター「Akyo」を700体以上、そしてAkyo要素のあるワールドを50種類以上収録したAkyoコンテンツの図鑑サイト。名前・作者・カテゴリで探せる日本語/英語/韓国語対応の共有データベースで、今日からキミもAkyoファインダーの仲間入り!',
     type: 'website',
     url: 'https://akyodex.com/zukan',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Akyoずかん ロゴ' }],
+    images: [{ url: '/opengraph-image.png', width: 1200, height: 630, alt: 'Akyoずかん ロゴ' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Akyoずかん - VRChatアバター Akyoコンテンツ図鑑',
     description: 'VRChatに潜むなぞ生物アバター「Akyo」を700体以上、そしてAkyo要素のあるワールドを50種類以上収録したAkyoコンテンツの図鑑サイト。名前・作者・カテゴリで探せる日本語/英語/韓国語対応の共有データベースで、今日からキミもAkyoファインダーの仲間入り!',
-    images: ['/twitter-image'],
+    images: ['/twitter-image.png'],
   },
 };
 
