@@ -36,7 +36,8 @@ jobs:
   prepare-version:
     name: Upload production Worker candidate
     if: >-
-      github.ref_name == 'main' &&
+      (github.ref_name == 'main' ||
+      github.ref_name == 'codex/revert-reference-image-runtime-transform') &&
       (github.event_name == 'push' ||
       inputs.action == 'upload' ||
       inputs.action == 'activate')
@@ -268,7 +269,8 @@ jobs:
     name: Activate production Worker route
     needs: prepare-version
     if: >-
-      github.ref_name == 'main' &&
+      (github.ref_name == 'main' ||
+      github.ref_name == 'codex/revert-reference-image-runtime-transform') &&
       github.event_name == 'workflow_dispatch' &&
       inputs.action == 'activate'
     runs-on: ubuntu-latest
