@@ -64,6 +64,7 @@ test("evaluates only median values against Lighthouse budgets", () => {
   };
   assert.deepEqual(evaluateLighthouseBudgets(passingSummary), []);
 
+  // LCPはLantern変動が大きく非ブロッキング扱いのため、超過してもviolationsに入らない
   assert.deepEqual(
     evaluateLighthouseBudgets({
       ...passingSummary,
@@ -73,8 +74,23 @@ test("evaluates only median values against Lighthouse budgets", () => {
     }),
     [
       "Performance score 49 is below 50",
-      "Largest Contentful Paint 10001ms exceeds 10000ms",
       "Total Blocking Time 601ms exceeds 600ms",
+    ],
+  );
+});
+
+test("records LCP budget breaches as non-blocking warnings", () => {
+  const { evaluateNonBlockingBudgets } = require("./lighthouse-summary");
+  assert.equal(typeof evaluateNonBlockingBudgets, "function");
+
+  assert.deepEqual(
+    evaluateNonBlockingBudgets({ largestContentfulPaintMs: 7_999 }),
+    [],
+  );
+  assert.deepEqual(
+    evaluateNonBlockingBudgets({ largestContentfulPaintMs: 8_001 }),
+    [
+      "Largest Contentful Paint 8001ms exceeds 8000ms (recorded only, non-blocking)",
     ],
   );
 });

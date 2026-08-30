@@ -56,6 +56,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # bot commitのpushはGITHUB_TOKENのためon:pushワークフローを起動しない
+      # （GitHub仕様）。本番候補の作成をworkflow_dispatchで明示起動するために必要。
+      actions: write
 
     steps:
       - name: Checkout code
@@ -108,6 +111,7 @@ jobs:
           fi
 
       - name: Commit JSON changes
+        id: commit-json
         if: steps.json-changes.outputs.changed == 'true'
         run: |
           set -e
@@ -140,6 +144,7 @@ jobs:
             set -e
             if [ $PUSH_EXIT_CODE -eq 0 ]; then
               echo "✅ Git push successful (attempt $RETRY_COUNT/$MAX_RETRIES)"
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             LAST_FAILURE="push"
@@ -286,3 +291,20 @@ jobs:
           else
             echo "ℹ️ No changes detected in JSON files" >> $GITHUB_STEP_SUMMARY
           fi
+
+      # このワークフローがpushしたbot commit（JSON+フォントサブセット）は、
+      # GITHUB_TOKENによるpushのため on:push の本番デプロイを起動しない
+      # （GitHub仕様: GITHUB_TOKEN起点のイベントは新しいworkflow runを作らない）。
+      # 新フォント/JSONを含む本番候補が作られない穴を塞ぐため、ここで明示的に
+      # workflow_dispatch(action=upload)する。activateは従来どおり手動。
+      - name: Trigger production candidate upload
+        if: steps.commit-json.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          gh workflow run deploy-cloudflare-workers-production.yml \
+            --repo "${{ github.repository }}" \
+            --ref main \
+            -f action=upload
+          echo "✅ Dispatched production candidate upload (includes regenerated font subsets)"
