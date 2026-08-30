@@ -115,11 +115,12 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 
 - `main`へのpushでは、SHA付きWorker versionをuploadするだけでトラフィックを切り替えません。
 - 候補uploadに失敗した場合はfail closedで停止します。Durable Object migration追加時は、稼働中Worker向けのmigration手順を別途レビューして実行します。
+- Wrangler rollback cannot cross a Durable Object class lifecycle change. Durable Object migrationを追加・変更したversionを跨ぐ復帰は、通常の`rollback-worker`ではなく専用のmigration手順として別途レビューします。
 - 候補upload用configには本番domainを含めません。`akyodex.com/*`はroute専用configを使う手動`activate`だけがWorker routeとして設定できます。
 - 本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。
 - `activate`は現在の本番がWorker tag付きで健全なこととWorker secretsを確認し、同じSHAタグが複数存在しても最新の候補version IDを一意に選んで100%へdeployします。
 - runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合は`wrangler rollback`で直前のWorker deploymentへ戻します。Worker routeは外しません。
-- `rollback-worker`は直前のWorker deploymentへ戻し、前後ともWorker tagが存在することを検証します。Worker routeは維持し、Pagesを本番rollback先には使用しません。
+- `rollback-worker`は既定で直前のWorker deploymentへ戻します。必要な場合は任意の`version-id`を指定でき、復帰後はWorker tagに加えて完全カタログのschema・件数を検証します。Worker routeは維持し、Pagesを本番rollback先には使用しません。
 - Worker route設定にはVersions運用向けの`wrangler triggers deploy`を使いますが、routeを外す設定やworkflowはリポジトリに置きません。
 - productionの`NEXT_TAG_CACHE_D1`は`akyodex-next-tag-cache-production`を使用し、stagingのタグ無効化が本番キャッシュへ波及しないよう分離します。
 

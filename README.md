@@ -530,10 +530,11 @@ The current runtime code reads `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, a
 
 - **Production candidate**: push or merge to `main` → `deploy-cloudflare-workers-production.yml` uploads a zero-traffic Worker version
 - **Production activation**: Actions → `Deploy Cloudflare Workers Production` → `activate`
-- **Production rollback**: the same workflow → `rollback-worker`; the production route stays on Workers
+- **Production rollback**: the same workflow → `rollback-worker`; optionally specify a Worker `version-id`, and the production route stays on Workers
 - **PR preview**: `deploy-cloudflare-pages-preview.yml` deploys an isolated, read-only Pages preview
 
 PagesはPRの画面確認専用です。本番のsource of truth、activation、rollbackはすべてWorkers workflowです。
+Worker rollback cannot cross a Durable Object class lifecycle change; Durable Object migrationを跨ぐ復帰は専用のmigration手順として扱います。
 
 ---
 

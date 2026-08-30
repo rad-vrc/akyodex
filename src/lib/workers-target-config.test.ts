@@ -128,6 +128,10 @@ test('Workers production workflow keeps rollback entirely on Workers', async () 
     workflow,
     /npx wrangler rollback --config "\$\{WORKERS_CONFIG\}"/
   );
+  assert.match(workflow, /version-id:/);
+  assert.match(workflow, /inputs\['version-id'\]/);
+  assert.match(workflow, /ROLLBACK_VERSION_ID/);
+  assert.match(workflow, /wrangler rollback "\$\{rollback_args\[@\]\}"/);
   assert.match(workflow, /inputs\.action == 'rollback-worker'/);
   assert.doesNotMatch(workflow, /rollback-pages/);
   assert.doesNotMatch(workflow, /akyodex\.pages\.dev/);
@@ -145,6 +149,11 @@ test('Workers production workflow keeps rollback entirely on Workers', async () 
   );
   assert.match(workflow, /x-akyodex-worker-tag/);
   assert.match(workflow, /x-robots-tag/);
+  assert.equal(
+    workflow.match(/catalog\.schemaVersion!==1/g)?.length,
+    3,
+    'activation plus automatic and manual rollback must validate the catalog schema'
+  );
   assert.match(
     workflow,
     /always\(\) && \(failure\(\) \|\| cancelled\(\)\) && steps\.deploy-version\.outcome == 'success'/
@@ -153,6 +162,15 @@ test('Workers production workflow keeps rollback entirely on Workers', async () 
     pattern: 'akyodex.com/*',
     zone_name: 'akyodex.com',
   }]);
+});
+
+test('Workers rollback documentation warns about Durable Object lifecycle changes', async () => {
+  const operationsGuide = await readFile(
+    path.join(process.cwd(), '.github', 'workflows', 'README.md'),
+    'utf8'
+  );
+
+  assert.match(operationsGuide, /rollback cannot cross a Durable Object class lifecycle change/i);
 });
 
 test('Workers production workflow configures managed secrets without activating traffic', async () => {

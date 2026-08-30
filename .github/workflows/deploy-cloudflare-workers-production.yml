@@ -16,6 +16,10 @@ on:
           - configure-secrets
           - activate
           - rollback-worker
+      version-id:
+        description: 'Optional Worker version ID for rollback-worker'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -384,6 +388,7 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 12); do
+            rm -f /tmp/rollback-headers /tmp/rollback-body /tmp/rollback-catalog-body
             status="$(curl --silent --show-error \
               --connect-timeout 10 \
               --max-time 30 \
@@ -393,8 +398,17 @@ jobs:
               "https://akyodex.com/zukan" || echo "000")"
             worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' /tmp/rollback-headers)"
             if [ "${status}" = "200" ] && [ -n "${worker_tag}" ] && [ "${worker_tag}" != "${GITHUB_SHA}" ]; then
-              echo "Previous Worker ${worker_tag} is serving production again."
-              exit 0
+              catalog_status="$(curl --silent --show-error \
+                --connect-timeout 10 \
+                --max-time 30 \
+                --header "Accept: application/json" \
+                --output /tmp/rollback-catalog-body \
+                --write-out "%{http_code}" \
+                "https://akyodex.com/api/catalog/ja" || true)"
+              if [ "${catalog_status}" = "200" ] && CATALOG_PATH=/tmp/rollback-catalog-body node -e 'const fs=require("node:fs");const catalog=JSON.parse(fs.readFileSync(process.env.CATALOG_PATH,"utf8"));if(catalog.schemaVersion!==1||!Array.isArray(catalog.data)||catalog.count!==catalog.data.length||catalog.count===0)process.exit(1)'; then
+                echo "Previous Worker ${worker_tag} is serving healthy production traffic again."
+                exit 0
+              fi
             fi
 
             if [ "${attempt}" -lt 12 ]; then
@@ -418,7 +432,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
 
   rollback-worker:
-    name: Roll back to the previous Worker deployment
+    name: Roll back production Worker deployment
     if: >-
       github.ref_name == 'main' &&
       github.event_name == 'workflow_dispatch' &&
@@ -464,9 +478,19 @@ jobs:
           echo "tag=${worker_tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Roll back to the previous Worker
+        env:
+          ROLLBACK_VERSION_ID: ${{ inputs['version-id'] }}
         run: |
           set -euo pipefail
-          npx wrangler rollback --config "${WORKERS_CONFIG}" \
+          rollback_args=()
+          if [ -n "${ROLLBACK_VERSION_ID}" ]; then
+            if [[ ! "${ROLLBACK_VERSION_ID}" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]]; then
+              echo "::error::version-id must be a Cloudflare Worker version UUID."
+              exit 1
+            fi
+            rollback_args+=("${ROLLBACK_VERSION_ID}")
+          fi
+          npx wrangler rollback "${rollback_args[@]}" --config "${WORKERS_CONFIG}" \
             --name "${WORKERS_NAME}" \
             --message "Manual production rollback from ${{ steps.current-worker.outputs.tag }}" \
             --yes
@@ -475,6 +499,7 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in $(seq 1 12); do
+            rm -f /tmp/production-headers /tmp/production-body /tmp/production-catalog-body
             status="$(curl --silent --show-error \
               --connect-timeout 10 \
               --max-time 30 \
@@ -484,8 +509,17 @@ jobs:
               "https://akyodex.com/zukan" || echo "000")"
             worker_tag="$(awk 'tolower($0) ~ /^x-akyodex-worker-tag:/ { sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' /tmp/production-headers)"
             if [ "${status}" = "200" ] && [ -n "${worker_tag}" ] && [ "${worker_tag}" != "${{ steps.current-worker.outputs.tag }}" ]; then
-              echo "Previous Worker ${worker_tag} is serving akyodex.com."
-              exit 0
+              catalog_status="$(curl --silent --show-error \
+                --connect-timeout 10 \
+                --max-time 30 \
+                --header "Accept: application/json" \
+                --output /tmp/production-catalog-body \
+                --write-out "%{http_code}" \
+                "https://akyodex.com/api/catalog/ja" || true)"
+              if [ "${catalog_status}" = "200" ] && CATALOG_PATH=/tmp/production-catalog-body node -e 'const fs=require("node:fs");const catalog=JSON.parse(fs.readFileSync(process.env.CATALOG_PATH,"utf8"));if(catalog.schemaVersion!==1||!Array.isArray(catalog.data)||catalog.count!==catalog.data.length||catalog.count===0)process.exit(1)'; then
+                echo "Worker ${worker_tag} is serving a healthy catalog on akyodex.com."
+                exit 0
+              fi
             fi
 
             if [ "${attempt}" -lt 12 ]; then
