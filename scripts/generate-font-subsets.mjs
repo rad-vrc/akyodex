@@ -268,6 +268,9 @@ async function main() {
     characterCount: [...text].length,
     files: {},
   };
+  // 複数ソース対応: いずれかのソースフォントがカバーした文字の合算。
+  // フォールバックは「どのソースにも無い字」としてループ後に算出する。
+  const coveredSet = new Set();
 
   for (const source of SOURCES) {
     const ttf = await fetchSource(source);
@@ -289,13 +292,11 @@ async function main() {
     // 前提として許容し、マニフェストへ記録する。
     const sourceCmap = parseCmap(ttf);
     const outputCmap = parseCmap(sfnt);
-    const covered = [];
-    const fallback = [];
     const missing = [];
     for (const ch of text) {
       const cp = ch.codePointAt(0);
-      if (!sourceCmap.has(cp)) fallback.push(ch);
-      else if (outputCmap.has(cp)) covered.push(ch);
+      if (!sourceCmap.has(cp)) continue;
+      if (outputCmap.has(cp)) coveredSet.add(ch);
       else missing.push(ch);
     }
     if (missing.length > 0) {
@@ -318,13 +319,17 @@ async function main() {
       bytes: woff2.length,
       from: source.file,
     };
-    manifest.coveredChars = covered.sort().join("");
-    manifest.fallbackChars = fallback.sort().join("");
     console.log(
-      `${source.out}: ${(woff2.length / 1024).toFixed(1)}KB (from ${(ttf.length / 1024 / 1024).toFixed(1)}MB), ` +
-        `covered ${covered.length}, system-fallback ${fallback.length} [${fallback.join("")}]`,
+      `${source.out}: ${(woff2.length / 1024).toFixed(1)}KB (from ${(ttf.length / 1024 / 1024).toFixed(1)}MB)`,
     );
   }
+
+  const fallback = [...text].filter((ch) => !coveredSet.has(ch)).sort();
+  manifest.coveredChars = [...coveredSet].sort().join("");
+  manifest.fallbackChars = fallback.join("");
+  console.log(
+    `covered ${coveredSet.size}, system-fallback ${fallback.length} [${fallback.join("")}]`,
+  );
 
   await writeFile(
     path.join(outDir, "subset-manifest.json"),
