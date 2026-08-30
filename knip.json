@@ -1,5 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@^5/schema.json",
+  "entry": [
+    "workers/reference-image-generator/src/index.ts"
+  ],
   "ignore": [
     "open-next.config.ts",
     "next.config.test.ts",
