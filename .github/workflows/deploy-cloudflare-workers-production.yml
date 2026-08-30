@@ -438,8 +438,7 @@ jobs:
   rollback-to-pages:
     name: Remove Worker route and restore Pages
     if: >-
-      (github.ref_name == 'main' ||
-      github.ref_name == 'codex/fix-worker-route-rollback') &&
+      github.ref_name == 'main' &&
       github.event_name == 'workflow_dispatch' &&
       inputs.action == 'rollback-pages'
     runs-on: ubuntu-latest
