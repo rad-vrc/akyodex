@@ -13,15 +13,15 @@ function readUtf8(relativePath: string) {
 test("root metadata explicitly references optimized social preview images", () => {
   const layoutSource = readUtf8("app/layout.tsx");
 
-  assert.match(layoutSource, /images:\s*\[\{\s*url:\s*['"]\/opengraph-image['"]/);
-  assert.match(layoutSource, /images:\s*\[['"]\/twitter-image['"]\]/);
+  assert.match(layoutSource, /images:\s*\[\{\s*url:\s*['"]\/opengraph-image\.png['"]/);
+  assert.match(layoutSource, /images:\s*\[['"]\/twitter-image\.png['"]\]/);
 });
 
 test("zukan metadata explicitly references optimized social preview images", () => {
   const zukanPageSource = readUtf8("app/zukan/page.tsx");
 
-  assert.match(zukanPageSource, /images:\s*\[\{\s*url:\s*['"]\/opengraph-image['"]/);
-  assert.match(zukanPageSource, /images:\s*\[['"]\/twitter-image['"]\]/);
+  assert.match(zukanPageSource, /images:\s*\[\{\s*url:\s*['"]\/opengraph-image\.png['"]/);
+  assert.match(zukanPageSource, /images:\s*\[['"]\/twitter-image\.png['"]\]/);
 });
 
 test("static social image files exist and stay within provider limits", () => {
