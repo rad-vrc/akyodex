@@ -1,0 +1,41 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "akyodex-reference-image-generator-staging",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-31",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "vars": {
+    "SENTRY_ENVIRONMENT": "staging-reference-images"
+  },
+  "r2_buckets": [
+    {
+      "binding": "AKYO_BUCKET",
+      "bucket_name": "akyodex-workers-staging-data"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "queues": {
+    "consumers": [
+      {
+        "queue": "akyodex-reference-images-staging",
+        "dead_letter_queue": "akyodex-reference-images-staging-dlq",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_concurrency": 2,
+        "max_retries": 5
+      }
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  }
+}

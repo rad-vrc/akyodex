@@ -1,0 +1,41 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "akyodex-reference-image-generator-production",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-31",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "vars": {
+    "SENTRY_ENVIRONMENT": "production-reference-images"
+  },
+  "r2_buckets": [
+    {
+      "binding": "AKYO_BUCKET",
+      "bucket_name": "akyo-images"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "queues": {
+    "consumers": [
+      {
+        "queue": "akyodex-reference-images-production",
+        "dead_letter_queue": "akyodex-reference-images-production-dlq",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "max_concurrency": 2,
+        "max_retries": 5
+      }
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true
+    }
+  }
+}

@@ -1,0 +1,211 @@
+name: Reference Image Generator
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Reference image operation
+        required: true
+        default: deploy-staging
+        type: choice
+        options:
+          - deploy-staging
+          - audit-staging
+          - deploy-production
+          - backfill-production
+          - audit-production
+      current-images-transformations:
+        description: Current monthly Images transformations before production backfill
+        required: false
+        type: string
+  schedule:
+    - cron: "0 3 1 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reference-image-generator-${{ inputs.action || 'monthly-audit' }}
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  REFERENCE_R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+
+jobs:
+  deploy-staging:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'deploy-staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+    env:
+      CONFIG: workers/reference-image-generator/wrangler.staging.jsonc
+      QUEUE: akyodex-reference-images-staging
+      DLQ: akyodex-reference-images-staging-dlq
+      BUCKET: akyodex-workers-staging-data
+      SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Verify Cloudflare credentials
+        run: npx wrangler whoami
+      - name: Ensure staging queues exist
+        run: |
+          set -euo pipefail
+          npx wrangler queues info "${QUEUE}" >/dev/null 2>&1 || npx wrangler queues create "${QUEUE}"
+          npx wrangler queues info "${DLQ}" >/dev/null 2>&1 || npx wrangler queues create "${DLQ}"
+      - name: Deploy private staging generator
+        run: npx wrangler deploy --config "${CONFIG}" --tag "${GITHUB_SHA}" --message "Reference generator staging ${GITHUB_SHA}"
+      - name: Configure staging generator Sentry
+        if: env.SENTRY_DSN != ''
+        run: printf '%s' "${SENTRY_DSN}" | npx wrangler secret put SENTRY_DSN --config "${CONFIG}"
+      - name: Ensure staging R2 custom domain exists
+        run: |
+          set -euo pipefail
+          if ! npx wrangler r2 bucket domain list "${BUCKET}" 2>&1 | grep -Fq "images-staging.akyodex.com"; then
+            zone_id="$(curl --fail --silent --show-error \
+              --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              "https://api.cloudflare.com/client/v4/zones?name=akyodex.com&account.id=${CLOUDFLARE_ACCOUNT_ID}" | \
+              node -e 'let input="";process.stdin.on("data",c=>input+=c).on("end",()=>{const body=JSON.parse(input);const id=body.result?.[0]?.id;if(!body.success||!id)process.exit(1);process.stdout.write(id)})')"
+            npx wrangler r2 bucket domain add "${BUCKET}" \
+              --domain images-staging.akyodex.com \
+              --zone-id "${zone_id}" \
+              --min-tls 1.2 \
+              --force
+          fi
+      - name: Ensure staging R2 notifications exist
+        run: |
+          set -euo pipefail
+          set +e
+          notification_output="$(npx wrangler r2 bucket notification list "${BUCKET}" 2>&1)"
+          notification_status=$?
+          set -e
+          if [ "${notification_status}" -eq 0 ] && grep -Fq "${QUEUE}" <<<"${notification_output}"; then
+            echo "Staging notification already exists."
+          elif grep -Fq "11015" <<<"${notification_output}"; then
+            npx wrangler r2 bucket notification create "${BUCKET}" --event-type object-create --event-type object-delete --suffix ".png" --queue "${QUEUE}" --description "Generate Akyo reference WebPs"
+          else
+            echo "::error::Unexpected existing R2 notification configuration."
+            printf '%s\n' "${notification_output}"
+            exit 1
+          fi
+
+  audit-staging:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'audit-staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      REFERENCE_R2_BUCKET: akyodex-workers-staging-data
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:reference-images
+
+  deploy-production:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'deploy-production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CONFIG: workers/reference-image-generator/wrangler.production.jsonc
+      QUEUE: akyodex-reference-images-production
+      DLQ: akyodex-reference-images-production-dlq
+      BUCKET: akyo-images
+      SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Verify Cloudflare credentials
+        run: npx wrangler whoami
+      - name: Ensure production queues exist
+        run: |
+          set -euo pipefail
+          npx wrangler queues info "${QUEUE}" >/dev/null 2>&1 || npx wrangler queues create "${QUEUE}"
+          npx wrangler queues info "${DLQ}" >/dev/null 2>&1 || npx wrangler queues create "${DLQ}"
+      - name: Deploy private production generator
+        run: npx wrangler deploy --config "${CONFIG}" --tag "${GITHUB_SHA}" --message "Reference generator production ${GITHUB_SHA}"
+      - name: Configure production generator Sentry
+        if: env.SENTRY_DSN != ''
+        run: printf '%s' "${SENTRY_DSN}" | npx wrangler secret put SENTRY_DSN --config "${CONFIG}"
+      - name: Ensure production R2 notifications exist
+        run: |
+          set -euo pipefail
+          set +e
+          notification_output="$(npx wrangler r2 bucket notification list "${BUCKET}" 2>&1)"
+          notification_status=$?
+          set -e
+          if [ "${notification_status}" -eq 0 ] && grep -Fq "${QUEUE}" <<<"${notification_output}"; then
+            echo "Production notification already exists."
+          elif grep -Fq "11015" <<<"${notification_output}"; then
+            npx wrangler r2 bucket notification create "${BUCKET}" --event-type object-create --event-type object-delete --suffix ".png" --queue "${QUEUE}" --description "Generate Akyo reference WebPs"
+          else
+            echo "::error::Unexpected existing R2 notification configuration."
+            printf '%s\n' "${notification_output}"
+            exit 1
+          fi
+
+  backfill-production:
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'backfill-production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      REFERENCE_R2_BUCKET: akyo-images
+      REFERENCE_QUEUE_NAME: akyodex-reference-images-production
+      REFERENCE_BACKFILL_REQUIRE_USAGE_GUARD: "true"
+      REFERENCE_IMAGES_CURRENT_TRANSFORMATIONS: ${{ inputs.current-images-transformations }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Require current Images usage input
+        run: |
+          if ! [[ "${REFERENCE_IMAGES_CURRENT_TRANSFORMATIONS}" =~ ^[0-9]+$ ]]; then
+            echo "::error::current-images-transformations must be supplied from the Cloudflare Images dashboard."
+            exit 1
+          fi
+      - run: npm run backfill:reference-images
+
+  audit-production:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.action == 'audit-production') ||
+      (github.event_name == 'schedule' && vars.REFERENCE_IMAGES_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      REFERENCE_R2_BUCKET: akyo-images
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run audit:reference-images
