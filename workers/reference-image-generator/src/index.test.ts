@@ -208,3 +208,35 @@ test("rejects unsuccessful or non-WebP Images responses", async () => {
     ReferenceImageGenerationError,
   );
 });
+
+test("awaits the asynchronous Images output before requesting its response", async () => {
+  const binding = {
+    input() {
+      return {
+        transform() {
+          return this;
+        },
+        async output() {
+          return {
+            response() {
+              return new Response(new Uint8Array([9, 6, 0]), {
+                headers: { "Content-Type": "image/webp" },
+              });
+            },
+          };
+        },
+      };
+    },
+  } as unknown as ImagesBindingLike;
+  const request: ReferenceTransformRequest = {
+    source: new Blob([new Uint8Array([1]).buffer]).stream(),
+    width: 960,
+    fit: "scale-down",
+    format: "image/webp",
+    quality: 82,
+  };
+
+  const result = await transformReferenceImage(binding, request);
+
+  assert.deepEqual([...new Uint8Array(result.bytes)], [9, 6, 0]);
+});

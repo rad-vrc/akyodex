@@ -72,9 +72,9 @@ interface ImagePipeline {
   output(options: {
     format: "image/webp";
     quality: 82;
-  }): {
-    response(): Promise<Response>;
-  };
+  }):
+    | Promise<{ response(): Response | Promise<Response> }>
+    | { response(): Response | Promise<Response> };
 }
 
 export interface ImagesBindingLike {
@@ -202,11 +202,11 @@ export async function transformReferenceImage(
   images: ImagesBindingLike,
   request: ReferenceTransformRequest,
 ): Promise<ReferenceTransformResult> {
-  const response = await images
+  const output = await images
     .input(request.source)
     .transform({ fit: request.fit, width: request.width })
-    .output({ format: request.format, quality: request.quality })
-    .response();
+    .output({ format: request.format, quality: request.quality });
+  const response = await output.response();
   const contentType = response.headers.get("Content-Type") ?? "";
   if (!response.ok || contentType.toLowerCase() !== "image/webp") {
     response.body?.cancel().catch(() => undefined);
