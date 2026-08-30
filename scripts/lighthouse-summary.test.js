@@ -68,12 +68,12 @@ test("evaluates only median values against Lighthouse budgets", () => {
     evaluateLighthouseBudgets({
       ...passingSummary,
       performanceScore: 49,
-      largestContentfulPaintMs: 8_001,
+      largestContentfulPaintMs: 10_001,
       totalBlockingTimeMs: 601,
     }),
     [
       "Performance score 49 is below 50",
-      "Largest Contentful Paint 8001ms exceeds 8000ms",
+      "Largest Contentful Paint 10001ms exceeds 10000ms",
       "Total Blocking Time 601ms exceeds 600ms",
     ],
   );

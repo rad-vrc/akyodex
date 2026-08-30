@@ -1,9 +1,13 @@
 const { appendFileSync, readFileSync, writeFileSync } = require("node:fs");
 
+// 2026-08-31: LCP予算を8000→10000へ更新。自己ホスト丸ゴシック421KB(PR #466、承認済み)を
+// Lantern(simulate)がLCP依存グラフへ直列加算するため中央値が6.4s→8.5sへ移動した。
+// 実ブラウザ適用スロットリングの観測LCPは2.05s→2.36s(+0.3s)で、以後この水準からの
+// 悪化を検出するための予算である。他の予算は据え置き。
 const DEFAULT_BUDGETS = Object.freeze({
   minimumPerformanceScore: 50,
   maximumFirstContentfulPaintMs: 2_500,
-  maximumLargestContentfulPaintMs: 8_000,
+  maximumLargestContentfulPaintMs: 10_000,
   maximumTotalBlockingTimeMs: 600,
   maximumCumulativeLayoutShift: 0.05,
   maximumSpeedIndexMs: 7_000,
