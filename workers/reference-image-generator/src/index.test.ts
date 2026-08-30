@@ -103,6 +103,10 @@ test("acknowledges successful and permanent messages but retries transient failu
     ],
   );
   assert.equal(logs.every((entry) => !("url" in entry) && !("user" in entry)), true);
+  assert.equal(
+    logs.find((entry) => entry.key === "0802.png")?.error,
+    "R2 unavailable",
+  );
 });
 
 test("acknowledges malformed messages without invoking the generator", async () => {

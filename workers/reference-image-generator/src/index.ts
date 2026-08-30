@@ -179,6 +179,7 @@ export async function handleReferenceImageBatch(
       dependencies.captureException?.(error, context);
       log({
         elapsedMs: Math.max(0, now() - startedAt),
+        error: error.message,
         event: "reference-image-generator",
         key: context.key,
         result:
