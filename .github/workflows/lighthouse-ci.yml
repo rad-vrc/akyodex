@@ -66,6 +66,18 @@ jobs:
             sleep 2
           done
 
+      - name: Warm up the server before measuring
+        run: |
+          set -euo pipefail
+          # 初回リクエスト直後はSSR応答が43ms〜436msで振れる（実測）。Lanternは
+          # observedのサーバ応答からネットワーク係数を推定するため、このゆらぎが
+          # FCP/LCP推定を最大3倍に増幅し、medianでもフレークしていた。応答が
+          # 安定するまで温めてから計測する（予算・ガード自体は変更しない）。
+          for i in $(seq 1 10); do
+            t=$(curl -o /dev/null -s -w "%{time_total}" http://127.0.0.1:3000/zukan)
+            echo "warmup ${i}: ${t}s"
+          done
+
       - name: Run three simulated mobile audits
         run: |
           set -euo pipefail
