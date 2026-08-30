@@ -67,8 +67,8 @@ test('Workers production config uses production data without exposing a route', 
   assert.equal(routeConfig.name, 'akyodex-workers-production');
   assert.equal(routeConfig.workers_dev, false);
   assert.deepEqual(routeConfig.routes, [{
-    pattern: 'akyodex.com',
-    custom_domain: true,
+    pattern: 'akyodex.com/*',
+    zone_name: 'akyodex.com',
   }]);
   assert.equal(selfReference?.service, 'akyodex-workers-production');
   assert.equal(config.vars?.AKYODEX_DEPLOYMENT_ENVIRONMENT, 'production');
@@ -150,8 +150,8 @@ test('Workers production workflow keeps rollback entirely on Workers', async () 
     /always\(\) && \(failure\(\) \|\| cancelled\(\)\) && steps\.deploy-version\.outcome == 'success'/
   );
   assert.deepEqual(routeConfig.routes, [{
-    pattern: 'akyodex.com',
-    custom_domain: true,
+    pattern: 'akyodex.com/*',
+    zone_name: 'akyodex.com',
   }]);
 });
 

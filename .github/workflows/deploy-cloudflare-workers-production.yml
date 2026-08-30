@@ -285,7 +285,7 @@ jobs:
             --message "Activate production ${GITHUB_SHA}" \
             --yes
 
-      - name: Attach akyodex.com Worker Custom Domain
+      - name: Attach akyodex.com Worker route
         id: activate-route
         run: npx wrangler triggers deploy --config "${WORKERS_ROUTE_CONFIG}"
 
@@ -414,7 +414,7 @@ jobs:
             echo "- Revision: ${GITHUB_SHA}"
             echo "- URL: https://akyodex.com"
             echo "- Result: ${{ job.status }}"
-            echo "- Rollback: previous Worker deployment; the Worker Custom Domain remains attached"
+            echo "- Rollback: previous Worker deployment; the Worker route remains attached"
           } >> "${GITHUB_STEP_SUMMARY}"
 
   rollback-worker:
@@ -504,5 +504,5 @@ jobs:
             echo ""
             echo "- URL: https://akyodex.com"
             echo "- Result: ${{ job.status }}"
-            echo "- Custom Domain: remains attached to akyodex-workers-production"
+            echo "- Worker route: remains attached to akyodex-workers-production"
           } >> "${GITHUB_STEP_SUMMARY}"

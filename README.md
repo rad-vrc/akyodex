@@ -456,7 +456,7 @@ npm run data:convert     # Convert CSV to JSON (npx tsx scripts/csv-to-json.ts)
 
 - Production runs on `akyodex-workers-production`; `push` to `main` uploads a tagged candidate without changing traffic.
 - Production traffic changes only through the manual `activate` action in `.github/workflows/deploy-cloudflare-workers-production.yml`.
-- Production rollback uses Wrangler to restore the previous Worker deployment. The Worker Custom Domain remains attached and Pages is not a production rollback target.
+- Production rollback uses Wrangler to restore the previous Worker deployment. The Worker route remains attached and Pages is not a production rollback target.
 - `npm run build` and `.github/workflows/deploy-cloudflare-pages-preview.yml` are retained only for isolated PR previews in the `akyodex-pr-preview` Pages project.
 
 ### 1. Create Cloudflare Pages Preview Project
@@ -530,7 +530,7 @@ The current runtime code reads `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, a
 
 - **Production candidate**: push or merge to `main` → `deploy-cloudflare-workers-production.yml` uploads a zero-traffic Worker version
 - **Production activation**: Actions → `Deploy Cloudflare Workers Production` → `activate`
-- **Production rollback**: the same workflow → `rollback-worker`; the Custom Domain stays on Workers
+- **Production rollback**: the same workflow → `rollback-worker`; the production route stays on Workers
 - **PR preview**: `deploy-cloudflare-pages-preview.yml` deploys an isolated, read-only Pages preview
 
 PagesはPRの画面確認専用です。本番のsource of truth、activation、rollbackはすべてWorkers workflowです。

@@ -115,12 +115,12 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 
 - `main`へのpushでは、SHA付きWorker versionをuploadするだけでトラフィックを切り替えません。
 - 候補uploadに失敗した場合はfail closedで停止します。Durable Object migration追加時は、稼働中Worker向けのmigration手順を別途レビューして実行します。
-- 候補upload用configには本番domainを含めません。`akyodex.com`はroute専用configを使う手動`activate`だけがWorker Custom Domainとして設定できます。
+- 候補upload用configには本番domainを含めません。`akyodex.com/*`はroute専用configを使う手動`activate`だけがWorker routeとして設定できます。
 - 本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。
 - `activate`は現在の本番がWorker tag付きで健全なこととWorker secretsを確認し、同じSHAタグが複数存在しても最新の候補version IDを一意に選んで100%へdeployします。
 - runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合は`wrangler rollback`で直前のWorker deploymentへ戻します。Worker routeは外しません。
-- `rollback-worker`は直前のWorker deploymentへ戻し、前後ともWorker tagが存在することを検証します。Worker Custom Domainは維持し、Pagesを本番rollback先には使用しません。
-- Custom Domain設定にはVersions運用向けの`wrangler triggers deploy`を使いますが、domainを外す設定やworkflowはリポジトリに置きません。
+- `rollback-worker`は直前のWorker deploymentへ戻し、前後ともWorker tagが存在することを検証します。Worker routeは維持し、Pagesを本番rollback先には使用しません。
+- Worker route設定にはVersions運用向けの`wrangler triggers deploy`を使いますが、routeを外す設定やworkflowはリポジトリに置きません。
 - productionの`NEXT_TAG_CACHE_D1`は`akyodex-next-tag-cache-production`を使用し、stagingのタグ無効化が本番キャッシュへ波及しないよう分離します。
 
 ### 本番activation手順
@@ -291,10 +291,10 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 
 ### ロールバックしたい
 
-`Deploy Cloudflare Workers Production`を`rollback-worker`で手動実行し、直前のWorker deploymentへ戻します。Worker Custom Domainは外さず、Pagesには切り替えません。
+`Deploy Cloudflare Workers Production`を`rollback-worker`で手動実行し、直前のWorker deploymentへ戻します。Worker routeは外さず、Pagesには切り替えません。
 
 - Workersコードのrollback: `wrangler rollback`で直前のWorker deploymentへ戻す
-- Worker Custom Domain: `akyodex-workers-production`へ付いたまま維持する
+- Worker route: `akyodex-workers-production`へ付いたまま維持する
 - データ変更のrollback: KV、R2、D1、GitHub上のCSV/JSONをコードversionとは別に確認する
 
 ### `npm run push:check-pr` が失敗した
