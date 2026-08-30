@@ -637,7 +637,7 @@ export function AkyoDetailModal({
                       <IconTag size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.name', lang)}
                     </h3>
-                    <p className="text-xl font-black">{localAkyo.nickname || '-'}</p>
+                    <p className="text-xl font-bold">{localAkyo.nickname || '-'}</p>
                   </div>
 
                   {!isWorldEntry && (
@@ -654,7 +654,7 @@ export function AkyoDetailModal({
                         />
                         {t('modal.avatarName', lang)}
                       </h3>
-                      <p className="text-xl font-black">{localAkyo.avatarName || '-'}</p>
+                      <p className="text-xl font-bold">{localAkyo.avatarName || '-'}</p>
                     </div>
                   )}
 
@@ -689,7 +689,7 @@ export function AkyoDetailModal({
                       <IconUser size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.author', lang)}
                     </h3>
-                    <p className="text-xl font-black">{authorStr || ''}</p>
+                    <p className="text-xl font-bold">{authorStr || ''}</p>
                   </div>
                 </div>
 
@@ -752,8 +752,8 @@ export function AkyoDetailModal({
                       {t('modal.bonus', lang)}
                     </h3>
                     <div className="bg-white bg-opacity-80 rounded-2xl p-4 shadow-inner">
-                      {/* おまけ本文は丸ゴシック適用外（font-system） */}
-                      <p className="font-system text-gray-700 whitespace-pre-wrap leading-relaxed">
+                      {/* 試行: おまけ本文にも丸ゴシックを適用（コメント文字はサブセット収録済み） */}
+                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
                         {commentStr}
                       </p>
                     </div>

@@ -44,7 +44,16 @@ const SOURCES = [
 ];
 
 const DATA_FILES = ["akyo-data-ja.json", "akyo-data-en.json", "akyo-data-ko.json"];
-const DATA_FIELDS = ["nickname", "avatarName", "author", "category", "displaySerial"];
+// comment/notes はおまけ情報本文にも丸ゴシックを適用するため収録する
+const DATA_FIELDS = [
+  "nickname",
+  "avatarName",
+  "author",
+  "category",
+  "displaySerial",
+  "comment",
+  "notes",
+];
 
 // Always-included ranges so the subset never depends on today's data alone:
 // ASCII, hiragana + katakana (full blocks incl. marks and ー), CJK punctuation,
