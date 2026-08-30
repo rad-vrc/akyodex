@@ -28,17 +28,17 @@ const SOURCE_COMMIT = "84efd8ad78c3710ad14bd909e3bc407151885628";
 const SOURCES = [
   {
     file: "MPLUSRounded1c-Regular.ttf",
-    sha256: "b75708b53e45b06d",
+    sha256: "b75708b53e45b06d17d470aeeca5b766e3d1b3999f03f13ec4eb863ca846c14c",
     out: "mplus-rounded-1c-regular.subset.woff2",
   },
   {
     file: "MPLUSRounded1c-Bold.ttf",
-    sha256: "c358630584e8e2d8",
+    sha256: "c358630584e8e2d8fbd6121d0f4693255ffef6d1e6d4f3441fd6e5a963a11f9e",
     out: "mplus-rounded-1c-bold.subset.woff2",
   },
   {
     file: "MPLUSRounded1c-Black.ttf",
-    sha256: "d5981a59ccc5f00d",
+    sha256: "d5981a59ccc5f00da1bd3ae46750fa95cd165b0e6b3a5fc7a1945f94c59449e3",
     out: "mplus-rounded-1c-black.subset.woff2",
   },
 ];
@@ -93,7 +93,7 @@ async function fetchSource(source) {
   const cached = path.join(cacheDir, source.file);
   try {
     const buf = await readFile(cached);
-    if (createHash("sha256").update(buf).digest("hex").startsWith(source.sha256)) {
+    if (createHash("sha256").update(buf).digest("hex") === source.sha256) {
       return buf;
     }
   } catch {
@@ -104,8 +104,8 @@ async function fetchSource(source) {
   if (!res.ok) throw new Error(`Failed to download ${source.file}: HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   const digest = createHash("sha256").update(buf).digest("hex");
-  if (!digest.startsWith(source.sha256)) {
-    throw new Error(`sha256 mismatch for ${source.file}: got ${digest.slice(0, 16)}`);
+  if (digest !== source.sha256) {
+    throw new Error(`sha256 mismatch for ${source.file}: got ${digest}`);
   }
   await mkdir(cacheDir, { recursive: true });
   await writeFile(cached, buf);
