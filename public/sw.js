@@ -11,7 +11,7 @@
  * - Images: Stale While Revalidate
  */
 
-const CACHE_VERSION = 'akyodex-nextjs-v8';
+const CACHE_VERSION = 'akyodex-nextjs-v9';
 const CACHE_NAME = `akyodex-cache-${CACHE_VERSION}`;
 
 // Core files to precache on install
@@ -370,6 +370,23 @@ async function handleStaticAssets(event, request) {
  * Strategy 5: Images - Stale While Revalidate
  * Return cached image immediately, update in background
  */
+function isCacheableImageResponse(response) {
+  if (!response) {
+    return false;
+  }
+
+  const isDirectSuccess = response.ok && !response.redirected;
+  if (!isDirectSuccess) {
+    return false;
+  }
+
+  try {
+    return new URL(response.url).pathname !== '/images/placeholder.webp';
+  } catch {
+    return false;
+  }
+}
+
 async function handleImageRequest(event, request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
@@ -379,7 +396,7 @@ async function handleImageRequest(event, request) {
     event.waitUntil(
       fetch(request)
         .then(async (resp) => {
-          if (resp && resp.ok) {
+          if (isCacheableImageResponse(resp)) {
             await cache.put(request, resp.clone());
           }
         })
@@ -388,17 +405,21 @@ async function handleImageRequest(event, request) {
     return cached;
   }
 
-  // No cache → hit network, fallback 404 on failure
+  // No cache → hit network, return a non-cacheable 503 on network failure
   try {
     const resp = await fetch(request);
-    if (resp && resp.ok) {
+    if (isCacheableImageResponse(resp)) {
       await cache.put(request, resp.clone());
       return resp;
     }
+    return resp;
   } catch (e) {
     console.log('[SW] Image fetch failed:', e?.message || e);
   }
-  return new Response('', { status: 404 });
+  return new Response('', {
+    status: 503,
+    headers: { 'Cache-Control': 'no-store' },
+  });
 }
 
 /**

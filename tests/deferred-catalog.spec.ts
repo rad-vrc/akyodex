@@ -95,6 +95,18 @@ test.describe("Complete catalog loading", () => {
   test("loads avatar cards through the fixed-width transformation API", async ({
     page,
   }) => {
+    let avatarImageRequestCount = 0;
+    await page.route("**/api/avatar-image?id=0001&w=768", async (route) => {
+      avatarImageRequestCount += 1;
+      await route.fulfill({
+        body: readFileSync(
+          path.join(process.cwd(), "public", "images", "profileIcon.webp"),
+        ),
+        contentType: "image/webp",
+        status: 200,
+      });
+    });
+
     await page.goto("/zukan");
 
     const firstCardImage = page.locator("article.akyo-card img").first();
@@ -102,6 +114,7 @@ test.describe("Complete catalog loading", () => {
       "src",
       /\/api\/avatar-image\?id=0001&w=768$/,
     );
+    await expect.poll(() => avatarImageRequestCount).toBeGreaterThan(0);
     await expect
       .poll(() =>
         page.evaluate(() =>
@@ -112,6 +125,47 @@ test.describe("Complete catalog loading", () => {
         ),
       )
       .toEqual([]);
+  });
+
+  test("falls back to the direct R2 image when the transformation API fails", async ({
+    page,
+  }) => {
+    let transformationRequestCount = 0;
+    let directR2RequestCount = 0;
+    const fallbackImage = readFileSync(
+      path.join(process.cwd(), "public", "images", "profileIcon.webp"),
+    );
+
+    await page.route("**/api/avatar-image?id=0001&w=768", async (route) => {
+      transformationRequestCount += 1;
+      await route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        headers: { "Cache-Control": "no-store" },
+        json: {
+          success: false,
+          error: "Avatar image upstream request failed",
+        },
+      });
+    });
+    await page.route("**/0001.webp", async (route) => {
+      directR2RequestCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "image/webp",
+        body: fallbackImage,
+      });
+    });
+
+    await page.goto("/zukan");
+
+    const firstCardImage = page.locator("article.akyo-card img").first();
+    await expect(firstCardImage).toHaveAttribute(
+      "src",
+      /\/0001\.webp$/,
+    );
+    expect(transformationRequestCount).toBeGreaterThan(0);
+    expect(directR2RequestCount).toBeGreaterThan(0);
   });
 
   test("preloads the exact complete catalog URL before the window load event", async ({

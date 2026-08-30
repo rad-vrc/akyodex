@@ -4,7 +4,7 @@
  * Priority:
  * 1. R2 bucket (direct URL or binding)
  * 2. VRChat API (scrape) - using avtr ID from CSV if available
- * 3. Placeholder image
+ * 3. Non-cacheable error so the card can try its direct R2 fallback
  *
  * Features:
  * - Image caching (1 hour via Cache-Control headers)
@@ -16,11 +16,19 @@ import { connection } from 'next/server';
 import { jsonError } from '@/lib/api-helpers';
 import { VRCHAT_AVATAR_ID_PATTERN, extractVRChatAvatarIdFromUrl } from '@/lib/akyo-entry';
 import {
+  createAvatarImageFailureResponse,
   fetchAvatarCardImageWithFallback,
   getAvatarCardImageResponseHeaders,
   getPreferredAvatarCardImageFormat,
   shouldTransformAvatarCardImage,
+  type AvatarImageFailureKind,
 } from '@/lib/avatar-card-image';
+
+function createNoStoreJsonError(message: string, status: number): Response {
+  const response = jsonError(message, status);
+  response.headers.set('Cache-Control', 'no-store');
+  return response;
+}
 
 /**
  * Fetch CSV data and find avtr ID for given Akyo ID
@@ -93,13 +101,13 @@ export async function GET(request: Request) {
 
   // Need either avtr or id
   if (!avtr && !id) {
-    return jsonError('Missing avtr or id parameter', 400);
+    return createNoStoreJsonError('Missing avtr or id parameter', 400);
   }
 
   // Strengthen input validation for security
   if (avtr) {
     if (!VRCHAT_AVATAR_ID_PATTERN.test(avtr)) {
-      return jsonError('Invalid avtr format', 400);
+      return createNoStoreJsonError('Invalid avtr format', 400);
     }
   }
 
@@ -108,7 +116,7 @@ export async function GET(request: Request) {
     // Accept IDs with 1-4 digits and normalize to 4 digits (e.g., 3 -> 0003)
     const idRegex = /^\d{1,4}$/;
     if (!idRegex.test(id)) {
-      return jsonError('Invalid id format: must be numeric (up to 4 digits)', 400);
+      return createNoStoreJsonError('Invalid id format: must be numeric (up to 4 digits)', 400);
     }
     normalizedId = id.padStart(4, '0');
   }
@@ -120,6 +128,8 @@ export async function GET(request: Request) {
       console.log(`[avatar-image] Found avtr ${avtr} for ID ${normalizedId} from CSV`);
     }
   }
+
+  let failureKind: AvatarImageFailureKind = 'not-found';
 
   try {
     console.log(`[avatar-image] Processing request: id=${id}, avtr=${avtr}, width=${width}`);
@@ -157,7 +167,11 @@ export async function GET(request: Request) {
         console.log(
           `[avatar-image] R2 returned ${r2Response.status} for ${id}, trying VRChat fallback`
         );
+        if (r2Response.status !== 404) {
+          failureKind = 'upstream-error';
+        }
       } catch (error) {
+        failureKind = 'upstream-error';
         console.log(`[avatar-image] R2 fetch failed for ${id}, trying VRChat fallback:`, error);
       }
     }
@@ -167,7 +181,7 @@ export async function GET(request: Request) {
       // Validate avtr format
       const cleanAvtr = extractVRChatAvatarIdFromUrl(avtr);
       if (!cleanAvtr) {
-        return jsonError('Invalid avtr format', 400);
+        return createNoStoreJsonError('Invalid avtr format', 400);
       }
 
       // Security: Explicitly construct VRChat URL to prevent SSRF
@@ -177,13 +191,14 @@ export async function GET(request: Request) {
       // Validate URL is actually vrchat.com (defense in depth)
       const parsedUrl = new URL(vrchatPageUrl);
       if (parsedUrl.hostname !== 'vrchat.com') {
-        return jsonError('Invalid domain', 400);
+        return createNoStoreJsonError('Invalid domain', 400);
       }
 
       try {
         // Create AbortController for 30-second timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
+        let pageNotFound = false;
 
         let html: string;
         try {
@@ -199,12 +214,19 @@ export async function GET(request: Request) {
           clearTimeout(timeoutId);
 
           if (!pageResponse.ok) {
+            pageNotFound = pageResponse.status === 404;
+            if (pageResponse.status !== 404) {
+              failureKind = 'upstream-error';
+            }
             throw new Error(`VRChat page returned ${pageResponse.status}`);
           }
 
           html = await pageResponse.text();
         } catch (fetchError) {
           clearTimeout(timeoutId);
+          if (!pageNotFound) {
+            failureKind = 'upstream-error';
+          }
           if (fetchError instanceof Error && fetchError.name === 'AbortError') {
             throw new Error('VRChat page fetch timeout (30 seconds)');
           }
@@ -293,8 +315,12 @@ export async function GET(request: Request) {
                 },
               });
             }
+            if (imageResponse.status !== 404) {
+              failureKind = 'upstream-error';
+            }
           } catch (imageFetchError) {
             clearTimeout(imageTimeoutId);
+            failureKind = 'upstream-error';
             if (imageFetchError instanceof Error && imageFetchError.name === 'AbortError') {
               console.warn(`[avatar-image] VRChat image fetch timeout for ${avtr}`);
             } else {
@@ -307,12 +333,13 @@ export async function GET(request: Request) {
       }
     }
 
-    // Step 3: Return placeholder redirect
-    console.log('[avatar-image] Returning placeholder redirect');
-    const url = new URL(request.url);
-    const placeholderUrl = `${url.protocol}//${url.host}/images/placeholder.webp`;
-    console.log('[avatar-image] Placeholder URL:', placeholderUrl);
-    return Response.redirect(placeholderUrl, 302);
+    // Step 3: Let the card's onError chain try direct R2 before using a placeholder.
+    if (failureKind === 'upstream-error') {
+      console.warn(`[avatar-image] Returning ${failureKind} response`);
+    } else {
+      console.log(`[avatar-image] Returning ${failureKind} response`);
+    }
+    return createAvatarImageFailureResponse(failureKind);
   } catch (error) {
     console.error('[avatar-image] Unexpected error:', error);
     console.error('[avatar-image] Error details:', {
@@ -326,12 +353,12 @@ export async function GET(request: Request) {
 
     // Return detailed error in development
     if (process.env.NODE_ENV !== 'production') {
-      return jsonError(
+      return createNoStoreJsonError(
         `Internal Server Error: ${error instanceof Error ? error.message : String(error)}`,
         500
       );
     }
 
-    return jsonError('Internal Server Error', 500);
+    return createNoStoreJsonError('Internal Server Error', 500);
   }
 }
