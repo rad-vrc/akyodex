@@ -21,10 +21,8 @@
 | CI | `ci.yml` | PR / push (`main`, `develop`) | 型チェック、Cloudflare Pages ビルド検証、Security Scan | ESLint と Dify CSP hash は advisory |
 | Deploy Workers staging | `deploy-cloudflare-workers-staging.yml` | non-draft PR (`main`) | 最新PRを本番相当の共有Workers環境へデプロイ | `X-Akyodex-Worker-Tag`でSHAを照合 |
 | Lighthouse CI | `lighthouse-ci.yml` | PR (`main`) / manual | Lighthouse 13.4.1のモバイルsimulated計測を3回実行 | 中央値を記録し、重大な性能退行だけを予算で停止 |
-| Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / manual | 本番候補のupload、手動activate、Pagesへのrollback | `main` pushだけでは本番routeを変更しない |
+| Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / manual | 本番候補のupload、手動activate、直前Workerへのrollback | `main` pushだけでは本番trafficを変更しない |
 | Deploy Pages PR Preview | `deploy-cloudflare-pages-preview.yml` | non-draft same-repository PR (`main`) | PRごとの独立した読み取り専用Previewを作成 | Dependabotとfork PRは対象外 |
-| Verify Pages rollback | `cloudflare-pages-preview-gate.yml` | non-draft PR (`main`) / manual | 固定したPagesロールバック先の健全性確認 | Previewの作成は行わない |
-| Deploy Pages rollback | `deploy-cloudflare-pages.yml` | `pages-rollback`からmanual | 既知の正常なPages版を手動再デプロイ | `main`からは実行不可 |
 | Conflict Check | `conflict-check.yml` | PR to `main`, push to `main` | `main` との競合をコメントで通知 | 競合解消時は古いコメントを削除 |
 | Sync JSON Data from CSV | `sync-json-data.yml` | `main` push (CSV変更時) / manual | CSV→JSON 変換、R2 アップロード、ISR 再検証 | GitHub へ自動コミットも行う |
 | Weekly Security Audit | `security-audit.yml` | weekly / manual | `npm audit`、Snyk、CodeQL、Issue 作成 | Snyk は token がある場合のみ有効 |
@@ -41,7 +39,6 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 - `CI - Continuous Integration / Build Validation`
 - `Deploy Cloudflare Workers Staging / Deploy and verify Workers staging`
 - `Deploy Cloudflare Pages PR Preview / Deploy and verify Pages PR preview`
-- `Verify Cloudflare Pages Rollback / Verify Cloudflare Pages rollback`
 
 `Conflict Check` は有用ですが、補助的なコメント通知として扱うのが実運用に合っています。
 
@@ -51,9 +48,9 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 2. `git push` する。
 3. PowerShell では repo 既定の wrapper が push 後に PR 状態を確認する。
 4. それ以外の shell では `npm run push:check-pr -- -u origin HEAD` を使うと push と PR 状態確認をまとめて実行できる。
-5. PR を開くと `CI`、共有Workers staging、PR別Pages Preview、Pages rollback確認が走る。
+5. PR を開くと `CI`、共有Workers staging、PR別Pages Previewが走る。
 6. Pages Previewで表示を確認し、Workers固有機能は`staging.akyodex.com`で確認する。
-7. `main`へのマージではPages本番を更新せず、Workers本番候補だけをuploadする。手動の`activate`を実行するまで`akyodex.com`はPagesのまま維持される。
+7. `main`へのマージではWorkers本番候補だけをuploadする。手動の`activate`を実行するまで現在の本番Workerが維持される。
 8. CSV を更新したcommitが`main`に入ると`Sync JSON Data from CSV`が追加で走る。
 
 ## Cloudflare Pages PR Preview
@@ -63,7 +60,7 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 ### 何をしているか
 
 - non-draftかつ同一リポジトリのPRだけを対象にし、forkとDependabotではSecretsを使用しません。
-- 公開Previewは専用Pages project `akyodex-pr-preview`へデプロイし、Production/rollback用の`akyodex`から分離します。
+- 公開Previewは専用Pages project `akyodex-pr-preview`へデプロイし、Workers本番から分離します。
 - `npm run build`で`prepare-cloudflare-pages.js`まで実行し、Pages用`_worker.js`を生成します。
 - `wrangler pages deploy --branch=pr-N --commit-hash=SHA`で明示的にPreviewへアップロードします。
 - `pages deployment list --json`からbranchとSHAが一致するデプロイを探し、Cloudflare採番の不変URLを取得します。
@@ -83,7 +80,7 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 - Pages Previewでは`/admin`へログインせず、書き込み、移行、アップロード、キャッシュ変更を行いません。HTTPガードとリソース分離に加えた運用上の第三防御です。
 - Durable Object、Service Binding、Workers cache、`cf.image`、Workers Sentry、性能は共有`staging.akyodex.com`を正とします。
 - Pages側のサーバーSentryは無効なので、Pages Previewの成功だけではサーバーエラー不在を保証しません。
-- `akyodex.pages.dev`は`pages-rollback`に固定したロールバック先であり、PR Previewとは別です。
+- Pages Previewは画面レビュー専用であり、本番配信や本番rollbackには使用しません。
 
 ### 待機ポリシー
 
@@ -117,82 +114,38 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 ### 安全境界
 
 - `main`へのpushでは、SHA付きWorker versionをuploadするだけでトラフィックを切り替えません。
-- 初回候補uploadがWorker未作成またはDurable Object migration未適用で失敗した場合だけ、Pagesが本番配信中であることを確認してから、`workers_dev=false`、Preview URL無効、routeなしの完全なWorkerを通常deployしてmigrationを適用します。その後、Pages配信を再確認して本物の候補versionをuploadします。
-- 候補upload用configには本番routeを含めません。`akyodex.com/*`はroute専用configを使う手動`activate`だけが設定できます。
-- Workers本番切替後にDurable Object migrationを追加した場合、この初回専用経路はPages確認で停止します。稼働中Workerへmigrationを適用する手順を別途レビューし、手動で実行してください。
+- 候補uploadに失敗した場合はfail closedで停止します。Durable Object migration追加時は、稼働中Worker向けのmigration手順を別途レビューして実行します。
+- Wrangler rollback cannot cross a Durable Object class lifecycle change. Durable Object migrationを追加・変更したversionを跨ぐ復帰は、通常の`rollback-worker`ではなく専用のmigration手順として別途レビューします。
+- 候補upload用configには本番domainを含めません。`akyodex.com/*`はroute専用configを使う手動`activate`だけがWorker routeとして設定できます。
 - 本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。
-- `activate`は固定Pagesの健全性とWorker secretsを確認し、同じSHAタグが複数存在しても最新の候補version IDを一意に選んで100%へdeployしてから、最後に`akyodex.com/*` routeを付けます。
-- runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合はrouteを自動で外し、固定Pagesへ戻します。
-- `rollback-pages`はWorker routeだけを外します。Pagesの再ビルドは不要です。
-- routeの付け外しにはVersions運用向けの`wrangler triggers deploy`を使います。このコマンドはWrangler 4.126時点でexperimentalのため、手動activation、runtime検証、自動route解除を必須の防御として維持します。
+- `activate`は現在の本番がWorker tag付きで健全なこととWorker secretsを確認し、同じSHAタグが複数存在しても最新の候補version IDを一意に選んで100%へdeployします。
+- runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合は`wrangler rollback`で直前のWorker deploymentへ戻します。Worker routeは外しません。
+- `rollback-worker`は既定で直前のWorker deploymentへ戻します。必要な場合は任意の`version-id`を指定でき、復帰後はWorker tagに加えて完全カタログのschema・件数を検証します。Worker routeは維持し、Pagesを本番rollback先には使用しません。
+- Worker route設定にはVersions運用向けの`wrangler triggers deploy`を使いますが、routeを外す設定やworkflowはリポジトリに置きません。
 - productionの`NEXT_TAG_CACHE_D1`は`akyodex-next-tag-cache-production`を使用し、stagingのタグ無効化が本番キャッシュへ波及しないよう分離します。
 
-### 初回切替手順
+### 本番activation手順
 
 1. `main`へのマージ後、`Upload production Worker candidate`が成功したことを確認する。
-2. Cloudflare Worker `akyodex-workers-production`へ、`ADMIN_PASSWORD_OWNER`、`ADMIN_PASSWORD_ADMIN`、`GITHUB_TOKEN`をsecretとして設定する。管理者の運用を変えないため、管理者パスワードはPages本番と同じ値を使う。
+2. Cloudflare Worker `akyodex-workers-production`へ、`ADMIN_PASSWORD_OWNER`、`ADMIN_PASSWORD_ADMIN`、`GITHUB_TOKEN`をsecretとして設定する。管理者の運用を変えないため、既存の本番管理者パスワードを維持する。
 3. Actionsから`Deploy Cloudflare Workers Production`を開き、`configure-secrets`を手動実行する。既存のActions `REVALIDATE_SECRET`とSentry DSNを値を表示せずWorkerへ転送し、`SESSION_SECRET`が未設定の場合だけ安全なランダム値を生成する。この操作には未デプロイ候補を直接更新できる`wrangler versions secret bulk`を使い、routeもtrafficも変更しない。
 4. `upload`を手動実行し、6つのsecretを保持した同じ`main`の候補versionを再作成する。`activate`はこの正確なSHAタグの候補versionに6つのsecret bindingがあることを確認してから進みます。
 5. `activate`を手動実行し、最新候補versionを有効化してから本番routeを付ける。
 6. workflowのruntime検証に加え、管理画面ログイン、図鑑更新、リンク色、カテゴリ階層、3言語、Sentryを確認する。
-7. 重大な不具合、データ件数不一致、または性能の明確な後退があれば、同workflowの`rollback-pages`を実行する。
+7. 重大な不具合、データ件数不一致、または性能の明確な後退があれば、同workflowの`rollback-worker`を実行する。
 
 ### 本番Worker secrets
 
 | 名前 | 用途 |
 | ---- | ---- |
-| `ADMIN_PASSWORD_OWNER` | 既存ownerログイン。Pages本番と同じ値を設定 |
-| `ADMIN_PASSWORD_ADMIN` | 既存adminログイン。Pages本番と同じ値を設定 |
+| `ADMIN_PASSWORD_OWNER` | 既存ownerログインの本番値 |
+| `ADMIN_PASSWORD_ADMIN` | 既存adminログインの本番値 |
 | `SESSION_SECRET` | session HMAC signing。`configure-secrets`が未設定時だけ生成し、既存値は保持 |
 | `GITHUB_TOKEN` | 管理画面から`main`へ図鑑データを反映 |
 | `REVALIDATE_SECRET` | データ更新後の再検証 |
 | `SENTRY_DSN` | Workersサーバーエラー送信 |
 
-管理者パスワードとGitHub tokenの値はGitHubやPagesから読み戻せないため、`activate`前にCloudflare Dashboardから設定してください。残る3件は`configure-secrets`が安全に設定し、値自体をリポジトリやActionsログへ出力しません。
-
-## Deploy Pages Rollback
-
-**ファイル**: `deploy-cloudflare-pages.yml`
-
-### トリガー
-
-- `pages-rollback`ブランチからの`workflow_dispatch`
-
-`main`へのpushでは起動せず、`github.ref_name == 'pages-rollback'`のguardを満たさない手動実行もskipします。
-
-### 実行フロー
-
-1. Node.js 20 をセットアップし、npm cache と `.next/cache` を復元
-2. `npm ci`
-3. `npm run build`
-4. `.open-next`、`_worker.js`、`_routes.json`、`_next/` の存在を検証
-5. `cloudflare/wrangler-action@v3` で `pages deploy .open-next --project-name=${CF_PAGES_PROJECT} --branch=${CF_PAGES_PRODUCTION_BRANCH}`
-6. deployment URL に対して HTTP ヘルスチェック
-7. Step Summary に deploy 結果を記録
-
-### ヘルスチェック仕様
-
-- 対象: `steps.deployment.outputs.url`
-- 成功条件: HTTP `200` / `301` / `302`
-- リトライ: 10 回
-- 間隔: 3 秒
-
-### Step Summary の読み方
-
-| 状態 | 意味 |
-| ---- | ---- |
-| `Deploy Step=success`, `Health Check=healthy` | deploy と URL 応答が両方成功 |
-| `Deploy Step=success`, `Health Check=missing_url` | deploy 自体は成功したが action が URL を返さなかった |
-| `Deploy Step=success`, `Health Check=unhealthy` | deploy 後の URL が想定 HTTP を返さなかった |
-| `Deploy Step!=success` | Wrangler deploy そのものが失敗 |
-
-### 実装上の注意点
-
-- workflow は `CF_PAGES_PROJECT=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'akyodex' }}` を使います。
-- `CF_PAGES_PRODUCTION_BRANCH=${{ vars.CLOUDFLARE_PAGES_PRODUCTION_BRANCH || 'main' }}` を明示し、`pages-rollback`のチェックアウト名がPreview branchとして推測されないようにします。
-- build step では `DEFAULT_ADMIN_PASSWORD_HASH` / `DEFAULT_OWNER_PASSWORD_HASH` / `DEFAULT_JWT_SECRET` 由来の legacy fallback をまだ export しています。
-- ただし runtime code が読むのは `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, `SESSION_SECRET` です。workflow 側の legacy defaults は runtime source of truth ではありません。
-- workflow ファイルには PR コメント step がありますが、現在の trigger は `push` と `workflow_dispatch` のみなので、その step は通常到達しません。
+管理者パスワードとGitHub tokenの値はGitHubから読み戻せないため、`activate`前にCloudflare Dashboardから設定してください。残る3件は`configure-secrets`が安全に設定し、値自体をリポジトリやActionsログへ出力しません。
 
 ## CI とマージ安全性
 
@@ -339,10 +292,10 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 
 ### ロールバックしたい
 
-Workers本番切替後の最短経路は、`Deploy Cloudflare Workers Production`を`rollback-pages`で手動実行し、`akyodex.com/*`のWorker routeを外して固定済みPagesへ戻すことです。Pagesを再ビルドする必要がある場合だけ、`pages-rollback`ブランチから`Deploy Cloudflare Pages Rollback`を手動実行します。
+`Deploy Cloudflare Workers Production`を`rollback-worker`で手動実行し、直前のWorker deploymentへ戻します。Worker routeは外さず、Pagesには切り替えません。
 
-- Worker routeのrollback: routeを外して`akyodex.pages.dev`と同じ固定Pagesへ戻す
-- Workersコードのrollback: WranglerまたはDashboardから既知の正常なWorker versionへ戻す
+- Workersコードのrollback: `wrangler rollback`で直前のWorker deploymentへ戻す
+- Worker route: `akyodex-workers-production`へ付いたまま維持する
 - データ変更のrollback: KV、R2、D1、GitHub上のCSV/JSONをコードversionとは別に確認する
 
 ### `npm run push:check-pr` が失敗した

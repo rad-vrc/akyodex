@@ -81,30 +81,23 @@ test('Workers production config uses production data without exposing a route', 
   assert.notEqual(tagCache?.database_id, '1484cf52-987d-4861-9590-99d77cd40390');
 });
 
-test('Workers production workflow separates upload, activation, and Pages rollback', async () => {
+test('Workers production workflow keeps rollback entirely on Workers', async () => {
   const workflowPath = path.join(
     process.cwd(),
     '.github',
     'workflows',
     'deploy-cloudflare-workers-production.yml'
   );
-  const rollbackConfigPath = path.join(
-    process.cwd(),
-    'wrangler.workers.production-rollback.jsonc'
-  );
+  const rollbackConfigPath = path.join(process.cwd(), 'wrangler.workers.production-rollback.jsonc');
   const routeConfigPath = path.join(
     process.cwd(),
     'wrangler.workers.production-route.jsonc'
   );
 
   assert.equal(existsSync(workflowPath), true, 'production Workers workflow must exist');
-  assert.equal(existsSync(rollbackConfigPath), true, 'route rollback config must exist');
+  assert.equal(existsSync(rollbackConfigPath), false, 'route-removal rollback config must not exist');
   assert.equal(existsSync(routeConfigPath), true, 'production route config must exist');
-  if (
-    !existsSync(workflowPath) ||
-    !existsSync(rollbackConfigPath) ||
-    !existsSync(routeConfigPath)
-  ) {
+  if (!existsSync(workflowPath) || !existsSync(routeConfigPath)) {
     return;
   }
 
@@ -112,20 +105,7 @@ test('Workers production workflow separates upload, activation, and Pages rollba
   const routeConfig = JSON.parse(
     await readFile(routeConfigPath, 'utf8')
   ) as WorkersWranglerConfig;
-  const rollbackConfig = JSON.parse(
-    await readFile(rollbackConfigPath, 'utf8')
-  ) as WorkersWranglerConfig;
-
   assert.match(workflow, /github\.ref_name == 'main'/);
-  assert.match(workflow, /code: \(10007\|10211\)/);
-  assert.match(
-    workflow,
-    /wrangler deploy --config "\$\{WORKERS_CONFIG\}"/
-  );
-  assert.ok(
-    workflow.indexOf('wrangler deploy --config "${WORKERS_CONFIG}"') <
-      workflow.lastIndexOf('upload_production_candidate')
-  );
   assert.match(workflow, /wrangler versions upload --config wrangler\.workers\.production\.jsonc/);
   assert.match(workflow, /wrangler versions deploy --config wrangler\.workers\.production\.jsonc/);
   assert.match(workflow, /id: candidate-version/);
@@ -146,9 +126,17 @@ test('Workers production workflow separates upload, activation, and Pages rollba
   );
   assert.match(
     workflow,
-    /wrangler triggers deploy --config wrangler\.workers\.production-rollback\.jsonc/
+    /npx wrangler rollback --config "\$\{WORKERS_CONFIG\}"/
   );
-  assert.match(workflow, /https:\/\/akyodex\.pages\.dev\/zukan/);
+  assert.match(workflow, /version-id:/);
+  assert.match(workflow, /inputs\['version-id'\]/);
+  assert.match(workflow, /ROLLBACK_VERSION_ID/);
+  assert.match(workflow, /wrangler rollback "\$\{rollback_args\[@\]\}"/);
+  assert.match(workflow, /inputs\.action == 'rollback-worker'/);
+  assert.doesNotMatch(workflow, /rollback-pages/);
+  assert.doesNotMatch(workflow, /akyodex\.pages\.dev/);
+  assert.doesNotMatch(workflow, /production-rollback\.jsonc/);
+  assert.doesNotMatch(workflow, /Remove Worker route/);
   assert.match(workflow, /ADMIN_PASSWORD_OWNER/);
   assert.match(workflow, /ADMIN_PASSWORD_ADMIN/);
   assert.match(workflow, /SESSION_SECRET/);
@@ -161,15 +149,28 @@ test('Workers production workflow separates upload, activation, and Pages rollba
   );
   assert.match(workflow, /x-akyodex-worker-tag/);
   assert.match(workflow, /x-robots-tag/);
+  assert.equal(
+    workflow.match(/catalog\.schemaVersion!==1/g)?.length,
+    3,
+    'activation plus automatic and manual rollback must validate the catalog schema'
+  );
   assert.match(
     workflow,
-    /\(failure\(\) \|\| cancelled\(\)\) && steps\.deploy-version\.outcome == 'success'/
+    /always\(\) && \(failure\(\) \|\| cancelled\(\)\) && steps\.deploy-version\.outcome == 'success'/
   );
   assert.deepEqual(routeConfig.routes, [{
     pattern: 'akyodex.com/*',
     zone_name: 'akyodex.com',
   }]);
-  assert.deepEqual(rollbackConfig.routes, []);
+});
+
+test('Workers rollback documentation warns about Durable Object lifecycle changes', async () => {
+  const operationsGuide = await readFile(
+    path.join(process.cwd(), '.github', 'workflows', 'README.md'),
+    'utf8'
+  );
+
+  assert.match(operationsGuide, /rollback cannot cross a Durable Object class lifecycle change/i);
 });
 
 test('Workers production workflow configures managed secrets without activating traffic', async () => {
@@ -240,23 +241,15 @@ test('Workers staging CI deploys a tagged version and verifies that exact revisi
   assert.doesNotMatch(workflow, /grep --ignore-case/);
 });
 
-test('Pages remains a manual rollback target during the Workers migration', async () => {
-  const deployWorkflow = await readFile(
-    path.join(process.cwd(), '.github', 'workflows', 'deploy-cloudflare-pages.yml'),
-    'utf8'
+test('Pages production rollback automation is absent', () => {
+  assert.equal(
+    existsSync(path.join(process.cwd(), '.github', 'workflows', 'deploy-cloudflare-pages.yml')),
+    false
   );
-  const rollbackGate = await readFile(
-    path.join(process.cwd(), '.github', 'workflows', 'cloudflare-pages-preview-gate.yml'),
-    'utf8'
+  assert.equal(
+    existsSync(path.join(process.cwd(), '.github', 'workflows', 'cloudflare-pages-preview-gate.yml')),
+    false
   );
-
-  assert.doesNotMatch(deployWorkflow, /^\s{2}push:/m);
-  assert.match(deployWorkflow, /github\.ref_name == 'pages-rollback'/);
-  assert.match(
-    deployWorkflow,
-    /--branch=\$\{\{ env\.CF_PAGES_PRODUCTION_BRANCH \}\}/
-  );
-  assert.match(rollbackGate, /https:\/\/akyodex\.pages\.dev/);
 });
 
 test('Pages PR previews are deployed independently without unfreezing Pages production', async () => {

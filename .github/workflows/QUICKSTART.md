@@ -184,15 +184,15 @@ curl -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
 1. `package-lock.json` の問題の可能性
 2. ワークフローが `npm ci` を使用していることを確認
 
-### 問題: デプロイが失敗する
+### 問題: Pages PR Previewのデプロイが失敗する
 
 #### エラー: "Project not found"
 
 **解決策**:
-1. Cloudflare Pages でプロジェクトが作成されているか確認
-2. `deploy-cloudflare-pages.yml` のプロジェクト名を確認
+1. Cloudflare Pages で専用の`akyodex-pr-preview`プロジェクトが作成されているか確認
+2. `deploy-cloudflare-pages-preview.yml` のプロジェクト名を確認
    ```yaml
-   command: pages deploy .open-next --project-name=akyodex-nextjs
+   command: pages deploy .open-next --project-name=akyodex-pr-preview
    ```
 
 #### エラー: "Build output directory not found"
@@ -310,9 +310,9 @@ gh run view [RUN_ID] --log
 ### ワークフローを手動実行
 
 ```bash
-# GitHub CLI を使用
-gh workflow run deploy-cloudflare-pages.yml \
-  -f environment=production
+# 本番Worker候補をuploadする（trafficは変更しない）
+gh workflow run deploy-cloudflare-workers-production.yml \
+  -f action=upload
 ```
 
 ## 🎯 チェックリスト

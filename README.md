@@ -454,17 +454,17 @@ npm run data:convert     # Convert CSV to JSON (npx tsx scripts/csv-to-json.ts)
 
 ### Current Deployment Model
 
-- `npm run build` runs `opennextjs-cloudflare build` and then `scripts/prepare-cloudflare-pages.js`, which reshapes `.open-next` for Pages (`_worker.js`, `_routes.json`, and root-level static assets).
-- `open-next.config.ts` stores incremental cache in R2, tag cache in KV, uses `queue: 'direct'`, and enables cache interception for Pages.
-- `push` to `main` triggers `.github/workflows/deploy-cloudflare-pages.yml`.
-- Non-draft PRs targeting `main` or `develop` are checked by `.github/workflows/cloudflare-pages-preview-gate.yml`.
+- Production runs on `akyodex-workers-production`; `push` to `main` uploads a tagged candidate without changing traffic.
+- Production traffic changes only through the manual `activate` action in `.github/workflows/deploy-cloudflare-workers-production.yml`.
+- Production rollback uses Wrangler to restore the previous Worker deployment. The Worker route remains attached and Pages is not a production rollback target.
+- `npm run build` and `.github/workflows/deploy-cloudflare-pages-preview.yml` are retained only for isolated PR previews in the `akyodex-pr-preview` Pages project.
 
-### 1. Create Cloudflare Pages Project
+### 1. Create Cloudflare Pages Preview Project
 
 Via Cloudflare Dashboard:
 1. Go to Cloudflare Dashboard → Pages
 2. Create a new project
-3. Connect to GitHub repository: `rad-vrc/Akyodex`
+3. Use the isolated `akyodex-pr-preview` project; do not attach `akyodex.com`
 
 ### 2. Build Configuration
 
@@ -528,11 +528,13 @@ The current runtime code reads `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, a
 
 ### 6. Deployment Paths
 
-- **Production deploy**: push or merge to `main` → `deploy-cloudflare-pages.yml`
-- **Manual deploy**: Actions → `Deploy to Cloudflare Pages` → choose `production` or `staging`
-- **PR preview verification**: `cloudflare-pages-preview-gate.yml` polls the Cloudflare Pages API and falls back to the GitHub check run named `Cloudflare Pages` when Cloudflare omits commit metadata
+- **Production candidate**: push or merge to `main` → `deploy-cloudflare-workers-production.yml` uploads a zero-traffic Worker version
+- **Production activation**: Actions → `Deploy Cloudflare Workers Production` → `activate`
+- **Production rollback**: the same workflow → `rollback-worker`; optionally specify a Worker `version-id`, and the production route stays on Workers
+- **PR preview**: `deploy-cloudflare-pages-preview.yml` deploys an isolated, read-only Pages preview
 
-PR preview と production/manual deploy は source of truth が異なります。PR preview は Cloudflare Pages の Git-connected preview を監視し、production/manual deploy は GitHub Actions + `wrangler pages deploy` が本線です。
+PagesはPRの画面確認専用です。本番のsource of truth、activation、rollbackはすべてWorkers workflowです。
+Worker rollback cannot cross a Durable Object class lifecycle change; Durable Object migrationを跨ぐ復帰は専用のmigration手順として扱います。
 
 ---
 
