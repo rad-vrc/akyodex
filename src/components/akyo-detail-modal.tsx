@@ -7,7 +7,7 @@
  * Features:
  * - Header with gradient background
  * - Profile icon + ID + name
- * - Large image with sparkle effect (PNG reference sheet preferred, WebP fallback)
+ * - Large image with sparkle effect (optimized reference sheet with resilient fallbacks)
  * - Info grid (4 sections: name, avatar, attributes, creator)
  * - VRChat URL section
  * - Notes section (if available)
@@ -27,7 +27,12 @@ import { ensureContrastForWhiteText, getCategoryColor, parseAndSortCategories } 
 import { formatDisplayId, getAkyoSourceUrl, getDisplaySerial, resolveEntryType } from '@/lib/akyo-entry';
 import type { SupportedLanguage } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
-import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
+import {
+  createInitialDetailImageState,
+  getNextDetailImageState,
+  type DetailImageArgs,
+  type DetailImageState,
+} from '@/lib/reference-sheet-image-client';
 import type { AkyoData } from '@/types/akyo';
 import Image from 'next/image';
 import type {
@@ -119,11 +124,14 @@ export function AkyoDetailModal({
     return null;
   }, [sourceUrl]);
 
-  // 三面図（PNG）優先、WebPフォールバック用の状態
+  // 表示用三面図、原本PNG、カード画像の順にフォールバックする状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
+  const [imageState, setImageState] = useState<DetailImageState>({
+    stage: 'failed',
+    url: null,
+  });
+  const [isImageLoading, setIsImageLoading] = useState(false);
 
   // ズーム機能の状態
   const [isZoomed, setIsZoomed] = useState(false);
@@ -155,15 +163,15 @@ export function AkyoDetailModal({
   useEffect(() => {
     if (localAkyo) {
       const nextSourceUrl = getAkyoSourceUrl(localAkyo);
-      const isWorldEntry = resolveEntryType(localAkyo) === 'world';
-      if (isWorldEntry) {
-        setImageUrl(buildAvatarImageUrl(localAkyo.id, nextSourceUrl, 800));
-        setImageLoadAttempt(1);
-      } else {
-        const pngUrl = `${r2Base}/${getDisplaySerial(localAkyo)}.png`;
-        setImageUrl(pngUrl);
-        setImageLoadAttempt(0);
-      }
+      const nextImageState = createInitialDetailImageState({
+        entryType: resolveEntryType(localAkyo),
+        id: localAkyo.id,
+        displaySerial: getDisplaySerial(localAkyo),
+        sourceUrl: nextSourceUrl,
+        r2BaseUrl: r2Base,
+      });
+      setImageState(nextImageState);
+      setIsImageLoading(Boolean(nextImageState.url));
       setIsZoomed(false); // ズーム状態もリセット
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- localAkyo.id の変更時のみ発火させたい
@@ -249,17 +257,21 @@ export function AkyoDetailModal({
     wasOpenRef.current = isOpen;
   }, [isOpen, returnFocusRef]);
 
-  // PNG→WebPフォールバック処理
+  // 表示用三面図→原本PNG→カード画像のフォールバック処理
   const handleImageError = useCallback(() => {
-    if (localAkyo && imageLoadAttempt === 0) {
-      // PNG失敗 → WebPにフォールバック
-      const webpUrl = buildAvatarImageUrl(localAkyo.id, sourceUrl, 800);
-      console.log(`[detail-modal] PNG not found for ${localAkyo.id}, falling back to WebP`);
-      setImageUrl(webpUrl);
-      setImageLoadAttempt(1);
-    }
-    // WebPも失敗した場合はonErrorのスタイル処理に任せる
-  }, [imageLoadAttempt, localAkyo, sourceUrl]);
+    if (!localAkyo) return;
+
+    const args: DetailImageArgs = {
+      entryType: resolveEntryType(localAkyo),
+      id: localAkyo.id,
+      displaySerial: getDisplaySerial(localAkyo),
+      sourceUrl,
+      r2BaseUrl: r2Base,
+    };
+    const nextImageState = getNextDetailImageState(imageState, args);
+    setImageState(nextImageState);
+    setIsImageLoading(Boolean(nextImageState.url));
+  }, [imageState, localAkyo, r2Base, sourceUrl]);
 
   // シングルクリックでズームイン（クリック位置を中心に）
   const handleImageClick = useCallback(
@@ -444,7 +456,6 @@ export function AkyoDetailModal({
     ? parseAndSortCategories(categoryStr)
     : [];
   const isWorldEntry = resolveEntryType(localAkyo) === 'world';
-  const categoryColor = getCategoryColor(categoryStr);
 
   const handleBackdropClick = (e: ReactMouseEvent<HTMLDivElement>) => {
     // モーダル外（backdrop または modal container）をクリックしたら閉じる
@@ -591,27 +602,32 @@ export function AkyoDetailModal({
                         transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
                       }}
                     >
-                      {imageUrl && (
+                      {isImageLoading && imageState.url && (
+                        <div
+                          className="absolute inset-0 z-10 flex items-center justify-center"
+                          role="status"
+                        >
+                          <span
+                            className="h-7 w-7 animate-spin rounded-full border-2 border-purple-200 border-t-purple-600"
+                            aria-hidden="true"
+                          />
+                          <span className="sr-only">{t('loading.text', lang)}</span>
+                        </div>
+                      )}
+                      {imageState.url && (
                         <Image
-                          src={imageUrl}
-                          alt={imageLoadAttempt >= 2 ? "" : displayName}
-                          role={imageLoadAttempt >= 2 ? "presentation" : undefined}
-                          width={800}
-                          height={533}
+                          key={`${imageState.stage}:${imageState.url}`}
+                          src={imageState.url}
+                          alt={displayName}
+                          width={1920}
+                          height={1080}
                           className="w-full h-full object-contain rounded-2xl"
                           unoptimized
+                          loading="eager"
+                          fetchPriority="high"
                           draggable={false}
-                          onError={(e) => {
-                            handleImageError();
-                            if (imageLoadAttempt >= 1) {
-                              setImageLoadAttempt(2);
-                            }
-                            const target = e.target as HTMLImageElement;
-                            target.style.background = `linear-gradient(135deg, ${categoryColor}, ${categoryColor}66)`;
-                            // Temporarily mutate DOM while React updates state
-                            target.alt = "";
-                            target.setAttribute('role', 'presentation');
-                          }}
+                          onLoad={() => setIsImageLoading(false)}
+                          onError={handleImageError}
                         />
                       )}
                     </div>
