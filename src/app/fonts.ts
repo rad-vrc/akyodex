@@ -12,7 +12,9 @@ import localFont from "next/font/local";
 export const mPlusRounded1c = localFont({
   src: [
     {
-      path: "../fonts/mplus-rounded-1c-regular.subset.woff2",
+      // Mediumカットを400として配信する。Regularは線が細く、Windowsの等倍
+      // 小サイズ本文でストロークがかすれる（ドット欠けに見える）ため。
+      path: "../fonts/mplus-rounded-1c-medium.subset.woff2",
       weight: "400",
       style: "normal",
     },

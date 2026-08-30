@@ -27,9 +27,11 @@ const outDir = path.join(rootDir, "src", "fonts");
 const SOURCE_COMMIT = "84efd8ad78c3710ad14bd909e3bc407151885628";
 const SOURCES = [
   {
-    file: "MPLUSRounded1c-Regular.ttf",
-    sha256: "b75708b53e45b06d17d470aeeca5b766e3d1b3999f03f13ec4eb863ca846c14c",
-    out: "mplus-rounded-1c-regular.subset.woff2",
+    // weight:400にはMediumカットを割り当てる。Regularは線が細く、Windowsの
+    // 等倍小サイズ描画で本文がかすれて見えるため（いわゆるドット欠け）。
+    file: "MPLUSRounded1c-Medium.ttf",
+    sha256: "adfde1b6bae58719c4e0144612a94232e72fc5ca655c4722165fe88d06521a70",
+    out: "mplus-rounded-1c-medium.subset.woff2",
   },
   {
     file: "MPLUSRounded1c-Bold.ttf",
