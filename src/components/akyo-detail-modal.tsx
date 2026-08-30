@@ -752,7 +752,7 @@ export function AkyoDetailModal({
                       {t('modal.bonus', lang)}
                     </h3>
                     <div className="bg-white bg-opacity-80 rounded-2xl p-4 shadow-inner">
-                      {/* 試行: おまけ本文にも丸ゴシックを適用（コメント文字はサブセット収録済み） */}
+                      {/* 試行: おまけ本文にもサイト書体(M PLUS 2)を適用（コメント文字はサブセット収録済み） */}
                       <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
                         {commentStr}
                       </p>

@@ -1,18 +1,10 @@
 {
-  "source": "google/fonts@84efd8ad78c3710ad14bd909e3bc407151885628 ofl/mplusrounded1c",
+  "source": "google/fonts@84efd8ad78c3710ad14bd909e3bc407151885628 ofl/mplus2",
   "characterCount": 1380,
   "files": {
-    "mplus-rounded-1c-medium.subset.woff2": {
-      "bytes": 192372,
-      "from": "MPLUSRounded1c-Medium.ttf"
-    },
-    "mplus-rounded-1c-bold.subset.woff2": {
-      "bytes": 203440,
-      "from": "MPLUSRounded1c-Bold.ttf"
-    },
-    "mplus-rounded-1c-black.subset.woff2": {
-      "bytes": 192268,
-      "from": "MPLUSRounded1c-Black.ttf"
+    "mplus2-variable.subset.woff2": {
+      "bytes": 346080,
+      "from": "MPLUS2[wght].ttf"
     }
   }
 }

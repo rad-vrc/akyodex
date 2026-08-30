@@ -1,5 +1,5 @@
-/* M PLUS Rounded 1c is now loaded via next/font/google in layout.tsx */
-/* CSS variable: var(--font-m-plus-rounded) */
+/* Body font: self-hosted M PLUS 2 subset via next/font/local (src/app/fonts.ts) */
+/* CSS variable: var(--font-m-plus-rounded) — 歴史的な名前だが中身はM PLUS 2 */
 
 @import 'tailwindcss';
 
@@ -12,7 +12,7 @@
   /* Primary UI font stack (replaces next/font variable on runtime) */
   --font-m-plus-rounded: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP';
   /* Fallback definition: overridden on <body> by next/font (src/app/fonts.ts),
-     which injects the real self-hosted M PLUS Rounded 1c subset. */
+     which injects the real self-hosted M PLUS 2 subset. */
   --font-kosugi-maru: 'Kosugi Maru';
   --font-noto-sans-jp: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP';
 

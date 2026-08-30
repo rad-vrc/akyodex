@@ -1,18 +1,18 @@
 /**
- * Generate self-hosted M PLUS Rounded 1c subsets from the live catalog data.
+ * Generate a self-hosted M PLUS 2 subset from the live catalog data.
  *
- * The full font is ~3.4MB per weight. This script keeps only the characters
- * the site can actually render — every name/author/category across the
- * ja/en/ko catalogs, all kana, ASCII, and Japanese punctuation — producing
- * ~50x smaller woff2 files that are committed to src/fonts/ and served via
- * next/font/local.
+ * The full variable font is ~4.2MB. This script keeps only the characters
+ * the site can actually render — every name/author/category/comment across
+ * the ja/en/ko catalogs, all kana, ASCII, and Japanese punctuation — and
+ * preserves the wght variation axis, producing a single woff2 that serves
+ * every weight (400/500/700/900...) from one file committed to src/fonts/.
  *
  * Characters that appear in future catalog updates but are missing from the
  * committed subset fall back to the system font stack (no tofu). The data
  * sync workflow re-runs this script so the subset follows the data.
  *
- * Source TTFs are pinned to a google/fonts commit and verified by sha256.
- * License: SIL OFL 1.1 (see src/fonts/LICENSE-MPLUSRounded1c.txt).
+ * The source TTF is pinned to a google/fonts commit and verified by sha256.
+ * License: SIL OFL 1.1 (see src/fonts/LICENSE-MPLUS2.txt).
  */
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -27,26 +27,19 @@ const outDir = path.join(rootDir, "src", "fonts");
 const SOURCE_COMMIT = "84efd8ad78c3710ad14bd909e3bc407151885628";
 const SOURCES = [
   {
-    // weight:400にはMediumカットを割り当てる。Regularは線が細く、Windowsの
-    // 等倍小サイズ描画で本文がかすれて見えるため（いわゆるドット欠け）。
-    file: "MPLUSRounded1c-Medium.ttf",
-    sha256: "adfde1b6bae58719c4e0144612a94232e72fc5ca655c4722165fe88d06521a70",
-    out: "mplus-rounded-1c-medium.subset.woff2",
-  },
-  {
-    file: "MPLUSRounded1c-Bold.ttf",
-    sha256: "c358630584e8e2d8fbd6121d0f4693255ffef6d1e6d4f3441fd6e5a963a11f9e",
-    out: "mplus-rounded-1c-bold.subset.woff2",
-  },
-  {
-    file: "MPLUSRounded1c-Black.ttf",
-    sha256: "d5981a59ccc5f00da1bd3ae46750fa95cd165b0e6b3a5fc7a1945f94c59449e3",
-    out: "mplus-rounded-1c-black.subset.woff2",
+    // M PLUS 2（2021年新設計）。旧M PLUS Rounded 1cはRegular〜Mediumの線が
+    // 細く、Windowsの等倍小サイズ描画で本文がかすれて見えた（ドット欠け）。
+    // M PLUS 2は細ウェイトでもストロークが痩せない設計で、この症状が出ない。
+    // 可変フォントなのでwght軸ごとサブセットし、1ファイルで全ウェイトを配信する。
+    dir: "mplus2",
+    file: "MPLUS2[wght].ttf",
+    sha256: "2e4f45c2391355fb03195da4854ffbe85fea49bfdff5cc51020238083af6b75c",
+    out: "mplus2-variable.subset.woff2",
   },
 ];
 
 const DATA_FILES = ["akyo-data-ja.json", "akyo-data-en.json", "akyo-data-ko.json"];
-// comment/notes はおまけ情報本文にも丸ゴシックを適用するため収録する
+// comment/notes はおまけ情報本文にもサイト書体を適用するため収録する
 const DATA_FIELDS = [
   "nickname",
   "avatarName",
@@ -110,7 +103,7 @@ async function fetchSource(source) {
   } catch {
     // Cache miss: download below.
   }
-  const url = `https://raw.githubusercontent.com/google/fonts/${SOURCE_COMMIT}/ofl/mplusrounded1c/${source.file}`;
+  const url = `https://raw.githubusercontent.com/google/fonts/${SOURCE_COMMIT}/ofl/${source.dir}/${encodeURIComponent(source.file)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to download ${source.file}: HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
@@ -129,7 +122,7 @@ async function main() {
   await mkdir(outDir, { recursive: true });
 
   const manifest = {
-    source: `google/fonts@${SOURCE_COMMIT} ofl/mplusrounded1c`,
+    source: `google/fonts@${SOURCE_COMMIT} ofl/mplus2`,
     characterCount: [...text].length,
     files: {},
   };
@@ -137,6 +130,17 @@ async function main() {
   for (const source of SOURCES) {
     const ttf = await fetchSource(source);
     const woff2 = await subsetFont(ttf, text, { targetFormat: "woff2" });
+    // wght軸の生存確認。hb-subsetは既定で可変軸を保持するが、もし将来の
+    // ライブラリ更新で落ちたら太字が全て合成ボールドになるので即失敗させる。
+    const sfnt = await subsetFont(ttf, "あ", { targetFormat: "sfnt" });
+    const tables = new Set();
+    const numTables = sfnt.readUInt16BE(4);
+    for (let i = 0; i < numTables; i += 1) {
+      tables.add(sfnt.toString("ascii", 12 + i * 16, 16 + i * 16));
+    }
+    if (!tables.has("fvar") || !tables.has("gvar")) {
+      throw new Error(`variation axes were stripped from ${source.file} (fvar/gvar missing)`);
+    }
     const outPath = path.join(outDir, source.out);
     let previous = null;
     try {
