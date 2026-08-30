@@ -31,5 +31,9 @@ export const mPlusRounded1c = localFont({
   variable: "--font-m-plus-rounded",
   fallback: ["Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", "sans-serif"],
   adjustFontFallback: false,
-  preload: true,
+  // preloadすると3ウェイト421KBがLCP画像と帯域を取り合い、Lighthouse(Lantern)の
+  // LCP中央値が6.4s→9.5sへ悪化した（LHCI予算超過）。和文グリフは新旧とも全角等幅で
+  // スワップ時のリフローがほぼ無い（実測CLS≦0.005）ため、クリティカルパス外で
+  // 遅延ロードし display:swap で差し替える。
+  preload: false,
 });
