@@ -208,8 +208,28 @@ test.describe("Complete catalog loading", () => {
       )
       .toEqual([
         "catalog-fetch-start",
+        "catalog-normalize-start",
+        "catalog-normalize-end",
         "catalog-response",
+        "catalog-search-index-start",
+        "catalog-search-index-end",
+        "catalog-state-apply-start",
+        "catalog-state-apply-end",
         "catalog-ready",
+      ]);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          performance
+            .getEntriesByType("measure")
+            .map((entry) => entry.name)
+            .filter((name) => name.startsWith("catalog-")),
+        ),
+      )
+      .toEqual([
+        "catalog-normalize",
+        "catalog-search-index",
+        "catalog-state-apply",
       ]);
   });
 

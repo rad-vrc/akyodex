@@ -36,6 +36,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 test("loadCompleteCatalogData uses the API result without requesting R2", async () => {
   const requestedUrls: string[] = [];
+  const phases: string[] = [];
   const fetchImpl: typeof fetch = async (input) => {
     requestedUrls.push(String(input));
     return jsonResponse({ data: [createAkyo("0001")] });
@@ -46,11 +47,16 @@ test("loadCompleteCatalogData uses the API result without requesting R2", async 
     catalogUrl: "/api/catalog/ja",
     r2BaseUrl: "https://images.example.com",
     fetchImpl,
+    phaseRecorder: {
+      startPhase: (phase) => phases.push(`start:${phase}`),
+      endPhase: (phase) => phases.push(`end:${phase}`),
+    },
   });
 
   assert.equal(result.source, "api");
   assert.equal(result.items[0]?.id, "0001");
   assert.deepEqual(requestedUrls, ["/api/catalog/ja"]);
+  assert.deepEqual(phases, ["start:normalize", "end:normalize"]);
 });
 
 test("loadCompleteCatalogData falls back to R2 after an API HTTP error", async () => {

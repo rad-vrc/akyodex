@@ -10,6 +10,7 @@ class FakePerformanceClock {
   timeOrigin = 1_000;
   currentTime = 0;
   marks: string[] = [];
+  measures: Array<{ name: string; startMark: string; endMark: string }> = [];
 
   now(): number {
     return this.currentTime;
@@ -17,6 +18,10 @@ class FakePerformanceClock {
 
   mark(name: string): void {
     this.marks.push(name);
+  }
+
+  measure(name: string, startMark: string, endMark: string): void {
+    this.measures.push({ name, startMark, endMark });
   }
 }
 
@@ -41,8 +46,52 @@ test("CatalogLoadPerformance records fetch, response, and ready timing", () => {
     failureReason: null,
     startedAtEpochMs: 1_000,
     endedAtEpochMs: 1_125,
+    phaseDurationsMs: {
+      normalize: 0,
+      searchIndex: 0,
+      stateApply: 0,
+    },
   });
   assert.equal(measurement.markReady(), null);
+});
+
+test("CatalogLoadPerformance measures normalization, search indexing, and state application separately", () => {
+  const clock = new FakePerformanceClock();
+  const measurement = new CatalogLoadPerformance("ja", clock);
+
+  measurement.startPhase("normalize");
+  clock.currentTime = 12;
+  measurement.endPhase("normalize");
+  measurement.startPhase("search-index");
+  clock.currentTime = 31;
+  measurement.endPhase("search-index");
+  measurement.startPhase("state-apply");
+  clock.currentTime = 70;
+  measurement.endPhase("state-apply");
+  const event = measurement.markReady();
+
+  assert.deepEqual(event?.phaseDurationsMs, {
+    normalize: 12,
+    searchIndex: 19,
+    stateApply: 39,
+  });
+  assert.deepEqual(clock.measures, [
+    {
+      name: "catalog-normalize",
+      startMark: "catalog-normalize-start",
+      endMark: "catalog-normalize-end",
+    },
+    {
+      name: "catalog-search-index",
+      startMark: "catalog-search-index-start",
+      endMark: "catalog-search-index-end",
+    },
+    {
+      name: "catalog-state-apply",
+      startMark: "catalog-state-apply-start",
+      endMark: "catalog-state-apply-end",
+    },
+  ]);
 });
 
 test("CatalogLoadPerformance records a sanitized failure without a ready mark", () => {

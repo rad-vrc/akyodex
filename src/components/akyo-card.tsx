@@ -18,6 +18,7 @@ import { buildAvatarImageUrl, safeOpenVRChatLink } from "@/lib/vrchat-utils";
 import type { AkyoData } from "@/types/akyo";
 import Image from "next/image";
 import {
+  memo,
   type MouseEvent as ReactMouseEvent,
   useRef,
   useState,
@@ -83,7 +84,7 @@ export function getCatalogAvatarCardImageSrc(
  * @param props - Component properties
  * @returns Stylized card element
  */
-export function AkyoCard({
+function AkyoCardComponent({
   akyo,
   lang = "ja",
   onToggleFavorite,
@@ -352,3 +353,5 @@ export function AkyoCard({
     </article>
   );
 }
+
+export const AkyoCard = memo(AkyoCardComponent);
