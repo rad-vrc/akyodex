@@ -6,6 +6,7 @@ const AVATAR_CARD_IMAGE_CACHE_CONTROL =
   "public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000";
 
 export type AvatarCardImageFormat = "avif" | "webp";
+export type AvatarImageFailureKind = "not-found" | "upstream-error";
 
 interface AvatarCardImageFetchResult {
   response: Response;
@@ -158,4 +159,23 @@ export function getAvatarCardImageResponseHeaders(
     "X-Image-Source": "r2",
     "X-Image-Transformed": String(transformed),
   });
+}
+
+export function createAvatarImageFailureResponse(
+  failureKind: AvatarImageFailureKind,
+): Response {
+  const upstreamFailure = failureKind === "upstream-error";
+
+  return Response.json(
+    {
+      success: false,
+      error: upstreamFailure
+        ? "Avatar image upstream request failed"
+        : "Avatar image not found",
+    },
+    {
+      status: upstreamFailure ? 502 : 404,
+      headers: { "Cache-Control": "no-store" },
+    },
+  );
 }

@@ -32,6 +32,9 @@ interface AvatarCardImageModule {
     contentType: string,
     transformed: boolean,
   ) => Headers;
+  createAvatarImageFailureResponse?: (
+    failureKind: "not-found" | "upstream-error",
+  ) => Response;
 }
 
 const avatarCardImageModule = (
@@ -191,4 +194,27 @@ test("varies browser caching by Accept and reports transformation status", () =>
   assert.equal(headers.get("Vary"), "Accept");
   assert.equal(headers.get("X-Image-Transformed"), "true");
   assert.match(headers.get("Cache-Control") ?? "", /max-age=86400/);
+});
+
+test("avatar image failures are non-cacheable and distinguish missing images from upstream failures", async () => {
+  const createFailureResponse =
+    avatarCardImageModule.createAvatarImageFailureResponse;
+  assert.equal(typeof createFailureResponse, "function");
+  if (!createFailureResponse) return;
+
+  const notFound = createFailureResponse("not-found");
+  assert.equal(notFound.status, 404);
+  assert.equal(notFound.headers.get("Cache-Control"), "no-store");
+  assert.deepEqual(await notFound.json(), {
+    success: false,
+    error: "Avatar image not found",
+  });
+
+  const upstreamError = createFailureResponse("upstream-error");
+  assert.equal(upstreamError.status, 502);
+  assert.equal(upstreamError.headers.get("Cache-Control"), "no-store");
+  assert.deepEqual(await upstreamError.json(), {
+    success: false,
+    error: "Avatar image upstream request failed",
+  });
 });
