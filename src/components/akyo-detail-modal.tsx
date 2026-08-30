@@ -537,13 +537,15 @@ export function AkyoDetailModal({
 
             {/* Modal Header */}
             <div
-              className="rounded-t-3xl p-6 border-b-4 border-dotted border-purple-200"
+              className="rounded-t-3xl p-6 border-b-4 border-dotted"
               style={{
-                background:
-                  'linear-gradient(to right, rgb(243 232 255), rgb(252 231 243), rgb(219 234 254))',
+                // サイトヘッダーと同じピンク→オレンジ系。白文字のWCAG AA(大文字3:1)を
+                // 満たすためブランド原色より約1段深い値を使用（#ee4180=3.4:1, #ef6c52=3.0:1）
+                background: 'linear-gradient(135deg, #ee4180, #ef6c52)',
+                borderBottomColor: 'rgba(255, 255, 255, 0.85)',
               }}
             >
-              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center">
+              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white">
                 <Image
                   src="/images/profileIcon.webp"
                   alt=""
