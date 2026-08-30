@@ -523,11 +523,11 @@ export function AkyoDetailModal({
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                className="text-rose-700 transition-transform duration-300 hover:rotate-90"
+                className="transition-transform duration-300 hover:rotate-90"
               >
                 <path
                   d="M18 6L6 18M6 6L18 18"
-                  stroke="currentColor"
+                  stroke="#6b5b7b"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -738,16 +738,14 @@ export function AkyoDetailModal({
 
                 {/* Notes/Comment Section */}
                 {commentStr && (
-                  <div className="rounded-3xl bg-gradient-to-br from-pink-50 via-rose-50 to-orange-50 p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
+                  <div className="border-t border-gray-200 pt-5">
+                    <h3 className="text-lg font-bold text-gray-900">
                       <IconGift size="w-4 h-4" className="mr-2" />
                       {t('modal.bonus', lang)}
                     </h3>
-                    <div className="bg-white bg-opacity-80 rounded-2xl p-4 shadow-inner">
-                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                        {commentStr}
-                      </p>
-                    </div>
+                    <p className="mt-3 whitespace-pre-wrap leading-relaxed text-gray-700">
+                      {commentStr}
+                    </p>
                   </div>
                 )}
 

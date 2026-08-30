@@ -20,3 +20,18 @@ test("keeps the reference image viewer on a neutral solid background", () => {
     /h-64 overflow-hidden rounded-3xl bg-gray-100 p-2/,
   );
 });
+
+test("keeps the original close icon color", () => {
+  assert.match(modalSource, /stroke="#6b5b7b"/);
+  assert.doesNotMatch(modalSource, /text-rose-700 transition-transform/);
+});
+
+test("keeps bonus information free of gradients", () => {
+  const bonusSection = modalSource.match(
+    /\{\/\* Notes\/Comment Section \*\/\}([\s\S]*?)\{\/\* Action Buttons \*\/\}/,
+  )?.[1];
+
+  assert.ok(bonusSection, "bonus information section should exist");
+  assert.doesNotMatch(bonusSection, /(?:bg-)?gradient|linear-gradient/);
+  assert.match(bonusSection, /border-t border-gray-200 pt-5/);
+});
