@@ -251,14 +251,19 @@ export function AkyoDetailModal({
 
   // PNG→WebPフォールバック処理
   const handleImageError = useCallback(() => {
-    if (localAkyo && imageLoadAttempt === 0) {
+    if (!localAkyo) return;
+
+    if (imageLoadAttempt === 0) {
       // PNG失敗 → WebPにフォールバック
       const webpUrl = buildAvatarImageUrl(localAkyo.id, sourceUrl, 800);
       console.log(`[detail-modal] PNG not found for ${localAkyo.id}, falling back to WebP`);
       setImageUrl(webpUrl);
       setImageLoadAttempt(1);
+      return;
     }
-    // WebPも失敗した場合はonErrorのスタイル処理に任せる
+
+    // WebPも失敗した場合だけ画像を装飾扱いにする
+    setImageLoadAttempt(2);
   }, [imageLoadAttempt, localAkyo, sourceUrl]);
 
   // シングルクリックでズームイン（クリック位置を中心に）
@@ -444,8 +449,6 @@ export function AkyoDetailModal({
     ? parseAndSortCategories(categoryStr)
     : [];
   const isWorldEntry = resolveEntryType(localAkyo) === 'world';
-  const categoryColor = getCategoryColor(categoryStr);
-
   const handleBackdropClick = (e: ReactMouseEvent<HTMLDivElement>) => {
     // モーダル外（backdrop または modal container）をクリックしたら閉じる
     if (e.target === e.currentTarget) {
@@ -601,17 +604,7 @@ export function AkyoDetailModal({
                           className="w-full h-full object-contain rounded-2xl"
                           unoptimized
                           draggable={false}
-                          onError={(e) => {
-                            handleImageError();
-                            if (imageLoadAttempt >= 1) {
-                              setImageLoadAttempt(2);
-                            }
-                            const target = e.target as HTMLImageElement;
-                            target.style.background = `linear-gradient(135deg, ${categoryColor}, ${categoryColor}66)`;
-                            // Temporarily mutate DOM while React updates state
-                            target.alt = "";
-                            target.setAttribute('role', 'presentation');
-                          }}
+                          onError={handleImageError}
                         />
                       )}
                     </div>

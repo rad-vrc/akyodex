@@ -79,4 +79,28 @@ test.describe("Reference sheet modal reopen", () => {
     await expect(dialog.getByRole("status")).toHaveCount(0);
     expect(transformedImageRequestCount).toBe(0);
   });
+
+  test("keeps a successful WebP fallback accessible after the PNG fails", async ({
+    page,
+  }) => {
+    await page.route("**/0001.png", (route) =>
+      route.fulfill({ status: 404, body: "not found" }),
+    );
+    await page.route("**/api/avatar-image?id=0001**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "image/webp",
+        body: imageBody,
+      }),
+    );
+
+    await page.goto("/zukan");
+    const dialog = await openFirstAvatarDetail(page);
+    const fallbackImage = dialog.locator('img[src*="/api/avatar-image?id=0001"]');
+
+    await expectImageLoaded(fallbackImage);
+    await expect(fallbackImage).toHaveAttribute("alt", "オリジンAkyo");
+    await expect(fallbackImage).not.toHaveAttribute("role", "presentation");
+    await expect(fallbackImage).not.toHaveAttribute("style", /linear-gradient/);
+  });
 });
