@@ -28,6 +28,7 @@ declare global {
       // Public環境変数
       NEXT_PUBLIC_SITE_URL: string;
       NEXT_PUBLIC_R2_BASE: string;
+      NEXT_PUBLIC_REFERENCE_R2_BASE?: string;
       NEXT_PUBLIC_SENTRY_DSN?: string;
 
       // Server-side環境変数

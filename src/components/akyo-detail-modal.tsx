@@ -27,6 +27,13 @@ import { ensureContrastForWhiteText, getCategoryColor, parseAndSortCategories } 
 import { formatDisplayId, getAkyoSourceUrl, getDisplaySerial, resolveEntryType } from '@/lib/akyo-entry';
 import type { SupportedLanguage } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
+import {
+  getNextReferenceImageStage,
+  getReferenceImageUrls,
+  resolveReferenceImageUrl,
+  type ReferenceImageStage,
+  type ReferenceImageUrls,
+} from '@/lib/reference-image';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData } from '@/types/akyo';
 import Image from 'next/image';
@@ -119,11 +126,16 @@ export function AkyoDetailModal({
     return null;
   }, [sourceUrl]);
 
-  // 三面図（PNG）優先、WebPフォールバック用の状態
+  // 事前生成WebP優先、原本PNG・カード画像フォールバック用の状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
+  const referenceR2Base =
+    process.env.NEXT_PUBLIC_REFERENCE_R2_BASE || `${r2Base.replace(/\/+$/, '')}/reference`;
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
+  const [imageStage, setImageStage] = useState<ReferenceImageStage>('unavailable');
+  const [zoomImageRequested, setZoomImageRequested] = useState(false);
+  const [zoomImageReady, setZoomImageReady] = useState(false);
+  const [zoomImageFailed, setZoomImageFailed] = useState(false);
 
   // ズーム機能の状態
   const [isZoomed, setIsZoomed] = useState(false);
@@ -149,7 +161,19 @@ export function AkyoDetailModal({
     setLocalAkyo(akyo);
   }, [akyo]);
 
-  // akyo変更時に画像URLをリセット
+  const referenceImageUrls = useMemo<ReferenceImageUrls | null>(() => {
+    if (!localAkyo || resolveEntryType(localAkyo) === 'world') {
+      return null;
+    }
+    return getReferenceImageUrls({
+      cardUrl: buildAvatarImageUrl(localAkyo.id, sourceUrl, 800),
+      originalBaseUrl: r2Base,
+      referenceBaseUrl: referenceR2Base,
+      serial: getDisplaySerial(localAkyo),
+    });
+  }, [localAkyo, r2Base, referenceR2Base, sourceUrl]);
+
+  // akyo変更時に画像URLとズーム用派生の状態をリセット
   // Note: localAkyo?.id のみを依存にすることで、同一IDのプロパティ変更（isFavoriteなど）で
   // 画像URLがリセットされるのを防ぐ
   useEffect(() => {
@@ -158,16 +182,18 @@ export function AkyoDetailModal({
       const isWorldEntry = resolveEntryType(localAkyo) === 'world';
       if (isWorldEntry) {
         setImageUrl(buildAvatarImageUrl(localAkyo.id, nextSourceUrl, 800));
-        setImageLoadAttempt(1);
-      } else {
-        const pngUrl = `${r2Base}/${getDisplaySerial(localAkyo)}.png`;
-        setImageUrl(pngUrl);
-        setImageLoadAttempt(0);
+        setImageStage('card');
+      } else if (referenceImageUrls) {
+        setImageUrl(referenceImageUrls.preview);
+        setImageStage('preview');
       }
       setIsZoomed(false); // ズーム状態もリセット
+      setZoomImageRequested(false);
+      setZoomImageReady(false);
+      setZoomImageFailed(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- localAkyo.id の変更時のみ発火させたい
-  }, [localAkyo?.id, r2Base]);
+  }, [localAkyo?.id, r2Base, referenceR2Base]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -249,22 +275,41 @@ export function AkyoDetailModal({
     wasOpenRef.current = isOpen;
   }, [isOpen, returnFocusRef]);
 
-  // PNG→WebPフォールバック処理
+  // 960px派生→1920px派生→原本PNG→カード画像フォールバック処理
   const handleImageError = useCallback(() => {
     if (!localAkyo) return;
 
-    if (imageLoadAttempt === 0) {
-      // PNG失敗 → WebPにフォールバック
-      const webpUrl = buildAvatarImageUrl(localAkyo.id, sourceUrl, 800);
-      console.log(`[detail-modal] PNG not found for ${localAkyo.id}, falling back to WebP`);
-      setImageUrl(webpUrl);
-      setImageLoadAttempt(1);
+    if (!referenceImageUrls) {
+      setImageUrl(null);
+      setImageStage('unavailable');
       return;
     }
 
-    // WebPも失敗した場合だけ画像を装飾扱いにする
-    setImageLoadAttempt(2);
-  }, [imageLoadAttempt, localAkyo, sourceUrl]);
+    const nextStage = getNextReferenceImageStage(imageStage);
+    setImageStage(nextStage);
+    setImageUrl(resolveReferenceImageUrl(nextStage, referenceImageUrls));
+  }, [imageStage, localAkyo, referenceImageUrls]);
+
+  useEffect(() => {
+    if (
+      !isZoomed ||
+      !referenceImageUrls ||
+      imageStage === 'zoom' ||
+      imageStage === 'unavailable' ||
+      zoomImageRequested ||
+      zoomImageFailed
+    ) {
+      return;
+    }
+    setZoomImageRequested(true);
+    setZoomImageReady(false);
+  }, [
+    imageStage,
+    isZoomed,
+    referenceImageUrls,
+    zoomImageFailed,
+    zoomImageRequested,
+  ]);
 
   // シングルクリックでズームイン（クリック位置を中心に）
   const handleImageClick = useCallback(
@@ -597,14 +642,37 @@ export function AkyoDetailModal({
                       {imageUrl && (
                         <Image
                           src={imageUrl}
-                          alt={imageLoadAttempt >= 2 ? "" : displayName}
-                          role={imageLoadAttempt >= 2 ? "presentation" : undefined}
+                          alt={displayName}
                           width={800}
                           height={533}
                           className="w-full h-full object-contain rounded-2xl"
                           unoptimized
+                          loading="eager"
+                          fetchPriority="high"
                           draggable={false}
                           onError={handleImageError}
+                        />
+                      )}
+                      {referenceImageUrls && zoomImageRequested && imageStage !== 'zoom' && (
+                        <Image
+                          src={referenceImageUrls.zoom}
+                          alt=""
+                          role="presentation"
+                          aria-hidden="true"
+                          data-reference-zoom-image
+                          width={800}
+                          height={533}
+                          className={`absolute inset-0 w-full h-full object-contain rounded-2xl ${isZoomed && zoomImageReady ? 'opacity-100' : 'opacity-0'}`}
+                          unoptimized
+                          loading="eager"
+                          fetchPriority="high"
+                          draggable={false}
+                          onLoad={() => setZoomImageReady(true)}
+                          onError={() => {
+                            setZoomImageRequested(false);
+                            setZoomImageReady(false);
+                            setZoomImageFailed(true);
+                          }}
                         />
                       )}
                     </div>
