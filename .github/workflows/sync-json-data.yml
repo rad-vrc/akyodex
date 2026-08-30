@@ -82,6 +82,15 @@ jobs:
           fi
           echo "✅ CSV to JSON conversion completed successfully"
 
+      - name: Regenerate font subsets from catalog characters
+        run: |
+          set -e
+          # 新しい名前の文字を自己ホストの丸ゴシックサブセットへ反映する。
+          # 生成失敗はデータ同期を止めない（未収録文字はシステムFBで表示される）。
+          if ! npm run fonts:subset; then
+            echo "::warning::Font subset regeneration failed; keeping existing subsets"
+          fi
+
       - name: Check for JSON changes
         id: json-changes
         run: |
@@ -89,7 +98,7 @@ jobs:
           JSON_JA="data/${{ env.JSON_FILE_JA }}"
           JSON_EN="data/${{ env.JSON_FILE_EN }}"
           JSON_KO="data/${{ env.JSON_FILE_KO }}"
-          if git diff --quiet -- "$JSON_JA" "$JSON_EN" "$JSON_KO"; then
+          if git diff --quiet -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/; then
             echo "changed=false" >> $GITHUB_OUTPUT
             echo "No JSON changes detected"
           else
@@ -107,7 +116,7 @@ jobs:
           JSON_KO="data/${{ env.JSON_FILE_KO }}"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add -- "$JSON_JA" "$JSON_EN" "$JSON_KO"
+          git add -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/
 
           # Skip commit if nothing staged (idempotent for re-runs)
           if git diff --cached --quiet; then

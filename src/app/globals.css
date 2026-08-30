@@ -11,7 +11,8 @@
 :root {
   /* Primary UI font stack (replaces next/font variable on runtime) */
   --font-m-plus-rounded: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP';
-  /* Additional fallback font variables for legacy font-family references. */
+  /* Fallback definition: overridden on <body> by next/font (src/app/fonts.ts),
+     which injects the real self-hosted M PLUS Rounded 1c subset. */
   --font-kosugi-maru: 'Kosugi Maru';
   --font-noto-sans-jp: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP';
 
@@ -59,6 +60,11 @@
 }
 
 /* 全体のフォント設定 - 丸みを帯びたフォント */
+/* おまけ情報の本文など、丸ゴシック置換の対象外にする要素用 */
+.font-system {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+}
+
 body {
   font-family: var(--font-m-plus-rounded), var(--font-kosugi-maru), var(--font-noto-sans-jp), sans-serif !important;
   color: var(--text-primary);

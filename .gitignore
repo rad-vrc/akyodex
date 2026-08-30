@@ -64,3 +64,4 @@ tests/screenshots/*.png
 
 # claude local settings
 .claude/settings.local.json
+scripts/.font-cache/

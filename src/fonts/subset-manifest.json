@@ -1,0 +1,18 @@
+{
+  "source": "google/fonts@84efd8ad78c3710ad14bd909e3bc407151885628 ofl/mplusrounded1c",
+  "characterCount": 1050,
+  "files": {
+    "mplus-rounded-1c-regular.subset.woff2": {
+      "bytes": 139736,
+      "from": "MPLUSRounded1c-Regular.ttf"
+    },
+    "mplus-rounded-1c-bold.subset.woff2": {
+      "bytes": 149120,
+      "from": "MPLUSRounded1c-Bold.ttf"
+    },
+    "mplus-rounded-1c-black.subset.woff2": {
+      "bytes": 142208,
+      "from": "MPLUSRounded1c-Black.ttf"
+    }
+  }
+}

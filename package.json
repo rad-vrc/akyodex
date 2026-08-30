@@ -38,7 +38,8 @@
     "catalog:snapshots": "tsx scripts/generate-catalog-snapshots.ts",
     "generate-ko-data": "node scripts/generate-ko-data.js",
     "push:check-pr": "node scripts/push-and-check-pr-conflicts.js",
-    "hooks:install": "git config --local core.hooksPath .githooks"
+    "hooks:install": "git config --local core.hooksPath .githooks",
+    "fonts:subset": "node scripts/generate-font-subsets.mjs"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.3",
@@ -77,6 +78,7 @@
     "lighthouse": "13.4.1",
     "postcss": "^8.5.23",
     "sharp": "^0.35.4",
+    "subset-font": "^2.7.0",
     "tailwindcss": "^4",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
