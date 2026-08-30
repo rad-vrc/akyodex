@@ -185,7 +185,9 @@ export function parseCmap(buf) {
       best = cmapOffset + offset;
     }
   }
-  if (best < 0) throw new Error("no usable cmap subtable");
+  // score 0 = 未知のplatform/encoding（例: Macintosh、symbol）。誤って
+  // Unicodeとして解釈しないよう、認識できるサブテーブルが無ければ失敗させる。
+  if (bestScore < 1) throw new Error("no usable Unicode cmap subtable");
 
   const format = buf.readUInt16BE(best);
   const codepoints = new Set();
