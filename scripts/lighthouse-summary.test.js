@@ -64,17 +64,42 @@ test("evaluates only median values against Lighthouse budgets", () => {
   };
   assert.deepEqual(evaluateLighthouseBudgets(passingSummary), []);
 
+  // FCP/LCPはLanternの時間系モデル限界で非ブロッキング扱いのため、
+  // 超過してもviolationsに入らない
   assert.deepEqual(
     evaluateLighthouseBudgets({
       ...passingSummary,
       performanceScore: 49,
-      largestContentfulPaintMs: 8_001,
+      firstContentfulPaintMs: 2_744,
+      largestContentfulPaintMs: 10_001,
       totalBlockingTimeMs: 601,
     }),
     [
       "Performance score 49 is below 50",
-      "Largest Contentful Paint 8001ms exceeds 8000ms",
       "Total Blocking Time 601ms exceeds 600ms",
+    ],
+  );
+});
+
+test("records FCP/LCP budget breaches as non-blocking warnings", () => {
+  const { evaluateNonBlockingBudgets } = require("./lighthouse-summary");
+  assert.equal(typeof evaluateNonBlockingBudgets, "function");
+
+  assert.deepEqual(
+    evaluateNonBlockingBudgets({
+      firstContentfulPaintMs: 2_499,
+      largestContentfulPaintMs: 7_999,
+    }),
+    [],
+  );
+  assert.deepEqual(
+    evaluateNonBlockingBudgets({
+      firstContentfulPaintMs: 2_744,
+      largestContentfulPaintMs: 8_001,
+    }),
+    [
+      "First Contentful Paint 2744ms exceeds 2500ms (recorded only, non-blocking)",
+      "Largest Contentful Paint 8001ms exceeds 8000ms (recorded only, non-blocking)",
     ],
   );
 });
