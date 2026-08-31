@@ -227,13 +227,14 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                         </button>
                       )}
 
-                      {/* BOOTHリンク */}
+                      {/* BOOTHリンク — カード表示と同じく、見た目(22pxバナー)は変えず
+                          min-h-[44px]+負マージンでタップ領域をHIGの44ptへ */}
                       {akyo.boothUrl && (
                         <a
                           href={akyo.boothUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-shrink-0 p-1 transition-all hover:scale-110 active:scale-95"
+                          className="flex-shrink-0 flex items-center min-h-[44px] -my-[7px] p-1 transition-all hover:scale-110 active:scale-95"
                           title="BOOTH"
                           aria-label="BOOTH"
                           onClick={(e) => e.stopPropagation()}
