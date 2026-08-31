@@ -395,6 +395,9 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
 
         resolvedAuthor = formData.author.trim() || fetchedCreatorName;
         resolvedNickname = formData.nickname.trim() || fetchedWorldName;
+        // ワールドの正式名称はavatarName列にも保存する（フォームの
+        // 「アバター名/ワールド名」欄の実態と一致させるため）
+        resolvedAvatarName = fetchedWorldName;
 
         if (
           resolvedNickname !== formData.nickname ||
@@ -506,7 +509,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           submitData.append('entryType', entryType);
         }
         submitData.append('nickname', resolvedNickname);
-        submitData.append('avatarName', boothOnly ? '' : (entryType === 'world' ? '' : resolvedAvatarName));
+        submitData.append('avatarName', boothOnly ? '' : resolvedAvatarName);
         submitData.append('sourceUrl', url);
         submitData.append('avatarUrl', url);
         if (boothUrlTrimmed) {
@@ -669,7 +672,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         tone: data.isDuplicate ? 'error' : 'success',
       });
     } catch (error) {
-      console.error('通称 duplicate check error:', error);
+      console.error('ニックネーム duplicate check error:', error);
       setNicknameStatus({
         message: '重複チェックに失敗しました',
         tone: 'error',
@@ -809,18 +812,22 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
 
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* ID（自動採番） */}
+          {/* 内部ID（自動採番） */}
           <div>
-            <label htmlFor="add-tab-id" className="block text-gray-700 text-sm font-medium mb-1">
-              ID（自動採番）
-            </label>
+            {/* min-h-[34px]: 隣のニックネーム欄ヘッダー(重複確認ボタン込み)と行高を
+                揃える。無指定だとID側の入力欄が上にずれて見える */}
+            <div className="flex items-center min-h-[34px]">
+              <label htmlFor="add-tab-id" className="block text-gray-700 text-sm font-medium">
+                内部ID（自動採番）
+              </label>
+            </div>
             {userRole === 'owner' ? (
               <input
                 id="add-tab-id"
                 type="text"
                 value={nextId}
                 disabled
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg font-mono font-bold"
+                className="mt-2 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg font-mono font-bold"
               />
             ) : (
               <input
@@ -828,7 +835,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 type="text"
                 value="登録時に自動割り当て"
                 disabled
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
+                className="mt-2 w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
               />
             )}
             <p className="mt-2 text-xs text-gray-500 leading-snug">
@@ -842,7 +849,10 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           <div>
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="add-tab-nickname" className="block text-gray-700 text-sm font-medium">
-                名前
+                ニックネーム{' '}
+                <span className="text-xs font-normal text-gray-500">
+                  ※ワールド名はURLから自動取得
+                </span>
               </label>
               <button
                 type="button"
@@ -877,7 +887,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 ) : (
                   <>
                     <IconSearch size="w-4 h-4" />
-                    同じ名前が既に登録されているか確認
+                    同じニックネームがすでに登録されているか確認
                   </>
                 )}
               </button>
@@ -912,16 +922,12 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           {/* アバター名 */}
           <div>
             <label htmlFor="add-tab-name" className="block text-gray-700 text-sm font-medium mb-1">
-              アバター名
+              アバター名/ワールド名
             </label>
             <input
               id="add-tab-name"
               type="text"
-              value={
-                detectedEntryType === 'world'
-                  ? 'ワールド名は上の「通称」欄を名称として使用します'
-                  : '登録時にVRChat URLから自動取得'
-              }
+              value="登録時にVRChat URLから自動取得"
               disabled
               className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
             />
@@ -930,7 +936,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           {/* 作者 */}
           <div>
             <label htmlFor="add-tab-author" className="block text-gray-700 text-sm font-medium mb-1">
-              作者（アバター/ワールドは自動取得、BOOTH商品のみの場合は手動入力）
+              作者名
             </label>
             {isBoothOnly || detectedEntryType === 'world' ? (
               <input
