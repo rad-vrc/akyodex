@@ -781,13 +781,15 @@ export function AkyoDetailModal({
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t">
+                {/* Action Buttons — 狭幅+iOSの文字サイズ設定(Dynamic Type)でも
+                    はみ出さないよう、横パディングを確保しつつ max-sm で文字と
+                    隙間を一段詰める。それでも溢れる場合は中央揃えのまま折り返す */}
+                <div className="flex gap-3 max-sm:gap-2 pt-4 border-t">
                   {/* Favorite Button - ピンク色 */}
                   <button
                     type="button"
                     onClick={handleFavoriteClick}
-                    className={`flex-1 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${localAkyo.isFavorite
+                    className={`flex-1 min-w-0 py-3 px-2 max-sm:px-1 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 max-sm:gap-1.5 max-sm:text-sm ${localAkyo.isFavorite
                         ? 'text-white hover:opacity-90'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
@@ -805,8 +807,8 @@ export function AkyoDetailModal({
                     }
                   >
                     {localAkyo.isFavorite
-                      ? <IconHeart size="w-4 h-4" />
-                      : <IconHeartOutline size="w-4 h-4" />}
+                      ? <IconHeart size="w-4 h-4" className="shrink-0" />
+                      : <IconHeartOutline size="w-4 h-4" className="shrink-0" />}
                     {localAkyo.isFavorite
                       ? t('modal.favorite.remove', lang)
                       : t('modal.favorite.add', lang)}
@@ -817,14 +819,14 @@ export function AkyoDetailModal({
                     <button
                       type="button"
                       onClick={handleVRChatOpen}
-                      className="flex-1 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:brightness-110 hover:shadow-md"
+                      className="flex-1 min-w-0 py-3 px-2 max-sm:px-1 rounded-lg font-medium transition-all flex items-center justify-center gap-2 max-sm:gap-1.5 max-sm:text-sm hover:brightness-110 hover:shadow-md"
                       style={{
                         background: 'linear-gradient(135deg, #f97316, #fb923c)',
                         color: 'white',
                       }}
                       aria-label={t('modal.vrchatOpen', lang)}
                     >
-                      <IconExternalLink size="w-4 h-4" />
+                      <IconExternalLink size="w-4 h-4" className="shrink-0" />
                       {t('modal.vrchatOpen', lang)}
                     </button>
                   )}
