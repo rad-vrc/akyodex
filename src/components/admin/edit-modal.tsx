@@ -986,10 +986,10 @@ export function EditModal({
                 </p>
               </div>
 
-              {/* おまけ情報（comment） */}
+              {/* あきょうちしき（comment） */}
               <div>
                 <label htmlFor="edit-comment" className="block text-gray-700 text-sm font-medium mb-1">
-                  おまけ情報
+                  あきょうちしき
                 </label>
                 <textarea
                   id="edit-comment"
