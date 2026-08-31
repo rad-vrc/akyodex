@@ -122,6 +122,11 @@ export function AkyoDetailModal({
   // 三面図（PNG）優先、WebPフォールバック用の状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
+  // バツボタンの比較試行: 標準=F-2(フロステッド+白X) / ?x=solid でF-3(白ベタ+ブランドX)。
+  // オーナー決定後にどちらかへ固定してこのフラグは削除する。
+  const useSolidClose =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('x') === 'solid';
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
 
@@ -511,11 +516,10 @@ export function AkyoDetailModal({
               ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-white/60 backdrop-blur-md border border-white/30"
-              style={{
-                background: 'rgba(255, 255, 255, 0.45)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              }}
+              className={`absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 ${useSolidClose
+                ? 'bg-white shadow-[0_2px_10px_rgba(0,0,0,0.16)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.22)]'
+                : 'bg-white/[0.22] hover:bg-white/40 backdrop-blur-md border border-white/40 shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
+                }`}
               aria-label={t('modal.close', lang)}
             >
               <svg
@@ -527,7 +531,7 @@ export function AkyoDetailModal({
               >
                 <path
                   d="M18 6L6 18M6 6L18 18"
-                  stroke="#6b5b7b"
+                  stroke={useSolidClose ? '#ee4180' : '#ffffff'}
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
