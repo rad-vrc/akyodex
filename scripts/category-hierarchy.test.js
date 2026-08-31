@@ -71,6 +71,7 @@ function assertAncestors(categories, category) {
 const adoptedHierarchyExpectations = {
   ja: [
     ['菌類', '自然/菌類', 5],
+    ['貝', '自然/貝', 3],
     ['骨', '器官/骨', 2],
     ['四足歩行', '技能・特性/四足歩行', 14],
     ['合体・変身', '技能・特性/合体・変身', 7],
@@ -80,10 +81,12 @@ const adoptedHierarchyExpectations = {
     ['死', '状態/死', 4],
     ['復活', '状態/復活', 2],
     ['囚われの身', '状態/囚われの身', 4],
+    ['精霊馬', '季節・行事/お盆/精霊馬', 1],
     ['ばんそうこう', '道具・文房具・生活用品/ばんそうこう', 1],
   ],
   en: [
     ['Fungus', 'Nature/Fungus', 5],
+    ['Animal/Shell', 'Nature/Shell', 3],
     ['Bone', 'Body Part/Bone', 2],
     ['Quadruped', 'Skill・Trait/Quadruped', 14],
     ['Transformation', 'Skill・Trait/Transformation', 7],
@@ -93,10 +96,12 @@ const adoptedHierarchyExpectations = {
     ['Death', 'Condition/Death', 4],
     ['Revival', 'Condition/Revival', 2],
     ['Captive', 'Condition/Captive', 3],
+    ['Spirit Horse', 'Season・Event/Obon/Spirit Horse', 1],
     ['Bandage', 'Daily Necessities/Bandage', 1],
   ],
   ko: [
     ['균류', '자연/균류', 5],
+    ['조개', '자연/조개', 3],
     ['뼈', '기관/뼈', 2],
     ['네발걸음', '기능・특성/네발걸음', 14],
     ['합체・변신', '기능・특성/합체・변신', 7],
@@ -106,12 +111,14 @@ const adoptedHierarchyExpectations = {
     ['죽음', '상태/죽음', 4],
     ['부활', '상태/부활', 2],
     ['갇힌 몸', '상태/갇힌 몸', 3],
+    ['정령마', '계절・행사/오봉/정령마', 1],
     ['반창고', '도구・문구・생활용품/반창고', 1],
   ],
 };
 
 const vectorizeHierarchyCounts = new Map([
   ['自然/菌類', 3],
+  ['自然/貝', 1],
   ['器官/骨', 1],
   ['技能・特性/四足歩行', 0],
   ['技能・特性/合体・変身', 0],
@@ -121,6 +128,7 @@ const vectorizeHierarchyCounts = new Map([
   ['状態/死', 1],
   ['状態/復活', 0],
   ['状態/囚われの身', 0],
+  ['季節・行事/お盆/精霊馬', 1],
   ['道具・文房具・生活用品/ばんそうこう', 0],
 ]);
 
@@ -165,11 +173,63 @@ test('keeps the explicitly rejected categories at the root level', () => {
     '最強戦士',
     '正体不明のUMAkyo',
     '惑星',
+    '電子',
+    'まめ',
+    'まめAkyo',
   ]) {
     assert.ok(
       rows.some((row) => splitCategories(row.Category).includes(category)),
       `${category} should remain a root category`,
     );
+  }
+});
+
+test('classifies the spirit horse under Obon instead of New Year', () => {
+  const expectations = {
+    ja: {
+      obon: '季節・行事/お盆',
+      spiritHorse: '季節・行事/お盆/精霊馬',
+      newYear: '季節・行事/お正月',
+    },
+    en: {
+      obon: 'Season・Event/Obon',
+      spiritHorse: 'Season・Event/Obon/Spirit Horse',
+      newYear: 'Season・Event/New Year',
+    },
+    ko: {
+      obon: '계절・행사/오봉',
+      spiritHorse: '계절・행사/오봉/정령마',
+      newYear: '계절・행사/설날',
+    },
+  };
+
+  for (const [language, expected] of Object.entries(expectations)) {
+    const row = readCategoryRows(language).find((record) => record.ID === '0616');
+    assert.ok(row, `${language} should include ID 0616`);
+    const categories = splitCategories(row.Category);
+    assert.ok(categories.includes(expected.obon));
+    assert.ok(categories.includes(expected.spiritHorse));
+    assert.ok(!categories.includes(expected.newYear));
+  }
+});
+
+test('adds durable battery categories without removing Electronic', () => {
+  const expectations = {
+    ja: ['電子', 'エネルギー', 'エネルギー/電気', '道具・文房具・生活用品'],
+    en: ['Electronic', 'Energy', 'Energy/Electricity', 'Daily Necessities'],
+    ko: ['전자', '에너지', '에너지/전기', '도구・문구・생활용품'],
+  };
+
+  for (const [language, expectedCategories] of Object.entries(expectations)) {
+    const row = readCategoryRows(language).find((record) => record.ID === '0276');
+    assert.ok(row, `${language} should include battery ID 0276`);
+    const categories = splitCategories(row.Category);
+    for (const category of expectedCategories) {
+      assert.ok(
+        categories.includes(category),
+        `${language} battery should include ${category}`,
+      );
+    }
   }
 });
 
@@ -237,6 +297,7 @@ test('defines canonical English and Korean translations for the new hierarchy', 
 
   const hierarchyTranslations = [
     ['自然/菌類', 'Nature/Fungus', '자연/균류'],
+    ['自然/貝', 'Nature/Shell', '자연/조개'],
     ['器官/骨', 'Body Part/Bone', '기관/뼈'],
     ['技能・特性/四足歩行', 'Skill・Trait/Quadruped', '기능・특성/네발걸음'],
     [
@@ -250,6 +311,11 @@ test('defines canonical English and Korean translations for the new hierarchy', 
     ['状態/死', 'Condition/Death', '상태/죽음'],
     ['状態/復活', 'Condition/Revival', '상태/부활'],
     ['状態/囚われの身', 'Condition/Captive', '상태/갇힌 몸'],
+    [
+      '季節・行事/お盆/精霊馬',
+      'Season・Event/Obon/Spirit Horse',
+      '계절・행사/오봉/정령마',
+    ],
     [
       '道具・文房具・生活用品/ばんそうこう',
       'Daily Necessities/Bandage',
@@ -358,6 +424,21 @@ test('keeps the Vectorize payload on the canonical Japanese hierarchy', () => {
       adoptedCounts.get(hierarchicalCategory),
       vectorizeHierarchyCounts.get(hierarchicalCategory),
       `Vectorize has an unexpected count for ${hierarchicalCategory}`,
+    );
+  }
+
+  const battery = records.find((record) => record.id === '0276');
+  assert.ok(battery, 'Vectorize should include battery ID 0276');
+  const batteryCategories = splitCategories(battery.category);
+  for (const category of [
+    '電子',
+    'エネルギー',
+    'エネルギー/電気',
+    '道具・文房具・生活用品',
+  ]) {
+    assert.ok(
+      batteryCategories.includes(category),
+      `Vectorize battery should include ${category}`,
     );
   }
 });
