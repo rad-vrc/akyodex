@@ -7,7 +7,7 @@
  * Features:
  * - Header with gradient background
  * - Profile icon + ID + name
- * - Large image with sparkle effect (PNG reference sheet preferred, WebP fallback)
+ * - Large image on grid-paper background (PNG reference sheet preferred, WebP fallback)
  * - Info grid (4 sections: name, avatar, attributes, creator)
  * - VRChat URL section
  * - Notes section (if available)
@@ -17,6 +17,7 @@
 import {
   IconExternalLink,
   IconGift,
+  IconGlobe,
   IconHeart,
   IconHeartOutline,
   IconSparkles,
@@ -506,16 +507,14 @@ export function AkyoDetailModal({
             tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
+            {/* Close Button — 白ベタ丸+ブランドピンクのX（トイUIの押しボタン）。
+                装飾アクセントだった旧X線#6b5b7b（紫グレー）を撤去
+                （名前カードの淡いto-purple-50は選定どおり意図的に維持） */}
             <button
               ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-white/60 backdrop-blur-md border border-white/30"
-              style={{
-                background: 'rgba(255, 255, 255, 0.45)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              }}
+              className="group absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.16)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.22)]"
               aria-label={t('modal.close', lang)}
             >
               <svg
@@ -523,11 +522,11 @@ export function AkyoDetailModal({
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                className="transition-transform duration-300 hover:rotate-90"
+                className="transition-transform duration-300 group-hover:rotate-90"
               >
                 <path
                   d="M18 6L6 18M6 6L18 18"
-                  stroke="#6b5b7b"
+                  stroke="#ee4180"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -545,7 +544,10 @@ export function AkyoDetailModal({
                 borderBottomColor: 'rgba(255, 255, 255, 0.85)',
               }}
             >
-              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white">
+              {/* pr-12: 右上の閉じるボタン(right-4 + 48px)の下にタイトルが潜り込まないよう余白を確保。
+                  spanのmin-w-0はflex子のmin-width:autoを打ち消すために必須で、
+                  これが無いと320px幅+長タイトルで文字が余白を突き破ってボタンに重なる */}
+              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white pr-12">
                 <Image
                   src="/images/profileIcon.webp"
                   alt=""
@@ -554,7 +556,7 @@ export function AkyoDetailModal({
                   className="w-10 h-10 mr-3 inline-block object-cover rounded-full"
                   unoptimized
                 />
-                <span>
+                <span className="min-w-0 flex-1 break-words">
                   {formatDisplayId(localAkyo)} {displayName}
                 </span>
               </h2>
@@ -566,9 +568,23 @@ export function AkyoDetailModal({
                 {/* Image Section with Zoom & Drag */}
                 <div className="relative">
                   <div
-                    className={`h-64 overflow-hidden rounded-3xl bg-gradient-to-br from-purple-100 to-blue-100 p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-300 focus-visible:ring-offset-2 ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                    className={`h-64 overflow-hidden rounded-3xl bg-white p-2 select-none ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
                       }`}
-                    style={{ touchAction: isZoomed ? 'none' : 'auto' }}
+                    style={{
+                      touchAction: isZoomed ? 'none' : 'auto',
+                      // 三面図の背景は方眼紙（白地+極薄グリッド）。「三面図=設計資料」の
+                      // メタファーで、枠線はレイアウトを変えないinset影で描く
+                      backgroundImage:
+                        'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
+                      backgroundSize: '22px 22px',
+                      boxShadow: 'inset 0 0 0 1px #e2e8f0',
+                      // フォーカス表示はグローバルCSSの3px outline（[tabindex="0"]:focus-visible）
+                      // に任せ、色だけ方眼と同系のslate-500へ（白背景4.76:1・方眼#eef2f6に
+                      // 4.23:1でWCAG 1.4.11の3:1を満たす。slate-400は2.56:1で不適合）。
+                      // Tailwindのringはこのinset影のインラインbox-shadowに上書きされて
+                      // 描画されないため使わない
+                      outlineColor: '#64748b',
+                    }}
                     role="button"
                     tabIndex={0}
                     aria-pressed={isZoomed}
@@ -612,30 +628,30 @@ export function AkyoDetailModal({
                     </div>
                   </div>
 
-                  {/* Zoom/Drag Hint */}
+                  {/* Zoom/Drag Hint — 三面図と重ならないよう右上（旧キラキラ位置）に表示 */}
                   {!isZoomed ? (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
+                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
                       {t('modal.zoomHint', lang)}
                     </div>
                   ) : (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
+                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
                       {t('modal.dragHint', lang)}
                     </div>
                   )}
-
-                  {/* Sparkle Effect */}
-                  <div className="absolute -top-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center animate-bounce">
-                    <span className="text-2xl" aria-hidden="true">✨</span>
-                  </div>
                 </div>
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Name Card */}
+                  {/* Name Card — ワールドは正式名称なので「ニックネーム」でなく
+                      「ワールド名」+地球儀（フィルターUIと同じアイコン言語）で示す */}
                   <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4">
                     <h3 className="text-sm font-bold mb-2" style={{ color: '#FF6B9D' }}>
-                      <IconTag size="w-3.5 h-3.5" className="mr-1" />
-                      {t('modal.name', lang)}
+                      {isWorldEntry ? (
+                        <IconGlobe size="w-3.5 h-3.5" className="mr-1" />
+                      ) : (
+                        <IconTag size="w-3.5 h-3.5" className="mr-1" />
+                      )}
+                      {t(isWorldEntry ? 'modal.worldName' : 'modal.name', lang)}
                     </h3>
                     <p className="text-xl font-bold">{localAkyo.nickname || '-'}</p>
                   </div>
@@ -745,8 +761,10 @@ export function AkyoDetailModal({
                 )}
 
                 {/* Notes/Comment Section */}
+                {/* 額縁はピンク→オレンジ方向の超淡色グラデ。到達点はpink-50とorange-50の
+                    中間色で止め、情報カード群（隣接色相ペア）と同じ穏やかな変化量に揃える */}
                 {commentStr && (
-                  <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-3xl p-5">
+                  <div className="bg-gradient-to-br from-pink-50 to-[#fef4f3] rounded-3xl p-5">
                     <h3 className="text-lg font-bold text-gray-900 mb-3">
                       <IconGift size="w-4 h-4" className="mr-2" />
                       {t('modal.bonus', lang)}

@@ -102,6 +102,10 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   ドラゴン: '#d32f2f',
   ロボット: '#757575',
   食べ物: '#d84315',
+  // BOOTH公式は#fc4d50(実測)だが、白文字コントラスト補正(彩度維持で暗色化)を
+  // 通すと#ee0408の信号赤になる。補正を発動させないよう、色相を保ち彩度を
+  // 65%へ落とした白文字4.5:1準拠色を最初から登録する。
+  Booth: '#d63d43',
   グッズ: '#00acc1',
   Goods: '#00acc1',
   굿즈: '#00acc1',
@@ -123,9 +127,11 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 /**
  * デフォルト色（カテゴリマッピングに該当しない場合に使用）
  *
- * 紫に偏らない、色名で区別しやすいシアン・緑・青灰・ピンク・青を使用する。
+ * 紫に偏らない、色名で区別しやすいシアン・緑・青灰・赤・青を使用する。
+ * 赤は旧#f5576cが白文字補正で#ec0e2c(信号赤)化していたため、補正を発動させない
+ * 白文字4.5:1準拠のセミブライト赤#d63d43に変更(2026-08-31)。
  */
-const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#f5576c', '#1a73cc'];
+const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#d63d43', '#1a73cc'];
 
 /**
  * Generates a deterministic hash value from a string (simple djb2 algorithm).
