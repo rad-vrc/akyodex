@@ -7,7 +7,7 @@
  * Features:
  * - Header with gradient background
  * - Profile icon + ID + name
- * - Large image with sparkle effect (PNG reference sheet preferred, WebP fallback)
+ * - Large image on grid-paper background (PNG reference sheet preferred, WebP fallback)
  * - Info grid (4 sections: name, avatar, attributes, creator)
  * - VRChat URL section
  * - Notes section (if available)
@@ -508,7 +508,8 @@ export function AkyoDetailModal({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button — 白ベタ丸+ブランドピンクのX（トイUIの押しボタン）。
-                旧仕様のX線#6b5b7bはモーダル最後の紫だったため、置換して紫を全廃 */}
+                装飾アクセントだった旧X線#6b5b7b（紫グレー）を撤去
+                （名前カードの淡いto-purple-50は選定どおり意図的に維持） */}
             <button
               ref={closeButtonRef}
               type="button"
@@ -578,9 +579,11 @@ export function AkyoDetailModal({
                       backgroundSize: '22px 22px',
                       boxShadow: 'inset 0 0 0 1px #e2e8f0',
                       // フォーカス表示はグローバルCSSの3px outline（[tabindex="0"]:focus-visible）
-                      // に任せ、色だけ方眼と同系のslate-400へ。Tailwindのringはこのinset影の
-                      // インラインbox-shadowに上書きされて描画されないため使わない
-                      outlineColor: '#94a3b8',
+                      // に任せ、色だけ方眼と同系のslate-500へ（白背景4.76:1・方眼#eef2f6に
+                      // 4.23:1でWCAG 1.4.11の3:1を満たす。slate-400は2.56:1で不適合）。
+                      // Tailwindのringはこのinset影のインラインbox-shadowに上書きされて
+                      // 描画されないため使わない
+                      outlineColor: '#64748b',
                     }}
                     role="button"
                     tabIndex={0}
