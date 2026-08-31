@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { getCategoryColor } from './akyo-data-helpers';
+import { ensureContrastForWhiteText, getCategoryColor } from './akyo-data-helpers';
 
 test('fallback category colors avoid purple and yellow hues', () => {
   const categoriesByPaletteIndex = [
@@ -14,8 +14,16 @@ test('fallback category colors avoid purple and yellow hues', () => {
 
   assert.deepEqual(
     categoriesByPaletteIndex.map(getCategoryColor),
-    ['#00acc1', '#43a047', '#607d8b', '#f5576c', '#1a73cc'],
+    ['#00acc1', '#43a047', '#607d8b', '#d63d43', '#1a73cc'],
   );
+});
+
+test('Booth uses the WCAG-safe semi-bright red without triggering darkening', () => {
+  // 白文字4.5:1を最初から満たす色を登録し、コントラスト補正(彩度維持の暗色化で
+  // #ee0408級の信号赤になる)を発動させないことがこの色選定の要点。
+  assert.equal(getCategoryColor('Booth'), '#d63d43');
+  assert.equal(getCategoryColor('Booth/アバター'), '#d63d43');
+  assert.equal(ensureContrastForWhiteText(getCategoryColor('Booth')), '#d63d43');
 });
 
 test('formerly purple semantic colors use established non-purple colors', () => {

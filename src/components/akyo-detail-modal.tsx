@@ -545,7 +545,8 @@ export function AkyoDetailModal({
                 borderBottomColor: 'rgba(255, 255, 255, 0.85)',
               }}
             >
-              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white">
+              {/* pr-12: 右上の閉じるボタン(right-4 + 48px)の下にタイトルが潜り込まないよう余白を確保 */}
+              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white pr-12">
                 <Image
                   src="/images/profileIcon.webp"
                   alt=""
@@ -745,8 +746,9 @@ export function AkyoDetailModal({
                 )}
 
                 {/* Notes/Comment Section */}
+                {/* 額縁はヘッダーのピンク→オレンジと同方向の超淡色グラデ（紫・青は廃止） */}
                 {commentStr && (
-                  <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-3xl p-5">
+                  <div className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-3xl p-5">
                     <h3 className="text-lg font-bold text-gray-900 mb-3">
                       <IconGift size="w-4 h-4" className="mr-2" />
                       {t('modal.bonus', lang)}

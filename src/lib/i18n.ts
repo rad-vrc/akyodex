@@ -537,9 +537,10 @@ export const UI_TEXTS = {
     ko: "닫기",
   },
   "modal.name": {
-    ja: "なまえ",
-    en: "Name",
-    ko: "이름",
+    // データフィールド(nickname)に合わせた表記。管理画面側の表記は別途対応予定
+    ja: "ニックネーム",
+    en: "Nickname",
+    ko: "닉네임",
   },
   "modal.avatarName": {
     ja: "アバター名",
@@ -577,9 +578,10 @@ export const UI_TEXTS = {
     ko: "BOOTH URL",
   },
   "modal.bonus": {
-    ja: "おまけじょうほう",
-    en: "Bonus Info",
-    ko: "보너스 정보",
+    // 「Akyo + 豆知識」の言葉遊び。en/koは意味対応（Trivia=豆知識、지식=知識）
+    ja: "あきょうちしき",
+    en: "Akyo Trivia",
+    ko: "Akyo 지식",
   },
   "modal.favorite.add": {
     ja: "お気に入りに追加",
