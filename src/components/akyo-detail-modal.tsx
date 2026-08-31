@@ -17,6 +17,7 @@
 import {
   IconExternalLink,
   IconGift,
+  IconGlobe,
   IconHeart,
   IconHeartOutline,
   IconSparkles,
@@ -542,7 +543,9 @@ export function AkyoDetailModal({
                 borderBottomColor: 'rgba(255, 255, 255, 0.85)',
               }}
             >
-              {/* pr-12: 右上の閉じるボタン(right-4 + 48px)の下にタイトルが潜り込まないよう余白を確保 */}
+              {/* pr-12: 右上の閉じるボタン(right-4 + 48px)の下にタイトルが潜り込まないよう余白を確保。
+                  spanのmin-w-0はflex子のmin-width:autoを打ち消すために必須で、
+                  これが無いと320px幅+長タイトルで文字が余白を突き破ってボタンに重なる */}
               <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white pr-12">
                 <Image
                   src="/images/profileIcon.webp"
@@ -552,7 +555,7 @@ export function AkyoDetailModal({
                   className="w-10 h-10 mr-3 inline-block object-cover rounded-full"
                   unoptimized
                 />
-                <span>
+                <span className="min-w-0 flex-1 break-words">
                   {formatDisplayId(localAkyo)} {displayName}
                 </span>
               </h2>
@@ -564,7 +567,7 @@ export function AkyoDetailModal({
                 {/* Image Section with Zoom & Drag */}
                 <div className="relative">
                   <div
-                    className={`h-64 overflow-hidden rounded-3xl bg-white p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-400 focus-visible:ring-offset-2 ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                    className={`h-64 overflow-hidden rounded-3xl bg-white p-2 select-none ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
                       }`}
                     style={{
                       touchAction: isZoomed ? 'none' : 'auto',
@@ -574,6 +577,10 @@ export function AkyoDetailModal({
                         'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
                       backgroundSize: '22px 22px',
                       boxShadow: 'inset 0 0 0 1px #e2e8f0',
+                      // フォーカス表示はグローバルCSSの3px outline（[tabindex="0"]:focus-visible）
+                      // に任せ、色だけ方眼と同系のslate-400へ。Tailwindのringはこのinset影の
+                      // インラインbox-shadowに上書きされて描画されないため使わない
+                      outlineColor: '#94a3b8',
                     }}
                     role="button"
                     tabIndex={0}
@@ -632,11 +639,16 @@ export function AkyoDetailModal({
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Name Card */}
+                  {/* Name Card — ワールドは正式名称なので「ニックネーム」でなく
+                      「ワールド名」+地球儀（フィルターUIと同じアイコン言語）で示す */}
                   <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4">
                     <h3 className="text-sm font-bold mb-2" style={{ color: '#FF6B9D' }}>
-                      <IconTag size="w-3.5 h-3.5" className="mr-1" />
-                      {t('modal.name', lang)}
+                      {isWorldEntry ? (
+                        <IconGlobe size="w-3.5 h-3.5" className="mr-1" />
+                      ) : (
+                        <IconTag size="w-3.5 h-3.5" className="mr-1" />
+                      )}
+                      {t(isWorldEntry ? 'modal.worldName' : 'modal.name', lang)}
                     </h3>
                     <p className="text-xl font-bold">{localAkyo.nickname || '-'}</p>
                   </div>

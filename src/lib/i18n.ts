@@ -542,6 +542,12 @@ export const UI_TEXTS = {
     en: "Nickname",
     ko: "닉네임",
   },
+  "modal.worldName": {
+    // ワールドはnicknameフィールドに正式名称が入るため、表示上は「ワールド名」
+    ja: "ワールド名",
+    en: "World Name",
+    ko: "월드 이름",
+  },
   "modal.avatarName": {
     ja: "アバター名",
     en: "Avatar Name",
