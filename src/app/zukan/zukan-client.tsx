@@ -20,9 +20,11 @@ import {
   IconCog,
   IconGlobe,
   IconGrid,
+  IconHeart,
   IconList,
   IconShoppingBag,
 } from "@/components/icons";
+import { SortControls } from "@/components/sort-controls";
 import { LanguageToggle } from "@/components/language-toggle";
 import { SearchBar } from "@/components/search-bar";
 import {
@@ -816,7 +818,8 @@ export function ZukanClient({
             <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.favoritesLabel", lang)}：</dt>
               <dd className="min-w-[5ch] text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap flex items-center gap-1">
-                <span aria-hidden="true">❤️</span>
+                {/* OSの絵文字ハートは3D調で浮くため、白塗りのフラットなSVGに統一 */}
+                <IconHeart size="w-4 h-4" className="inline-block shrink-0" aria-hidden="true" />
                 {isCurrentDatasetComplete ? (
                   stats.favorites
                 ) : (
@@ -923,6 +926,18 @@ export function ZukanClient({
             ) : null}
           </div>
 
+          {/* 並び替え系はモバイルでフィルタが初期クローズでも使えるよう折りたたみ外に常時表示 */}
+          <SortControls
+            onSortToggle={handleSortToggle}
+            onRandomClick={handleRandomClick}
+            onFavoritesClick={handleFavoritesClick}
+            favoritesOnly={favoritesOnly}
+            sortAscending={sortAscending}
+            randomMode={randomMode}
+            lang={lang}
+            disabled={catalogControlsDisabled}
+          />
+
           <div
             id="zukan-filter-panel"
             className={
@@ -949,12 +964,6 @@ export function ZukanClient({
                 onCreatorChange={(creator) =>
                   setSelectedCreators(creator ? [creator] : [])
                 }
-                onSortToggle={handleSortToggle}
-                onRandomClick={handleRandomClick}
-                onFavoritesClick={handleFavoritesClick}
-                favoritesOnly={favoritesOnly}
-                sortAscending={sortAscending}
-                randomMode={randomMode}
                 lang={lang}
                 disabled={catalogControlsDisabled}
               />
