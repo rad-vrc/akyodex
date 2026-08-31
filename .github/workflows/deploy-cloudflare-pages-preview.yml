@@ -127,6 +127,10 @@ jobs:
       - name: Verify immutable Pages preview runtime
         env:
           DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}
+          # プレビューはCloudflare Accessで保護されているため、CIからの検証は
+          # サービストークンで認証する（Zero Trust > Access controls > Service auth）
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           max_attempts=12
@@ -144,12 +148,22 @@ jobs:
               --connect-timeout 10 \
               --max-time 30 \
               --header "Accept: ${accept}" \
+              --header "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}" \
+              --header "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}" \
               --dump-header "${headers_file}" \
               --output "${body_file}" \
               --write-out "%{http_code}" \
               "${DEPLOYMENT_URL}${path}" || echo "000")"
 
             if [ "${status}" != "200" ]; then
+              # Accessのサインイン要求はリトライしても解消しないので即時失敗させる
+              if grep -qi 'cloudflareaccess\.com' "${headers_file}" 2>/dev/null; then
+                echo "::error::${path} was blocked by Cloudflare Access (HTTP ${status})."
+                echo "Preview Access is enabled on the Pages project, so CI must authenticate with an Access service token."
+                echo "Create one in Zero Trust > Access controls > Service auth, include it in the preview Access policy,"
+                echo "then set the CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET repository secrets."
+                exit 1
+              fi
               echo "${path} returned HTTP ${status}."
               return 1
             fi
@@ -176,6 +190,8 @@ jobs:
               --max-time 30 \
               --request POST \
               --header "Content-Type: application/json" \
+              --header "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}" \
+              --header "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}" \
               --data '{}' \
               --output /tmp/admin-login-body \
               --write-out "%{http_code}" \
@@ -249,6 +265,7 @@ jobs:
                   `- PR alias: ${process.env.DEPLOYMENT_ALIAS_URL}`,
                   `- Deployment ID: \`${process.env.DEPLOYMENT_ID}\``,
                   '',
+                  '> **Cloudflare Access required:** preview URLs prompt for sign-in. Ask the owner if you need access.',
                   '> **Mechanically read-only review environment:** mutating HTTP methods are rejected before OpenNext, and Preview uses dedicated KV/R2 resources.',
                   '> Durable Objects, service bindings, Workers caches, `cf.image`, Workers Sentry, and final performance must be verified at https://staging.akyodex.com.',
                   '> Pages server-side Sentry is disabled, so a clean Pages preview is not proof that server errors are absent.'
