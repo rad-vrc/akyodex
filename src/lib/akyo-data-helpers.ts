@@ -277,24 +277,38 @@ function hslToHex(h: number, s: number, l: number): string {
 const contrastOnWhiteCache = new Map<string, string>();
 const contrastForWhiteTextCache = new Map<string, string>();
 
+/** `${color}20`（alpha 0x20/255 ≈ 12.5%）を白に重ねたバッジ薄底の実背景色 */
+function tintedWhiteBackground(hexColor: string): { r: number; g: number; b: number } {
+  const alpha = 0x20 / 255;
+  const { r, g, b } = hexToRGB(hexColor);
+  return {
+    r: alpha * r + (1 - alpha) * 255,
+    g: alpha * g + (1 - alpha) * 255,
+    b: alpha * b + (1 - alpha) * 255,
+  };
+}
+
 /**
- * 白背景 (#fff) 上のテキスト色として WCAG 1.4.3 のコントラスト比を満たす色を返す。
+ * カード/リストのバッジ（`background: ${color}20` の薄底）上のテキスト色として、
+ * WCAG 1.4.3 のコントラスト比を満たす色を返す。
  *
- * カード/リストのバッジは `background: ${color}20`（≈白）の上に `color` をテキスト
- * として表示するため、実質的に白背景に対するコントラストが必要。
- * 元の色相・彩度を維持しつつ明度を下げてコントラスト比 ≥ minRatio を確保する。
+ * 旧実装は基準を白(#fff)で近似していたが、薄底は色が乗るぶん白より暗く、
+ * 「白基準で4.5ちょうど」の色が実背景では3.7〜4.0台に割れていた。
+ * 実際の合成後背景の輝度を基準に、元の色相・彩度を維持しつつ明度を下げて
+ * コントラスト比 ≥ minRatio を確保する。
  *
  * @param hexColor - HEX カラーコード (例: '#ff9800')
  * @param minRatio - 目標コントラスト比 (デフォルト: 4.5)
  * @returns コントラストが保証された HEX カラーコード
  */
-export function ensureContrastOnWhite(hexColor: string, minRatio = 4.5): string {
+export function ensureContrastOnTintedWhite(hexColor: string, minRatio = 4.5): string {
   const cached = contrastOnWhiteCache.get(hexColor);
   if (cached) return cached;
 
-  const whiteL = 1.0; // #ffffff の相対輝度
+  // バッジ背景は元色の12.5%薄底で固定（文字色を暗くしても背景は変わらない）
+  const bgL = relativeLuminance(tintedWhiteBackground(hexColor));
   const fgL = relativeLuminance(hexToRGB(hexColor));
-  if (contrastRatio(whiteL, fgL) >= minRatio) {
+  if (contrastRatio(bgL, fgL) >= minRatio) {
     contrastOnWhiteCache.set(hexColor, hexColor);
     return hexColor;
   }
@@ -307,7 +321,7 @@ export function ensureContrastOnWhite(hexColor: string, minRatio = 4.5): string 
     newL = Math.max(0, newL - step);
     const candidate = hslToHex(h, s, newL);
     const candidateL = relativeLuminance(hexToRGB(candidate));
-    if (contrastRatio(whiteL, candidateL) >= minRatio) {
+    if (contrastRatio(bgL, candidateL) >= minRatio) {
       contrastOnWhiteCache.set(hexColor, candidate);
       return candidate;
     }

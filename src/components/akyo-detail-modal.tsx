@@ -692,7 +692,10 @@ export function AkyoDetailModal({
                             key={index}
                             className="px-3 py-1 rounded-full text-sm font-bold text-white shadow-md"
                             style={{
-                              background: `linear-gradient(135deg, ${bgColor}, ${bgColor}dd)`,
+                              // 単色ベタ塗り。旧`${bgColor}dd`への半透明グラデは末端が
+                              // 白と混ざり、補正の白文字4.5:1保証が実表示で3.7〜3.9台に
+                              // 割れていた（WCAG 1.4.3違反）ため廃止
+                              background: bgColor,
                             }}
                           >
                             {cat}

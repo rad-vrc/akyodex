@@ -1,7 +1,47 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { ensureContrastForWhiteText, getCategoryColor } from './akyo-data-helpers';
+import {
+  ensureContrastForWhiteText,
+  ensureContrastOnTintedWhite,
+  getCategoryColor,
+} from './akyo-data-helpers';
+
+// --- 実描画条件のコントラスト検証用ヘルパー（WCAG 2.x 定義の再実装） ---
+const hexToRgb = (hex: string) => ({
+  r: parseInt(hex.slice(1, 3), 16),
+  g: parseInt(hex.slice(3, 5), 16),
+  b: parseInt(hex.slice(5, 7), 16),
+});
+const relLum = ({ r, g, b }: { r: number; g: number; b: number }) => {
+  const [rs, gs, bs] = [r, g, b].map((c) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+};
+const contrast = (l1: number, l2: number) =>
+  (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+/** `${color}20` を白へ合成したバッジ薄底の実背景 */
+const tint20 = (hex: string) => {
+  const a = 0x20 / 255;
+  const { r, g, b } = hexToRgb(hex);
+  return { r: a * r + (1 - a) * 255, g: a * g + (1 - a) * 255, b: a * b + (1 - a) * 255 };
+};
+// 実データで最上位として生きているマップキー＋フォールバック5色の代表元色
+const LIVE_BASE_COLORS = [
+  '#00bfa5', // チョコミント
+  '#d44335', // 動物
+  '#4caf50', // ギミック
+  '#d84315', // 食べ物
+  '#d63d43', // Booth
+  '#00acc1', // グッズ / fallback0
+  '#5a8a1a', // 自然
+  '#424242', // ホラー
+  '#43a047', // fallback1
+  '#607d8b', // fallback2
+  '#1a73cc', // fallback4
+];
 
 test('fallback category colors avoid purple and yellow hues', () => {
   const categoriesByPaletteIndex = [
@@ -36,6 +76,30 @@ test('translated categories resolve to the same color as their Japanese counterp
   // マップ命中系はマップ色そのものになる
   assert.equal(getCategoryColor('Mint Chocolate'), '#00bfa5');
   assert.equal(getCategoryColor('Food'), '#d84315');
+});
+
+test('chip colors meet WCAG 4.5:1 in their actual rendering contexts', () => {
+  // 「不透明色 vs 白」だけの検証では、モーダルの旧半透明グラデ末端や
+  // カードの薄底で3.6〜4.0台に割れる問題を検出できなかった（Codex指摘）。
+  // モーダル=単色ベタ塗り+白文字 / カード・リスト=薄底(color20)+補正文字色、
+  // の実描画条件で全代表色を検証する。
+  for (const base of LIVE_BASE_COLORS) {
+    // モーダル: ensureContrastForWhiteText の出力が白文字と4.5+（背景は単色化済み）
+    const modalBg = ensureContrastForWhiteText(base);
+    const modalRatio = contrast(1.0, relLum(hexToRgb(modalBg)));
+    assert.ok(
+      modalRatio >= 4.5,
+      `modal chip ${base}→${modalBg}: ${modalRatio.toFixed(2)} < 4.5`,
+    );
+
+    // カード/リスト: 文字色が「color20を白へ合成した実背景」と4.5+
+    const badgeText = ensureContrastOnTintedWhite(base);
+    const badgeRatio = contrast(relLum(hexToRgb(badgeText)), relLum(tint20(base)));
+    assert.ok(
+      badgeRatio >= 4.5,
+      `badge text ${base}→${badgeText}: ${badgeRatio.toFixed(2)} < 4.5 on tinted bg`,
+    );
+  }
 });
 
 test('prototype property names as categories fall back to hash colors without throwing', () => {

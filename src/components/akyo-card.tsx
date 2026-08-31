@@ -2,7 +2,7 @@
 
 import { IconDownload, IconHeart, IconHeartOutline, IconVRChat } from "@/components/icons";
 import {
-  ensureContrastOnWhite,
+  ensureContrastOnTintedWhite,
   getCategoryColor,
   parseAndSortCategories,
 } from "@/lib/akyo-data-helpers";
@@ -328,7 +328,7 @@ function AkyoCardComponent({
                   className="attribute-badge text-xs"
                   style={{
                     background: `${color}20`,
-                    color: ensureContrastOnWhite(color),
+                    color: ensureContrastOnTintedWhite(color),
                     boxShadow: `0 6px 12px ${color}20`,
                   }}
                 >
