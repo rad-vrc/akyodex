@@ -435,8 +435,9 @@ select:focus {
 /* モバイルでは transform 拡大でなく実寸で大きくする。
    旧 max-sm:scale-[1.2] はレイアウト幅を変えずに描画だけ膨らませるため、
    端末のフォント環境によってカード端からはみ出しかけていた。
-   実寸(文字0.875rem+パディング増)ならレイアウトが幅を知覚でき、はみ出さない */
-@media (max-width: 640px) {
+   実寸(文字0.875rem+パディング増)ならレイアウトが幅を知覚でき、はみ出さない。
+   639.98pxはTailwindのmax-sm(<640px)と同じ排他境界（640px=PC側でscale-90と揃える） */
+@media (max-width: 639.98px) {
   .reference-sheet-button {
     padding: 0.375rem 0.75rem !important;
     font-size: 0.875rem !important;

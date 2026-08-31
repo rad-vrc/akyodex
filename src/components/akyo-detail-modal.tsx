@@ -809,9 +809,13 @@ export function AkyoDetailModal({
                     {localAkyo.isFavorite
                       ? <IconHeart size="w-4 h-4" className="shrink-0" />
                       : <IconHeartOutline size="w-4 h-4" className="shrink-0" />}
-                    {localAkyo.isFavorite
-                      ? t('modal.favorite.remove', lang)
-                      : t('modal.favorite.add', lang)}
+                    {/* 明示spanでmin-w-0: 匿名flex itemのままだとmin-content幅が
+                        縮まず、200%文字拡大時に長い英語ラベルがはみ出す(WCAG 1.4.4) */}
+                    <span className="min-w-0 text-center [overflow-wrap:anywhere]">
+                      {localAkyo.isFavorite
+                        ? t('modal.favorite.remove', lang)
+                        : t('modal.favorite.add', lang)}
+                    </span>
                   </button>
 
                   {/* VRChat Button - Orange Gradient (not purple!) */}
@@ -827,7 +831,9 @@ export function AkyoDetailModal({
                       aria-label={t('modal.vrchatOpen', lang)}
                     >
                       <IconExternalLink size="w-4 h-4" className="shrink-0" />
-                      {t('modal.vrchatOpen', lang)}
+                      <span className="min-w-0 text-center [overflow-wrap:anywhere]">
+                        {t('modal.vrchatOpen', lang)}
+                      </span>
                     </button>
                   )}
                 </div>

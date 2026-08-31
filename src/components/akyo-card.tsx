@@ -264,7 +264,7 @@ function AkyoCardComponent({
               aria-label={t("card.download", lang)}
             >
               <IconDownload size="w-4 h-4" />
-              <span className="text-xs">{t("card.downloadLabel", lang)}</span>
+              <span className="text-xs max-sm:text-sm">{t("card.downloadLabel", lang)}</span>
             </button>
           )}
         </div>
