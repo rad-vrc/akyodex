@@ -932,17 +932,27 @@ export function ZukanClient({
             ) : null}
           </div>
 
-          {/* 並び替え系はモバイルでフィルタが初期クローズでも使えるよう折りたたみ外に常時表示 */}
-          <SortControls
-            onSortToggle={handleSortToggle}
-            onRandomClick={handleRandomClick}
-            onFavoritesClick={handleFavoritesClick}
-            favoritesOnly={favoritesOnly}
-            sortAscending={sortAscending}
-            randomMode={randomMode}
-            lang={lang}
-            disabled={catalogControlsDisabled}
-          />
+          {/* 並び替え系はフィルタ閉時のみトグル直下に表示（モバイルの即アクセス用）。
+              開時は従来どおりパネル下(下の同要素)に出す。SSR分岐はパネルと同じ
+              CSSメディア境界でCLSを防ぐ */}
+          <div
+            className={
+              isMobile === undefined
+                ? "md:hidden"
+                : resolvedIsFilterPanelOpen ? "hidden" : "block"
+            }
+          >
+            <SortControls
+              onSortToggle={handleSortToggle}
+              onRandomClick={handleRandomClick}
+              onFavoritesClick={handleFavoritesClick}
+              favoritesOnly={favoritesOnly}
+              sortAscending={sortAscending}
+              randomMode={randomMode}
+              lang={lang}
+              disabled={catalogControlsDisabled}
+            />
+          </div>
 
           <div
             id="zukan-filter-panel"
@@ -986,6 +996,26 @@ export function ZukanClient({
                 />
               </fieldset>
             )}
+          </div>
+
+          {/* フィルタ開時の並び替え系（従来の公開版と同じ、絞り込みの下） */}
+          <div
+            className={
+              isMobile === undefined
+                ? "hidden md:block"
+                : resolvedIsFilterPanelOpen ? "block" : "hidden"
+            }
+          >
+            <SortControls
+              onSortToggle={handleSortToggle}
+              onRandomClick={handleRandomClick}
+              onFavoritesClick={handleFavoritesClick}
+              favoritesOnly={favoritesOnly}
+              sortAscending={sortAscending}
+              randomMode={randomMode}
+              lang={lang}
+              disabled={catalogControlsDisabled}
+            />
           </div>
 
           {/* ビュー切替 & エントリ種別フィルター */}
