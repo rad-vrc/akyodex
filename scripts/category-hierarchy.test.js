@@ -68,6 +68,111 @@ function assertAncestors(categories, category) {
   }
 }
 
+const adoptedHierarchyExpectations = {
+  ja: [
+    ['菌類', '自然/菌類', 5],
+    ['骨', '器官/骨', 2],
+    ['四足歩行', '技能・特性/四足歩行', 14],
+    ['合体・変身', '技能・特性/合体・変身', 7],
+    ['頭脳明晰', '技能・特性/頭脳明晰', 1],
+    ['高身長', '体型/高身長', 1],
+    ['睡眠', '状態/睡眠', 5],
+    ['死', '状態/死', 4],
+    ['復活', '状態/復活', 2],
+    ['囚われの身', '状態/囚われの身', 4],
+    ['ばんそうこう', '道具・文房具・生活用品/ばんそうこう', 1],
+  ],
+  en: [
+    ['Fungus', 'Nature/Fungus', 5],
+    ['Bone', 'Body Part/Bone', 2],
+    ['Quadruped', 'Skill・Trait/Quadruped', 14],
+    ['Transformation', 'Skill・Trait/Transformation', 7],
+    ['Intelligent', 'Skill・Trait/Intelligent', 1],
+    ['Tall', 'Body Type/Tall', 0],
+    ['Sleep', 'Condition/Sleep', 5],
+    ['Death', 'Condition/Death', 4],
+    ['Revival', 'Condition/Revival', 2],
+    ['Captive', 'Condition/Captive', 3],
+    ['Bandage', 'Daily Necessities/Bandage', 1],
+  ],
+  ko: [
+    ['균류', '자연/균류', 5],
+    ['뼈', '기관/뼈', 2],
+    ['네발걸음', '기능・특성/네발걸음', 14],
+    ['합체・변신', '기능・특성/합체・변신', 7],
+    ['명석한 두뇌', '기능・특성/명석한 두뇌', 1],
+    ['장신', '체형/장신', 0],
+    ['수면', '상태/수면', 5],
+    ['죽음', '상태/죽음', 4],
+    ['부활', '상태/부활', 2],
+    ['갇힌 몸', '상태/갇힌 몸', 3],
+    ['반창고', '도구・문구・생활용품/반창고', 1],
+  ],
+};
+
+const vectorizeHierarchyCounts = new Map([
+  ['自然/菌類', 3],
+  ['器官/骨', 1],
+  ['技能・特性/四足歩行', 0],
+  ['技能・特性/合体・変身', 0],
+  ['技能・特性/頭脳明晰', 0],
+  ['体型/高身長', 0],
+  ['状態/睡眠', 0],
+  ['状態/死', 1],
+  ['状態/復活', 0],
+  ['状態/囚われの身', 0],
+  ['道具・文房具・生活用品/ばんそうこう', 0],
+]);
+
+test('places the adopted isolated categories under their approved parents', () => {
+  for (const [language, expectations] of Object.entries(
+    adoptedHierarchyExpectations,
+  )) {
+    const rows = readCategoryRows(language);
+
+    for (const [legacyCategory, hierarchicalCategory, expectedCount] of expectations) {
+      let actualCount = 0;
+
+      for (const row of rows) {
+        const categories = splitCategories(row.Category);
+        assert.ok(
+          !categories.includes(legacyCategory),
+          `${language} ID ${row.ID} still uses isolated category ${legacyCategory}`,
+        );
+
+        if (categories.includes(hierarchicalCategory)) {
+          actualCount += 1;
+          assertAncestors(categories, hierarchicalCategory);
+        }
+      }
+
+      assert.equal(
+        actualCount,
+        expectedCount,
+        `${language} should include ${expectedCount} records in ${hierarchicalCategory}`,
+      );
+    }
+  }
+});
+
+test('keeps the explicitly rejected categories at the root level', () => {
+  const rows = readCategoryRows('ja');
+  for (const category of [
+    '飲み物',
+    '調味料',
+    '病気・ウイルス',
+    '頂に立つ者',
+    '最強戦士',
+    '正体不明のUMAkyo',
+    '惑星',
+  ]) {
+    assert.ok(
+      rows.some((row) => splitCategories(row.Category).includes(category)),
+      `${category} should remain a root category`,
+    );
+  }
+});
+
 test('uses the Nature hierarchy for plant categories in every language', () => {
   const expectations = {
     ja: {
@@ -130,6 +235,33 @@ test('defines canonical English and Korean translations for the new hierarchy', 
   const englishMap = require('./category-ja-en-map');
   const { CATEGORY_MAP: koreanMap } = require('./category-definitions-ko');
 
+  const hierarchyTranslations = [
+    ['自然/菌類', 'Nature/Fungus', '자연/균류'],
+    ['器官/骨', 'Body Part/Bone', '기관/뼈'],
+    ['技能・特性/四足歩行', 'Skill・Trait/Quadruped', '기능・특성/네발걸음'],
+    [
+      '技能・特性/合体・変身',
+      'Skill・Trait/Transformation',
+      '기능・특성/합체・변신',
+    ],
+    ['技能・特性/頭脳明晰', 'Skill・Trait/Intelligent', '기능・특성/명석한 두뇌'],
+    ['体型/高身長', 'Body Type/Tall', '체형/장신'],
+    ['状態/睡眠', 'Condition/Sleep', '상태/수면'],
+    ['状態/死', 'Condition/Death', '상태/죽음'],
+    ['状態/復活', 'Condition/Revival', '상태/부활'],
+    ['状態/囚われの身', 'Condition/Captive', '상태/갇힌 몸'],
+    [
+      '道具・文房具・生活用品/ばんそうこう',
+      'Daily Necessities/Bandage',
+      '도구・문구・생활용품/반창고',
+    ],
+  ];
+
+  for (const [japanese, english, korean] of hierarchyTranslations) {
+    assert.equal(englishMap[japanese], english);
+    assert.equal(koreanMap[japanese], korean);
+  }
+
   assert.equal(englishMap['自然'], 'Nature');
   assert.equal(englishMap['自然/岩石'], 'Nature/Rock');
   assert.equal(englishMap['自然/植物'], 'Nature/Plant');
@@ -177,6 +309,9 @@ test('keeps the Vectorize payload on the canonical Japanese hierarchy', () => {
     fs.readFileSync(path.join(rootDir, 'data', 'vectorize-payload.json'), 'utf8'),
   );
   let plantRecords = 0;
+  const adoptedCounts = new Map(
+    adoptedHierarchyExpectations.ja.map(([, category]) => [category, 0]),
+  );
 
   for (const record of records) {
     const categories = splitCategories(record.category);
@@ -198,12 +333,33 @@ test('keeps the Vectorize payload on the canonical Japanese hierarchy', () => {
     )) {
       assertAncestors(categories, category);
     }
+    for (const [legacyCategory, hierarchicalCategory] of
+      adoptedHierarchyExpectations.ja) {
+      assert.ok(
+        !categories.includes(legacyCategory),
+        `Vectorize ID ${record.id} still uses ${legacyCategory}`,
+      );
+      if (categories.includes(hierarchicalCategory)) {
+        adoptedCounts.set(
+          hierarchicalCategory,
+          adoptedCounts.get(hierarchicalCategory) + 1,
+        );
+      }
+    }
     if (categories.includes('自然/植物')) {
       plantRecords += 1;
     }
   }
 
   assert.ok(plantRecords > 0, 'Vectorize should include plant records under Nature');
+  for (const [, hierarchicalCategory] of
+    adoptedHierarchyExpectations.ja) {
+    assert.equal(
+      adoptedCounts.get(hierarchicalCategory),
+      vectorizeHierarchyCounts.get(hierarchicalCategory),
+      `Vectorize has an unexpected count for ${hierarchicalCategory}`,
+    );
+  }
 });
 
 test('automatic category processors emit the complete Nature plant hierarchy', () => {
