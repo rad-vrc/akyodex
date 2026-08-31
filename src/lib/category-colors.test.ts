@@ -56,6 +56,15 @@ test('Booth uses the WCAG-safe semi-bright red without triggering darkening', ()
   assert.equal(ensureContrastForWhiteText(getCategoryColor('Booth')), '#d63d43');
 });
 
+test('Animal uses the WCAG-safe warm red without triggering darkening', () => {
+  // Boothと同じ設計。旧#ff6f61は補正で#eb1500(信号赤)化していた。
+  assert.equal(getCategoryColor('動物'), '#d44335');
+  assert.equal(getCategoryColor('動物/きつね'), '#d44335');
+  assert.equal(getCategoryColor('Animal'), '#d44335');
+  assert.equal(getCategoryColor('동물'), '#d44335');
+  assert.equal(ensureContrastForWhiteText(getCategoryColor('動物')), '#d44335');
+});
+
 test('formerly purple semantic colors use established non-purple colors', () => {
   assert.equal(getCategoryColor('おばけ'), '#607d8b');
   assert.equal(getCategoryColor('ドラゴン'), '#d32f2f');
