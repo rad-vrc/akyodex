@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  IconDice,
-  IconHeart,
-  IconSortAsc,
-  IconSortDesc,
-  IconSparkles,
-  IconTag,
-  IconUser,
-} from '@/components/icons';
+import { IconSparkles, IconTag, IconUser } from '@/components/icons';
 import { t, type SupportedLanguage } from '@/lib/i18n';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -35,12 +27,6 @@ interface FilterPanelProps {
   onCreatorsChange?: (creators: string[]) => void;
   onCreatorChange?: (creator: string) => void;
 
-  onSortToggle: () => void;
-  onRandomClick: () => void;
-  onFavoritesClick: () => void;
-  favoritesOnly: boolean;
-  sortAscending: boolean;
-  randomMode: boolean;
   lang?: SupportedLanguage;
   disabled?: boolean;
 }
@@ -60,12 +46,6 @@ export function FilterPanel({
   onAttributeChange,
   onCreatorsChange,
   onCreatorChange,
-  onSortToggle,
-  onRandomClick,
-  onFavoritesClick,
-  favoritesOnly,
-  sortAscending,
-  randomMode,
   lang = 'ja',
   disabled = false,
 }: FilterPanelProps) {
@@ -278,7 +258,9 @@ export function FilterPanel({
     >
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-3">
         <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* min-h-[2.125rem](=34px、OR/ANDトグルのp-1+py-1+text-xs+border2pxの実高): 両ヘッダー行の
+              高さを揃える。無指定だと作者側の行が低くなりラベル・検索ボックスの縦位置がずれる */}
+          <div className="flex flex-wrap items-center justify-between gap-2 min-h-[2.125rem]">
             <div className="font-bold text-orange-600 flex items-center gap-2">
               <IconSparkles size="w-4 h-4" />
               {t('filter.category', lang)}
@@ -426,7 +408,7 @@ export function FilterPanel({
         </section>
 
         <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 min-h-[2.125rem]">
             <div className="font-bold text-blue-600/80 flex items-center gap-2">
               <IconUser size="w-4 h-4" />
               {t('filter.author', lang)}
@@ -519,51 +501,6 @@ export function FilterPanel({
             )}
           </div>
         </section>
-      </div>
-
-      <div className="flex flex-wrap gap-2 items-center">
-        <button
-          type="button"
-          onClick={onSortToggle}
-          aria-pressed={sortAscending}
-          aria-label={t('filter.sortToggle', lang)}
-          className={`attribute-badge quick-filter-badge transition-colors ${
-            sortAscending
-              ? 'bg-green-200 text-green-800 hover:bg-green-300'
-              : 'bg-blue-200 text-blue-800 hover:bg-blue-300'
-          }`}
-        >
-          {sortAscending ? <IconSortAsc size="w-4 h-4" /> : <IconSortDesc size="w-4 h-4" />}{' '}
-          {sortAscending ? t('filter.ascending', lang) : t('filter.descending', lang)}
-        </button>
-
-        <button
-          type="button"
-          onClick={onRandomClick}
-          aria-pressed={randomMode}
-          aria-label={t('filter.randomToggle', lang)}
-          className={`attribute-badge quick-filter-badge transition-colors ${
-            randomMode
-              ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <IconDice size="w-4 h-4" /> {t('filter.random', lang)}
-        </button>
-
-        <button
-          type="button"
-          onClick={onFavoritesClick}
-          aria-pressed={favoritesOnly}
-          aria-label={t('filter.favoritesToggle', lang)}
-          className={`attribute-badge quick-filter-badge transition-colors ${
-            favoritesOnly
-              ? 'bg-pink-200 text-pink-800 hover:bg-pink-300'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <IconHeart size="w-4 h-4" /> {t('filter.favorites', lang)}
-        </button>
       </div>
     </fieldset>
   );

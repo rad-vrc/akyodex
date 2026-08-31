@@ -20,9 +20,11 @@ import {
   IconCog,
   IconGlobe,
   IconGrid,
+  IconHeart,
   IconList,
   IconShoppingBag,
 } from "@/components/icons";
+import { SortControls } from "@/components/sort-controls";
 import { LanguageToggle } from "@/components/language-toggle";
 import { SearchBar } from "@/components/search-bar";
 import {
@@ -816,7 +818,14 @@ export function ZukanClient({
             <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.favoritesLabel", lang)}：</dt>
               <dd className="min-w-[5ch] text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap flex items-center gap-1">
-                <span aria-hidden="true">❤️</span>
+                {/* OSの絵文字ハートは3D調で浮くため、白塗りのフラットなSVGに統一。
+                    サイズは1em(フォント連動)、translate-y-0.05emは数字グリフの
+                    インク中心とハート中心を一致させる視覚補正（フォントメトリクス実測値） */}
+                <IconHeart
+                  size="w-[1em] h-[1em]"
+                  className="inline-block shrink-0 translate-y-[0.05em]"
+                  aria-hidden="true"
+                />
                 {isCurrentDatasetComplete ? (
                   stats.favorites
                 ) : (
@@ -923,6 +932,28 @@ export function ZukanClient({
             ) : null}
           </div>
 
+          {/* 並び替え系はフィルタ閉時のみトグル直下に表示（モバイルの即アクセス用）。
+              開時は従来どおりパネル下(下の同要素)に出す。SSR分岐はパネルと同じ
+              CSSメディア境界でCLSを防ぐ */}
+          <div
+            className={
+              isMobile === undefined
+                ? "md:hidden"
+                : resolvedIsFilterPanelOpen ? "hidden" : "block"
+            }
+          >
+            <SortControls
+              onSortToggle={handleSortToggle}
+              onRandomClick={handleRandomClick}
+              onFavoritesClick={handleFavoritesClick}
+              favoritesOnly={favoritesOnly}
+              sortAscending={sortAscending}
+              randomMode={randomMode}
+              lang={lang}
+              disabled={catalogControlsDisabled}
+            />
+          </div>
+
           <div
             id="zukan-filter-panel"
             className={
@@ -949,12 +980,6 @@ export function ZukanClient({
                 onCreatorChange={(creator) =>
                   setSelectedCreators(creator ? [creator] : [])
                 }
-                onSortToggle={handleSortToggle}
-                onRandomClick={handleRandomClick}
-                onFavoritesClick={handleFavoritesClick}
-                favoritesOnly={favoritesOnly}
-                sortAscending={sortAscending}
-                randomMode={randomMode}
                 lang={lang}
                 disabled={catalogControlsDisabled}
               />
@@ -971,6 +996,26 @@ export function ZukanClient({
                 />
               </fieldset>
             )}
+          </div>
+
+          {/* フィルタ開時の並び替え系（従来の公開版と同じ、絞り込みの下） */}
+          <div
+            className={
+              isMobile === undefined
+                ? "hidden md:block"
+                : resolvedIsFilterPanelOpen ? "block" : "hidden"
+            }
+          >
+            <SortControls
+              onSortToggle={handleSortToggle}
+              onRandomClick={handleRandomClick}
+              onFavoritesClick={handleFavoritesClick}
+              favoritesOnly={favoritesOnly}
+              sortAscending={sortAscending}
+              randomMode={randomMode}
+              lang={lang}
+              disabled={catalogControlsDisabled}
+            />
           </div>
 
           {/* ビュー切替 & エントリ種別フィルター */}
