@@ -172,9 +172,22 @@ jobs:
               # Accessのサインイン要求はリトライしても解消しないので即時失敗させる
               if grep -qi 'cloudflareaccess\.com' "${headers_file}" 2>/dev/null; then
                 echo "::error::${path} was blocked by Cloudflare Access (HTTP ${status})."
-                echo "Preview Access is enabled on the Pages project, so CI must authenticate with an Access service token."
-                echo "Create one in Zero Trust > Access controls > Service auth, include it in the preview Access policy,"
-                echo "then set the CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET repository secrets."
+                # リダイレクトURLのmetaクレーム（機密でない診断情報）を復号し、
+                # トークン自体が認識されなかったのか、認識された上で認可されなかったのかを切り分ける
+                node -e '
+                  const fs = require("node:fs");
+                  const headers = fs.readFileSync(process.argv[1], "utf8");
+                  const line = headers.match(/^location:.*$/im);
+                  if (!line) { console.log("Access meta: no Location header"); process.exit(0); }
+                  const meta = new URL(line[0].replace(/^location:\s*/i, "").trim()).searchParams.get("meta");
+                  if (!meta) { console.log("Access meta: absent"); process.exit(0); }
+                  const claims = JSON.parse(Buffer.from(meta.split(".")[1], "base64url").toString());
+                  console.log("Access meta: auth_status=" + claims.auth_status +
+                    " service_token_status=" + claims.service_token_status +
+                    " service_token_id=" + (claims.service_token_id || "-"));
+                ' "${headers_file}" || true
+                echo "service_token_status=false  -> Access did not recognize the credentials (wrong or revoked token)."
+                echo "service_token_status=true   -> token recognized but not authorized; check the Service Auth policy binds THIS token."
                 exit 1
               fi
               echo "${path} returned HTTP ${status}."
