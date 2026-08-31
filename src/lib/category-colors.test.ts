@@ -18,6 +18,36 @@ test('fallback category colors avoid purple and yellow hues', () => {
   );
 });
 
+test('translated categories resolve to the same color as their Japanese counterpart', () => {
+  // EN/KOはビルド時生成の対訳辞書(category-canonical.json)でJA名へ正規化される。
+  // これが無いとハッシュフォールバックが言語ごとに別色へ散る。
+  const trios: Array<[string, string, string]> = [
+    ['動物', 'Animal', '동물'],
+    ['パロディ', 'Parody', '패러디'],
+    ['チョコミント類', 'Mint Chocolate', '초코민트류'],
+    ['食べ物', 'Food', '음식'],
+    ['ワールド', 'World', '월드'],
+  ];
+  for (const [jaName, enName, koName] of trios) {
+    const jaColor = getCategoryColor(jaName);
+    assert.equal(getCategoryColor(enName), jaColor, `${enName} != ${jaName}`);
+    assert.equal(getCategoryColor(koName), jaColor, `${koName} != ${jaName}`);
+  }
+  // マップ命中系はマップ色そのものになる
+  assert.equal(getCategoryColor('Mint Chocolate'), '#00bfa5');
+  assert.equal(getCategoryColor('Food'), '#d84315');
+});
+
+test('prototype property names as categories fall back to hash colors without throwing', () => {
+  // 素の添字参照だとObject.prototype上の関数が返りincludesで例外になる回帰の防止。
+  // カテゴリは管理画面から自由に追加できるため、この名前群でも描画を壊さないこと。
+  const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#d63d43', '#1a73cc'];
+  for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    const color = getCategoryColor(name);
+    assert.ok(DEFAULT_COLORS.includes(color), `${name} → ${color} はフォールバック色であるべき`);
+  }
+});
+
 test('Booth uses the WCAG-safe semi-bright red without triggering darkening', () => {
   // 白文字4.5:1を最初から満たす色を登録し、コントラスト補正(彩度維持の暗色化で
   // #ee0408級の信号赤になる)を発動させないことがこの色選定の要点。

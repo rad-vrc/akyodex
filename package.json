@@ -39,7 +39,8 @@
     "generate-ko-data": "node scripts/generate-ko-data.js",
     "push:check-pr": "node scripts/push-and-check-pr-conflicts.js",
     "hooks:install": "git config --local core.hooksPath .githooks",
-    "fonts:subset": "node scripts/generate-font-subsets.mjs"
+    "fonts:subset": "node scripts/generate-font-subsets.mjs",
+    "categories:canonical": "node scripts/generate-category-canonical.mjs"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "1.20.3",
