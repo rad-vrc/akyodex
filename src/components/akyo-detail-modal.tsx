@@ -122,11 +122,6 @@ export function AkyoDetailModal({
   // 三面図（PNG）優先、WebPフォールバック用の状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
-  // 三面図背景の比較試行（C-4ウォーム vs C-5方眼）: ?frame=grid で方眼に切替。
-  // オーナー決定後にどちらかへ固定してこのフラグは削除する。
-  const useGridFrame =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('frame') === 'grid';
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
 
@@ -572,22 +567,16 @@ export function AkyoDetailModal({
                 {/* Image Section with Zoom & Drag */}
                 <div className="relative">
                   <div
-                    className={`h-64 overflow-hidden rounded-3xl p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${useGridFrame
-                      ? 'bg-white focus-visible:ring-slate-400'
-                      : 'bg-gradient-to-br from-orange-50 to-rose-50 focus-visible:ring-rose-300'
-                      } ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                    className={`h-64 overflow-hidden rounded-3xl bg-white p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-400 focus-visible:ring-offset-2 ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
                       }`}
                     style={{
                       touchAction: isZoomed ? 'none' : 'auto',
-                      // C-5方眼: 白地に極薄グリッド（枠線はレイアウトを変えないinset影で）
-                      ...(useGridFrame
-                        ? {
-                          backgroundImage:
-                            'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
-                          backgroundSize: '22px 22px',
-                          boxShadow: 'inset 0 0 0 1px #e2e8f0',
-                        }
-                        : {}),
+                      // 三面図の背景は方眼紙（白地+極薄グリッド）。「三面図=設計資料」の
+                      // メタファーで、枠線はレイアウトを変えないinset影で描く
+                      backgroundImage:
+                        'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
+                      backgroundSize: '22px 22px',
+                      boxShadow: 'inset 0 0 0 1px #e2e8f0',
                     }}
                     role="button"
                     tabIndex={0}
@@ -632,21 +621,16 @@ export function AkyoDetailModal({
                     </div>
                   </div>
 
-                  {/* Zoom/Drag Hint */}
+                  {/* Zoom/Drag Hint — 三面図と重ならないよう右上（旧キラキラ位置）に表示 */}
                   {!isZoomed ? (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
+                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
                       {t('modal.zoomHint', lang)}
                     </div>
                   ) : (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
+                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
                       {t('modal.dragHint', lang)}
                     </div>
                   )}
-
-                  {/* Sparkle Effect */}
-                  <div className="absolute -top-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center animate-bounce">
-                    <span className="text-2xl" aria-hidden="true">✨</span>
-                  </div>
                 </div>
 
                 {/* Info Grid */}
