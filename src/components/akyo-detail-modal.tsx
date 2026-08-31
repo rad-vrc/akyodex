@@ -512,7 +512,7 @@ export function AkyoDetailModal({
               ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.16)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.22)]"
+              className="group absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.16)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.22)]"
               aria-label={t('modal.close', lang)}
             >
               <svg
@@ -520,7 +520,7 @@ export function AkyoDetailModal({
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                className="transition-transform duration-300 hover:rotate-90"
+                className="transition-transform duration-300 group-hover:rotate-90"
               >
                 <path
                   d="M18 6L6 18M6 6L18 18"
