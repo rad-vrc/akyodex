@@ -256,11 +256,14 @@ export function detectVrcEntryTypeFromUrl(url: string): AkyoEntryType | null {
       (parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:") &&
       normalizedHost === "vrchat.com"
     ) {
-      if (/^\/home\/avatar\/avtr_[a-z0-9-]{1,64}\/?$/i.test(normalizedPath)) {
+      // 末尾のタブサフィックスを許容する。VRChat公式サイトの詳細ページは
+      // タブUIで、アドレスバーからコピーすると /info 等が付いてくる
+      // （例: /home/world/wrld_xxx/info）。IDは別途厳格パターンで抽出する。
+      if (/^\/home\/avatar\/avtr_[a-z0-9-]{1,64}(?:\/[a-z0-9-]*)*\/?$/i.test(normalizedPath)) {
         return "avatar";
       }
 
-      if (/^\/home\/world\/wrld_[a-z0-9-]{1,64}\/?$/i.test(normalizedPath)) {
+      if (/^\/home\/world\/wrld_[a-z0-9-]{1,64}(?:\/[a-z0-9-]*)*\/?$/i.test(normalizedPath)) {
         return "world";
       }
     }

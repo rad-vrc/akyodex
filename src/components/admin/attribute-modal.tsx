@@ -221,7 +221,7 @@ export function AttributeModal({
 
             {/* Attribute List */}
             <div className="border border-gray-200 rounded-2xl">
-              <div className="max-h-72 overflow-y-auto pr-1">
+              <div className="max-h-[25rem] overflow-y-auto pr-1">
                 <div className={gridColumnClass}>
                   {filteredAttributes.map((attr) => {
                     const isSelected = selectedAttributes.includes(attr);

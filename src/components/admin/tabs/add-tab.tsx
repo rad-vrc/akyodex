@@ -1110,7 +1110,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           )}
 
           <p className="text-xs text-gray-500 mt-3">
-            登録すると画像も公開環境へ自動でアップロードされ、図鑑でもすぐ表示されます。
+            登録すると画像も公開環境へ自動でアップロードされ、図鑑でも数分後に表示されます。
           </p>
         </div>
 
