@@ -136,6 +136,19 @@ jobs:
           max_attempts=12
           retry_seconds=5
 
+          # サービストークンがRunnerへ届いているかを検査する（値は出さず長さと形式のみ）。
+          # Client IDは "<32桁hex>.access"、Client Secretは64桁hexまたは cfast_ 形式。
+          id_len="${#CF_ACCESS_CLIENT_ID}"
+          secret_len="${#CF_ACCESS_CLIENT_SECRET}"
+          id_suffix="no"
+          case "${CF_ACCESS_CLIENT_ID}" in *.access) id_suffix="yes" ;; esac
+          echo "Access service token: client_id=${id_len} chars (ends with .access: ${id_suffix}), client_secret=${secret_len} chars"
+          if [ "${id_len}" -eq 0 ] || [ "${secret_len}" -eq 0 ]; then
+            echo "::error::Access service token secrets are empty on the runner."
+            echo "Set the CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET repository secrets."
+            exit 1
+          fi
+
           verify_response() {
             local path="$1"
             local accept="$2"
