@@ -167,8 +167,12 @@ export function getCategoryColor(category: string): string {
   // EN/KOのカテゴリ名をJA正規名へ変換してから色を決める。これをしないと
   // ハッシュフォールバックが言語ごとに別の色へ散り、同じAkyoのカテゴリが
   // 言語によって違う色になる（対訳辞書はデータ同期で自動再生成される）。
-  const topLevelCategory =
-    (categoryCanonical as Record<string, string>)[rawTopLevel] ?? rawTopLevel;
+  // Object.hasOwn必須: 素の添字参照だと "constructor" や "toString" という
+  // カテゴリ名でprototype上の関数が返り、後段のincludesで例外になる。
+  const canonicalName = Object.hasOwn(categoryCanonical, rawTopLevel)
+    ? (categoryCanonical as Record<string, string>)[rawTopLevel]
+    : undefined;
+  const topLevelCategory = canonicalName ?? rawTopLevel;
 
   for (const [key, color] of Object.entries(CATEGORY_COLOR_MAP)) {
     if (topLevelCategory.includes(key)) {

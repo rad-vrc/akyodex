@@ -38,6 +38,16 @@ test('translated categories resolve to the same color as their Japanese counterp
   assert.equal(getCategoryColor('Food'), '#d84315');
 });
 
+test('prototype property names as categories fall back to hash colors without throwing', () => {
+  // 素の添字参照だとObject.prototype上の関数が返りincludesで例外になる回帰の防止。
+  // カテゴリは管理画面から自由に追加できるため、この名前群でも描画を壊さないこと。
+  const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#d63d43', '#1a73cc'];
+  for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
+    const color = getCategoryColor(name);
+    assert.ok(DEFAULT_COLORS.includes(color), `${name} → ${color} はフォールバック色であるべき`);
+  }
+});
+
 test('Booth uses the WCAG-safe semi-bright red without triggering darkening', () => {
   // 白文字4.5:1を最初から満たす色を登録し、コントラスト補正(彩度維持の暗色化で
   // #ee0408級の信号赤になる)を発動させないことがこの色選定の要点。

@@ -52,14 +52,17 @@ async function main() {
   }
 
   // 多数決で正規名を確定（翻訳ゆれ: 例 EN"Animal" が「貝」の行にも現れる → 最多の「動物」へ）
-  const canonical = {};
+  // Mapで保持: 素のオブジェクトへの代入だと "__proto__" というカテゴリ名が
+  // 辞書エントリにならずprototype操作になる。Object.fromEntriesは
+  // CreateDataPropertyで定義するため__proto__キーも安全に通常プロパティになる。
+  const canonical = new Map();
   for (const [foreign, v] of votes) {
     const [winner] = [...v.entries()].sort((a, b) => b[1] - a[1])[0];
-    canonical[foreign] = winner;
+    canonical.set(foreign, winner);
   }
 
   const sorted = Object.fromEntries(
-    Object.entries(canonical).sort(([a], [b]) => a.localeCompare(b)),
+    [...canonical.entries()].sort(([a], [b]) => a.localeCompare(b)),
   );
   await writeFile(outPath, JSON.stringify(sorted, null, 2) + "\n");
   console.log(`category-canonical.json: ${Object.keys(sorted).length} entries`);
