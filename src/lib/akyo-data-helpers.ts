@@ -7,6 +7,7 @@
  * to avoid code duplication.
  */
 
+import categoryCanonical from '@/lib/category-canonical.json';
 import type { AkyoData } from '@/types/akyo';
 /**
  * Delimiter pattern for splitting multi-value strings in CSV (comma or Japanese ideographic comma)
@@ -162,7 +163,12 @@ function hashString(str: string): number {
  * @returns HEX カラーコード
  */
 export function getCategoryColor(category: string): string {
-  const topLevelCategory = (category || '').split('/', 1)[0].trim();
+  const rawTopLevel = (category || '').split('/', 1)[0].trim();
+  // EN/KOのカテゴリ名をJA正規名へ変換してから色を決める。これをしないと
+  // ハッシュフォールバックが言語ごとに別の色へ散り、同じAkyoのカテゴリが
+  // 言語によって違う色になる（対訳辞書はデータ同期で自動再生成される）。
+  const topLevelCategory =
+    (categoryCanonical as Record<string, string>)[rawTopLevel] ?? rawTopLevel;
 
   for (const [key, color] of Object.entries(CATEGORY_COLOR_MAP)) {
     if (topLevelCategory.includes(key)) {

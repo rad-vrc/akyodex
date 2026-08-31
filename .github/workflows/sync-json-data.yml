@@ -94,6 +94,15 @@ jobs:
             echo "::warning::Font subset regeneration failed; keeping existing subsets"
           fi
 
+      - name: Regenerate category canonical map
+        run: |
+          set -e
+          # カテゴリ色の言語間一致に使うEN/KO→JA対訳辞書をデータから再生成する。
+          # 生成失敗はデータ同期を止めない（未登録カテゴリは従来のハッシュ色になるだけ）。
+          if ! npm run categories:canonical; then
+            echo "::warning::Category canonical map regeneration failed; keeping existing map"
+          fi
+
       - name: Check for JSON changes
         id: json-changes
         run: |
@@ -101,7 +110,7 @@ jobs:
           JSON_JA="data/${{ env.JSON_FILE_JA }}"
           JSON_EN="data/${{ env.JSON_FILE_EN }}"
           JSON_KO="data/${{ env.JSON_FILE_KO }}"
-          if git diff --quiet -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/; then
+          if git diff --quiet -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/ src/lib/category-canonical.json; then
             echo "changed=false" >> $GITHUB_OUTPUT
             echo "No JSON changes detected"
           else
@@ -120,7 +129,7 @@ jobs:
           JSON_KO="data/${{ env.JSON_FILE_KO }}"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/
+          git add -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/ src/lib/category-canonical.json
 
           # Skip commit if nothing staged (idempotent for re-runs)
           if git diff --cached --quiet; then
