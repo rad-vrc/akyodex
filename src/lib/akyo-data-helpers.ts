@@ -288,6 +288,25 @@ function tintedWhiteBackground(hexColor: string): { r: number; g: number; b: num
   };
 }
 
+const tintedBadgeBackgroundCache = new Map<string, string>();
+
+/**
+ * バッジ薄底の背景色を「白へ事前合成した不透明HEX」として返す。
+ *
+ * 旧実装の半透明 `${color}20` は下地に依存して最終色が変わるため、
+ * リスト行ホバー（#f9fafb）等で ensureContrastOnTintedWhite の白合成基準と
+ * ずれ、文字コントラストが4.5:1を割れていた。不透明化すれば下地が
+ * 何色でもバッジの実背景はこの値で固定され、コントラスト保証が崩れない。
+ */
+export function getTintedBadgeBackground(hexColor: string): string {
+  const cached = tintedBadgeBackgroundCache.get(hexColor);
+  if (cached) return cached;
+  const { r, g, b } = tintedWhiteBackground(hexColor);
+  const result = rgbToHex(r, g, b);
+  tintedBadgeBackgroundCache.set(hexColor, result);
+  return result;
+}
+
 /**
  * カード/リストのバッジ（`background: ${color}20` の薄底）上のテキスト色として、
  * WCAG 1.4.3 のコントラスト比を満たす色を返す。

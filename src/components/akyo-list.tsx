@@ -1,7 +1,7 @@
 'use client';
 
 import { IconHeart, IconHeartOutline, IconInfoCircle, IconVRChat } from '@/components/icons';
-import { ensureContrastOnTintedWhite, getCategoryColor, parseAndSortCategories } from '@/lib/akyo-data-helpers';
+import { ensureContrastOnTintedWhite, getCategoryColor, getTintedBadgeBackground, parseAndSortCategories } from '@/lib/akyo-data-helpers';
 import { formatDisplayId, getAkyoSourceUrl, resolveEntryType } from '@/lib/akyo-entry';
 import { generateBlurDataURL } from '@/lib/blur-data-url';
 import { t, type SupportedLanguage } from '@/lib/i18n';
@@ -193,7 +193,7 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                             key={index}
                             className="attribute-badge"
                             style={{
-                              background: `${color}20`,
+                              background: getTintedBadgeBackground(color),
                               color: ensureContrastOnTintedWhite(color),
                               boxShadow: `0 6px 12px ${color}20`,
                             }}

@@ -5,6 +5,7 @@ import {
   ensureContrastForWhiteText,
   ensureContrastOnTintedWhite,
   getCategoryColor,
+  getTintedBadgeBackground,
 } from './akyo-data-helpers';
 
 // --- 実描画条件のコントラスト検証用ヘルパー（WCAG 2.x 定義の再実装） ---
@@ -92,12 +93,26 @@ test('chip colors meet WCAG 4.5:1 in their actual rendering contexts', () => {
       `modal chip ${base}→${modalBg}: ${modalRatio.toFixed(2)} < 4.5`,
     );
 
-    // カード/リスト: 文字色が「color20を白へ合成した実背景」と4.5+
+    // カード/リスト: バッジ背景は白へ事前合成した「不透明HEX」であること。
+    // 半透明のままだとリスト行ホバー(#f9fafb)等の下地で最終色が変わり、
+    // 白合成基準の文字コントラストがホバー中に4.5を割れる（Codex指摘）。
+    const badgeBg = getTintedBadgeBackground(base);
+    assert.match(badgeBg, /^#[0-9a-f]{6}$/, `badge bg ${badgeBg} must be opaque hex`);
+    const expected = tint20(base);
+    const actual = hexToRgb(badgeBg);
+    assert.ok(
+      Math.abs(actual.r - expected.r) <= 1 &&
+        Math.abs(actual.g - expected.g) <= 1 &&
+        Math.abs(actual.b - expected.b) <= 1,
+      `badge bg ${badgeBg} should equal color20-over-white composite`,
+    );
+
+    // 文字色は不透明化された実背景と4.5+（背景が固定なので行ホバーでも不変）
     const badgeText = ensureContrastOnTintedWhite(base);
-    const badgeRatio = contrast(relLum(hexToRgb(badgeText)), relLum(tint20(base)));
+    const badgeRatio = contrast(relLum(hexToRgb(badgeText)), relLum(actual));
     assert.ok(
       badgeRatio >= 4.5,
-      `badge text ${base}→${badgeText}: ${badgeRatio.toFixed(2)} < 4.5 on tinted bg`,
+      `badge text ${base}→${badgeText}: ${badgeRatio.toFixed(2)} < 4.5 on opaque tinted bg`,
     );
   }
 });
