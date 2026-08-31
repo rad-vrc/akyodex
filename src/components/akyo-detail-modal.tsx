@@ -122,13 +122,6 @@ export function AkyoDetailModal({
   // 三面図（PNG）優先、WebPフォールバック用の状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
-  // 方眼マス目サイズの比較試行: ?grid=16|28|36 で切替（無指定は現行22px）。
-  // オーナー決定後にどれかへ固定してこのフラグは削除する。
-  const gridSize = (() => {
-    if (typeof window === 'undefined') return 22;
-    const v = Number(new URLSearchParams(window.location.search).get('grid'));
-    return v === 16 || v === 28 || v === 36 ? v : 22;
-  })();
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
 
@@ -582,7 +575,7 @@ export function AkyoDetailModal({
                       // メタファーで、枠線はレイアウトを変えないinset影で描く
                       backgroundImage:
                         'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
-                      backgroundSize: `${gridSize}px ${gridSize}px`,
+                      backgroundSize: '22px 22px',
                       boxShadow: 'inset 0 0 0 1px #e2e8f0',
                     }}
                     role="button"
