@@ -548,12 +548,15 @@ export function AkyoDetailModal({
                   spanのmin-w-0はflex子のmin-width:autoを打ち消すために必須で、
                   これが無いと320px幅+長タイトルで文字が余白を突き破ってボタンに重なる */}
               <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white pr-12">
+                {/* -translate-y-[3.5px]: profileIcon.webpは絵柄が画像内で下寄り
+                    （インク分布y=55〜304/305px、中心58.9%）のため、配置は中央揃いでも
+                    視覚的に下がって見える。実測分を上へ補正 */}
                 <Image
                   src="/images/profileIcon.webp"
                   alt=""
                   width={40}
                   height={40}
-                  className="w-10 h-10 mr-3 inline-block object-cover rounded-full"
+                  className="w-10 h-10 mr-3 inline-block object-cover rounded-full -translate-y-[3.5px]"
                   unoptimized
                 />
                 <span className="min-w-0 flex-1 break-words">
