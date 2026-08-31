@@ -346,7 +346,7 @@ export const UI_TEXTS = {
     ko: "모든 카테고리",
   },
   "filter.categorySearch": {
-    ja: "カテゴリを検索...",
+    ja: "カテゴリ名を検索...",
     en: "Search categories...",
     ko: "카테고리 검색...",
   },
@@ -386,7 +386,7 @@ export const UI_TEXTS = {
     ko: "작자로 필터",
   },
   "filter.authorSearch": {
-    ja: "作者を検索...",
+    ja: "作者名を検索...",
     en: "Search authors...",
     ko: "작자 검색...",
   },
