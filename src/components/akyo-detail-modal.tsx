@@ -122,6 +122,11 @@ export function AkyoDetailModal({
   // 三面図（PNG）優先、WebPフォールバック用の状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
+  // 三面図背景の比較試行（C-4ウォーム vs C-5方眼）: ?frame=grid で方眼に切替。
+  // オーナー決定後にどちらかへ固定してこのフラグは削除する。
+  const useGridFrame =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('frame') === 'grid';
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
 
@@ -567,9 +572,23 @@ export function AkyoDetailModal({
                 {/* Image Section with Zoom & Drag */}
                 <div className="relative">
                   <div
-                    className={`h-64 overflow-hidden rounded-3xl bg-gradient-to-br from-purple-100 to-blue-100 p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-300 focus-visible:ring-offset-2 ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                    className={`h-64 overflow-hidden rounded-3xl p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 ${useGridFrame
+                      ? 'bg-white focus-visible:ring-slate-400'
+                      : 'bg-gradient-to-br from-orange-50 to-rose-50 focus-visible:ring-rose-300'
+                      } ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
                       }`}
-                    style={{ touchAction: isZoomed ? 'none' : 'auto' }}
+                    style={{
+                      touchAction: isZoomed ? 'none' : 'auto',
+                      // C-5方眼: 白地に極薄グリッド（枠線はレイアウトを変えないinset影で）
+                      ...(useGridFrame
+                        ? {
+                          backgroundImage:
+                            'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
+                          backgroundSize: '22px 22px',
+                          boxShadow: 'inset 0 0 0 1px #e2e8f0',
+                        }
+                        : {}),
+                    }}
                     role="button"
                     tabIndex={0}
                     aria-pressed={isZoomed}
