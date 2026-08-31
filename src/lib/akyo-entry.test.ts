@@ -303,6 +303,11 @@ test("detectVrcEntryTypeFromUrl accepts tab suffixes like /info from copied brow
   );
   // ホストが違えば拒否のまま
   assert.equal(detect("https://evil.example/home/world/wrld_12ab34cd/info"), null);
+  // タブサフィックスは1個まで。多重セグメント・空セグメントは拒否
+  assert.equal(detect("https://vrchat.com/home/world/wrld_12ab34cd/info/anything"), null);
+  assert.equal(detect("https://vrchat.com/home/world/wrld_12ab34cd////"), null);
+  // 未知タブでも1セグメントなら許容（将来のタブ追加に追従）
+  assert.equal(detect("https://vrchat.com/home/world/wrld_12ab34cd/reviews"), "world");
   // ID抽出は /info 付きでも従来どおり
   assert.equal(
     extractWorld("https://vrchat.com/home/world/wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456/info"),

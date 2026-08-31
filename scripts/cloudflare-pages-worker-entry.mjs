@@ -2,24 +2,18 @@ import openNextWorker from './worker.js';
 
 const PREVIEW_ROBOTS_POLICY = 'noindex, nofollow, noarchive';
 const SAFE_PREVIEW_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-// 認証セッションの確立/破棄のPOSTだけはプレビューでも通す（管理UIの表示確認用。
-// パスワード等はPagesプロジェクトのPreview環境シークレットで供給される）。
-// データを変更するAPI群（upload/update/delete/csv等）は引き続き全ブロック。
-const PREVIEW_AUTH_POST_PATHS = new Set(['/api/admin/login', '/api/admin/logout']);
+// プレビューは全面read-only（安全側の既定）。管理ログインPOSTの例外は、
+// PagesプレビューがCloudflare Accessで保護されていない前提では、公開URLで
+// 本番パスワードの総当たりを許すため導入しない。管理UIをプレビューで
+// 確認したい場合は先に(1)Access policy有効化 (2)Preview専用パスワード/
+// SESSION_SECRET (3)ログインのレート制限 を整えてから例外を再導入すること。
 
 function isReadOnlyPreview(env) {
   return env.PAGES_PREVIEW_READ_ONLY === 'true';
 }
 
 function isPreviewAllowedRequest(request) {
-  const method = request.method.toUpperCase();
-  if (SAFE_PREVIEW_METHODS.has(method)) {
-    return true;
-  }
-  if (method === 'POST') {
-    return PREVIEW_AUTH_POST_PATHS.has(new URL(request.url).pathname);
-  }
-  return false;
+  return SAFE_PREVIEW_METHODS.has(request.method.toUpperCase());
 }
 
 function withPreviewHeaders(response) {

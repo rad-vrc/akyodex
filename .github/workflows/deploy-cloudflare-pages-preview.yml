@@ -168,9 +168,8 @@ jobs:
               return 1
             fi
 
-            # 認証POSTはガードを通過してアプリへ到達する（管理UI確認用の例外）。
-            # 403=ガードが誤って残存、500=Preview環境のADMIN_PASSWORD_*/SESSION_SECRET未設定。
-            # 空ボディなのでアプリ側のバリデーション/認証エラー(4xx)が期待値。
+            # 管理ログインを含む全mutating POSTがガードで403になること
+            # （プレビューは完全read-only。Access未保護のため認証POSTも遮断）
             local status
             status="$(curl --silent --show-error \
               --connect-timeout 10 \
@@ -182,25 +181,8 @@ jobs:
               --write-out "%{http_code}" \
               "${DEPLOYMENT_URL}/api/admin/login" || echo "000")"
 
-            if [ "${status}" = "403" ] || [ "${status}" = "500" ] || [ "${status}" = "000" ]; then
-              echo "/api/admin/login returned HTTP ${status}; expected the auth POST to pass the guard and hit app validation (4xx)."
-              return 1
-            fi
-
-            # データ変更系のPOSTは引き続きガードが403で遮断すること
-            local mutation_status
-            mutation_status="$(curl --silent --show-error \
-              --connect-timeout 10 \
-              --max-time 30 \
-              --request POST \
-              --header "Content-Type: application/json" \
-              --data '{}' \
-              --output /tmp/mutation-guard-body \
-              --write-out "%{http_code}" \
-              "${DEPLOYMENT_URL}/api/update-akyo" || echo "000")"
-
-            if [ "${mutation_status}" != "403" ]; then
-              echo "/api/update-akyo returned HTTP ${mutation_status}; expected HTTP 403 from the read-only preview guard."
+            if [ "${status}" != "403" ]; then
+              echo "/api/admin/login returned HTTP ${status}; expected HTTP 403 from the read-only preview guard."
               return 1
             fi
           }
