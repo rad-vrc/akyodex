@@ -69,8 +69,8 @@ module.exports = {
       { from: ['ギミック', '特殊'], to: 'ギミック・特殊' },
       { from: ['素材'], to: '素材・材質' },
       { from: ['架空', '妖怪', 'りゅう', 'ドラゴン'], to: '架空の存在' },
-      { from: ['芸術', 'アート'], to: '芸術・アート' },
-      { from: ['音楽', '楽器'], to: '音楽・楽器' }
+      { from: ['芸術', 'アート', '芸術・アート'], to: '芸術' },
+      { from: ['音楽', '楽器', '音楽・楽器'], to: '芸術/音楽・楽器' }
     ],
     renameFish: { from: '魚', to: ['動物', '動物/海の生き物'] },
     foodSubCategories: {
@@ -104,14 +104,14 @@ module.exports = {
     costumeCategory: '衣類・衣装',
     occupationCategory: '職業・身分',
     seasonCategory: '季節・行事',
-    musicCategory: '音楽・楽器',
+    musicCategory: '芸術/音楽・楽器',
     toolCategory: '道具',
     bathCategory: '設備/お風呂',
     schoolCategory: '学校',
     natureCategory: '環境・天候',
     historyCategory: '歴史',
     bodyCategory: '体型',
-    artCategory: '芸術・アート',
+    artCategory: '芸術',
     realKeyword: 'リアル',
     realCategory: '実写',
     uncategorized: '未分類',
