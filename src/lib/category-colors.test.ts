@@ -197,6 +197,22 @@ test('Cyber style inherits the established Electronic red in every language', ()
   }
 });
 
+test('renamed equipment and split machine categories preserve their established colors', () => {
+  for (const category of [
+    'ファッション・装備',
+    'ファッション・装備/武器',
+    'Fashion・Equipment',
+    'Fashion・Equipment/Weapon',
+    '패션・장비',
+    '패션・장비/무기',
+  ]) {
+    assert.equal(getCategoryColor(category), '#1a73cc');
+  }
+  for (const category of ['機械', 'Machine', '기계']) {
+    assert.equal(getCategoryColor(category), '#43a047');
+  }
+});
+
 test('Nature and its translated hierarchies retain the established plant green', () => {
   const natureCategories = [
     '自然',
