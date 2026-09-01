@@ -32,6 +32,7 @@ const weaponIds = [
   '0550',
   '0594',
   '0595',
+  '0611',
   '0631',
   '0845',
 ];
@@ -134,12 +135,6 @@ test('splits every approved record into Machine or Fashion Equipment Weapon', ()
       assertAncestors(categories, expected.weapon);
       assert.ok(!categories.includes(expected.machine), `${language} ID ${id} should not be Machine`);
     }
-
-    const unassigned = rowsById.get('0611');
-    assert.ok(unassigned, `${language} should include unassigned legacy ID 0611`);
-    const unassignedCategories = splitCategories(unassigned.Category);
-    assert.ok(!unassignedCategories.includes(expected.machine));
-    assert.ok(!unassignedCategories.includes(expected.weapon));
 
     const missile = rowsById.get('0510');
     assert.ok(splitCategories(missile.Category).includes(expected.hazard));
