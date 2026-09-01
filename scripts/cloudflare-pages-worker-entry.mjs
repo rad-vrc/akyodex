@@ -2,11 +2,13 @@ import openNextWorker from './worker.js';
 
 const PREVIEW_ROBOTS_POLICY = 'noindex, nofollow, noarchive';
 const SAFE_PREVIEW_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
-// プレビューは全面read-only（安全側の既定）。管理ログインPOSTの例外は、
-// PagesプレビューがCloudflare Accessで保護されていない前提では、公開URLで
-// 本番パスワードの総当たりを許すため導入しない。管理UIをプレビューで
-// 確認したい場合は先に(1)Access policy有効化 (2)Preview専用パスワード/
-// SESSION_SECRET (3)ログインのレート制限 を整えてから例外を再導入すること。
+// プレビューは全面read-only。Cloudflare Accessによるゲート（2026-09-01有効化）
+// とは独立した、アプリ側の防御層として維持する。管理ログインPOSTの例外は
+// 導入しない。Accessが無効化・誤設定された瞬間に、公開URLで本番パスワードの
+// 総当たりを許すことになるため（#473の事故：Access保護下だと未確認のまま
+// 例外を入れ、実際には無保護だった）。例外を再導入するなら先に
+// (1)Access保護が有効であることの実測 (2)Preview専用パスワード/SESSION_SECRET
+// (3)ログインのレート制限 を整えること。
 
 function isReadOnlyPreview(env) {
   return env.PAGES_PREVIEW_READ_ONLY === 'true';

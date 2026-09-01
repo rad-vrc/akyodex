@@ -216,7 +216,7 @@ jobs:
             fi
 
             # 管理ログインを含む全mutating POSTがガードで403になること
-            # （プレビューは完全read-only。Access未保護のため認証POSTも遮断）
+            # （プレビューは完全read-only。Accessゲートとは独立したアプリ側の防御層）
             local status
             status="$(curl --silent --show-error \
               --connect-timeout 10 \

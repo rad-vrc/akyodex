@@ -47,8 +47,8 @@ test('Pages preview blocks all mutating methods, including auth endpoints', asyn
     ['https://preview.example/api/update-akyo', 'POST'],
     ['https://preview.example/api/upload-akyo', 'POST'],
     ['https://preview.example/api/delete-akyo', 'DELETE'],
-    // 管理ログイン/ログアウトも遮断（Access未保護の公開プレビューで
-    // 本番パスワード総当たりを許さないため、例外を設けない）
+    // 管理ログイン/ログアウトも遮断。Accessゲートに依存しないアプリ側の
+    // 防御層として、Accessが外れても本番パスワード総当たりを許さない
     ['https://preview.example/api/admin/login', 'POST'],
     ['https://preview.example/api/admin/logout', 'POST'],
   ]) {
