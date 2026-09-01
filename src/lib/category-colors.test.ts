@@ -158,7 +158,7 @@ test('food and fox categories use orange instead of mustard yellow', () => {
 test('nested categories inherit the top-level category color', () => {
   const categoryHierarchies = [
     ['器官', '器官/耳'],
-    ['芸術・アート', '芸術・アート/絵画'],
+    ['芸術', '芸術/絵画・イラスト', '芸術/工芸品', '芸術/彫刻・像'],
     ['Food', 'Food/Dish', 'Food/Dish/Fried'],
     ['동물', '동물/여우'],
   ];
@@ -168,6 +168,19 @@ test('nested categories inherit the top-level category color', () => {
     for (const category of nestedCategories) {
       assert.equal(getCategoryColor(category), topLevelColor);
     }
+  }
+});
+
+test('the renamed Art hierarchy preserves its established slate color', () => {
+  for (const category of [
+    '芸術',
+    '芸術/絵画・イラスト',
+    'Art',
+    'Art/Painting・Illustration',
+    '예술',
+    '예술/회화・일러스트',
+  ]) {
+    assert.equal(getCategoryColor(category), '#607d8b');
   }
 });
 

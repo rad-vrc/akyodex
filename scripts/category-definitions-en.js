@@ -72,7 +72,7 @@ module.exports = {
       { from: ['Material'], to: 'Material・Texture' },
       { from: ['Fictional', 'Yokai', 'Dragon'], to: 'Fictional Being' },
       { from: ['Art', 'Arts'], to: 'Art' },
-      { from: ['Music', 'Instrument'], to: 'Music・Instrument' }
+      { from: ['Music', 'Instrument', 'Music・Instrument'], to: 'Art/Music・Instrument' }
     ],
     renameFish: { from: 'Fish', to: ['Animal', 'Animal/Marine Life'] },
     foodSubCategories: {
@@ -107,7 +107,7 @@ module.exports = {
     occupationCategory: 'Occupation/Status',
     seasonCategory: 'Season・Event',
     electronicCategory: 'Electronic',
-    musicCategory: 'Music・Instrument',
+    musicCategory: 'Art/Music・Instrument',
     toolCategory: 'Tool',
     bathCategory: 'Equipment/Bath',
     schoolCategory: 'School',

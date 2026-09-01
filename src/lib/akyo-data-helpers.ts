@@ -116,6 +116,8 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   自然: '#5a8a1a',
   Nature: '#5a8a1a',
   자연: '#5a8a1a',
+  // 「芸術・アート」から階層化しても既存の青灰色を維持する。
+  芸術: '#607d8b',
   植物: '#5a8a1a',
   宇宙: '#3f51b5',
   和風: '#d32f2f',
