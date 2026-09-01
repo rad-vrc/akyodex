@@ -184,6 +184,19 @@ test('the renamed Art hierarchy preserves its established slate color', () => {
   }
 });
 
+test('Cyber style inherits the established Electronic red in every language', () => {
+  for (const category of [
+    '作風・スタイル',
+    '作風・スタイル/サイバーチック',
+    'Style',
+    'Style/Cyber',
+    '스타일',
+    '스타일/사이버풍',
+  ]) {
+    assert.equal(getCategoryColor(category), '#d63d43');
+  }
+});
+
 test('Nature and its translated hierarchies retain the established plant green', () => {
   const natureCategories = [
     '自然',

@@ -237,7 +237,6 @@ test('keeps the explicitly rejected categories at the root level', () => {
     '最強戦士',
     '正体不明のUMAkyo',
     '惑星',
-    '電子',
     'まめ',
     'まめAkyo',
   ]) {
@@ -277,11 +276,11 @@ test('classifies the spirit horse under Obon instead of New Year', () => {
   }
 });
 
-test('adds durable battery categories without removing Electronic', () => {
+test('keeps the durable battery categories after Electronic is retired', () => {
   const expectations = {
-    ja: ['電子', 'エネルギー', 'エネルギー/電気', '道具・文房具・生活用品'],
-    en: ['Electronic', 'Energy', 'Energy/Electricity', 'Daily Necessities'],
-    ko: ['전자', '에너지', '에너지/전기', '도구・문구・생활용품'],
+    ja: ['エネルギー', 'エネルギー/電気', '道具・文房具・生活用品'],
+    en: ['Energy', 'Energy/Electricity', 'Daily Necessities'],
+    ko: ['에너지', '에너지/전기', '도구・문구・생활용품'],
   };
 
   for (const [language, expectedCategories] of Object.entries(expectations)) {
@@ -492,7 +491,6 @@ test('keeps the Vectorize payload on the canonical Japanese hierarchy', () => {
   assert.ok(battery, 'Vectorize should include battery ID 0276');
   const batteryCategories = splitCategories(battery.category);
   for (const category of [
-    '電子',
     'エネルギー',
     'エネルギー/電気',
     '道具・文房具・生活用品',

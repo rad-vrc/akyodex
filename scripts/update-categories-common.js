@@ -14,7 +14,6 @@ function createCategoryProcessor(definitions) {
     OCCUPATION_KEYWORDS,
     COSTUME_KEYWORDS,
     SEASON_KEYWORDS,
-    ELECTRONIC_KEYWORDS,
     MUSIC_KEYWORDS,
     TOOL_KEYWORDS,
     BATH_KEYWORDS,
@@ -186,11 +185,6 @@ function createCategoryProcessor(definitions) {
     // Season/Event
     if (matches(SEASON_KEYWORDS, nickname)) {
       addCat(CONFIG.seasonCategory);
-    }
-
-    // Electronic
-    if (matches(ELECTRONIC_KEYWORDS, nickname)) {
-      addCat(CONFIG.electronicCategory);
     }
 
     // Music
