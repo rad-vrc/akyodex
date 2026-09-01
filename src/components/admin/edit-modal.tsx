@@ -443,7 +443,7 @@ export function EditModal({
   // VRChat URLからアバター名を取得
   const handleFetchAvatarName = async () => {
     if (isWorldEntry) {
-      alert('ワールドは通称欄を名称として使用します');
+      alert('ワールド名は登録時にURLから自動取得されます。変更する場合はニックネーム欄を編集してください');
       return;
     }
 
@@ -737,7 +737,7 @@ export function EditModal({
                       ) : (
                         <>
                           <IconSearch size="w-4 h-4" />
-                          同じ名前が既に登録されているか確認
+                          同じニックネームがすでに登録されているか確認
                         </>
                       )}
                     </button>
@@ -986,10 +986,10 @@ export function EditModal({
                 </p>
               </div>
 
-              {/* おまけ情報（comment） */}
+              {/* あきょうちしき（comment） */}
               <div>
                 <label htmlFor="edit-comment" className="block text-gray-700 text-sm font-medium mb-1">
-                  おまけ情報
+                  あきょうちしき
                 </label>
                 <textarea
                   id="edit-comment"

@@ -98,10 +98,10 @@ export async function POST(request: Request) {
 
     let message = '';
     if (isDuplicate) {
-      const fieldName = field === 'nickname' ? '通称' : 'アバター名';
+      const fieldName = field === 'nickname' ? 'ニックネーム' : 'アバター名';
       message = `重複している${fieldName}が見つかりました: ${formattedIds.join('、')}`;
     } else {
-      const fieldName = field === 'nickname' ? '通称' : 'アバター名';
+      const fieldName = field === 'nickname' ? 'ニックネーム' : 'アバター名';
       message = `重複している${fieldName}はありません`;
     }
 
