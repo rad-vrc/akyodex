@@ -125,7 +125,6 @@ jobs:
           exit 1
 
       - name: Verify immutable Pages preview runtime
-        id: runtime
         env:
           DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}
           # プレビューはCloudflare Accessで保護されているため、CIからの検証は
@@ -171,13 +170,13 @@ jobs:
 
             if [ "${status}" != "200" ]; then
               # Accessのサインイン要求はリトライしても解消しないので即時失敗させる
-              # プレビューはCloudflare Accessで保護されている。サービストークンが
-              # 未設定・無効な場合、ランタイム検証は原理的に実行できない。ここで
-              # 失敗させ続けると全PRが恒常的に赤くなり警告疲れを招くだけなので、
-              # 検証をスキップした事実を警告として明示した上でデプロイは成功扱いにする。
-              # トークンが有効化されれば、この分岐に入らなくなり検証は自動的に復帰する。
+              # 合否は最終HTTP応答のみで判定する。Access由来かどうかは失敗理由の
+              # 説明を厚くするためだけに使い、成功扱いには決してしない。
+              # 検証を一つも実行していないのに緑にすると、このジョブが守っている
+              # 境界（/zukanが描画できる・カタログAPIが正しいJSON・画像変換が効く・
+              # 変更系POSTが403・X-Robots-Tagが付く）を全て無効化するため。
               if grep -qi 'cloudflareaccess\.com' "${headers_file}" 2>/dev/null; then
-                echo "::warning::Runtime verification skipped: ${path} is gated by Cloudflare Access (HTTP ${status})."
+                echo "::error::${path} was blocked by Cloudflare Access (HTTP ${status}); runtime verification could not run."
                 # リダイレクトURLのmetaクレーム（機密でない診断情報）から失敗理由を切り分ける
                 node -e '
                   const fs = require("node:fs");
@@ -191,11 +190,12 @@ jobs:
                     " service_token_status=" + claims.service_token_status +
                     " service_token_id=" + (claims.service_token_id || "-"));
                 ' "${headers_file}" || true
-                echo "service_token_status=false -> Access did not recognize the credentials (wrong or revoked token)."
-                echo "service_token_status=true  -> token recognized but not authorized; the Service Auth policy must bind THIS token."
-                echo "Fix by setting valid CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET repository secrets."
-                echo "verification_skipped=true" >> "${GITHUB_OUTPUT}"
-                exit 0
+                echo "(The meta claim above is an UNVERIFIED JWT payload. Use it as a hint only;"
+                echo " the pass/fail decision here is made solely from the final HTTP status.)"
+                echo "Fix: create one Service Token in the same Zero Trust account, set BOTH values as a matching pair"
+                echo "into CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET, and make sure the preview Access app has a"
+                echo "Service Auth policy that explicitly includes THAT token."
+                exit 1
               fi
               echo "${path} returned HTTP ${status}."
               return 1
@@ -284,11 +284,9 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}
           DEPLOYMENT_ALIAS_URL: ${{ steps.deployment.outputs.deployment_alias_url }}
           DEPLOYMENT_ID: ${{ steps.deployment.outputs.deployment_id }}
-          VERIFICATION_SKIPPED: ${{ steps.runtime.outputs.verification_skipped }}
         with:
           script: |
             const header = '## Cloudflare Pages PR Preview';
-            const verificationSkipped = process.env.VERIFICATION_SKIPPED === 'true';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const succeeded = process.env.JOB_STATUS === 'success';
             const body = succeeded
@@ -300,9 +298,6 @@ jobs:
                   `- PR alias: ${process.env.DEPLOYMENT_ALIAS_URL}`,
                   `- Deployment ID: \`${process.env.DEPLOYMENT_ID}\``,
                   '',
-                  ...(verificationSkipped
-                    ? ['> ⚠️ **Runtime verification was skipped.** The preview is gated by Cloudflare Access and CI has no valid service token, so `/zukan`, the catalog API, and image transforms were NOT checked. The deploy itself succeeded. Set valid `CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET` secrets to restore verification.']
-                    : []),
                   '> **Cloudflare Access required:** preview URLs prompt for sign-in. Ask the owner if you need access.',
                   '> **Mechanically read-only review environment:** mutating HTTP methods are rejected before OpenNext, and Preview uses dedicated KV/R2 resources.',
                   '> Durable Objects, service bindings, Workers caches, `cf.image`, Workers Sentry, and final performance must be verified at https://staging.akyodex.com.',
