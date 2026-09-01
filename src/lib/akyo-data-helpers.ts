@@ -129,7 +129,6 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   洋風: '#1976d2',
   ファンタジー: '#00acc1',
   SF: '#00acc1',
-  ホラー: '#424242',
   かわいい: '#ec407a',
   クール: '#5c6bc0',
   シンプル: '#78909c',

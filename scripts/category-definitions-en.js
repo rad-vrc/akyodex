@@ -113,7 +113,8 @@ module.exports = {
     bodyCategory: 'Body Type',
     artCategory: 'Art',
     realKeyword: 'Real',
-    realCategory: 'Real Photo',
+    styleParentCategory: 'Style',
+    realCategory: 'Style/Real Photo',
     uncategorized: 'Uncategorized',
     onionExclusions: {
       remove: 'Fictional Being/Yokai・Ghost',

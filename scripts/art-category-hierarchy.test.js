@@ -161,7 +161,11 @@ test('keeps haniwa history tags while classifying their sculptural form', () => 
 });
 
 test('keeps real-photo records out of the new art subcategories for now', () => {
-  const realPhotoCategories = { ja: '実写', en: 'Real Photo', ko: '실사' };
+  const realPhotoCategories = {
+    ja: '作風・スタイル/実写',
+    en: 'Style/Real Photo',
+    ko: '스타일/실사',
+  };
   for (const language of ['ja', 'en', 'ko']) {
     const rowsById = new Map(readCategoryRows(language).map((row) => [row.ID, row]));
     for (const id of parentOnlyIds) {

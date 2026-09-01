@@ -38,7 +38,6 @@ const LIVE_BASE_COLORS = [
   '#d63d43', // Booth
   '#00acc1', // グッズ / fallback0
   '#5a8a1a', // 自然
-  '#424242', // ホラー
   '#43a047', // fallback1
   '#607d8b', // fallback2
   '#1a73cc', // fallback4

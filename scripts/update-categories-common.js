@@ -228,6 +228,7 @@ function createCategoryProcessor(definitions) {
       addCat(CONFIG.artCategory);
     }
     if (nickname.includes(CONFIG.realKeyword)) {
+      addCat(CONFIG.styleParentCategory);
       addCat(CONFIG.realCategory);
     }
 
