@@ -47,8 +47,6 @@ module.exports = {
 
   SEASON_KEYWORDS: ['Season', 'Event', 'Spring', 'Summer', 'Autumn', 'Winter', 'New Year', 'Setsubun', 'Hinamatsuri', 'Hanami', 'Children\'s Day', 'Tanabata', 'Obon', 'Halloween', 'Christmas', 'New Year\'s Eve', 'Valentine', 'White Day', 'Graduation', 'Entrance', 'Summer Vacation', 'Winter Vacation', 'Spring Vacation', 'Golden Week', 'Silver Week', 'Festival', 'Fireworks', 'Beach', 'Autumn Leaves', 'Snow', 'Carp Streamer', 'Lion Dance', 'Harvest', 'Koinobori', 'Teru Teru', 'Tropical', 'Fall'],
 
-  ELECTRONIC_KEYWORDS: ['Electronic', 'Cyber', 'Digital', 'Techno', 'Robot', 'Android', 'Mech', 'Machine', 'AI', 'VR', 'AR', 'MR', 'Metaverse', 'Internet', 'Web', 'Program', 'Code', 'Bug', 'Glitch', 'Pixel', 'Dot', 'Battery', 'Loader', 'Nu', 'J2m3', 'Virtual'],
-
   MUSIC_KEYWORDS: ['Music', 'Instrument', 'Song', 'Piano', 'Guitar', 'Bass', 'Drum', 'Violin', 'Flute', 'Trumpet', 'Saxophone', 'Mic', 'Speaker', 'Headphone', 'Earphone', 'Record', 'CD', 'Cassette', 'Radio', 'DJ', 'Band', 'Orchestra', 'Live', 'Concert', 'Note', 'Melody', 'Rhythm', 'Harmony', 'Theremin'],
 
   TOOL_KEYWORDS: ['Tool', 'Stationery', 'Kitchenware', 'Cleaning Tool', 'Eraser', 'Blackboard Eraser', 'Shampoo', 'Brush', 'Pencil', 'Letter Pack'],
@@ -106,7 +104,6 @@ module.exports = {
     costumeCategory: 'Clothing/Costume',
     occupationCategory: 'Occupation/Status',
     seasonCategory: 'Season・Event',
-    electronicCategory: 'Electronic',
     musicCategory: 'Music・Instrument',
     toolCategory: 'Tool',
     bathCategory: 'Equipment/Bath',
