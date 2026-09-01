@@ -395,6 +395,9 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
 
         resolvedAuthor = formData.author.trim() || fetchedCreatorName;
         resolvedNickname = formData.nickname.trim() || fetchedWorldName;
+        // ワールドの正式名称はavatarName列にも保存する（フォームの
+        // 「アバター名/ワールド名」欄の実態と一致させるため）
+        resolvedAvatarName = fetchedWorldName;
 
         if (
           resolvedNickname !== formData.nickname ||
@@ -506,7 +509,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           submitData.append('entryType', entryType);
         }
         submitData.append('nickname', resolvedNickname);
-        submitData.append('avatarName', boothOnly ? '' : (entryType === 'world' ? '' : resolvedAvatarName));
+        submitData.append('avatarName', boothOnly ? '' : resolvedAvatarName);
         submitData.append('sourceUrl', url);
         submitData.append('avatarUrl', url);
         if (boothUrlTrimmed) {
@@ -669,7 +672,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         tone: data.isDuplicate ? 'error' : 'success',
       });
     } catch (error) {
-      console.error('通称 duplicate check error:', error);
+      console.error('ニックネーム duplicate check error:', error);
       setNicknameStatus({
         message: '重複チェックに失敗しました',
         tone: 'error',
@@ -809,40 +812,14 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
 
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* ID（自動採番） */}
-          <div>
-            <label htmlFor="add-tab-id" className="block text-gray-700 text-sm font-medium mb-1">
-              ID（自動採番）
-            </label>
-            {userRole === 'owner' ? (
-              <input
-                id="add-tab-id"
-                type="text"
-                value={nextId}
-                disabled
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg font-mono font-bold"
-              />
-            ) : (
-              <input
-                id="add-tab-id"
-                type="text"
-                value="登録時に自動割り当て"
-                disabled
-                className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
-              />
-            )}
-            <p className="mt-2 text-xs text-gray-500 leading-snug">
-              {userRole === 'owner'
-                ? '画像IDの自動割り当てはローカルに保存された画像を優先的に参照し、未使用の番号（CSV未登録の画像も含む）から決定されます。'
-                : 'IDは登録時に自動で割り当てられます。'}
-            </p>
-          </div>
-
-          {/* 名前 */}
-          <div>
+          {/* ニックネーム — IDは自動採番のみで欄は表示しない（1行目をすっきり保つ） */}
+          <div className="md:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <label htmlFor="add-tab-nickname" className="block text-gray-700 text-sm font-medium">
-                名前
+                ニックネーム{' '}
+                <span className="text-xs font-normal text-gray-500">
+                  ※ワールド名はURLから自動取得
+                </span>
               </label>
               <button
                 type="button"
@@ -877,7 +854,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 ) : (
                   <>
                     <IconSearch size="w-4 h-4" />
-                    同じ名前が既に登録されているか確認
+                    同じニックネームがすでに登録されているか確認
                   </>
                 )}
               </button>
@@ -912,16 +889,12 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           {/* アバター名 */}
           <div>
             <label htmlFor="add-tab-name" className="block text-gray-700 text-sm font-medium mb-1">
-              アバター名
+              アバター名/ワールド名
             </label>
             <input
               id="add-tab-name"
               type="text"
-              value={
-                detectedEntryType === 'world'
-                  ? 'ワールド名は上の「通称」欄を名称として使用します'
-                  : '登録時にVRChat URLから自動取得'
-              }
+              value="登録時にVRChat URLから自動取得"
               disabled
               className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
             />
@@ -930,7 +903,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           {/* 作者 */}
           <div>
             <label htmlFor="add-tab-author" className="block text-gray-700 text-sm font-medium mb-1">
-              作者（アバター/ワールドは自動取得、BOOTH商品のみの場合は手動入力）
+              作者名
             </label>
             {isBoothOnly || detectedEntryType === 'world' ? (
               <input
@@ -984,30 +957,11 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
               <p className="text-xs text-gray-500 leading-snug">
                 ワールドならワールドカテゴリは自動追加されますが、階層型カテゴリを設定する場合は手動で設定してください。
                 BOOTH URLが入力されている場合、Boothカテゴリは登録時に自動追加されます。
-                BOOTH商品のみの登録ではカテゴリ選択は任意です。
               </p>
             </div>
           </div>
 
-          {/* BOOTH URL */}
-          <div>
-            <label htmlFor="add-tab-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
-              BOOTH URL（任意）
-            </label>
-            <input
-              id="add-tab-booth-url"
-              type="url"
-              value={formData.boothUrl}
-              onChange={(e) => handleInputChange('boothUrl', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="https://booth.pm/ja/items/..."
-            />
-            <p className="mt-2 text-xs text-gray-500 leading-snug">
-              BOOTHの販売ページURLを入力すると、図鑑のカード・リスト表示にBOOTHリンクボタンが表示されます。
-            </p>
-          </div>
-
-          {/* VRChat URL */}
+          {/* VRChat URL — 登録の主役（自動取得の依存元）なので読み始めの左側に置く */}
           <div>
             <label htmlFor="add-tab-source-url" className="block text-gray-700 text-sm font-medium mb-1">
               VRChat URL（アバターまたはワールド）
@@ -1033,12 +987,30 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                 : '登録ボタンを押すと、このURLから名称・作者名・画像が自動的に取得されます。BOOTH URLのみの登録も可能です。'}
             </p>
           </div>
+
+          {/* BOOTH URL */}
+          <div>
+            <label htmlFor="add-tab-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
+              BOOTH URL（任意）
+            </label>
+            <input
+              id="add-tab-booth-url"
+              type="url"
+              value={formData.boothUrl}
+              onChange={(e) => handleInputChange('boothUrl', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              placeholder="https://booth.pm/ja/items/..."
+            />
+            <p className="mt-2 text-xs text-gray-500 leading-snug">
+              BOOTHの販売ページURLを入力すると、図鑑のカード・リスト表示にBOOTHリンクボタンが表示されます。
+            </p>
+          </div>
         </div>
 
-        {/* おまけ情報（comment） */}
+        {/* あきょうちしき（comment） */}
         <div>
           <label htmlFor="add-tab-comment" className="block text-gray-700 text-sm font-medium mb-1">
-            おまけ情報
+            あきょうちしき
           </label>
           <textarea
             id="add-tab-comment"
@@ -1053,7 +1025,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         {/* 画像（自動取得） */}
         <div>
           <label className="block text-gray-700 text-sm font-medium mb-1">
-            画像（登録時に自動取得）
+            サムネイル画像
           </label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center bg-gray-50">
             {isBoothOnly ? (
@@ -1138,7 +1110,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
           )}
 
           <p className="text-xs text-gray-500 mt-3">
-            登録すると画像も公開環境へ自動でアップロードされ、図鑑でもすぐ表示されます。
+            登録すると画像も公開環境へ自動でアップロードされ、図鑑でも数分後に表示されます。
           </p>
         </div>
 
