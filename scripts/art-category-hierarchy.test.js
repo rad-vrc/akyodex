@@ -218,3 +218,61 @@ test('keeps targeted Vectorize records on the new art hierarchy', () => {
     assert.ok(splitCategories(record.category).includes('歴史'));
   }
 });
+
+test('automatic category processors emit only the current Art hierarchy', () => {
+  const { createCategoryProcessor } = require('./update-categories-common');
+  const japaneseProcessor = createCategoryProcessor(
+    require('./category-definitions-ja'),
+  );
+  const englishProcessor = createCategoryProcessor(
+    require('./category-definitions-en'),
+  );
+
+  const cases = [
+    {
+      actual: japaneseProcessor('', '絵画Akyo'),
+      includes: ['芸術'],
+      excludes: ['芸術・アート'],
+    },
+    {
+      actual: japaneseProcessor('', 'おんがくAkyo'),
+      includes: ['芸術', '芸術/音楽・楽器'],
+      excludes: ['芸術・アート', '音楽・楽器'],
+    },
+    {
+      actual: japaneseProcessor('', 'リアルAkyo'),
+      includes: ['芸術'],
+      excludes: ['芸術・アート'],
+    },
+    {
+      actual: englishProcessor('', 'Painting Akyo'),
+      includes: ['Art'],
+      excludes: [],
+    },
+    {
+      actual: englishProcessor('', 'Music Akyo'),
+      includes: ['Art', 'Art/Music・Instrument'],
+      excludes: ['Music・Instrument'],
+    },
+    {
+      actual: japaneseProcessor('芸術・アート,音楽・楽器', 'Akyo'),
+      includes: ['芸術', '芸術/音楽・楽器'],
+      excludes: ['芸術・アート', '音楽・楽器'],
+    },
+    {
+      actual: englishProcessor('Music・Instrument', 'Akyo'),
+      includes: ['Art', 'Art/Music・Instrument'],
+      excludes: ['Music・Instrument'],
+    },
+  ];
+
+  for (const { actual, includes, excludes } of cases) {
+    const categories = splitCategories(actual);
+    for (const category of includes) {
+      assert.ok(categories.includes(category), `${actual} should include ${category}`);
+    }
+    for (const category of excludes) {
+      assert.ok(!categories.includes(category), `${actual} should not include ${category}`);
+    }
+  }
+});
