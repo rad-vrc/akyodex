@@ -113,7 +113,8 @@ module.exports = {
     bodyCategory: '体型',
     artCategory: '芸術・アート',
     realKeyword: 'リアル',
-    realCategory: '実写',
+    styleParentCategory: '作風・スタイル',
+    realCategory: '作風・スタイル/実写',
     uncategorized: '未分類',
     onionExclusions: {
       remove: '架空の存在/妖怪・おばけ',
