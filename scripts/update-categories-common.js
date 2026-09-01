@@ -51,6 +51,11 @@ function createCategoryProcessor(definitions) {
       });
     };
 
+    // Merge rules may normalize a legacy Music category before keyword matching.
+    if (categories.includes(CONFIG.musicCategory)) {
+      addCat(CONFIG.artCategory);
+    }
+
     // Food Logic
     for (const [subCat, keywords] of Object.entries(FOOD_KEYWORDS)) {
       if (matches(keywords, nickname) || keywords.some(k => typeof k === 'string' && categories.includes(k))) {
@@ -190,6 +195,7 @@ function createCategoryProcessor(definitions) {
 
     // Music
     if (matches(MUSIC_KEYWORDS, nickname)) {
+      addCat(CONFIG.artCategory);
       addCat(CONFIG.musicCategory);
     }
 
