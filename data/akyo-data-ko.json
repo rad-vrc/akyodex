@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-02T09:29:36.114Z",
-  "count": 940,
+  "updatedAt": "2026-09-02T09:50:27.263Z",
+  "count": 942,
   "data": [
     {
       "id": "0001",
@@ -11457,7 +11457,7 @@
       "displaySerial": "0833",
       "nickname": "kuro5963 부스 Akyo/Akyo의 숨바꼭질",
       "avatarName": "hjkjnknjm․kl",
-      "category": "기믹・특수,패러디,패러디/Rietzscha 대장,나라,나라/태국,건물,집단・조직,집단・조직/어두족,탈것",
+      "category": "기믹・특수,패러디,패러디/Capt.Rietzscha,나라,나라/태국,건물,집단・조직,집단・조직/어두족,탈것",
       "comment": "Fket2026Summer-Parallel Bangkok에 가 봐!",
       "author": "カヤ（kaya）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1e93d1ea-aad1-4f89-94ab-4a0053922b4c",
@@ -11474,6 +11474,30 @@
       "author": "葱 potipoti93",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3d31d4c5-79f6-4467-afb7-1041c54b9773",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3d31d4c5-79f6-4467-afb7-1041c54b9773"
+    },
+    {
+      "id": "0941",
+      "entryType": "world",
+      "displaySerial": "0107",
+      "nickname": "Akyoと一緒の秋-Akyo Autumn-",
+      "avatarName": "Akyoと一緒の秋-Akyo Autumn-",
+      "category": "월드",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_c70fe548-6f56-4b15-bfce-84021663b275/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_c70fe548-6f56-4b15-bfce-84021663b275/"
+    },
+    {
+      "id": "0942",
+      "entryType": "world",
+      "displaySerial": "0108",
+      "nickname": "Fket2026Summer-Parallel Bangkok",
+      "avatarName": "Fket2026Summer-Parallel Bangkok",
+      "category": "월드",
+      "comment": "",
+      "author": "long-potato",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/"
     }
   ]
 }

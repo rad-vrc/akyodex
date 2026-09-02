@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-02T09:29:36.090Z",
-  "count": 940,
+  "updatedAt": "2026-09-02T09:50:27.250Z",
+  "count": 942,
   "data": [
     {
       "id": "0001",
@@ -10715,7 +10715,7 @@
       "displaySerial": "0833",
       "nickname": "kuro5963 Booth Akyo / Akyo's Hide-and-Seek",
       "avatarName": "hjkjnknjm․kl",
-      "category": "Gimmick・Special,Parody,Parody/Captain Rietzscha,Country,Country/Thailand,Building,Group・Organization,Group・Organization/Fishhead Tribe,Vehicle",
+      "category": "Gimmick・Special,Parody,Parody/Capt.Rietzscha,Country,Country/Thailand,Building,Group・Organization,Group・Organization/Fishhead Tribe,Vehicle",
       "comment": "Go check out Fket2026Summer-Parallel Bangkok!",
       "author": "カヤ（kaya）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1e93d1ea-aad1-4f89-94ab-4a0053922b4c",
@@ -10732,6 +10732,30 @@
       "author": "葱 potipoti93",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3d31d4c5-79f6-4467-afb7-1041c54b9773",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3d31d4c5-79f6-4467-afb7-1041c54b9773"
+    },
+    {
+      "id": "0941",
+      "entryType": "world",
+      "displaySerial": "0107",
+      "nickname": "Akyoと一緒の秋-Akyo Autumn-",
+      "avatarName": "Akyoと一緒の秋-Akyo Autumn-",
+      "category": "World",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_c70fe548-6f56-4b15-bfce-84021663b275/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_c70fe548-6f56-4b15-bfce-84021663b275/"
+    },
+    {
+      "id": "0942",
+      "entryType": "world",
+      "displaySerial": "0108",
+      "nickname": "Fket2026Summer-Parallel Bangkok",
+      "avatarName": "Fket2026Summer-Parallel Bangkok",
+      "category": "World",
+      "comment": "",
+      "author": "long-potato",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/"
     }
   ]
 }

@@ -74,7 +74,7 @@ module.exports = {
   'パロディ/遊戯王': 'Parody/Yu-Gi-Oh!',
   'パロディ/頭文字D': 'Parody/Initial D',
   'パロディ/びっくりチキン': 'Parody/Rubber Chicken',
-  'パロディ/リーチャ隊長': 'Parody/Captain Rietzscha',
+  'パロディ/リーチャ隊長': 'Parody/Capt.Rietzscha',
   '身分・役割/ヒーロー': 'Role・Status/Hero',
   '作風・スタイル/ホラー': 'Style/Horror',
   'メガネ': 'Glasses',
