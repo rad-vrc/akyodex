@@ -172,15 +172,22 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
     container.appendChild(el);
   }, [nextUniform]);
 
-  // Initialize background animation（一度だけ実行）
+  // Initialize background animation（マウント時と reducedMotion 切替時）
   useEffect(() => {
+    // cleanup 後に古い init が再開しないようにする失効フラグ。
+    // resolveMiniAkyoUrl() の待機中に削減設定へ切り替わる（またはアンマウント）と
+    // cleanup が先に走るが、await から戻った古い init はそのまま進んでしまい、
+    // 背景DOMが無いのに維持 interval と resize listener だけを登録して残す。
+    let disposed = false;
+
     const init = async () => {
       const container = containerRef.current;
       if (!container) return;
 
       // Resolve image URL (module-level pure function)
       const url = await resolveMiniAkyoUrl();
-      if (!url) return;
+      // 待機中に cleanup 済み／container が差し替わった／URL 解決失敗なら終了
+      if (disposed || containerRef.current !== container || !url) return;
 
       setImageUrl(url);
 
@@ -263,8 +270,10 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
 
     // Cleanup
     return () => {
+      disposed = true;
       if (maintainTimer.current) {
         clearInterval(maintainTimer.current);
+        maintainTimer.current = null;
       }
       if (resizeHandler.current) {
         window.removeEventListener('resize', resizeHandler.current);
