@@ -76,7 +76,7 @@ test.describe("Complete catalog loading", () => {
     await expect(page.locator("#catalog-status-announcement")).toContainText(
       "図鑑の読み込みが完了しました",
     );
-    await expect(page.getByLabel("カテゴリを検索...")).toBeVisible();
+    await expect(page.getByLabel("カテゴリ名を検索...")).toBeVisible();
     await expect(filterFieldset).not.toHaveAttribute("disabled", "");
     await expect(page.locator(".list-view-table")).toBeVisible();
     await page.getByRole("button", { name: "カード表示" }).click();
@@ -249,7 +249,7 @@ test.describe("Complete catalog loading", () => {
     const pendingViewControlsBox = await viewControls.boundingBox();
 
     await apiRoute.fulfill({ json: { data: catalog.data } });
-    await expect(page.getByLabel("カテゴリを検索...")).toBeVisible();
+    await expect(page.getByLabel("カテゴリ名を検索...")).toBeVisible();
     const loadedFilterBox = await filterFieldset.boundingBox();
     const loadedViewControlsBox = await viewControls.boundingBox();
 

@@ -346,7 +346,7 @@ export const UI_TEXTS = {
     ko: "모든 카테고리",
   },
   "filter.categorySearch": {
-    ja: "カテゴリを検索...",
+    ja: "カテゴリ名を検索...",
     en: "Search categories...",
     ko: "카테고리 검색...",
   },
@@ -386,7 +386,7 @@ export const UI_TEXTS = {
     ko: "작자로 필터",
   },
   "filter.authorSearch": {
-    ja: "作者を検索...",
+    ja: "作者名を検索...",
     en: "Search authors...",
     ko: "작자 검색...",
   },
@@ -537,9 +537,16 @@ export const UI_TEXTS = {
     ko: "닫기",
   },
   "modal.name": {
-    ja: "なまえ",
-    en: "Name",
-    ko: "이름",
+    // データフィールド(nickname)に合わせた表記。管理画面側の表記は別途対応予定
+    ja: "ニックネーム",
+    en: "Nickname",
+    ko: "닉네임",
+  },
+  "modal.worldName": {
+    // ワールドはnicknameフィールドに正式名称が入るため、表示上は「ワールド名」
+    ja: "ワールド名",
+    en: "World Name",
+    ko: "월드 이름",
   },
   "modal.avatarName": {
     ja: "アバター名",
@@ -577,9 +584,10 @@ export const UI_TEXTS = {
     ko: "BOOTH URL",
   },
   "modal.bonus": {
-    ja: "おまけじょうほう",
-    en: "Bonus Info",
-    ko: "보너스 정보",
+    // 「Akyo + 豆知識」の言葉遊び。en/koは意味対応（Trivia=豆知識、지식=知識）
+    ja: "あきょうちしき",
+    en: "Akyo Trivia",
+    ko: "Akyo 지식",
   },
   "modal.favorite.add": {
     ja: "お気に入りに追加",

@@ -2,7 +2,8 @@
 
 import { IconDownload, IconHeart, IconHeartOutline, IconVRChat } from "@/components/icons";
 import {
-  ensureContrastOnWhite,
+  ensureContrastOnTintedWhite,
+  getTintedBadgeBackground,
   getCategoryColor,
   parseAndSortCategories,
 } from "@/lib/akyo-data-helpers";
@@ -259,12 +260,12 @@ function AkyoCardComponent({
             <button
               type="button"
               onClick={handleDownloadClick}
-              className="reference-sheet-button ml-auto flex-shrink-0 origin-right scale-90 max-sm:scale-[1.2]"
+              className="reference-sheet-button ml-auto flex-shrink-0 origin-right scale-90 max-sm:scale-100"
               title={t("card.download", lang)}
               aria-label={t("card.download", lang)}
             >
               <IconDownload size="w-4 h-4" />
-              <span className="text-xs">{t("card.downloadLabel", lang)}</span>
+              <span className="text-xs max-sm:text-sm">{t("card.downloadLabel", lang)}</span>
             </button>
           )}
         </div>
@@ -274,12 +275,14 @@ function AkyoCardComponent({
           <span className="text-sm font-bold text-gray-500">
             {formatDisplayId(akyo)}
           </span>
+          {/* BOOTHリンクは min-h-[44px]+負マージンで、バナーの見た目(18px)は変えず
+              タップ領域だけApple HIGの44ptへ拡大。-my-[13px]=(44-18)/2 で行高を相殺 */}
           {akyo.boothUrl && (
             <a
               href={akyo.boothUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative z-20 ml-auto flex-shrink-0 transition-transform hover:scale-105 active:scale-95 -translate-y-px"
+              className="relative z-20 ml-auto flex-shrink-0 flex items-center min-h-[44px] -my-[13px] px-1.5 -mx-1.5 transition-transform hover:scale-105 active:scale-95 -translate-y-px"
               onClick={(e) => e.stopPropagation()}
               aria-label="BOOTH"
             >
@@ -325,8 +328,8 @@ function AkyoCardComponent({
                   key={index}
                   className="attribute-badge text-xs"
                   style={{
-                    background: `${color}20`,
-                    color: ensureContrastOnWhite(color),
+                    background: getTintedBadgeBackground(color),
+                    color: ensureContrastOnTintedWhite(color),
                     boxShadow: `0 6px 12px ${color}20`,
                   }}
                 >
@@ -345,9 +348,9 @@ function AkyoCardComponent({
           className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
           aria-haspopup="dialog"
         >
-          <span className="animate-bounce" aria-hidden="true">🌟</span>
+          <span aria-hidden="true">🌟</span>
           <span>{t("card.detail", lang)}</span>
-          <span className="animate-bounce" aria-hidden="true">🌟</span>
+          <span aria-hidden="true">🌟</span>
         </button>
       </div>
     </article>

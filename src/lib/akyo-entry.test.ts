@@ -280,3 +280,37 @@ test("resolveDisplaySerialForEntryUpdate allocates a fresh world serial for avat
     "0001",
   );
 });
+
+test("detectVrcEntryTypeFromUrl accepts tab suffixes like /info from copied browser URLs", () => {
+  const detect = (akyoEntryModuleNs as Record<string, unknown>)
+    .detectVrcEntryTypeFromUrl as (url: string) => string | null;
+  const extractWorld = (akyoEntryModuleNs as Record<string, unknown>)
+    .extractVRChatWorldIdFromUrl as (url: string) => string | null;
+
+  // VRChat公式サイトの詳細ページはタブUIで、コピーしたURLに /info が付く
+  assert.equal(
+    detect("https://vrchat.com/home/world/wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456/info"),
+    "world",
+  );
+  assert.equal(
+    detect("https://vrchat.com/home/avatar/avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921/info"),
+    "avatar",
+  );
+  // 従来形式は不変
+  assert.equal(
+    detect("https://vrchat.com/home/world/wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456"),
+    "world",
+  );
+  // ホストが違えば拒否のまま
+  assert.equal(detect("https://evil.example/home/world/wrld_12ab34cd/info"), null);
+  // タブサフィックスは1個まで。多重セグメント・空セグメントは拒否
+  assert.equal(detect("https://vrchat.com/home/world/wrld_12ab34cd/info/anything"), null);
+  assert.equal(detect("https://vrchat.com/home/world/wrld_12ab34cd////"), null);
+  // 未知タブでも1セグメントなら許容（将来のタブ追加に追従）
+  assert.equal(detect("https://vrchat.com/home/world/wrld_12ab34cd/reviews"), "world");
+  // ID抽出は /info 付きでも従来どおり
+  assert.equal(
+    extractWorld("https://vrchat.com/home/world/wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456/info"),
+    "wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456",
+  );
+});

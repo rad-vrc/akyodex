@@ -7,6 +7,7 @@
  * to avoid code duplication.
  */
 
+import categoryCanonical from '@/lib/category-canonical.json';
 import type { AkyoData } from '@/types/akyo';
 /**
  * Delimiter pattern for splitting multi-value strings in CSV (comma or Japanese ideographic comma)
@@ -90,7 +91,10 @@ export function findAkyoById(data: AkyoData[], id: string): AkyoData | null {
  */
 const CATEGORY_COLOR_MAP: Record<string, string> = {
   チョコミント: '#00bfa5',
-  動物: '#ff6f61',
+  // Boothと同じ設計: 旧#ff6f61は白文字コントラスト補正（彩度維持の暗色化）で
+  // #eb1500の信号赤として表示されていた。補正を発動させない白文字4.51:1準拠の
+  // 落ち着いた赤（彩度65%相当）を最初から登録する。
+  動物: '#d44335',
   きつね: '#d84315',
   おばけ: '#607d8b',
   人類: '#2196f3',
@@ -102,19 +106,29 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   ドラゴン: '#d32f2f',
   ロボット: '#757575',
   食べ物: '#d84315',
+  // BOOTH公式は#fc4d50(実測)だが、白文字コントラスト補正(彩度維持で暗色化)を
+  // 通すと#ee0408の信号赤になる。補正を発動させないよう、色相を保ち彩度を
+  // 65%へ落とした白文字4.5:1準拠色を最初から登録する。
+  Booth: '#d63d43',
   グッズ: '#00acc1',
   Goods: '#00acc1',
   굿즈: '#00acc1',
   自然: '#5a8a1a',
   Nature: '#5a8a1a',
   자연: '#5a8a1a',
+  // 「芸術・アート」から階層化しても既存の青灰色を維持する。
+  芸術: '#607d8b',
+  // 廃止した「電子」の落ち着いた赤を、後継の作風カテゴリへ引き継ぐ。
+  '作風・スタイル': '#d63d43',
+  // 既存カテゴリの改名・分離後も一覧で急に色が変わらないよう維持する。
+  'ファッション・装備': '#1a73cc',
+  機械: '#43a047',
   植物: '#5a8a1a',
   宇宙: '#3f51b5',
   和風: '#d32f2f',
   洋風: '#1976d2',
   ファンタジー: '#00acc1',
   SF: '#00acc1',
-  ホラー: '#424242',
   かわいい: '#ec407a',
   クール: '#5c6bc0',
   シンプル: '#78909c',
@@ -123,9 +137,11 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
 /**
  * デフォルト色（カテゴリマッピングに該当しない場合に使用）
  *
- * 紫に偏らない、色名で区別しやすいシアン・緑・青灰・ピンク・青を使用する。
+ * 紫に偏らない、色名で区別しやすいシアン・緑・青灰・赤・青を使用する。
+ * 赤は旧#f5576cが白文字補正で#ec0e2c(信号赤)化していたため、補正を発動させない
+ * 白文字4.5:1準拠のセミブライト赤#d63d43に変更(2026-08-31)。
  */
-const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#f5576c', '#1a73cc'];
+const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#d63d43', '#1a73cc'];
 
 /**
  * Generates a deterministic hash value from a string (simple djb2 algorithm).
@@ -156,7 +172,16 @@ function hashString(str: string): number {
  * @returns HEX カラーコード
  */
 export function getCategoryColor(category: string): string {
-  const topLevelCategory = (category || '').split('/', 1)[0].trim();
+  const rawTopLevel = (category || '').split('/', 1)[0].trim();
+  // EN/KOのカテゴリ名をJA正規名へ変換してから色を決める。これをしないと
+  // ハッシュフォールバックが言語ごとに別の色へ散り、同じAkyoのカテゴリが
+  // 言語によって違う色になる（対訳辞書はデータ同期で自動再生成される）。
+  // Object.hasOwn必須: 素の添字参照だと "constructor" や "toString" という
+  // カテゴリ名でprototype上の関数が返り、後段のincludesで例外になる。
+  const canonicalName = Object.hasOwn(categoryCanonical, rawTopLevel)
+    ? (categoryCanonical as Record<string, string>)[rawTopLevel]
+    : undefined;
+  const topLevelCategory = canonicalName ?? rawTopLevel;
 
   for (const [key, color] of Object.entries(CATEGORY_COLOR_MAP)) {
     if (topLevelCategory.includes(key)) {
@@ -258,24 +283,57 @@ function hslToHex(h: number, s: number, l: number): string {
 const contrastOnWhiteCache = new Map<string, string>();
 const contrastForWhiteTextCache = new Map<string, string>();
 
+/** `${color}20`（alpha 0x20/255 ≈ 12.5%）を白に重ねたバッジ薄底の実背景色 */
+function tintedWhiteBackground(hexColor: string): { r: number; g: number; b: number } {
+  const alpha = 0x20 / 255;
+  const { r, g, b } = hexToRGB(hexColor);
+  return {
+    r: alpha * r + (1 - alpha) * 255,
+    g: alpha * g + (1 - alpha) * 255,
+    b: alpha * b + (1 - alpha) * 255,
+  };
+}
+
+const tintedBadgeBackgroundCache = new Map<string, string>();
+
 /**
- * 白背景 (#fff) 上のテキスト色として WCAG 1.4.3 のコントラスト比を満たす色を返す。
+ * バッジ薄底の背景色を「白へ事前合成した不透明HEX」として返す。
  *
- * カード/リストのバッジは `background: ${color}20`（≈白）の上に `color` をテキスト
- * として表示するため、実質的に白背景に対するコントラストが必要。
- * 元の色相・彩度を維持しつつ明度を下げてコントラスト比 ≥ minRatio を確保する。
+ * 旧実装の半透明 `${color}20` は下地に依存して最終色が変わるため、
+ * リスト行ホバー（#f9fafb）等で ensureContrastOnTintedWhite の白合成基準と
+ * ずれ、文字コントラストが4.5:1を割れていた。不透明化すれば下地が
+ * 何色でもバッジの実背景はこの値で固定され、コントラスト保証が崩れない。
+ */
+export function getTintedBadgeBackground(hexColor: string): string {
+  const cached = tintedBadgeBackgroundCache.get(hexColor);
+  if (cached) return cached;
+  const { r, g, b } = tintedWhiteBackground(hexColor);
+  const result = rgbToHex(r, g, b);
+  tintedBadgeBackgroundCache.set(hexColor, result);
+  return result;
+}
+
+/**
+ * カード/リストのバッジ（`background: ${color}20` の薄底）上のテキスト色として、
+ * WCAG 1.4.3 のコントラスト比を満たす色を返す。
+ *
+ * 旧実装は基準を白(#fff)で近似していたが、薄底は色が乗るぶん白より暗く、
+ * 「白基準で4.5ちょうど」の色が実背景では3.7〜4.0台に割れていた。
+ * 実際の合成後背景の輝度を基準に、元の色相・彩度を維持しつつ明度を下げて
+ * コントラスト比 ≥ minRatio を確保する。
  *
  * @param hexColor - HEX カラーコード (例: '#ff9800')
  * @param minRatio - 目標コントラスト比 (デフォルト: 4.5)
  * @returns コントラストが保証された HEX カラーコード
  */
-export function ensureContrastOnWhite(hexColor: string, minRatio = 4.5): string {
+export function ensureContrastOnTintedWhite(hexColor: string, minRatio = 4.5): string {
   const cached = contrastOnWhiteCache.get(hexColor);
   if (cached) return cached;
 
-  const whiteL = 1.0; // #ffffff の相対輝度
+  // バッジ背景は元色の12.5%薄底で固定（文字色を暗くしても背景は変わらない）
+  const bgL = relativeLuminance(tintedWhiteBackground(hexColor));
   const fgL = relativeLuminance(hexToRGB(hexColor));
-  if (contrastRatio(whiteL, fgL) >= minRatio) {
+  if (contrastRatio(bgL, fgL) >= minRatio) {
     contrastOnWhiteCache.set(hexColor, hexColor);
     return hexColor;
   }
@@ -288,7 +346,7 @@ export function ensureContrastOnWhite(hexColor: string, minRatio = 4.5): string 
     newL = Math.max(0, newL - step);
     const candidate = hslToHex(h, s, newL);
     const candidateL = relativeLuminance(hexToRGB(candidate));
-    if (contrastRatio(whiteL, candidateL) >= minRatio) {
+    if (contrastRatio(bgL, candidateL) >= minRatio) {
       contrastOnWhiteCache.set(hexColor, candidate);
       return candidate;
     }

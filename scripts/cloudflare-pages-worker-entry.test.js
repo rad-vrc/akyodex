@@ -41,20 +41,30 @@ async function loadWorkerEntry(t) {
   return import(moduleUrl.href);
 }
 
-test('Pages preview blocks mutating methods before OpenNext handles them', async (t) => {
+test('Pages preview blocks all mutating methods, including auth endpoints', async (t) => {
   const entry = await loadWorkerEntry(t);
-  const response = await entry.default.fetch(
-    new Request('https://preview.example/api/admin/login', { method: 'POST' }),
-    { PAGES_PREVIEW_READ_ONLY: 'true' },
-    {}
-  );
+  for (const target of [
+    ['https://preview.example/api/update-akyo', 'POST'],
+    ['https://preview.example/api/upload-akyo', 'POST'],
+    ['https://preview.example/api/delete-akyo', 'DELETE'],
+    // 管理ログイン/ログアウトも遮断。Accessゲートに依存しないアプリ側の
+    // 防御層として、Accessが外れても本番パスワード総当たりを許さない
+    ['https://preview.example/api/admin/login', 'POST'],
+    ['https://preview.example/api/admin/logout', 'POST'],
+  ]) {
+    const response = await entry.default.fetch(
+      new Request(target[0], { method: target[1] }),
+      { PAGES_PREVIEW_READ_ONLY: 'true' },
+      {}
+    );
 
-  assert.equal(response.status, 403);
-  assert.equal(response.headers.get('x-delegated'), null);
-  assert.equal(
-    response.headers.get('x-robots-tag'),
-    'noindex, nofollow, noarchive'
-  );
+    assert.equal(response.status, 403, `${target[1]} ${target[0]}`);
+    assert.equal(response.headers.get('x-delegated'), null);
+    assert.equal(
+      response.headers.get('x-robots-tag'),
+      'noindex, nofollow, noarchive'
+    );
+  }
 });
 
 test('Pages preview delegates safe methods and adds noindex headers', async (t) => {
