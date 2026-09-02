@@ -207,7 +207,7 @@ test.describe("Pre-generated reference sheet modal", () => {
     for (let run = 0; run < 3; run += 1) {
       let dialog = await openFirstAvatarDetail(page);
       await expectImageLoaded(dialog.getByAltText("オリジンAkyo", { exact: true }));
-      await dialog.locator('[role="button"][aria-roledescription]').press("Enter");
+      await dialog.locator('[role="button"][aria-roledescription]').click({ position: { x: 120, y: 80 } });
       await expect(dialog.locator("[data-reference-zoom-image]")).toHaveClass(/opacity-100/);
       await dialog.getByRole("button", { name: /閉じる|Close|닫기/i }).click();
       await expect(dialog).toBeHidden();
@@ -220,7 +220,7 @@ test.describe("Pre-generated reference sheet modal", () => {
       expect(opened).toHaveLength(1);
       expect(opened[0]).toMatch(/\/0001-960\.webp$/);
 
-      await dialog.locator('[role="button"][aria-roledescription]').press("Enter");
+      await dialog.locator('[role="button"][aria-roledescription]').click({ position: { x: 120, y: 80 } });
       await expect(dialog.locator("[data-reference-zoom-image]")).toHaveClass(/opacity-100/);
       expect(requested.slice(before).filter((url) => url.endsWith("/0001-1920.webp"))).toHaveLength(1);
       await dialog.getByRole("button", { name: /閉じる|Close|닫기/i }).click();
@@ -235,7 +235,7 @@ test.describe("Pre-generated reference sheet modal", () => {
     await page.goto("/zukan");
     let dialog = await openFirstAvatarDetail(page);
     await expectImageLoaded(dialog.getByAltText("オリジンAkyo", { exact: true }));
-    await dialog.locator('[role="button"][aria-roledescription]').press("Enter");
+    await dialog.locator('[role="button"][aria-roledescription]').click({ position: { x: 120, y: 80 } });
     await expect(dialog.locator("[data-reference-zoom-image]")).toHaveClass(/opacity-100/);
     await dialog.getByRole("button", { name: /閉じる|Close|닫기/i }).click();
     await expect(dialog).toBeHidden();
@@ -267,6 +267,38 @@ test.describe("Pre-generated reference sheet modal", () => {
     await viewer.press("Enter");
     await expect(image).toHaveAttribute("src", /\/0001-960\.webp$/);
     await expectImageLoaded(image);
+    expect(zoomRequests).toBe(1);
+  });
+
+  test("reuses the in-flight zoom image as primary fallback when preview fails during zoom", async ({ page }) => {
+    let failPreview!: () => void;
+    const previewGate = new Promise<void>((resolve) => { failPreview = resolve; });
+    let finishZoom!: () => void;
+    const zoomGate = new Promise<void>((resolve) => { finishZoom = resolve; });
+    let zoomStarted!: () => void;
+    const zoomRequest = new Promise<void>((resolve) => { zoomStarted = resolve; });
+    let zoomRequests = 0;
+    await page.route("**/reference/0001-960.webp", async (route) => {
+      await previewGate;
+      await route.fulfill({ status: 404, body: "preview unavailable" });
+    });
+    await page.route("**/reference/0001-1920.webp", async (route) => {
+      zoomRequests += 1;
+      zoomStarted();
+      await zoomGate;
+      await fulfillWebP(route);
+    });
+    await page.goto("/zukan");
+    const dialog = await openFirstAvatarDetail(page);
+    await dialog.locator('[role="button"][aria-roledescription]').click({ position: { x: 120, y: 80 } });
+    await zoomRequest;
+    failPreview();
+    const primaryImage = dialog.getByAltText("オリジンAkyo", { exact: true });
+    await expect(primaryImage).toHaveAttribute("src", /\/0001-1920\.webp$/);
+    finishZoom();
+    await expectImageLoaded(primaryImage);
+    await expect(primaryImage).toBeVisible();
+    await expect(dialog.locator("[data-reference-zoom-image]")).toHaveCount(0);
     expect(zoomRequests).toBe(1);
   });
 
@@ -332,7 +364,7 @@ test.describe("Pre-generated reference sheet modal", () => {
     await expect(image).toHaveAttribute("src", /\/api\/vrc-world-image\?wrld=wrld_reference-test&w=800$/);
     await expect(image).toHaveAttribute("width", "800");
     await expect(image).toHaveAttribute("height", "533");
-    await dialog.locator('[role="button"][aria-roledescription]').press("Enter");
+    await dialog.locator('[role="button"][aria-roledescription]').click({ position: { x: 120, y: 80 } });
     await expect(dialog.locator("[data-reference-zoom-image]")).toHaveCount(0);
     expect(requested.slice(before).filter((url) => url.includes("/reference/"))).toHaveLength(0);
   });
