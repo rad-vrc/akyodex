@@ -356,7 +356,7 @@ test("attributes transformation failures to the original key and width", async (
   );
 });
 
-test("demonstrates concurrent consumer race where late v1 write overwrites v2 derivative", async () => {
+test("documents why config must serialize consumers: a late v1 write can overwrite v2", async () => {
   const bucket = new FakeBucket();
   bucket.set("0800.png", { etag: "source-v1" });
   const transformer = createTransform();
