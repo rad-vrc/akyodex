@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-02T03:53:46.061Z",
-  "count": 940,
+  "updatedAt": "2026-09-02T06:47:21.476Z",
+  "count": 941,
   "data": [
     {
       "id": "0001",
@@ -10732,6 +10732,18 @@
       "author": "葱 potipoti93",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3d31d4c5-79f6-4467-afb7-1041c54b9773",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3d31d4c5-79f6-4467-afb7-1041c54b9773"
+    },
+    {
+      "id": "0941",
+      "entryType": "world",
+      "displaySerial": "0107",
+      "nickname": "Akyoと一緒の秋-Akyo Autumn-",
+      "avatarName": "Akyoと一緒の秋-Akyo Autumn-",
+      "category": "ワールド",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_c70fe548-6f56-4b15-bfce-84021663b275/",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_c70fe548-6f56-4b15-bfce-84021663b275/"
     }
   ]
 }
