@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   createTimingSafeDigest,
+  jsonError,
   parseAkyoFormData,
   timingSafeCompare,
 } from "./api-helpers";
@@ -180,4 +181,11 @@ test("parseAkyoFormData stores the ID from the validated path, not one smuggled 
     assert.equal(result.data.sourceUrl, `https://vrchat.com/home/avatar/${realId}`);
     assert.equal(result.data.avatarUrl, `https://vrchat.com/home/avatar/${realId}`);
   }
+});
+
+test("jsonError attaches extra headers such as Retry-After", async () => {
+  const response = jsonError("too many", 429, { retryAfterSeconds: 60 }, { "Retry-After": "60" });
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get("Retry-After"), "60");
+  assert.deepEqual(await response.json(), { success: false, error: "too many", retryAfterSeconds: 60 });
 });

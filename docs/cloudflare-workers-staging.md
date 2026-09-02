@@ -71,6 +71,8 @@ npx wrangler secret put ADMIN_PASSWORD_ADMIN --config wrangler.workers.jsonc
 npx wrangler secret put SESSION_SECRET --config wrangler.workers.jsonc
 npx wrangler secret put GITHUB_TOKEN --config wrangler.workers.jsonc
 npx wrangler secret put REVALIDATE_SECRET --config wrangler.workers.jsonc
+# 任意: 管理ログインのレート制限の緊急停止（値を off にすると無効化。通常は設定しない）
+npx wrangler secret put ADMIN_LOGIN_RATE_LIMIT --config wrangler.workers.jsonc
 npx wrangler secret put SENTRY_DSN --config wrangler.workers.jsonc
 ```
 

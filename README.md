@@ -506,6 +506,9 @@ Go to **Settings** → **Environment variables** and add:
 | `GITHUB_CSV_PATH_JA` | Yes | JA CSV path in repo |
 | `REVALIDATE_SECRET` | Recommended | Protects `/api/revalidate` |
 | `NEXT_PUBLIC_DIFY_CHATBOT_TOKEN` | Optional | Enables Dify/Udify chatbot widget |
+| `ADMIN_LOGIN_RATE_LIMIT` | Optional | Emergency switch: set to `off` to disable the admin login rate limit (`src/lib/admin-login-rate-limit.ts`) |
+
+**Admin login rate limiting.** `POST /api/admin/login` is throttled per client IP with a Workers Rate Limiting binding (`ADMIN_LOGIN_IP_LIMITER`, nominal 10 attempts per 60 seconds, keyed by `CF-Connecting-IP`). A second binding (`ADMIN_LOGIN_GLOBAL_LIMITER`, nominal 60 per 60 seconds across all clients) is monitor-only: exceeding it is logged but never blocks, so a distributed attack cannot lock legitimate admins out. The nominal values are configuration targets, not guarantees: Cloudflare enforces them per location and eventually consistently, and staging measurements showed roughly 3-4x the nominal count getting through before 429s start. A blocked IP is accepted again within 60 seconds after its own attempts stop. The check fails open: when a binding is missing (local dev, Pages preview) or throws, the request is allowed; on Workers deployments (`CLOUDFLARE_DEPLOY_TARGET=workers`) a warning is logged so a configuration regression is visible. Emergency switch: create a Worker version with the secret `ADMIN_LOGIN_RATE_LIMIT=off` (production: `npx wrangler versions secret put ADMIN_LOGIN_RATE_LIMIT --config wrangler.workers.production.jsonc`, then activate that version; staging: `npx wrangler secret put ADMIN_LOGIN_RATE_LIMIT --config wrangler.workers.jsonc`) and delete the secret again once the limiter is healthy.
 
 ### 5. GitHub Actions Secrets and Variables
 
