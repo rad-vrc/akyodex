@@ -1,11 +1,15 @@
-export const MAX_SOURCE_IMAGE_BYTES = 20_000_000;
-export const REFERENCE_GENERATOR_VERSION = "v1";
-export const REFERENCE_IMAGE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
+import {
+  getReferenceDerivativeKey,
+  REFERENCE_GENERATOR_VERSION,
+  REFERENCE_IMAGE_CACHE_CONTROL,
+  REFERENCE_QUALITY,
+  REFERENCE_SOURCE_KEY_PATTERN,
+  REFERENCE_VARIANTS,
+  type ReferenceImageWidth,
+} from "../../../src/lib/reference-image-contract";
 
-export const REFERENCE_VARIANTS = [
-  { width: 960, kind: "preview" },
-  { width: 1920, kind: "zoom" },
-] as const;
+export { REFERENCE_GENERATOR_VERSION, REFERENCE_IMAGE_CACHE_CONTROL, REFERENCE_VARIANTS };
+export const MAX_SOURCE_IMAGE_BYTES = 20_000_000;
 
 export interface ReferenceImageKeys {
   sourceKey: string;
@@ -49,7 +53,7 @@ export interface ReferenceTransformRequest {
   width: number;
   fit: "scale-down";
   format: "image/webp";
-  quality: 82;
+  quality: typeof REFERENCE_QUALITY;
 }
 
 export interface ReferenceTransformResult {
@@ -115,7 +119,7 @@ export class ReferenceImageGenerationError extends Error {
 }
 
 export function getReferenceImageKeys(sourceKey: string): ReferenceImageKeys | null {
-  const match = /^(\d{4})\.png$/.exec(sourceKey);
+  const match = REFERENCE_SOURCE_KEY_PATTERN.exec(sourceKey);
   if (!match) {
     return null;
   }
@@ -123,8 +127,8 @@ export function getReferenceImageKeys(sourceKey: string): ReferenceImageKeys | n
   const id = match[1];
   return {
     sourceKey,
-    previewKey: `reference/${id}-960.webp`,
-    zoomKey: `reference/${id}-1920.webp`,
+    previewKey: getReferenceDerivativeKey(id, REFERENCE_VARIANTS[0].width),
+    zoomKey: getReferenceDerivativeKey(id, REFERENCE_VARIANTS[1].width),
   };
 }
 
@@ -132,8 +136,8 @@ function isDeleteAction(action: ReferenceImageEvent["action"]): boolean {
   return action === "DeleteObject" || action === "LifecycleDeletion";
 }
 
-function getVariantKey(keys: ReferenceImageKeys, width: number): string {
-  return width === 960 ? keys.previewKey : keys.zoomKey;
+function getVariantKey(keys: ReferenceImageKeys, width: ReferenceImageWidth): string {
+  return getReferenceDerivativeKey(keys.sourceKey.slice(0, 4), width);
 }
 
 function isCurrentDerivative(
@@ -145,7 +149,7 @@ function isCurrentDerivative(
     object?.customMetadata?.["source-etag"] === sourceEtag &&
     object.customMetadata["generator-version"] === REFERENCE_GENERATOR_VERSION &&
     object.customMetadata.width === String(width) &&
-    object.customMetadata.quality === "82"
+    object.customMetadata.quality === String(REFERENCE_QUALITY)
   );
 }
 
@@ -163,6 +167,11 @@ async function processDeleteEvent(
   return { key: keys.sourceKey, status: "deleted", written: [] };
 }
 
+/**
+ * Requires max_batch_size=1 and max_concurrency=1 (enforced by config tests).
+ * Source HEAD/GET checks and derivative writes are not an atomic cross-key operation.
+ * Parallel consumers require per-key serialization or another proven concurrency design.
+ */
 export async function processReferenceImageEvent(
   event: ReferenceImageEvent,
   {
@@ -213,7 +222,7 @@ export async function processReferenceImageEvent(
     bytes: ArrayBuffer;
     contentType: string;
     key: string;
-    width: number;
+    width: ReferenceImageWidth;
   }> = [];
 
   for (const variant of pendingVariants) {
@@ -231,7 +240,7 @@ export async function processReferenceImageEvent(
         width: variant.width,
         fit: "scale-down",
         format: "image/webp",
-        quality: 82,
+        quality: REFERENCE_QUALITY,
       });
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Unknown Images binding failure";
@@ -264,7 +273,7 @@ export async function processReferenceImageEvent(
     await bucket.put(output.key, output.bytes, {
       customMetadata: {
         "generator-version": REFERENCE_GENERATOR_VERSION,
-        quality: "82",
+        quality: String(REFERENCE_QUALITY),
         "source-etag": currentSource.etag,
         width: String(output.width),
       },

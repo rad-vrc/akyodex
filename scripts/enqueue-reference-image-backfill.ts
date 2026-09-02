@@ -1,18 +1,16 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { REFERENCE_VARIANTS } from "../src/lib/reference-image-contract";
 
 import {
   createBackfillBatches,
-  selectReferenceSources,
+  parseCompleteR2Listing,
+  requireReferenceSources,
   type ListedR2Object,
 } from "./reference-image-maintenance";
 
 const execFileAsync = promisify(execFile);
 const IMAGES_FREE_TRANSFORMATION_LIMIT = 5_000;
-
-interface ListObjectsResponse {
-  Contents?: ListedR2Object[];
-}
 
 interface QueueListResponse {
   result?: Array<{ queue_id?: string; queue_name?: string }>;
@@ -38,8 +36,7 @@ async function listR2Objects(bucket: string, endpoint: string): Promise<ListedR2
     "--output",
     "json",
   ], { maxBuffer: 20 * 1024 * 1024 });
-  const response = JSON.parse(stdout) as ListObjectsResponse;
-  return response.Contents ?? [];
+  return parseCompleteR2Listing(JSON.parse(stdout) as unknown);
 }
 
 async function resolveQueueId(
@@ -68,13 +65,14 @@ function assertTransformationBudget(sourceCount: number): void {
   if (!Number.isSafeInteger(current) || current < 0) {
     throw new Error("REFERENCE_IMAGES_CURRENT_TRANSFORMATIONS must be a non-negative integer");
   }
-  const projected = current + sourceCount * 2;
+  const planned = sourceCount * REFERENCE_VARIANTS.length;
+  const projected = current + planned;
   if (projected > IMAGES_FREE_TRANSFORMATION_LIMIT) {
     throw new Error(
       `Backfill blocked: projected ${projected} transformations exceeds the free limit of ${IMAGES_FREE_TRANSFORMATION_LIMIT}`,
     );
   }
-  console.log(`[reference-backfill] Images usage guard: ${current} + ${sourceCount * 2} = ${projected}`);
+  console.log(`[reference-backfill] Images usage guard: ${current} + ${planned} = ${projected}`);
 }
 
 async function enqueueBatches(
@@ -110,10 +108,7 @@ async function main(): Promise<void> {
   const endpoint = requireEnv("REFERENCE_R2_ENDPOINT");
   const queueName = requireEnv("REFERENCE_QUEUE_NAME");
 
-  const sources = selectReferenceSources(await listR2Objects(bucket, endpoint));
-  if (sources.length === 0) {
-    throw new Error(`No root-level four-digit PNGs found in ${bucket}`);
-  }
+  const sources = requireReferenceSources(await listR2Objects(bucket, endpoint));
   assertTransformationBudget(sources.length);
 
   const queueId = await resolveQueueId(accountId, apiToken, queueName);

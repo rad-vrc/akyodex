@@ -14,7 +14,6 @@ function createCategoryProcessor(definitions) {
     OCCUPATION_KEYWORDS,
     COSTUME_KEYWORDS,
     SEASON_KEYWORDS,
-    ELECTRONIC_KEYWORDS,
     MUSIC_KEYWORDS,
     TOOL_KEYWORDS,
     BATH_KEYWORDS,
@@ -50,6 +49,11 @@ function createCategoryProcessor(definitions) {
         return text.includes(k);
       });
     };
+
+    // Merge rules may normalize a legacy Music category before keyword matching.
+    if (categories.includes(CONFIG.musicCategory)) {
+      addCat(CONFIG.artCategory);
+    }
 
     // Food Logic
     for (const [subCat, keywords] of Object.entries(FOOD_KEYWORDS)) {
@@ -183,13 +187,9 @@ function createCategoryProcessor(definitions) {
       addCat(CONFIG.seasonCategory);
     }
 
-    // Electronic
-    if (matches(ELECTRONIC_KEYWORDS, nickname)) {
-      addCat(CONFIG.electronicCategory);
-    }
-
     // Music
     if (matches(MUSIC_KEYWORDS, nickname)) {
+      addCat(CONFIG.artCategory);
       addCat(CONFIG.musicCategory);
     }
 
@@ -228,6 +228,7 @@ function createCategoryProcessor(definitions) {
       addCat(CONFIG.artCategory);
     }
     if (nickname.includes(CONFIG.realKeyword)) {
+      addCat(CONFIG.styleParentCategory);
       addCat(CONFIG.realCategory);
     }
 

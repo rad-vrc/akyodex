@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
+import { REFERENCE_QUALITY } from "../../../src/lib/reference-image-contract";
 
 import {
   PermanentReferenceImageError,
@@ -71,7 +72,7 @@ interface ImagePipeline {
   transform(options: { fit: "scale-down"; width: number }): ImagePipeline;
   output(options: {
     format: "image/webp";
-    quality: 82;
+    quality: typeof REFERENCE_QUALITY;
   }):
     | Promise<{ response(): Response | Promise<Response> }>
     | { response(): Response | Promise<Response> };

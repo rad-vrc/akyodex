@@ -355,3 +355,109 @@ test("attributes transformation failures to the original key and width", async (
     },
   );
 });
+
+test("documents why config must serialize consumers: a late v1 write can overwrite v2", async () => {
+  const bucket = new FakeBucket();
+  bucket.set("0800.png", { etag: "source-v1" });
+  const transformer = createTransform();
+
+  let v1PassedFinalHead = false;
+  let v2Completed = false;
+
+  const originalHead = bucket.head.bind(bucket);
+  let headCallCount = 0;
+  bucket.head = async (key: string) => {
+    const res = await originalHead(key);
+    if (key === "0800.png") {
+      headCallCount += 1;
+      // Each generation reads the source HEAD at startup and once before writing.
+      if (headCallCount === 2) {
+        v1PassedFinalHead = true;
+      }
+    }
+    return res;
+  };
+
+  const originalPut = bucket.put.bind(bucket);
+  let putCallCount = 0;
+  bucket.put = async (
+    key: string,
+    value: ArrayBuffer,
+    options: {
+      customMetadata: Record<string, string>;
+      httpMetadata: { cacheControl: string; contentType: string };
+    },
+  ) => {
+    putCallCount += 1;
+    if (putCallCount === 1 && v1PassedFinalHead && !v2Completed) {
+      v2Completed = true;
+      bucket.set("0800.png", { etag: "source-v2" });
+      await processReferenceImageEvent(createEvent("PutObject", "0800.png", "source-v2"), {
+        bucket,
+        transform: transformer.transform,
+      });
+      assert.equal(
+        bucket.objects.get("reference/0800-960.webp")?.customMetadata?.["source-etag"],
+        "source-v2",
+      );
+      assert.equal(
+        bucket.objects.get("reference/0800-1920.webp")?.customMetadata?.["source-etag"],
+        "source-v2",
+      );
+    }
+    return originalPut(key, value, options);
+  };
+
+  await processReferenceImageEvent(createEvent("PutObject", "0800.png", "source-v1"), {
+    bucket,
+    transform: transformer.transform,
+  });
+
+  assert.equal(v1PassedFinalHead, true);
+  assert.equal(v2Completed, true);
+
+  // Under concurrent execution, late v1 write overwrites the derivatives back to source-v1
+  assert.equal(
+    bucket.objects.get("reference/0800-960.webp")?.customMetadata?.["source-etag"],
+    "source-v1",
+  );
+  assert.equal(
+    bucket.objects.get("reference/0800-1920.webp")?.customMetadata?.["source-etag"],
+    "source-v1",
+  );
+});
+
+test("serial execution rejects old v1 event after v2 has been processed", async () => {
+  const bucket = new FakeBucket();
+  bucket.set("0800.png", { etag: "source-v2" });
+  for (const variant of REFERENCE_VARIANTS) {
+    bucket.set(`reference/0800-${variant.width}.webp`, {
+      etag: `derived-${variant.width}`,
+      customMetadata: {
+        "generator-version": "v1",
+        quality: "82",
+        "source-etag": "source-v2",
+        width: String(variant.width),
+      },
+    });
+  }
+  const transformer = createTransform();
+
+  const staleResult = await processReferenceImageEvent(
+    createEvent("PutObject", "0800.png", "source-v1"),
+    {
+      bucket,
+      transform: transformer.transform,
+    },
+  );
+
+  assert.equal(staleResult.status, "stale");
+  assert.equal(
+    bucket.objects.get("reference/0800-960.webp")?.customMetadata?.["source-etag"],
+    "source-v2",
+  );
+  assert.equal(
+    bucket.objects.get("reference/0800-1920.webp")?.customMetadata?.["source-etag"],
+    "source-v2",
+  );
+});

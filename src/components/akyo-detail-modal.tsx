@@ -7,7 +7,7 @@
  * Features:
  * - Header with gradient background
  * - Profile icon + ID + name
- * - Large image with sparkle effect (PNG reference sheet preferred, WebP fallback)
+ * - Large image on grid-paper background (PNG reference sheet preferred, WebP fallback)
  * - Info grid (4 sections: name, avatar, attributes, creator)
  * - VRChat URL section
  * - Notes section (if available)
@@ -17,6 +17,7 @@
 import {
   IconExternalLink,
   IconGift,
+  IconGlobe,
   IconHeart,
   IconHeartOutline,
   IconSparkles,
@@ -551,16 +552,14 @@ export function AkyoDetailModal({
             tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
+            {/* Close Button — 白ベタ丸+ブランドピンクのX（トイUIの押しボタン）。
+                装飾アクセントだった旧X線#6b5b7b（紫グレー）を撤去
+                （名前カードの淡いto-purple-50は選定どおり意図的に維持） */}
             <button
               ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-white/60 backdrop-blur-md border border-white/30"
-              style={{
-                background: 'rgba(255, 255, 255, 0.45)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              }}
+              className="group absolute top-4 right-4 w-12 h-12 rounded-full z-[60] flex items-center justify-center transition-all duration-300 hover:scale-110 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.16)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.22)]"
               aria-label={t('modal.close', lang)}
             >
               <svg
@@ -568,11 +567,11 @@ export function AkyoDetailModal({
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                className="transition-transform duration-300 hover:rotate-90"
+                className="transition-transform duration-300 group-hover:rotate-90"
               >
                 <path
                   d="M18 6L6 18M6 6L18 18"
-                  stroke="#6b5b7b"
+                  stroke="#ee4180"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -582,22 +581,30 @@ export function AkyoDetailModal({
 
             {/* Modal Header */}
             <div
-              className="rounded-t-3xl p-6 border-b-4 border-dotted border-purple-200"
+              className="rounded-t-3xl p-6 border-b-4 border-dotted"
               style={{
-                background:
-                  'linear-gradient(to right, rgb(243 232 255), rgb(252 231 243), rgb(219 234 254))',
+                // サイトヘッダーと同じピンク→オレンジ系。白文字のWCAG AA(大文字3:1)を
+                // 満たすためブランド原色より約1段深い値を使用（#ee4180=3.4:1, #ef6c52=3.0:1）
+                background: 'linear-gradient(135deg, #ee4180, #ef6c52)',
+                borderBottomColor: 'rgba(255, 255, 255, 0.85)',
               }}
             >
-              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center">
+              {/* pr-12: 右上の閉じるボタン(right-4 + 48px)の下にタイトルが潜り込まないよう余白を確保。
+                  spanのmin-w-0はflex子のmin-width:autoを打ち消すために必須で、
+                  これが無いと320px幅+長タイトルで文字が余白を突き破ってボタンに重なる */}
+              <h2 id="akyo-detail-modal-title" className="text-3xl font-black flex items-center text-white pr-12">
+                {/* -translate-y-[3.5px]: profileIcon.webpは絵柄が画像内で下寄り
+                    （インク分布y=55〜304/305px、中心58.9%）のため、配置は中央揃いでも
+                    視覚的に下がって見える。実測分を上へ補正 */}
                 <Image
                   src="/images/profileIcon.webp"
                   alt=""
                   width={40}
                   height={40}
-                  className="w-10 h-10 mr-3 inline-block object-cover rounded-full"
+                  className="w-10 h-10 mr-3 inline-block object-cover rounded-full -translate-y-[3.5px]"
                   unoptimized
                 />
-                <span>
+                <span className="min-w-0 flex-1 break-words">
                   {formatDisplayId(localAkyo)} {displayName}
                 </span>
               </h2>
@@ -609,9 +616,23 @@ export function AkyoDetailModal({
                 {/* Image Section with Zoom & Drag */}
                 <div className="relative">
                   <div
-                    className={`h-64 overflow-hidden rounded-3xl bg-gradient-to-br from-purple-100 to-blue-100 p-2 select-none focus:outline-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-purple-300 focus-visible:ring-offset-2 ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+                    className={`h-64 overflow-hidden rounded-3xl bg-white p-2 select-none ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
                       }`}
-                    style={{ touchAction: isZoomed ? 'none' : 'auto' }}
+                    style={{
+                      touchAction: isZoomed ? 'none' : 'auto',
+                      // 三面図の背景は方眼紙（白地+極薄グリッド）。「三面図=設計資料」の
+                      // メタファーで、枠線はレイアウトを変えないinset影で描く
+                      backgroundImage:
+                        'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
+                      backgroundSize: '22px 22px',
+                      boxShadow: 'inset 0 0 0 1px #e2e8f0',
+                      // フォーカス表示はグローバルCSSの3px outline（[tabindex="0"]:focus-visible）
+                      // に任せ、色だけ方眼と同系のslate-500へ（白背景4.76:1・方眼#eef2f6に
+                      // 4.23:1でWCAG 1.4.11の3:1を満たす。slate-400は2.56:1で不適合）。
+                      // Tailwindのringはこのinset影のインラインbox-shadowに上書きされて
+                      // 描画されないため使わない
+                      outlineColor: '#64748b',
+                    }}
                     role="button"
                     tabIndex={0}
                     aria-pressed={isZoomed}
@@ -678,32 +699,32 @@ export function AkyoDetailModal({
                     </div>
                   </div>
 
-                  {/* Zoom/Drag Hint */}
+                  {/* Zoom/Drag Hint — 三面図と重ならないよう右上（旧キラキラ位置）に表示 */}
                   {!isZoomed ? (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
+                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
                       {t('modal.zoomHint', lang)}
                     </div>
                   ) : (
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
+                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
                       {t('modal.dragHint', lang)}
                     </div>
                   )}
-
-                  {/* Sparkle Effect */}
-                  <div className="absolute -top-2 -right-2 w-12 h-12 bg-white rounded-full flex items-center justify-center animate-bounce">
-                    <span className="text-2xl" aria-hidden="true">✨</span>
-                  </div>
                 </div>
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Name Card */}
+                  {/* Name Card — ワールドは正式名称なので「ニックネーム」でなく
+                      「ワールド名」+地球儀（フィルターUIと同じアイコン言語）で示す */}
                   <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4">
                     <h3 className="text-sm font-bold mb-2" style={{ color: '#FF6B9D' }}>
-                      <IconTag size="w-3.5 h-3.5" className="mr-1" />
-                      {t('modal.name', lang)}
+                      {isWorldEntry ? (
+                        <IconGlobe size="w-3.5 h-3.5" className="mr-1" />
+                      ) : (
+                        <IconTag size="w-3.5 h-3.5" className="mr-1" />
+                      )}
+                      {t(isWorldEntry ? 'modal.worldName' : 'modal.name', lang)}
                     </h3>
-                    <p className="text-xl font-black">{localAkyo.nickname || '-'}</p>
+                    <p className="text-xl font-bold">{localAkyo.nickname || '-'}</p>
                   </div>
 
                   {!isWorldEntry && (
@@ -720,7 +741,7 @@ export function AkyoDetailModal({
                         />
                         {t('modal.avatarName', lang)}
                       </h3>
-                      <p className="text-xl font-black">{localAkyo.avatarName || '-'}</p>
+                      <p className="text-xl font-bold">{localAkyo.avatarName || '-'}</p>
                     </div>
                   )}
 
@@ -739,7 +760,10 @@ export function AkyoDetailModal({
                             key={index}
                             className="px-3 py-1 rounded-full text-sm font-bold text-white shadow-md"
                             style={{
-                              background: `linear-gradient(135deg, ${bgColor}, ${bgColor}dd)`,
+                              // 単色ベタ塗り。旧`${bgColor}dd`への半透明グラデは末端が
+                              // 白と混ざり、補正の白文字4.5:1保証が実表示で3.7〜3.9台に
+                              // 割れていた（WCAG 1.4.3違反）ため廃止
+                              background: bgColor,
                             }}
                           >
                             {cat}
@@ -755,7 +779,7 @@ export function AkyoDetailModal({
                       <IconUser size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.author', lang)}
                     </h3>
-                    <p className="text-xl font-black">{authorStr || ''}</p>
+                    <p className="text-xl font-bold">{authorStr || ''}</p>
                   </div>
                 </div>
 
@@ -811,13 +835,16 @@ export function AkyoDetailModal({
                 )}
 
                 {/* Notes/Comment Section */}
+                {/* 額縁はピンク→オレンジ方向の超淡色グラデ。到達点はpink-50とorange-50の
+                    中間色で止め、情報カード群（隣接色相ペア）と同じ穏やかな変化量に揃える */}
                 {commentStr && (
-                  <div className="bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 rounded-3xl p-5">
+                  <div className="bg-gradient-to-br from-pink-50 to-[#fef4f3] rounded-3xl p-5">
                     <h3 className="text-lg font-bold text-gray-900 mb-3">
                       <IconGift size="w-4 h-4" className="mr-2" />
                       {t('modal.bonus', lang)}
                     </h3>
                     <div className="bg-white bg-opacity-80 rounded-2xl p-4 shadow-inner">
+                      {/* 試行: おまけ本文にもサイト書体(M PLUS 2)を適用（コメント文字はサブセット収録済み） */}
                       <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
                         {commentStr}
                       </p>
@@ -825,13 +852,15 @@ export function AkyoDetailModal({
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4 border-t">
+                {/* Action Buttons — 狭幅+iOSの文字サイズ設定(Dynamic Type)でも
+                    はみ出さないよう、横パディングを確保しつつ max-sm で文字と
+                    隙間を一段詰める。それでも溢れる場合は中央揃えのまま折り返す */}
+                <div className="flex gap-3 max-sm:gap-2 pt-4 border-t">
                   {/* Favorite Button - ピンク色 */}
                   <button
                     type="button"
                     onClick={handleFavoriteClick}
-                    className={`flex-1 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${localAkyo.isFavorite
+                    className={`flex-1 min-w-0 py-3 px-2 max-sm:px-1 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 max-sm:gap-1.5 max-sm:text-sm ${localAkyo.isFavorite
                         ? 'text-white hover:opacity-90'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
@@ -849,11 +878,15 @@ export function AkyoDetailModal({
                     }
                   >
                     {localAkyo.isFavorite
-                      ? <IconHeart size="w-4 h-4" />
-                      : <IconHeartOutline size="w-4 h-4" />}
-                    {localAkyo.isFavorite
-                      ? t('modal.favorite.remove', lang)
-                      : t('modal.favorite.add', lang)}
+                      ? <IconHeart size="w-4 h-4" className="shrink-0" />
+                      : <IconHeartOutline size="w-4 h-4" className="shrink-0" />}
+                    {/* 明示spanでmin-w-0: 匿名flex itemのままだとmin-content幅が
+                        縮まず、200%文字拡大時に長い英語ラベルがはみ出す(WCAG 1.4.4) */}
+                    <span className="min-w-0 text-center [overflow-wrap:anywhere]">
+                      {localAkyo.isFavorite
+                        ? t('modal.favorite.remove', lang)
+                        : t('modal.favorite.add', lang)}
+                    </span>
                   </button>
 
                   {/* VRChat Button - Orange Gradient (not purple!) */}
@@ -861,15 +894,17 @@ export function AkyoDetailModal({
                     <button
                       type="button"
                       onClick={handleVRChatOpen}
-                      className="flex-1 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2 hover:brightness-110 hover:shadow-md"
+                      className="flex-1 min-w-0 py-3 px-2 max-sm:px-1 rounded-lg font-medium transition-all flex items-center justify-center gap-2 max-sm:gap-1.5 max-sm:text-sm hover:brightness-110 hover:shadow-md"
                       style={{
                         background: 'linear-gradient(135deg, #f97316, #fb923c)',
                         color: 'white',
                       }}
                       aria-label={t('modal.vrchatOpen', lang)}
                     >
-                      <IconExternalLink size="w-4 h-4" />
-                      {t('modal.vrchatOpen', lang)}
+                      <IconExternalLink size="w-4 h-4" className="shrink-0" />
+                      <span className="min-w-0 text-center [overflow-wrap:anywhere]">
+                        {t('modal.vrchatOpen', lang)}
+                      </span>
                     </button>
                   )}
                 </div>

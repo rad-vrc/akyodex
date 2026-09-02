@@ -128,10 +128,27 @@ jobs:
       - name: Verify immutable Pages preview runtime
         env:
           DEPLOYMENT_URL: ${{ steps.deployment.outputs.deployment_url }}
+          # プレビューはCloudflare Accessで保護されているため、CIからの検証は
+          # サービストークンで認証する（Zero Trust > Access controls > Service auth）
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           max_attempts=12
           retry_seconds=5
+
+          # サービストークンがRunnerへ届いているかを検査する（値は出さず長さと形式のみ）。
+          # Client IDは "<32桁hex>.access"、Client Secretは64桁hexまたは cfast_ 形式。
+          id_len="${#CF_ACCESS_CLIENT_ID}"
+          secret_len="${#CF_ACCESS_CLIENT_SECRET}"
+          id_suffix="no"
+          case "${CF_ACCESS_CLIENT_ID}" in *.access) id_suffix="yes" ;; esac
+          echo "Access service token: client_id=${id_len} chars (ends with .access: ${id_suffix}), client_secret=${secret_len} chars"
+          if [ "${id_len}" -eq 0 ] || [ "${secret_len}" -eq 0 ]; then
+            echo "::error::Access service token secrets are empty on the runner."
+            echo "Set the CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET repository secrets."
+            exit 1
+          fi
 
           verify_response() {
             local path="$1"
@@ -145,12 +162,42 @@ jobs:
               --connect-timeout 10 \
               --max-time 30 \
               --header "Accept: ${accept}" \
+              --header "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}" \
+              --header "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}" \
               --dump-header "${headers_file}" \
               --output "${body_file}" \
               --write-out "%{http_code}" \
               "${DEPLOYMENT_URL}${path}" || echo "000")"
 
             if [ "${status}" != "200" ]; then
+              # Accessのサインイン要求はリトライしても解消しないので即時失敗させる
+              # 合否は最終HTTP応答のみで判定する。Access由来かどうかは失敗理由の
+              # 説明を厚くするためだけに使い、成功扱いには決してしない。
+              # 検証を一つも実行していないのに緑にすると、このジョブが守っている
+              # 境界（/zukanが描画できる・カタログAPIが正しいJSON・画像変換が効く・
+              # 変更系POSTが403・X-Robots-Tagが付く）を全て無効化するため。
+              if grep -qi 'cloudflareaccess\.com' "${headers_file}" 2>/dev/null; then
+                echo "::error::${path} was blocked by Cloudflare Access (HTTP ${status}); runtime verification could not run."
+                # リダイレクトURLのmetaクレーム（機密でない診断情報）から失敗理由を切り分ける
+                node -e '
+                  const fs = require("node:fs");
+                  const headers = fs.readFileSync(process.argv[1], "utf8");
+                  const line = headers.match(/^location:.*$/im);
+                  if (!line) { console.log("Access meta: no Location header"); process.exit(0); }
+                  const meta = new URL(line[0].replace(/^location:\s*/i, "").trim()).searchParams.get("meta");
+                  if (!meta) { console.log("Access meta: absent"); process.exit(0); }
+                  const claims = JSON.parse(Buffer.from(meta.split(".")[1], "base64url").toString());
+                  console.log("Access meta: auth_status=" + claims.auth_status +
+                    " service_token_status=" + claims.service_token_status +
+                    " service_token_id=" + (claims.service_token_id || "-"));
+                ' "${headers_file}" || true
+                echo "(The meta claim above is an UNVERIFIED JWT payload. Use it as a hint only;"
+                echo " the pass/fail decision here is made solely from the final HTTP status.)"
+                echo "Fix: create one Service Token in the same Zero Trust account, set BOTH values as a matching pair"
+                echo "into CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET, and make sure the preview Access app has a"
+                echo "Service Auth policy that explicitly includes THAT token."
+                exit 1
+              fi
               echo "${path} returned HTTP ${status}."
               return 1
             fi
@@ -169,12 +216,16 @@ jobs:
               return 1
             fi
 
+            # 管理ログインを含む全mutating POSTがガードで403になること
+            # （プレビューは完全read-only。Accessゲートとは独立したアプリ側の防御層）
             local status
             status="$(curl --silent --show-error \
               --connect-timeout 10 \
               --max-time 30 \
               --request POST \
               --header "Content-Type: application/json" \
+              --header "CF-Access-Client-Id: ${CF_ACCESS_CLIENT_ID}" \
+              --header "CF-Access-Client-Secret: ${CF_ACCESS_CLIENT_SECRET}" \
               --data '{}' \
               --output /tmp/admin-login-body \
               --write-out "%{http_code}" \
@@ -248,6 +299,7 @@ jobs:
                   `- PR alias: ${process.env.DEPLOYMENT_ALIAS_URL}`,
                   `- Deployment ID: \`${process.env.DEPLOYMENT_ID}\``,
                   '',
+                  '> **Cloudflare Access required:** preview URLs prompt for sign-in. Ask the owner if you need access.',
                   '> **Mechanically read-only review environment:** mutating HTTP methods are rejected before OpenNext, and Preview uses dedicated KV/R2 resources.',
                   '> Durable Objects, service bindings, Workers caches, `cf.image`, Workers Sentry, and final performance must be verified at https://staging.akyodex.com.',
                   '> Pages server-side Sentry is disabled, so a clean Pages preview is not proof that server errors are absent.'

@@ -25,7 +25,7 @@ test.describe("Search input focus styling", () => {
     await page.waitForSelector(".akyo-card", { state: "attached" });
 
     const globalSearch = page.locator("input.search-input");
-    const authorSearch = page.getByPlaceholder(/作者を検索|Search authors|작가 검색/i);
+    const authorSearch = page.getByPlaceholder(/作者名を検索|Search authors|작가 검색/i);
 
     await expect(globalSearch).toBeEnabled();
     await expect(globalSearch).toBeVisible();

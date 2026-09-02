@@ -3,17 +3,14 @@ import { promisify } from "node:util";
 
 import {
   auditReferenceImages,
-  selectReferenceSources,
+  createHeadPool,
+  parseCompleteR2Listing,
   type HeadObjectResult,
   type ListedR2Object,
 } from "./reference-image-maintenance";
 
 const execFileAsync = promisify(execFile);
 const HEAD_CONCURRENCY = 12;
-
-interface ListObjectsResponse {
-  Contents?: ListedR2Object[];
-}
 
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -31,7 +28,7 @@ async function runAwsJson(args: string[]): Promise<unknown> {
 }
 
 async function listR2Objects(bucket: string, endpoint: string): Promise<ListedR2Object[]> {
-  const response = (await runAwsJson([
+  const response = await runAwsJson([
     "s3api",
     "list-objects-v2",
     "--bucket",
@@ -40,8 +37,8 @@ async function listR2Objects(bucket: string, endpoint: string): Promise<ListedR2
     endpoint,
     "--output",
     "json",
-  ])) as ListObjectsResponse;
-  return response.Contents ?? [];
+  ]);
+  return parseCompleteR2Listing(response);
 }
 
 async function headR2Object(
@@ -71,45 +68,18 @@ async function headR2Object(
   }
 }
 
-function createHeadPool(
-  bucket: string,
-  endpoint: string,
-): (key: string) => Promise<HeadObjectResult | null> {
-  let active = 0;
-  const waiting: Array<() => void> = [];
-
-  async function acquire(): Promise<void> {
-    if (active < HEAD_CONCURRENCY) {
-      active += 1;
-      return;
-    }
-    await new Promise<void>((resolve) => waiting.push(resolve));
-    active += 1;
-  }
-
-  function release(): void {
-    active -= 1;
-    waiting.shift()?.();
-  }
-
-  return async (key) => {
-    await acquire();
-    try {
-      return await headR2Object(bucket, endpoint, key);
-    } finally {
-      release();
-    }
-  };
-}
-
 async function main(): Promise<void> {
   const bucket = requireEnv("REFERENCE_R2_BUCKET");
   const endpoint = requireEnv("REFERENCE_R2_ENDPOINT");
-  const sources = selectReferenceSources(await listR2Objects(bucket, endpoint));
-  const report = await auditReferenceImages(sources, createHeadPool(bucket, endpoint));
+  const objects = await listR2Objects(bucket, endpoint);
+  const pooledHead = createHeadPool(
+    (key) => headR2Object(bucket, endpoint, key),
+    HEAD_CONCURRENCY,
+  );
+  const report = await auditReferenceImages(objects, pooledHead);
 
   console.log(
-    `[reference-audit] ${report.validDerivativeCount}/${report.sourceCount * 2} derivatives valid for ${report.sourceCount} originals`,
+    `[reference-audit] sources=${report.sourceCount} valid=${report.validDerivativeCount} issues=${report.issues.length} orphans=${report.orphanCount} incomplete=${report.incompleteSourceCount}`,
   );
   if (report.issues.length > 0) {
     for (const issue of report.issues) {
