@@ -118,4 +118,4 @@ function checkCatalogLocaleIds(dataDir = path.join(__dirname, '..', 'data')) {
   };
 }
 
-module.exports = { checkCatalogLocaleIds, readLocaleIds, findDuplicates, LOCALES, ID_PATTERN };
+module.exports = { checkCatalogLocaleIds };
