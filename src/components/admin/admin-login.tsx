@@ -8,17 +8,21 @@ interface AdminLoginProps {
   onLogin: (role: AdminRole) => void;
 }
 
+const INVALID_PASSWORD_MESSAGE = 'Akyoワードが正しくありません';
+// サーバー側のレート制限（IP 単位 / 全体）。カウンタは 1 分で自動的に消える
+const RATE_LIMITED_MESSAGE = 'ログイン試行が多すぎます。1分ほど待ってから再度お試しください';
+
 /**
  * Admin Login Component
  * 管理画面のログイン（完全再現）
  */
 export function AdminLogin({ onLogin }: AdminLoginProps) {
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(false);
+    setError(null);
 
     // サーバーサイド認証を使用（セキュリティ向上）
     try {
@@ -34,12 +38,14 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
 
       if (data.success && data.role) {
         onLogin(data.role);
+      } else if (response.status === 429) {
+        setError(RATE_LIMITED_MESSAGE);
       } else {
-        setError(true);
+        setError(INVALID_PASSWORD_MESSAGE);
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError(true);
+      setError(INVALID_PASSWORD_MESSAGE);
     }
   };
 
@@ -62,7 +68,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             <input
               id="admin-login-password"
               type="password"
-              aria-invalid={error}
+              aria-invalid={error !== null}
               aria-describedby={error ? 'admin-login-error' : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -86,7 +92,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
               className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm"
               role="alert"
             >
-              <IconExclamationCircle size="w-4 h-4" className="mr-1" /> Akyoワードが正しくありません
+              <IconExclamationCircle size="w-4 h-4" className="mr-1" /> {error}
             </div>
           )}
         </form>

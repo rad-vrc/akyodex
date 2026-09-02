@@ -103,10 +103,11 @@ export function jsonError(
   message: string,
   status: number = 400,
   extra: Record<string, unknown> = {},
+  headers?: HeadersInit,
 ): Response {
   return Response.json(
     { success: false, error: message, ...extra },
-    { status },
+    { status, headers },
   );
 }
 

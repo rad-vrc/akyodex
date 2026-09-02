@@ -6,9 +6,16 @@
  *
  * Server-side authentication endpoint to prevent client-side password exposure.
  * Creates a secure session cookie on successful authentication.
+ * Rate limited per client IP and globally (see src/lib/admin-login-rate-limit.ts);
+ * returns 429 with Retry-After when the budget for the current minute is spent.
  */
 
 import { connection } from 'next/server';
+import {
+  checkAdminLoginRateLimit,
+  isAdminLoginRateLimitDisabled,
+  resolveAdminLoginRateLimiters,
+} from '@/lib/admin-login-rate-limit';
 import { jsonError, jsonSuccess, setSessionCookie, timingSafeCompare } from '@/lib/api-helpers';
 import { createSessionToken } from '@/lib/session';
 import type { AdminRole } from '@/types/akyo';
@@ -20,6 +27,24 @@ const MAX_AKYO_WORD_LENGTH = 256;
 export async function POST(request: Request) {
   await connection();
   try {
+    // 総当たり対策のレート制限（IP 単位 10 回/分 + 全体 60 回/分）。パスワード照合の前に
+    // 判定し、成功・失敗を問わず 1 試行として数える。binding が無い・失敗した・
+    // ADMIN_LOGIN_RATE_LIMIT=off のときは制限せず通す（正当な管理者を締め出さない）。
+    const rateLimit = await checkAdminLoginRateLimit({
+      clientIp: request.headers.get('cf-connecting-ip'),
+      limiters: await resolveAdminLoginRateLimiters(),
+      disabled: isAdminLoginRateLimitDisabled(process.env.ADMIN_LOGIN_RATE_LIMIT),
+    });
+    if (!rateLimit.allowed) {
+      console.warn(`[admin-login] rate limited (${rateLimit.scope})`);
+      return jsonError(
+        'ログイン試行が多すぎます。しばらく待ってから再度お試しください',
+        429,
+        { retryAfterSeconds: rateLimit.retryAfterSeconds },
+        { 'Retry-After': String(rateLimit.retryAfterSeconds) },
+      );
+    }
+
     const body = await request.json();
     const { password } = body;
 
