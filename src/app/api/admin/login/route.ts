@@ -27,9 +27,9 @@ const MAX_AKYO_WORD_LENGTH = 256;
 export async function POST(request: Request) {
   await connection();
   try {
-    // 総当たり対策のレート制限（IP 単位 10 回/分 + 全体 60 回/分）。パスワード照合の前に
-    // 判定し、成功・失敗を問わず 1 試行として数える。binding が無い・失敗した・
-    // ADMIN_LOGIN_RATE_LIMIT=off のときは制限せず通す（正当な管理者を締め出さない）。
+    // 総当たり対策のレート制限（IP 単位 名目 10 回/分で遮断、全体 名目 60 回/分は監視専用）。
+    // パスワード照合の前に判定し、成功・失敗を問わず 1 試行として数える。binding が無い・
+    // 失敗した・ADMIN_LOGIN_RATE_LIMIT=off のときは制限せず通す（正当な管理者を締め出さない）。
     const rateLimit = await checkAdminLoginRateLimit({
       clientIp: request.headers.get('cf-connecting-ip'),
       limiters: await resolveAdminLoginRateLimiters(),
@@ -43,6 +43,10 @@ export async function POST(request: Request) {
         { retryAfterSeconds: rateLimit.retryAfterSeconds },
         { 'Retry-After': String(rateLimit.retryAfterSeconds) },
       );
+    }
+    if (rateLimit.globalBudgetExceeded) {
+      // 全体段は監視専用: 分散攻撃の兆候をログに残すだけで、遮断はしない
+      console.warn('[admin-login] global login budget exceeded (monitor only; request allowed)');
     }
 
     const body = await request.json();
