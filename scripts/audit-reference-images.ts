@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 
 import {
   auditReferenceImages,
+  createHeadPool,
   selectReferenceSources,
   type HeadObjectResult,
   type ListedR2Object,
@@ -71,42 +72,15 @@ async function headR2Object(
   }
 }
 
-function createHeadPool(
-  bucket: string,
-  endpoint: string,
-): (key: string) => Promise<HeadObjectResult | null> {
-  let active = 0;
-  const waiting: Array<() => void> = [];
-
-  async function acquire(): Promise<void> {
-    if (active < HEAD_CONCURRENCY) {
-      active += 1;
-      return;
-    }
-    await new Promise<void>((resolve) => waiting.push(resolve));
-    active += 1;
-  }
-
-  function release(): void {
-    active -= 1;
-    waiting.shift()?.();
-  }
-
-  return async (key) => {
-    await acquire();
-    try {
-      return await headR2Object(bucket, endpoint, key);
-    } finally {
-      release();
-    }
-  };
-}
-
 async function main(): Promise<void> {
   const bucket = requireEnv("REFERENCE_R2_BUCKET");
   const endpoint = requireEnv("REFERENCE_R2_ENDPOINT");
   const sources = selectReferenceSources(await listR2Objects(bucket, endpoint));
-  const report = await auditReferenceImages(sources, createHeadPool(bucket, endpoint));
+  const pooledHead = createHeadPool(
+    (key) => headR2Object(bucket, endpoint, key),
+    HEAD_CONCURRENCY,
+  );
+  const report = await auditReferenceImages(sources, pooledHead);
 
   console.log(
     `[reference-audit] ${report.validDerivativeCount}/${report.sourceCount * 2} derivatives valid for ${report.sourceCount} originals`,

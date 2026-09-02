@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   auditReferenceImages,
   createBackfillBatches,
+  createHeadPool,
   selectReferenceSources,
   type HeadObjectResult,
   type ListedR2Object,
@@ -138,24 +139,9 @@ test("audits derivatives concurrently and bounds active requests to pool concurr
   const CONCURRENCY_LIMIT = 12;
   let active = 0;
   let maxConcurrentHeads = 0;
-  const waiting: Array<() => void> = [];
 
-  async function acquire(): Promise<void> {
-    if (active < CONCURRENCY_LIMIT) {
-      active += 1;
-      return;
-    }
-    await new Promise<void>((resolve) => waiting.push(resolve));
+  const pooledHead = createHeadPool(async (key) => {
     active += 1;
-  }
-
-  function release(): void {
-    active -= 1;
-    waiting.shift()?.();
-  }
-
-  const report = await auditReferenceImages(sources, async (key) => {
-    await acquire();
     try {
       maxConcurrentHeads = Math.max(maxConcurrentHeads, active);
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -172,9 +158,11 @@ test("audits derivatives concurrently and bounds active requests to pool concurr
         },
       };
     } finally {
-      release();
+      active -= 1;
     }
-  });
+  }, CONCURRENCY_LIMIT);
+
+  const report = await auditReferenceImages(sources, pooledHead);
 
   assert.equal(maxConcurrentHeads, CONCURRENCY_LIMIT);
   assert.equal(report.sourceCount, 20);

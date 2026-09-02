@@ -370,7 +370,8 @@ test("demonstrates concurrent consumer race where late v1 write overwrites v2 de
     const res = await originalHead(key);
     if (key === "0800.png") {
       headCallCount += 1;
-      if (headCallCount === 4) {
+      // Each generation reads the source HEAD at startup and once before writing.
+      if (headCallCount === 2) {
         v1PassedFinalHead = true;
       }
     }
@@ -411,6 +412,9 @@ test("demonstrates concurrent consumer race where late v1 write overwrites v2 de
     bucket,
     transform: transformer.transform,
   });
+
+  assert.equal(v1PassedFinalHead, true);
+  assert.equal(v2Completed, true);
 
   // Under concurrent execution, late v1 write overwrites the derivatives back to source-v1
   assert.equal(

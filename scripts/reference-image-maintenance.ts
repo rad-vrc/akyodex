@@ -48,6 +48,37 @@ export interface ReferenceAuditReport {
   validDerivativeCount: number;
 }
 
+export function createHeadPool(
+  headObject: (key: string) => Promise<HeadObjectResult | null>,
+  concurrency: number,
+): (key: string) => Promise<HeadObjectResult | null> {
+  let active = 0;
+  const waiting: Array<() => void> = [];
+
+  async function acquire(): Promise<void> {
+    if (active < concurrency) {
+      active += 1;
+      return;
+    }
+    await new Promise<void>((resolve) => waiting.push(resolve));
+    active += 1;
+  }
+
+  function release(): void {
+    active -= 1;
+    waiting.shift()?.();
+  }
+
+  return async (key) => {
+    await acquire();
+    try {
+      return await headObject(key);
+    } finally {
+      release();
+    }
+  };
+}
+
 function normalizeEtag(eTag: string): string {
   return eTag.replace(/^"|"$/g, "");
 }
