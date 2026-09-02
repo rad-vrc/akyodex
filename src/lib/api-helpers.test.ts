@@ -82,3 +82,58 @@ test("parseAkyoFormData rejects worlds without a display name", () => {
     error: "必須フィールドが不足しています",
   });
 });
+
+test("parseAkyoFormData stores VRChat URLs in canonical form (trailing slash / tab suffix / query removed)", () => {
+  const worldId = "wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456";
+  const worldForm = new FormData();
+  worldForm.append("id", "0941");
+  worldForm.append("entryType", "world");
+  worldForm.append("nickname", "Akyoと一緒の秋");
+  worldForm.append("category", "ワールド");
+  worldForm.append("author", "Author");
+  // 公式サイトのタブUIからコピーした /info 付き＋末尾スラッシュ
+  worldForm.append("sourceUrl", `https://vrchat.com/home/world/${worldId}/info/`);
+
+  const world = parseAkyoFormData(worldForm);
+  assert.equal(world.success, true, JSON.stringify(world));
+  if (world.success) {
+    assert.equal(world.data.sourceUrl, `https://vrchat.com/home/world/${worldId}`);
+    assert.equal(world.data.avatarUrl, `https://vrchat.com/home/world/${worldId}`);
+  }
+
+  const avatarId = "avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921";
+  const avatarForm = new FormData();
+  avatarForm.append("id", "0942");
+  avatarForm.append("entryType", "avatar");
+  avatarForm.append("nickname", "テストAkyo");
+  avatarForm.append("avatarName", "Test Akyo");
+  avatarForm.append("category", "動物");
+  avatarForm.append("author", "Author");
+  // 大文字ホスト・http・クエリ・ハッシュ
+  avatarForm.append("sourceUrl", `http://VRChat.com/home/avatar/${avatarId}?tab=details#top`);
+  // 旧クライアントが avatarUrl を別途送ってきても同じ標準形に揃う
+  avatarForm.append("avatarUrl", `https://vrchat.com/home/avatar/${avatarId}/`);
+
+  const avatar = parseAkyoFormData(avatarForm);
+  assert.equal(avatar.success, true, JSON.stringify(avatar));
+  if (avatar.success) {
+    assert.equal(avatar.data.sourceUrl, `https://vrchat.com/home/avatar/${avatarId}`);
+    assert.equal(avatar.data.avatarUrl, `https://vrchat.com/home/avatar/${avatarId}`);
+  }
+});
+
+test("parseAkyoFormData leaves BOOTH-only submissions untouched by URL normalization", () => {
+  const formData = new FormData();
+  formData.append("id", "0943");
+  formData.append("entryType", "booth");
+  formData.append("nickname", "BOOTH Akyo");
+  formData.append("author", "Author");
+  formData.append("boothUrl", "https://booth.pm/ja/items/1234567");
+
+  const result = parseAkyoFormData(formData);
+  assert.equal(result.success, true, JSON.stringify(result));
+  if (result.success) {
+    assert.equal(result.data.sourceUrl, "");
+    assert.equal(result.data.boothUrl, "https://booth.pm/ja/items/1234567");
+  }
+});

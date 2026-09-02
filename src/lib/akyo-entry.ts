@@ -302,6 +302,36 @@ export function extractVRChatWorldIdFromUrl(
   return match ? match[1] : null;
 }
 
+/**
+ * VRChat の avatar/world URL を保存用の標準形へ正規化する。
+ *
+ *   https://vrchat.com/home/avatar/{avtr_id}
+ *   https://vrchat.com/home/world/{wrld_id}
+ *
+ * 末尾スラッシュ・タブサフィックス（/info 等）・クエリ・ハッシュ・大文字ホスト・
+ * http を落とし、ID だけを残す。受理判定と拒否は従来どおり
+ * detectVrcEntryTypeFromUrl / isValidVRChatEntityId に委ね、VRChat URL と
+ * 判定できない入力（BOOTH のみ・空・不正）は trim 以外変更しない。
+ * 既存データの一括書き換えは行わず、新規登録・編集で通る入口だけに適用する。
+ */
+export function normalizeVrchatSourceUrl(url: string | undefined | null): string {
+  const trimmed = (url ?? "").trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  const entryType = detectVrcEntryTypeFromUrl(trimmed);
+  if (entryType === "avatar") {
+    const id = extractVRChatAvatarIdFromUrl(trimmed);
+    return id ? `https://vrchat.com/home/avatar/${id}` : trimmed;
+  }
+  if (entryType === "world") {
+    const id = extractVRChatWorldIdFromUrl(trimmed);
+    return id ? `https://vrchat.com/home/world/${id}` : trimmed;
+  }
+  return trimmed;
+}
+
 export function isValidVRChatEntityId(
   entryType: AkyoEntryType,
   id: string | undefined,

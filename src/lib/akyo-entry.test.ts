@@ -314,3 +314,38 @@ test("detectVrcEntryTypeFromUrl accepts tab suffixes like /info from copied brow
     "wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456",
   );
 });
+
+test("normalizeVrchatSourceUrl は VRChat URL を末尾スラッシュ・タブ・クエリなしの標準形へ揃える", () => {
+  const normalize = (akyoEntryModuleNs as Record<string, unknown>)
+    .normalizeVrchatSourceUrl as (url: string | undefined | null) => string;
+  assert.equal(typeof normalize, "function");
+
+  const avatarId = "avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921";
+  const worldId = "wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456";
+  const avatarCanonical = `https://vrchat.com/home/avatar/${avatarId}`;
+  const worldCanonical = `https://vrchat.com/home/world/${worldId}`;
+
+  // 既に標準形なら不変
+  assert.equal(normalize(avatarCanonical), avatarCanonical);
+  assert.equal(normalize(worldCanonical), worldCanonical);
+
+  // 既存データに27件ある末尾スラッシュ
+  assert.equal(normalize(`${worldCanonical}/`), worldCanonical);
+  // 公式サイトのタブUI由来の /info（#473 で受理するようになったもの）
+  assert.equal(normalize(`${worldCanonical}/info`), worldCanonical);
+  assert.equal(normalize(`${avatarCanonical}/info/`), avatarCanonical);
+  // 大文字ホスト・http・クエリ・ハッシュ・前後空白
+  assert.equal(
+    normalize(`  http://VRChat.com/home/avatar/${avatarId}?tab=details#top  `),
+    avatarCanonical,
+  );
+
+  // VRChat URL と判定できないものは trim 以外触らない（拒否は従来の検証に委ねる）
+  assert.equal(normalize("https://evil.example/home/world/wrld_12ab34cd/info"), "https://evil.example/home/world/wrld_12ab34cd/info");
+  assert.equal(normalize("https://booth.pm/ja/items/1234567"), "https://booth.pm/ja/items/1234567");
+  assert.equal(normalize(`  ${worldId}  `), worldId);
+  assert.equal(normalize(""), "");
+  assert.equal(normalize("   "), "");
+  assert.equal(normalize(undefined), "");
+  assert.equal(normalize(null), "");
+});
