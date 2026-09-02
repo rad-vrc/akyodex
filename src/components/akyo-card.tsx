@@ -348,9 +348,9 @@ function AkyoCardComponent({
           className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
           aria-haspopup="dialog"
         >
-          <span className="animate-bounce" aria-hidden="true">🌟</span>
+          <span aria-hidden="true">🌟</span>
           <span>{t("card.detail", lang)}</span>
-          <span className="animate-bounce" aria-hidden="true">🌟</span>
+          <span aria-hidden="true">🌟</span>
         </button>
       </div>
     </article>
