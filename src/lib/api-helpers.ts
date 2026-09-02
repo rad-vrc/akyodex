@@ -7,11 +7,12 @@
 import {
   createHash,
   timingSafeEqual as nodeTimingSafeEqual,
-  } from "node:crypto";
+} from "node:crypto";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import type { AkyoEntryType } from "@/types/akyo";
-import { detectVrcEntryTypeFromUrl,
+import {
+  detectVrcEntryTypeFromUrl,
   normalizeVrchatSourceUrl,
 } from "./akyo-entry";
 import {
@@ -493,7 +494,9 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
       nickname,
       sourceUrl,
       boothUrl,
-      avatarUrl: normalizeVrchatSourceUrl(readField("avatarUrl")) || sourceUrl,
+      // avatarUrl は sourceUrl の互換エイリアス。旧クライアントが別の URL を併送しても、
+      // 検証済みの sourceUrl と同じ値に統一する（別 ID の併存を保存しない）
+      avatarUrl: sourceUrl,
       imageData,
 
       // 新フィールド

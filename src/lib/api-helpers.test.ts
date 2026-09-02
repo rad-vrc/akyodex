@@ -137,3 +137,47 @@ test("parseAkyoFormData leaves BOOTH-only submissions untouched by URL normaliza
     assert.equal(result.data.boothUrl, "https://booth.pm/ja/items/1234567");
   }
 });
+
+test("parseAkyoFormData unifies avatarUrl with the validated sourceUrl even if a client sends a different ID", () => {
+  const sourceId = "avtr_11111111-1111-4111-8111-111111111111";
+  const otherId = "avtr_22222222-2222-4222-8222-222222222222";
+  const formData = new FormData();
+  formData.append("id", "0944");
+  formData.append("entryType", "avatar");
+  formData.append("nickname", "テストAkyo");
+  formData.append("avatarName", "Test Akyo");
+  formData.append("category", "動物");
+  formData.append("author", "Author");
+  formData.append("sourceUrl", `https://vrchat.com/home/avatar/${sourceId}/info`);
+  // 旧クライアントが別 ID の avatarUrl を併送しても、検証済み sourceUrl に統一される
+  formData.append("avatarUrl", `https://vrchat.com/home/avatar/${otherId}/`);
+
+  const result = parseAkyoFormData(formData);
+  assert.equal(result.success, true, JSON.stringify(result));
+  if (result.success) {
+    assert.equal(result.data.sourceUrl, `https://vrchat.com/home/avatar/${sourceId}`);
+    assert.equal(result.data.avatarUrl, `https://vrchat.com/home/avatar/${sourceId}`);
+  }
+});
+
+test("parseAkyoFormData stores the ID from the validated path, not one smuggled in the URL userinfo", () => {
+  const realId = "avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921";
+  const formData = new FormData();
+  formData.append("id", "0945");
+  formData.append("entryType", "avatar");
+  formData.append("nickname", "テストAkyo");
+  formData.append("avatarName", "Test Akyo");
+  formData.append("category", "動物");
+  formData.append("author", "Author");
+  formData.append(
+    "sourceUrl",
+    `https://avtr_attacker-0000-0000-0000-000000000000@vrchat.com/home/avatar/${realId}`,
+  );
+
+  const result = parseAkyoFormData(formData);
+  assert.equal(result.success, true, JSON.stringify(result));
+  if (result.success) {
+    assert.equal(result.data.sourceUrl, `https://vrchat.com/home/avatar/${realId}`);
+    assert.equal(result.data.avatarUrl, `https://vrchat.com/home/avatar/${realId}`);
+  }
+});

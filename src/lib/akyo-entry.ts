@@ -241,39 +241,72 @@ export function hydrateAkyoDataset(entries: AkyoData[]): AkyoData[] {
   });
 }
 
-export function detectVrcEntryTypeFromUrl(url: string): AkyoEntryType | null {
+// VRChat 公式サイトの詳細ページ URL の pathname。末尾のタブサフィックスは 1 つだけ
+// 許容する（タブUIのアドレスバーからコピーすると /info 等が付いてくる。例:
+// /home/world/wrld_xxx/info）。無効タブや多重セグメント（/info/anything, ////）
+// まで通すと壊れた sourceUrl が保存されるため、非空セグメント 1 個までに制限する。
+// ID はこのキャプチャからだけ取り出す。
+const VRCHAT_AVATAR_PATH_PATTERN =
+  /^\/home\/avatar\/(avtr_[a-z0-9-]{1,64})(?:\/[a-z0-9-]+)?\/?$/i;
+const VRCHAT_WORLD_PATH_PATTERN =
+  /^\/home\/world\/(wrld_[a-z0-9-]{1,64})(?:\/[a-z0-9-]+)?\/?$/i;
+
+interface VrchatEntityUrl {
+  entryType: "avatar" | "world";
+  id: string;
+}
+
+/**
+ * VRChat の avatar/world 詳細 URL を解析し、種別と ID を返す。
+ *
+ * 判定と ID 抽出を 1 か所にまとめ、ID は検証済み pathname のキャプチャからだけ取る。
+ * userinfo（https://avtr_xxx@vrchat.com/...）やクエリ・ハッシュに含まれる ID らしき
+ * 文字列は採用しない。キャプチャした ID は厳格パターン（小文字プレフィックス）を
+ * 満たす必要があり、満たさない URL は VRChat URL と判定しない。
+ */
+function parseVrchatEntityUrl(url: string): VrchatEntityUrl | null {
   const trimmedUrl = url.trim();
   if (!trimmedUrl) {
     return null;
   }
 
+  let parsedUrl: URL;
   try {
-    const parsedUrl = new URL(trimmedUrl);
-    const normalizedHost = parsedUrl.hostname.toLowerCase();
-    const normalizedPath = parsedUrl.pathname.toLowerCase();
-
-    if (
-      (parsedUrl.protocol === "https:" || parsedUrl.protocol === "http:") &&
-      normalizedHost === "vrchat.com"
-    ) {
-      // 末尾のタブサフィックスを1つだけ許容する。VRChat公式サイトの詳細
-      // ページはタブUIで、アドレスバーからコピーすると /info 等が付いてくる
-      // （例: /home/world/wrld_xxx/info）。無効タブや多重セグメント
-      // （/info/anything, ////）まで通すと壊れたsourceUrlが保存されるため、
-      // 非空セグメント1個までに制限する。IDは別途厳格パターンで抽出する。
-      if (/^\/home\/avatar\/avtr_[a-z0-9-]{1,64}(?:\/[a-z0-9-]+)?\/?$/i.test(normalizedPath)) {
-        return "avatar";
-      }
-
-      if (/^\/home\/world\/wrld_[a-z0-9-]{1,64}(?:\/[a-z0-9-]+)?\/?$/i.test(normalizedPath)) {
-        return "world";
-      }
-    }
+    parsedUrl = new URL(trimmedUrl);
   } catch {
     return null;
   }
 
+  if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+    return null;
+  }
+  if (parsedUrl.hostname.toLowerCase() !== "vrchat.com") {
+    return null;
+  }
+
+  const avatarMatch = VRCHAT_AVATAR_PATH_PATTERN.exec(parsedUrl.pathname);
+  if (avatarMatch) {
+    const id = avatarMatch[1];
+    if (isValidVRChatEntityId("avatar", id)) {
+      return { entryType: "avatar", id };
+    }
+    return null;
+  }
+
+  const worldMatch = VRCHAT_WORLD_PATH_PATTERN.exec(parsedUrl.pathname);
+  if (worldMatch) {
+    const id = worldMatch[1];
+    if (isValidVRChatEntityId("world", id)) {
+      return { entryType: "world", id };
+    }
+    return null;
+  }
+
   return null;
+}
+
+export function detectVrcEntryTypeFromUrl(url: string): AkyoEntryType | null {
+  return parseVrchatEntityUrl(url)?.entryType ?? null;
 }
 
 export function extractVRChatAvatarIdFromUrl(
@@ -308,11 +341,12 @@ export function extractVRChatWorldIdFromUrl(
  *   https://vrchat.com/home/avatar/{avtr_id}
  *   https://vrchat.com/home/world/{wrld_id}
  *
- * 末尾スラッシュ・タブサフィックス（/info 等）・クエリ・ハッシュ・大文字ホスト・
- * http を落とし、ID だけを残す。受理判定と拒否は従来どおり
- * detectVrcEntryTypeFromUrl / isValidVRChatEntityId に委ね、VRChat URL と
- * 判定できない入力（BOOTH のみ・空・不正）は trim 以外変更しない。
- * 既存データの一括書き換えは行わず、新規登録・編集で通る入口だけに適用する。
+ * 末尾スラッシュ・タブサフィックス（/info 等）・クエリ・ハッシュ・userinfo・
+ * 大文字ホスト・http を落とし、検証済み pathname から取り出した ID だけを残す
+ * （parseVrchatEntityUrl と同じ判定なので、受理集合は detectVrcEntryTypeFromUrl と
+ * 一致する）。VRChat URL と判定できない入力（BOOTH のみ・空・不正）は trim 以外
+ * 変更せず、拒否は従来の検証に委ねる。既存データの一括書き換えは行わず、
+ * 新規登録・編集で通る入口だけに適用する。
  */
 export function normalizeVrchatSourceUrl(url: string | undefined | null): string {
   const trimmed = (url ?? "").trim();
@@ -320,16 +354,11 @@ export function normalizeVrchatSourceUrl(url: string | undefined | null): string
     return trimmed;
   }
 
-  const entryType = detectVrcEntryTypeFromUrl(trimmed);
-  if (entryType === "avatar") {
-    const id = extractVRChatAvatarIdFromUrl(trimmed);
-    return id ? `https://vrchat.com/home/avatar/${id}` : trimmed;
+  const parsed = parseVrchatEntityUrl(trimmed);
+  if (!parsed) {
+    return trimmed;
   }
-  if (entryType === "world") {
-    const id = extractVRChatWorldIdFromUrl(trimmed);
-    return id ? `https://vrchat.com/home/world/${id}` : trimmed;
-  }
-  return trimmed;
+  return `https://vrchat.com/home/${parsed.entryType}/${parsed.id}`;
 }
 
 export function isValidVRChatEntityId(

@@ -349,3 +349,36 @@ test("normalizeVrchatSourceUrl は VRChat URL を末尾スラッシュ・タブ�
   assert.equal(normalize(undefined), "");
   assert.equal(normalize(null), "");
 });
+
+test("normalizeVrchatSourceUrl は検証済み pathname の ID だけを使い、userinfo・クエリ・ハッシュ中の ID らしき文字列は採用しない", () => {
+  const normalize = (akyoEntryModuleNs as Record<string, unknown>)
+    .normalizeVrchatSourceUrl as (url: string | undefined | null) => string;
+  const detect = (akyoEntryModuleNs as Record<string, unknown>)
+    .detectVrcEntryTypeFromUrl as (url: string) => string | null;
+
+  const avatarId = "avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921";
+  const worldId = "wrld_12ab34cd-1a2b-3c4d-5e6f-abcdef123456";
+  const avatarCanonical = `https://vrchat.com/home/avatar/${avatarId}`;
+  const worldCanonical = `https://vrchat.com/home/world/${worldId}`;
+
+  // userinfo に別の ID を仕込んでも、path で検証した ID が採用される（Codex [P2] の実測ケース）
+  const userinfoAvatar = `https://avtr_attacker-0000-0000-0000-000000000000@vrchat.com/home/avatar/${avatarId}`;
+  assert.equal(detect(userinfoAvatar), "avatar");
+  assert.equal(normalize(userinfoAvatar), avatarCanonical);
+  const userinfoWorld = `https://wrld_attacker:secret@vrchat.com/home/world/${worldId}/info`;
+  assert.equal(detect(userinfoWorld), "world");
+  assert.equal(normalize(userinfoWorld), worldCanonical);
+
+  // クエリ・ハッシュ中の ID らしき文字列は無視される
+  assert.equal(normalize(`${worldCanonical}?ref=wrld_other-0000`), worldCanonical);
+  assert.equal(normalize(`${avatarCanonical}#avtr_other-0000`), avatarCanonical);
+
+  // path セグメントの大小は従来どおり許容し、ID 自体はそのまま残す
+  assert.equal(normalize(`https://VRChat.com/HOME/AVATAR/${avatarId}/INFO`), avatarCanonical);
+
+  // 大文字プレフィックスは VRChat の ID 形式（小文字 avtr_/wrld_）ではないので、
+  // 判定を通さず不変のまま返し、拒否は後段の検証に委ねる
+  const upperPrefix = "https://vrchat.com/home/avatar/AVTR_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921";
+  assert.equal(detect(upperPrefix), null);
+  assert.equal(normalize(upperPrefix), upperPrefix);
+});
