@@ -346,9 +346,16 @@ select:focus {
 
 /* くわしく見るボタン（元の実装を完全再現） */
 .detail-button {
+  /* 虹色グラデーションは静止表示（2026-09 オーナー判断で無限アニメーションを廃止）。
+     以前は background-position を3秒ループで動かしていたが、compositorに乗らず
+     表示カード数×2ボタンぶんのスタイル再計算+ペイントが毎フレーム走り、
+     /zukan のアイドルCPUを1コアの約32%消費していた（Playwright+CDP実測）。
+     しかもOSのアニメーション削減が有効な環境と768px以下では元々止まっていて、
+     動く見た目は多くの環境で見えていなかった。
+     background-size 300% は、静止時の見た目（左上の桃〜黄）をこれまでと
+     同じに保つために残す。 */
   background: linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcf7f, #4facfe) !important;
   background-size: 300% 300% !important;
-  animation: rainbow-gradient 3s ease infinite !important;
   color: white !important;
   border-radius: 25px !important;
   padding: 12px 24px !important;
@@ -374,47 +381,10 @@ select:focus {
   transform: translateY(-1px) scale(1.02) !important;
 }
 
-/* ボタン内のアニメーション星 */
-.detail-button .animate-bounce {
-  animation: star-bounce 1.5s ease-in-out infinite !important;
-  display: inline-block !important;
-}
-
-@keyframes star-bounce {
-
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg) scale(1);
-  }
-
-  25% {
-    transform: translateY(-3px) rotate(-15deg) scale(1.1);
-  }
-
-  75% {
-    transform: translateY(-3px) rotate(15deg) scale(1.1);
-  }
-}
-
-@keyframes rainbow-gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
 /* 三面図ダウンロードボタン（detail-buttonと同じグラデーション） */
 .reference-sheet-button {
   background: linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcf7f, #4facfe) !important;
   background-size: 300% 300% !important;
-  animation: rainbow-gradient 3s ease infinite !important;
   color: white !important;
   border-radius: 9999px !important;
   padding: 0.25rem 0.5rem !important;
@@ -717,7 +687,6 @@ select:focus {
   }
 
   .detail-button,
-  .detail-button .animate-bounce,
   .detail-button::after,
   .reference-sheet-button,
   .akyo-card,
@@ -736,15 +705,9 @@ select:focus {
   }
 }
 
-/* モバイル向けパフォーマンス最適化: 重い無限アニメーションと影を停止 */
+/* モバイル向けパフォーマンス最適化: ロゴの重い影を停止
+   （ボタンの無限アニメーションは全環境で廃止済みのため、ここでの停止指定は不要になった） */
 @media (max-width: 768px) {
-
-  .detail-button,
-  .detail-button .animate-bounce,
-  .detail-button::after,
-  .reference-sheet-button {
-    animation: none !important;
-  }
 
   /* ロゴのGPU重いドロップシャドウを無効化 */
   .logo-animation {

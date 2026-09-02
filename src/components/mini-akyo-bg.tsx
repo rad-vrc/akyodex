@@ -120,6 +120,20 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
   const resizeHandler = useRef<(() => void) | null>(null);
   const rafRef = useRef<number | null>(null);
 
+  // OSの「アニメーション削減」が有効なら描画自体を行わない。
+  // 以前は CSS で animation:none + opacity 0.08 にしていたが、ほぼ見えない要素を
+  // 目標密度ぶん（最大42枚）抱えたまま setInterval が回り続けるだけだった。
+  // このコンポーネントは dynamic(ssr:false) で読まれるため window は常に存在する。
+  const [reducedMotion, setReducedMotion] = useState<boolean>(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   // Low-discrepancy sequence for balanced placement
   const nextUniform = useCallback(() => {
     seqU.current = (seqU.current + PHI) % 1;
@@ -259,7 +273,12 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [spawnOne]);
+    // reducedMotion が切り替わったら cleanup → 再init する。true になった側では
+    // return null で container が消えるので init は何もしない（interval は cleanup で止まる）。
+  }, [spawnOne, reducedMotion]);
+
+  // フックはすべて上で呼び終えているので、ここでの早期returnは安全
+  if (reducedMotion) return null;
 
   return (
     <>
@@ -300,12 +319,6 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
           }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-          .mini-akyo {
-            animation: none;
-            opacity: 0.08;
-          }
-        }
       `}</style>
 
       <div
