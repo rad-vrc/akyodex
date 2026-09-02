@@ -127,3 +127,57 @@ test("audits derivative metadata, content type, cache policy, and size", async (
     ],
   );
 });
+
+test("audits derivatives concurrently and bounds active requests to pool concurrency", async () => {
+  const sources = Array.from({ length: 20 }, (_, index) => ({
+    eTag: `etag-${index}`,
+    key: `${String(index).padStart(4, "0")}.png`,
+    size: 1_000,
+  }));
+
+  const CONCURRENCY_LIMIT = 12;
+  let active = 0;
+  let maxConcurrentHeads = 0;
+  const waiting: Array<() => void> = [];
+
+  async function acquire(): Promise<void> {
+    if (active < CONCURRENCY_LIMIT) {
+      active += 1;
+      return;
+    }
+    await new Promise<void>((resolve) => waiting.push(resolve));
+    active += 1;
+  }
+
+  function release(): void {
+    active -= 1;
+    waiting.shift()?.();
+  }
+
+  const report = await auditReferenceImages(sources, async (key) => {
+    await acquire();
+    try {
+      maxConcurrentHeads = Math.max(maxConcurrentHeads, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      const sourceIndex = Number.parseInt(key.replace(/^reference\/(\d{4})-\d+\.webp$/, "$1"), 10);
+      return {
+        CacheControl: "public, max-age=0, must-revalidate",
+        ContentLength: 50_000,
+        ContentType: "image/webp",
+        Metadata: {
+          "generator-version": "v1",
+          quality: "82",
+          "source-etag": `etag-${sourceIndex}`,
+          width: key.includes("960") ? "960" : "1920",
+        },
+      };
+    } finally {
+      release();
+    }
+  });
+
+  assert.equal(maxConcurrentHeads, CONCURRENCY_LIMIT);
+  assert.equal(report.sourceCount, 20);
+  assert.equal(report.validDerivativeCount, 40);
+  assert.equal(report.issues.length, 0);
+});

@@ -51,7 +51,7 @@ test("staging generator is private and isolated from production resources", asyn
       dead_letter_queue: "akyodex-reference-images-staging-dlq",
       max_batch_size: 1,
       max_batch_timeout: 1,
-      max_concurrency: 2,
+      max_concurrency: 1,
       max_retries: 5,
     },
   ]);
@@ -75,7 +75,7 @@ test("production generator is private and isolated from staging resources", asyn
       dead_letter_queue: "akyodex-reference-images-production-dlq",
       max_batch_size: 1,
       max_batch_timeout: 1,
-      max_concurrency: 2,
+      max_concurrency: 1,
       max_retries: 5,
     },
   ]);

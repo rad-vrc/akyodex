@@ -126,23 +126,36 @@ export async function auditReferenceImages(
   sources: ReferenceSource[],
   headObject: (key: string) => Promise<HeadObjectResult | null>,
 ): Promise<ReferenceAuditReport> {
+  const tasks = sources.flatMap((source) =>
+    VARIANTS.map((variant) => ({
+      key: getDerivativeKey(source.key, variant.width),
+      maxBytes: variant.maxBytes,
+      source,
+      width: variant.width,
+    })),
+  );
+
+  const results = await Promise.all(
+    tasks.map(async (task) => {
+      const object = await headObject(task.key);
+      const reasons = auditDerivative(
+        task.source,
+        task.width,
+        task.maxBytes,
+        object,
+      );
+      return { key: task.key, reasons };
+    }),
+  );
+
   const issues: ReferenceAuditIssue[] = [];
   let validDerivativeCount = 0;
 
-  for (const source of sources) {
-    for (const variant of VARIANTS) {
-      const key = getDerivativeKey(source.key, variant.width);
-      const reasons = auditDerivative(
-        source,
-        variant.width,
-        variant.maxBytes,
-        await headObject(key),
-      );
-      if (reasons.length === 0) {
-        validDerivativeCount += 1;
-      } else {
-        issues.push({ key, reasons });
-      }
+  for (const result of results) {
+    if (result.reasons.length === 0) {
+      validDerivativeCount += 1;
+    } else {
+      issues.push({ key: result.key, reasons: result.reasons });
     }
   }
 
