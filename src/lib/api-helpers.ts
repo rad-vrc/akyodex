@@ -11,7 +11,10 @@ import {
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import type { AkyoEntryType } from "@/types/akyo";
-import { detectVrcEntryTypeFromUrl } from "./akyo-entry";
+import {
+  detectVrcEntryTypeFromUrl,
+  normalizeVrchatSourceUrl,
+} from "./akyo-entry";
 import {
   SessionData,
   validateSession as validateSessionToken,
@@ -406,7 +409,9 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
   const displaySerial = readField("displaySerial") || undefined;
   const avatarName = readField("avatarName");
   const nickname = readField("nickname");
-  const sourceUrl = readField("sourceUrl") || readField("avatarUrl");
+  // 保存前に VRChat URL を標準形へ揃える（末尾スラッシュ・/info 等のタブ・クエリを除去）。
+  // BOOTH のみ・空・不正な入力は変更されず、後段の検証で従来どおり扱われる。
+  const sourceUrl = normalizeVrchatSourceUrl(readField("sourceUrl") || readField("avatarUrl"));
 
   // 新旧フィールドの両方をサポート
   // 優先順位: author (新) > creator (旧)
@@ -489,7 +494,9 @@ export function parseAkyoFormData(formData: FormData): AkyoFormParseResult {
       nickname,
       sourceUrl,
       boothUrl,
-      avatarUrl: readField("avatarUrl") || sourceUrl,
+      // avatarUrl は sourceUrl の互換エイリアス。旧クライアントが別の URL を併送しても、
+      // 検証済みの sourceUrl と同じ値に統一する（別 ID の併存を保存しない）
+      avatarUrl: sourceUrl,
       imageData,
 
       // 新フィールド
