@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  forwardRouterTransitionStart,
   loadSentryTracing,
   resetSentryTracingLoaderForTests,
   scheduleSentryTracingLoad,
@@ -11,13 +12,18 @@ type TracingModule = typeof import("./sentry-tracing");
 
 function fakeModule(options: { install?: boolean } = {}) {
   let installCalls = 0;
+  const transitions: Array<{ href: string; navigationType: string }> = [];
   const mod = {
     installBrowserTracing: () => {
       installCalls += 1;
       return options.install ?? true;
     },
+    startRouterTransitionSpan: (transition: { href: string; navigationType: string }) => {
+      transitions.push(transition);
+      return true;
+    },
   } as unknown as TracingModule;
-  return { mod, installCalls: () => installCalls };
+  return { mod, transitions, installCalls: () => installCalls };
 }
 
 const noDelay = async () => {};
@@ -85,10 +91,30 @@ test("一度失敗してもリトライで成功すれば install される", as
   assert.equal(installCalls(), 1);
 });
 
-test("クライアント未初期化（install が false）なら no-client で確定する", async (t) => {
+test("クライアント未初期化（install が false）なら no-client で確定し、遷移は転送しない", async (t) => {
   t.after(resetSentryTracingLoaderForTests);
-  const { mod } = fakeModule({ install: false });
+  const { mod, transitions } = fakeModule({ install: false });
   assert.equal(await loadSentryTracing({ importer: async () => mod, delay: noDelay }), "no-client");
+  assert.equal(forwardRouterTransitionStart("/admin", "push"), false);
+  assert.deepEqual(transitions, []);
+});
+
+test("onRouterTransitionStart は tracing 読み込み前は計測せず、読み込み後は遷移開始をそのまま転送する", async (t) => {
+  t.after(resetSentryTracingLoaderForTests);
+  const { mod, transitions } = fakeModule();
+  // 読み込み前（Next 用 SDK と同じく捨てる。例外も出さない）
+  assert.equal(forwardRouterTransitionStart("/before", "push"), false);
+  assert.deepEqual(transitions, []);
+
+  await loadSentryTracing({ importer: async () => mod, delay: noDelay });
+  assert.equal(forwardRouterTransitionStart("/admin", "push"), true);
+  assert.equal(forwardRouterTransitionStart("/zukan?tab=x", "replace"), true);
+  assert.equal(forwardRouterTransitionStart("/", "traverse"), true);
+  assert.deepEqual(transitions, [
+    { href: "/admin", navigationType: "push" },
+    { href: "/zukan?tab=x", navigationType: "replace" },
+    { href: "/", navigationType: "traverse" },
+  ]);
 });
 
 interface FakeWindow {

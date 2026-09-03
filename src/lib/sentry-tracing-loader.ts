@@ -3,7 +3,9 @@
  *
  *   - 読み込みは共有 Promise に集約する（初期化・再送・報告の重複を防ぐ）
  *   - 契機は load 後の requestIdleCallback（上限あり）。非対応環境は setTimeout
- *   - 読み込み失敗は有限回リトライし、最後は null（性能計測なし）で確定する。エラー捕捉には影響しない
+ *   - 読み込み失敗は有限回リトライし、最後は failed（性能計測なし）で確定する。エラー捕捉には影響しない
+ *   - Next の onRouterTransitionStart（遷移開始）は同期 export が必要なので、ここで受けて
+ *     読み込み済みの tracing へ転送する。読み込み前の遷移は Next 用 SDK と同じく計測しない
  */
 
 type TracingModule = typeof import('./sentry-tracing');
@@ -23,6 +25,7 @@ const defaultDelay = (ms: number) => new Promise<void>((resolve) => setTimeout(r
 const defaultImporter: Importer = () => import('./sentry-tracing');
 
 let loadPromise: Promise<TracingLoadResult> | null = null;
+let loadedModule: TracingModule | null = null;
 
 /**
  * tracing モジュールを読み込み、初期化済みクライアントへ BrowserTracing を追加する。
@@ -42,7 +45,11 @@ export function loadSentryTracing(options: TracingLoaderOptions = {}): Promise<T
       try {
         const mod = await importer();
         // クライアント未初期化（DSN 無しなど）なら計測は行わない
-        return mod.installBrowserTracing() ? 'installed' : 'no-client';
+        if (!mod.installBrowserTracing()) {
+          return 'no-client';
+        }
+        loadedModule = mod;
+        return 'installed';
       } catch (error) {
         if (attempt >= maxAttempts) {
           console.warn('[sentry] tracing module failed to load; performance monitoring disabled', error);
@@ -99,7 +106,17 @@ export function scheduleSentryTracingLoad(win: Window, options: ScheduleOptions)
   };
 }
 
+/**
+ * Next の onRouterTransitionStart の実体。遷移開始の時点で navigation span を開始する
+ * （RSC 応答待ちを含む所要時間になる）。tracing の読み込み前は Next 用 SDK と同じく計測しない。
+ * 戻り値は span を開始したかどうか。
+ */
+export function forwardRouterTransitionStart(href: string, navigationType: string): boolean {
+  return loadedModule?.startRouterTransitionSpan({ href, navigationType }) ?? false;
+}
+
 /** テスト用: 読み込み状態を初期化する */
 export function resetSentryTracingLoaderForTests(): void {
   loadPromise = null;
+  loadedModule = null;
 }
