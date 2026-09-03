@@ -6,6 +6,7 @@
     "public/sw.js",
     "sw.js",
     "src/**/*.test.ts",
+    "src/lib/sentry-tracing.ts",
     "scripts/convert-akyo-data.js",
     "scripts/cloudflare-pages-worker-entry.mjs",
     "scripts/csv-to-json.test.ts",

@@ -1,4 +1,6 @@
-import * as Sentry from '@sentry/nextjs';
+// クライアントでは @sentry/nextjs を静的 import しない（tracing が初期バンドルに戻る）。
+// エラー捕捉・送信の API は @sentry/react（= @sentry/browser の再 export）で同一。
+import * as Sentry from '@sentry/react';
 type SentryCaptureContext = NonNullable<
   Parameters<typeof Sentry.captureException>[1]
 >;

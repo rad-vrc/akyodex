@@ -135,7 +135,14 @@ test("browser Sentry explicitly enables metrics and exposes a safe distribution 
     "utf8",
   );
 
-  assert.match(instrumentation, /enableMetrics:\s*true/);
+  // 初期化オプションは src/lib/sentry-client-init.ts に移した（tracing 遅延化に伴う分離）。
+  // instrumentation-client.ts は環境変数を渡して初期化を呼ぶだけになった
+  const clientInit = readFileSync(
+    path.join(process.cwd(), "src", "lib", "sentry-client-init.ts"),
+    "utf8",
+  );
+  assert.match(instrumentation, /initBrowserSentry\(/);
+  assert.match(clientInit, /enableMetrics:\s*true/);
   assert.match(instrumentation, /NEXT_PUBLIC_SENTRY_ENVIRONMENT/);
   assert.match(
     sentryBrowser,

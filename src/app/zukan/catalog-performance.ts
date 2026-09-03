@@ -1,4 +1,5 @@
 import type { SupportedLanguage } from "@/lib/i18n";
+import { startInactiveSpan } from "@sentry/react";
 
 export type CatalogLoadSource = "api" | "r2" | "snapshot" | "none";
 
@@ -136,8 +137,10 @@ export async function reportCatalogLoadToSentry(
   if (!process.env.NEXT_PUBLIC_SENTRY_DSN) return;
 
   try {
-    const Sentry = await import("@sentry/nextjs");
-    const span = Sentry.startInactiveSpan({
+    // 初期化済みクライアントの span API（tracing の読み込み前でも root span として送れる）。
+    // barrel の動的 import は tree-shaking されず Replay/Feedback まで別チャンクで読み込むので、
+    // 静的な名前付き import にする（core は初期バンドルに既にある）
+    const span = startInactiveSpan({
       name: "catalog.ready",
       op: "ui.load",
       forceTransaction: true,
