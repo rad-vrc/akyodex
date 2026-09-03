@@ -34,6 +34,8 @@ declare global {
       // Server-side環境変数
       ADMIN_PASSWORD_OWNER?: string;
       ADMIN_PASSWORD_ADMIN?: string;
+      // 管理ログインのレート制限の緊急停止スイッチ（"off" で無効化。それ以外は有効）
+      ADMIN_LOGIN_RATE_LIMIT?: string;
       SENTRY_DSN?: string;
       SENTRY_ORG?: string;
       SENTRY_PROJECT?: string;

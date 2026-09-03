@@ -52,6 +52,7 @@
     "@opennextjs/cloudflare": "1.20.3",
     "@sentry/cloudflare": "^10.66.0",
     "@sentry/nextjs": "^10.66.0",
+    "@sentry/react": "10.66.0",
     "csv-parse": "^6.1.0",
     "csv-stringify": "^6.6.0",
     "next": "16.3.3",

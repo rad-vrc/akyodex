@@ -31,6 +31,45 @@ the generator. The shared, runtime-independent contract is in
   CLI `NextToken` means the input is not a complete inventory. `--page-size`
   alone does not truncate the final result.
 
+## Original uploads and public storage
+
+Upload or overwrite production originals manually at `akyo-images/NNNN.png`
+using the Cloudflare dashboard or an R2 client, as before. Only root-level,
+four-digit, lowercase `.png` keys are eligible. The admin registration form does
+not upload these originals; no CSV edit or admin operation is needed to trigger
+generation. Once configured, R2 create/delete notifications drive the generator.
+
+The staging workflow attaches `images-staging.akyodex.com` to
+`akyodex-workers-staging-data`. A custom domain exposes the bucket's objects,
+not just `reference/`; public CSV/JSON and test originals are also reachable by
+key unless separately restricted. Never put credentials, private data, or
+non-public test fixtures in this bucket. The private Queue-only generator does
+not make its storage private. Use disposable, public-safe staging originals.
+See [R2 public buckets](https://developers.cloudflare.com/r2/buckets/public-buckets/).
+
+## Backfill budget
+
+Before every production backfill, confirm the account's Images plan and current
+calendar-month usage in the dashboard. The existing guard requires:
+
+```text
+current monthly transformations + current eligible original count * 2 <= 5,000
+```
+
+For 834 originals this is 1,668 planned transformations, so current usage must
+be at most 3,332. These counts are an example, not a permanent allowance: refresh
+the inventory and usage each time, and allow headroom for other image activity.
+The guard is an estimate, not a reservation of remaining capacity. On retries
+it still budgets two variants for every original, even when some are current;
+do not bypass it or supply a lower usage value to force a run.
+
+Images Free rejects new transformations beyond its limit with `9422` rather
+than charging overages. Do not enable a paid plan automatically. Skipping an
+already-current derivative saves its transformation only; missing/stale
+variants and Queue, Worker, and R2 operations remain. See
+[Images pricing](https://developers.cloudflare.com/images/pricing/) and
+[Queues pricing](https://developers.cloudflare.com/queues/platform/pricing/).
+
 ## Rollout checklist
 
 - [ ] Deploy the reviewed generator revision to staging using `Reference Image
@@ -41,11 +80,11 @@ the generator. The shared, runtime-independent contract is in
   staging originals. Preserve the original bytes and ETag after generation.
 - [ ] Merge the generator PR; deploy with `deploy-production` only after approval.
 - [ ] Check current monthly Images usage and supply it to `backfill-production`.
-  Do not enable paid usage automatically. Background generation may take tens
-  of minutes with one consumer; enqueue success is not generation completion.
+  Follow the backfill budget above. Background generation may take tens of
+  minutes with one consumer; enqueue success is not generation completion.
 - [ ] Run `audit-production`. Require nonzero sources and zero issues, orphans,
-  and incomplete originals before merging the client change. Resolve oversized
-  outputs explicitly instead of changing the threshold to hide them.
+  and incomplete originals before merging the client change. Use the oversized
+  derivative decision rule below if a size check fails.
 - [ ] Update the client PR to the reviewed generator/main revision, run Full CI,
   and repeat cache-cold 0800/0826/0832 measurements and modal E2E tests.
 - [ ] Only after approval, merge the client and use the normal Worker candidate
@@ -58,9 +97,44 @@ it can exercise fallbacks, not prove successful derivative delivery. Generator
 correctness and real transformations must be verified in isolated Workers
 staging. Standard Lighthouse only measures the list page, not modal openings.
 
+## Oversized derivative decision rule
+
+An output above 250,000 bytes (960px) or 350,000 bytes (1920px) remains an audit
+failure even if it is a valid WebP. Before the client rollout, keep PR #467
+unmerged and the current PNG display path active until the issue is resolved.
+After rollout, an oversized result requires investigation, not an automatic
+rollback or deletion.
+
+Record the affected original/derivative keys, source ETag, width, actual byte
+size, image validity, and cache-cold display time. Do not silently lower quality,
+raise the shared limit, downgrade the failure to a warning, or exempt individual
+keys. If the fixed settings cannot meet the budget, present the evidence and a
+scoped proposal to the owner. Any exception or budget/quality change requires
+explicit approval and a separate reviewed change to the contract and checks;
+until then the failure and client rollout gate remain in place. Re-enqueueing a
+current derivative does not resize it or fix a size-only audit failure.
+
 ## Recovery
 
 For a client regression, restore the preceding healthy Web Worker version. For
 a generator regression, disable its R2 notification and roll back that generator
 Worker. Do not delete originals or use a data rollback. Audit failures report
 keys for investigation; they never auto-delete objects or auto-enqueue repairs.
+
+For Images quota exhaustion, do not repeatedly dispatch backfill while `9422`
+persists. Transient generation failures request a 60-second retry delay, with
+`max_retries: 5` before delivery to the DLQ. This repository has no automatic DLQ
+replay action; DLQ retention is finite, so do not rely on messages surviving
+until next month. See [Dead Letter Queues](https://developers.cloudflare.com/queues/configuration/dead-letter-queues/).
+
+After the monthly reset, confirm available quota in the dashboard and follow
+the budget check again. Run `backfill-production` with the refreshed
+`current-images-transformations` value. This re-lists current originals and
+enqueues them all; the generator skips variants whose source ETag, version,
+width, and quality are already current and generates only missing/stale ones.
+It reconstructs generation work from originals rather than replaying the DLQ.
+Wait for generation to finish, then run `audit-production`; enqueue success or
+an empty DLQ is not proof of recovery. Backfill does not repair orphan
+derivatives from missed deletes, oversized current outputs, or every invalid
+metadata case. Keep remaining audit failures visible and resolve them through
+separately approved action; never delete originals or bypass the client gate.

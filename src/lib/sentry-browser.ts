@@ -1,3 +1,7 @@
+// 注: import 先は @sentry/nextjs のまま。init を呼ばないので tracing は tree-shaking で入らず、
+// サーバ側のバンドル（SSR）では main と同じ依存グラフを保つ（@sentry/react に変えると
+// サーバの外部モジュール参照がルートチャンクへ移り OpenNext の esbuild が解決できなくなった）。
+// init と BrowserTracing の後付けだけ @sentry/react を使う（sentry-client-init.ts / sentry-tracing.ts）。
 import * as Sentry from '@sentry/nextjs';
 type SentryCaptureContext = NonNullable<
   Parameters<typeof Sentry.captureException>[1]

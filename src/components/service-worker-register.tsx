@@ -1,18 +1,25 @@
 'use client';
 
 import { captureExceptionSafely } from '@/lib/sentry-browser';
-import { isGoogleWrsServiceWorkerRejection } from '@/lib/service-worker-errors';
+import {
+  isExpectedServiceWorkerError,
+  runServiceWorkerRegistration,
+  sanitizeServiceWorkerExtra,
+  type ServiceWorkerPhase,
+} from '@/lib/service-worker-registration';
 import { useEffect, useRef, useState } from 'react';
 
 /**
  * Service Worker Registration Component
- * 
- * Registers the service worker and provides update notifications
+ *
+ * Registers the service worker and provides update notifications.
+ * 登録の中身は src/lib/service-worker-registration.ts（純粋ロジック）にあり、
+ * ここでは DOM・Sentry・React state との配線だけを行う。
  */
 export function ServiceWorkerRegister() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const updateIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Check if service workers are supported
@@ -21,59 +28,19 @@ export function ServiceWorkerRegister() {
       return;
     }
 
+    // アンマウント後に遅れて register() が完了しても配線しないための失効フラグ
+    let disposed = false;
+
     const reportServiceWorkerError = (
-      phase: 'register' | 'update',
+      phase: ServiceWorkerPhase,
       error: unknown,
       additional: Record<string, unknown> = {}
     ) => {
-      const sanitizeAdditionalSentryExtra = (
-        rawAdditional: Record<string, unknown>
-      ): Record<string, unknown> => {
-        const sanitized: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(rawAdditional)) {
-          if (key === 'scope' && typeof value === 'string') {
-            try {
-              const parsedScope = new URL(value, window.location.origin);
-              sanitized.scope = parsedScope.pathname || '/';
-            } catch {
-              sanitized.scope = '/';
-            }
-            continue;
-          }
-
-          // Defensive filtering: avoid forwarding URL/query/credential-like fields.
-          if (/(^|_|-)(url|href|query|search|token|email)(_|-|$)/i.test(key)) {
-            continue;
-          }
-
-          if (
-            typeof value === 'string' &&
-            (value.includes('://') || (value.includes('?') && (value.includes('=') || value.includes('&'))))
-          ) {
-            continue;
-          }
-
-          sanitized[key] = value;
-        }
-
-        return sanitized;
-      };
-
-      const normalizedError = error instanceof Error ? error : new Error(String(error));
-      const message = normalizedError.message;
-      const name = normalizedError.name;
-
-      const isExpectedError =
-        message.includes('Service Workers are not supported') ||
-        message.includes('The operation is insecure') ||
-        message.includes('Failed to register a ServiceWorker') ||
-        name === 'SecurityError' ||
-        (phase === 'register' && isGoogleWrsServiceWorkerRejection(error));
-
-      if (isExpectedError) {
+      if (isExpectedServiceWorkerError(phase, error)) {
         return;
       }
 
+      const normalizedError = error instanceof Error ? error : new Error(String(error));
       captureExceptionSafely(normalizedError, {
         level: 'error',
         tags: {
@@ -82,81 +49,31 @@ export function ServiceWorkerRegister() {
           online: String(navigator.onLine),
         },
         extra: {
-          errorName: name,
-          errorMessage: message,
+          errorName: normalizedError.name,
+          errorMessage: normalizedError.message,
           pathname: window.location.pathname,
           userAgent: navigator.userAgent,
-          ...sanitizeAdditionalSentryExtra(additional),
+          ...sanitizeServiceWorkerExtra(additional, window.location.origin),
         },
       });
     };
 
-    const shouldIgnoreUpdateError = (error: unknown): boolean => {
-      const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
-      const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
-      const isGenericNetworkError =
-        message.includes('a bad http response code') || message.includes('failed to fetch');
-      return (
-        message.includes('failed to update a serviceworker') ||
-        message.includes('the script resource is behind a redirect') ||
-        (isOffline && isGenericNetworkError)
-      );
-    };
-
     // Register service worker
-    const registerServiceWorker = async () => {
-      try {
-        console.log('[SW] Registering Service Worker...');
-        const reg = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/',
-        });
-
-        setRegistration(reg);
-        console.log('[SW] Service Worker registered:', reg.scope);
-
-        // Check for updates on initial load
-        void reg.update().catch((error) => {
-          if (shouldIgnoreUpdateError(error)) {
-            return;
-          }
-          console.error('[SW] Initial update check failed:', error);
-          reportServiceWorkerError('update', error, { scope: reg.scope, stage: 'initial-check' });
-        });
-
-        // Listen for updates
-        reg.addEventListener('updatefound', () => {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New service worker available
-              console.log('[SW] New version available!');
-              setUpdateAvailable(true);
-            }
-          });
-        });
-
-        // Check for updates every hour (ref で保持してクリーンアップ可能にする)
-        updateIntervalRef.current = setInterval(() => {
-          void reg.update().catch((error) => {
-            if (shouldIgnoreUpdateError(error)) {
-              return;
-            }
-            console.error('[SW] Scheduled update check failed:', error);
-            reportServiceWorkerError('update', error, { scope: reg.scope, stage: 'scheduled-check' });
-          });
-        }, 60 * 60 * 1000);
-
-      } catch (error) {
-        // Log detailed error information
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error('[SW] Registration failed:', errorMessage);
-
-        reportServiceWorkerError('register', error, {
-          readyState: document.readyState,
-        });
-      }
+    const registerServiceWorker = () => {
+      void runServiceWorkerRegistration<ServiceWorkerRegistration>({
+        register: () => navigator.serviceWorker.register('/sw.js', { scope: '/' }),
+        hasController: () => Boolean(navigator.serviceWorker.controller),
+        isDisposed: () => disposed,
+        isOnline: () => navigator.onLine,
+        readyState: () => document.readyState,
+        onRegistered: setRegistration,
+        onUpdateAvailable: () => setUpdateAvailable(true),
+        onIntervalCreated: (id) => {
+          updateIntervalRef.current = id;
+        },
+        reportError: reportServiceWorkerError,
+        setInterval: (callback, ms) => window.setInterval(callback, ms),
+      });
     };
 
     // Register on load
@@ -167,9 +84,10 @@ export function ServiceWorkerRegister() {
     }
 
     return () => {
+      disposed = true;
       window.removeEventListener('load', registerServiceWorker);
-      if (updateIntervalRef.current) {
-        clearInterval(updateIntervalRef.current);
+      if (updateIntervalRef.current !== null) {
+        window.clearInterval(updateIntervalRef.current);
         updateIntervalRef.current = null;
       }
     };
@@ -197,7 +115,7 @@ export function ServiceWorkerRegister() {
   }
 
   return (
-    <div 
+    <div
       className="fixed bottom-4 right-4 z-[9999] max-w-sm bg-white rounded-lg shadow-2xl border-2 border-orange-500 p-4 animate-slide-up"
       role="alert"
       aria-live="polite"
@@ -205,18 +123,18 @@ export function ServiceWorkerRegister() {
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-          <svg 
-            className="w-6 h-6 text-white" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-6 h-6 text-white"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
         </div>
