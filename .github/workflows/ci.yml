@@ -51,6 +51,12 @@ jobs:
 
       - name: Run Node unit tests
         run: npx tsx --test "src/**/*.test.ts" "scripts/*.test.ts" "scripts/*.test.js"
+
+      - name: Run reference image generator tests
+        run: npm run test:reference-images
+
+      - name: Run reference image generator type check
+        run: npm run typecheck:reference-images
         
   # Job 2: Build Validation
   build-validation:
@@ -135,6 +141,7 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://akyodex.com
           NEXT_PUBLIC_APP_URL: https://akyodex.com
           NEXT_PUBLIC_R2_BASE: https://images.akyodex.com
+          NEXT_PUBLIC_REFERENCE_R2_BASE: https://images.akyodex.com/reference
           NEXT_PUBLIC_DIFY_CHATBOT_TOKEN: ${{ vars.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN }}
           NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
           NEXT_PUBLIC_SENTRY_ENVIRONMENT: production
@@ -155,6 +162,12 @@ jobs:
 
       - name: Run production Wrangler version upload dry-run
         run: npm run dry-run:workers:production
+
+      - name: Run reference image generator staging dry-run
+        run: npm run dry-run:reference-images:staging
+
+      - name: Run reference image generator production dry-run
+        run: npm run dry-run:reference-images:production
 
       - name: Upload Workers build artifact
         uses: actions/upload-artifact@v4
