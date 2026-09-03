@@ -1,6 +1,8 @@
-// クライアントでは @sentry/nextjs を静的 import しない（tracing が初期バンドルに戻る）。
-// エラー捕捉・送信の API は @sentry/react（= @sentry/browser の再 export）で同一。
-import * as Sentry from '@sentry/react';
+// 注: import 先は @sentry/nextjs のまま。init を呼ばないので tracing は tree-shaking で入らず、
+// サーバ側のバンドル（SSR）では main と同じ依存グラフを保つ（@sentry/react に変えると
+// サーバの外部モジュール参照がルートチャンクへ移り OpenNext の esbuild が解決できなくなった）。
+// init と BrowserTracing の後付けだけ @sentry/react を使う（sentry-client-init.ts / sentry-tracing.ts）。
+import * as Sentry from '@sentry/nextjs';
 type SentryCaptureContext = NonNullable<
   Parameters<typeof Sentry.captureException>[1]
 >;
