@@ -21,10 +21,13 @@ concurrency:
 jobs:
   deploy-workers-staging:
     name: Deploy and verify Workers staging
+    # Dependabot の PR には secrets（CLOUDFLARE_API_TOKEN 等）が渡らず必ず失敗するので、
+    # Pages preview と同じく除外する（依存更新は Build Validation / Workers Build Validation で検証される）
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.pull_request.draft == false &&
-      github.event.pull_request.head.repo.full_name == github.repository)
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
