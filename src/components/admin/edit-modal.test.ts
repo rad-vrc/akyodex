@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { EditModal } from "@/components/admin/edit-modal";
@@ -132,6 +133,18 @@ test("画像は表示のみで、差し替え UI（ファイル入力・トリ�
     assert.doesNotMatch(markup, /トリミング/);
     assert.doesNotMatch(markup, /URLから画像を取得/);
     assert.doesNotMatch(markup, /ドラッグ&amp;ドロップ|ドラッグ&ドロップ/);
+  }
+});
+
+// AttributeModal は閉じているとき null を返すので markup では検証できない。
+// 登録画面と同じ props を渡していることをソースで固定する。
+test("カテゴリ管理モーダルは登録画面と同じ大きさ・列数で開く", () => {
+  const editSource = readFileSync(new URL("./edit-modal.tsx", import.meta.url), "utf8");
+  const addSource = readFileSync(new URL("./tabs/add-tab.tsx", import.meta.url), "utf8");
+  for (const source of [editSource, addSource]) {
+    assert.match(source, /listColumns=\{4\}/);
+    assert.match(source, /modalSize="wide"/);
+    assert.match(source, /onCreateAttribute=\{handleCreateCategory\}/);
   }
 });
 

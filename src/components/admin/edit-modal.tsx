@@ -218,6 +218,9 @@ export function EditModal({
   const initialFormJson = useMemo(() => JSON.stringify(buildInitialFormData(akyo)), [akyo]);
 
   const [showAttributeModal, setShowAttributeModal] = useState(false);
+  // このモーダル内で新規作成したカテゴリ。登録画面（add-tab.tsx）と同じく、
+  // 既存候補にマージして「カテゴリを管理」を開き直しても候補に残るようにする
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [fetchingName, setFetchingName] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -241,6 +244,24 @@ export function EditModal({
     () => (akyo ? buildAvatarImageUrl(akyo.id, getAkyoSourceUrl(akyo), 512) : null),
     [akyo]
   );
+
+  const allCategories = useMemo(
+    () => Array.from(new Set([...(categories || attributes), ...customCategories])).sort(),
+    [categories, attributes, customCategories]
+  );
+
+  const handleCreateCategory = (categoryName: string) => {
+    const normalizedInput = categoryName.trim().normalize('NFC').toLowerCase();
+    if (!normalizedInput) return;
+
+    setCustomCategories((prev) => {
+      const exists = prev.some(
+        (existing) => existing.normalize('NFC').toLowerCase() === normalizedInput
+      );
+      if (exists) return prev;
+      return [...prev, categoryName.trim()];
+    });
+  };
 
   // 未保存の変更があるときは閉じる前に確認する（Escape / 背景クリック / ×ボタン / キャンセル共通）
   const requestClose = useCallback(() => {
@@ -836,13 +857,16 @@ export function EditModal({
         </div>
       </div>
 
-      {/* カテゴリ管理モーダル */}
+      {/* カテゴリ管理モーダル — 登録画面（add-tab.tsx）と同じ大きさ・列数・作成挙動 */}
       <AttributeModal
         isOpen={showAttributeModal}
         onClose={() => setShowAttributeModal(false)}
         currentAttributes={formData.categories}
         onApply={(nextCategories) => handleInputChange('categories', nextCategories)}
-        allAttributes={categories || attributes}
+        allAttributes={allCategories}
+        onCreateAttribute={handleCreateCategory}
+        listColumns={4}
+        modalSize="wide"
       />
     </div>
   );
