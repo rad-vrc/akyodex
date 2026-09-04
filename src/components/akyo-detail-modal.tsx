@@ -8,7 +8,7 @@
  * - Header with gradient background
  * - Profile icon + ID + name
  * - Pre-generated reference sheets on grid-paper background, with original/card fallbacks
- * - Info grid (4 sections: name, avatar, attributes, creator)
+ * - Info grid (4 sections: name, avatar, creator, attributes)
  * - VRChat URL section
  * - Notes section (if available)
  * - Action buttons (favorite + VRChat link)
@@ -410,8 +410,24 @@ export function AkyoDetailModal({
                     </div>
                   )}
 
-                  {/* Categories Card */}
-                  <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4">
+                  {/* Author Card — 名前・作者の「誰の何か」を先に、属性はその後。
+                      一覧カードで作者の下にカテゴリを置いた並びと揃える */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4">
+                    <h3 className="text-sm font-bold text-green-600 mb-2">
+                      <IconUser size="w-3.5 h-3.5" className="mr-1" />
+                      {t('modal.author', lang)}
+                    </h3>
+                    <p className="text-xl font-bold">{authorStr || ''}</p>
+                  </div>
+
+                  {/* Categories Card — 件数で高さが変わるので最後に置く。
+                      ワールドはアバター名カードが無く3枚になるため、末尾のこのカードを
+                      全幅にして左下だけ空く形を避ける */}
+                  <div
+                    className={`bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4 ${
+                      isWorldEntry ? 'md:col-span-2' : ''
+                    }`}
+                  >
                     <h3 className="text-sm font-bold text-orange-600 mb-2">
                       <IconSparkles size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.category', lang)}
@@ -436,15 +452,6 @@ export function AkyoDetailModal({
                         );
                       })}
                     </div>
-                  </div>
-
-                  {/* Author Card */}
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4">
-                    <h3 className="text-sm font-bold text-green-600 mb-2">
-                      <IconUser size="w-3.5 h-3.5" className="mr-1" />
-                      {t('modal.author', lang)}
-                    </h3>
-                    <p className="text-xl font-bold">{authorStr || ''}</p>
                   </div>
                 </div>
 
