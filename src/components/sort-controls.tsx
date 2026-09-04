@@ -1,6 +1,6 @@
 'use client';
 
-import { IconDice, IconHeart, IconNew, IconSortAsc, IconSortDesc } from '@/components/icons';
+import { IconDice, IconHeart, IconHistory, IconSortAsc, IconSortDesc } from '@/components/icons';
 import { t, type SupportedLanguage } from '@/lib/i18n';
 
 interface SortControlsProps {
@@ -65,7 +65,7 @@ export function SortControls({
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
       >
-        <IconNew size="w-4 h-4" /> {t('filter.latest', lang)}
+        <IconHistory size="w-4 h-4" /> {t('filter.latest', lang)}
       </button>
 
       <button
