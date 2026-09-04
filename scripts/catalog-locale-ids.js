@@ -68,6 +68,12 @@ function checkCatalogLocaleIds(dataDir = path.join(__dirname, '..', 'data')) {
     idsByLocale[locale] = ids;
     counts[locale] = ids.length;
 
+    // 空集合同士は「一致」になってしまうので、件数 0 は単独で問題として扱う。
+    // ファイルサイズだけの検査（ヘッダー行があれば非空）では素通りする。
+    if (ids.length === 0) {
+      problems.push(`No records in ${locale.toUpperCase()} (header only or empty)`);
+    }
+
     const dupes = findDuplicates(ids);
     if (dupes.length > 0) {
       problems.push(`Duplicate IDs in ${locale.toUpperCase()}: ${dupes.join(', ')}`);

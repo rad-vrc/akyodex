@@ -121,6 +121,34 @@ test('non 4-digit IDs are reported as malformed', (t) => {
   assert.match(jaProblem, /"abcd"/);
 });
 
+// --- 空のカタログ -----------------------------------------------------------
+
+test('header-only catalogs are rejected instead of matching as empty sets', (t) => {
+  const dir = makeFixture(t, { ja: [], en: [], ko: [] });
+
+  const result = checkCatalogLocaleIds(dir);
+
+  // 空集合同士は「一致」になるため、件数 0 を独立した問題として検出する必要がある
+  assert.equal(result.ok, false, result.report);
+  assert.deepEqual(result.counts, { ja: 0, en: 0, ko: 0 });
+  for (const locale of ['JA', 'EN', 'KO']) {
+    assert.ok(
+      result.problems.includes(`No records in ${locale} (header only or empty)`),
+      result.report,
+    );
+  }
+});
+
+test('one empty locale is reported even when the others agree', (t) => {
+  const dir = makeFixture(t, { ja: ['0001', '0002'], en: [], ko: ['0001', '0002'] });
+
+  const result = checkCatalogLocaleIds(dir);
+
+  assert.equal(result.ok, false, result.report);
+  assert.ok(result.problems.includes('No records in EN (header only or empty)'), result.report);
+  assert.ok(result.problems.includes('Missing from EN: 0001, 0002'), result.report);
+});
+
 // --- 副作用がないこと -------------------------------------------------------
 
 test('the check never rewrites the files it inspects', (t) => {
