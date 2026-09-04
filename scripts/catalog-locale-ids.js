@@ -68,6 +68,12 @@ function checkCatalogLocaleIds(dataDir = path.join(__dirname, '..', 'data')) {
     idsByLocale[locale] = ids;
     counts[locale] = ids.length;
 
+    // 空集合同士は「一致」になってしまうので、件数 0 は単独で問題として扱う。
+    // ファイルサイズだけの検査（ヘッダー行があれば非空）では素通りする。
+    if (ids.length === 0) {
+      problems.push(`No records in ${locale.toUpperCase()} (header only or empty)`);
+    }
+
     const dupes = findDuplicates(ids);
     if (dupes.length > 0) {
       problems.push(`Duplicate IDs in ${locale.toUpperCase()}: ${dupes.join(', ')}`);
@@ -94,7 +100,8 @@ function checkCatalogLocaleIds(dataDir = path.join(__dirname, '..', 'data')) {
     }
   }
 
-  const lines = ['Catalog locale ID mismatch:'];
+  // CI では成功時もこのレポートを出すので、見出しは結果に合わせる
+  const lines = [problems.length > 0 ? 'Catalog locale ID mismatch:' : 'Catalog locale ID sets match:'];
   for (const locale of LOCALES) {
     lines.push(`${locale.toUpperCase()}: ${counts[locale]}`);
   }
@@ -119,3 +126,13 @@ function checkCatalogLocaleIds(dataDir = path.join(__dirname, '..', 'data')) {
 }
 
 module.exports = { checkCatalogLocaleIds };
+
+// CI から `node scripts/catalog-locale-ids.js` で直接実行できる入口。
+// 差分があれば report をそのまま出して非ゼロ終了する（修復は一切しない）。
+if (require.main === module) {
+  const result = checkCatalogLocaleIds();
+  console.log(result.report);
+  if (!result.ok) {
+    process.exitCode = 1;
+  }
+}

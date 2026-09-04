@@ -97,40 +97,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Validate CSV files
+      - name: Validate CSV files exist
         run: |
+          set -euo pipefail
           echo "Checking CSV data files..."
-          
-          # Check if CSV files exist
-          if [ ! -f "data/akyo-data.csv" ]; then
-            echo "Error: data/akyo-data.csv not found"
-            exit 1
-          fi
-          
-          if [ ! -f "data/akyo-data-US.csv" ]; then
-            echo "Error: data/akyo-data-US.csv not found"
-            exit 1
-          fi
-          
-          # Count records in CSV files
-          JA_RECORDS=$(tail -n +2 data/akyo-data.csv | wc -l)
-          EN_RECORDS=$(tail -n +2 data/akyo-data-US.csv | wc -l)
-          
-          echo "Japanese CSV records: ${JA_RECORDS}"
-          echo "English CSV records: ${EN_RECORDS}"
-          
-          # Basic validation: both files should have similar record counts
-          if [ $JA_RECORDS -eq 0 ]; then
-            echo "Error: Japanese CSV is empty"
-            exit 1
-          fi
-          
-          if [ $EN_RECORDS -eq 0 ]; then
-            echo "Error: English CSV is empty"
-            exit 1
-          fi
-          
-          echo "✅ CSV data validation passed"
+          for locale in ja en ko; do
+            file="data/akyo-data-${locale}.csv"
+            if [ ! -f "${file}" ]; then
+              echo "Error: ${file} not found"
+              exit 1
+            fi
+            if [ ! -s "${file}" ]; then
+              echo "Error: ${file} is empty"
+              exit 1
+            fi
+          done
+
+      # 行数ではなく CSV としてパースして数える（コメント欄に改行が入るため）。
+      # 併せて ja/en/ko の ID 集合の一致・重複・書式も検査する。検出のみで修復はしない。
+      - name: Validate catalog locale ID sets
+        run: node scripts/catalog-locale-ids.js
           
   create-health-check-report:
     name: Create Health Check Report
