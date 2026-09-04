@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-04T23:03:34.357Z",
-  "count": 943,
+  "updatedAt": "2026-09-04T23:06:20.990Z",
+  "count": 944,
   "data": [
     {
       "id": "0001",
@@ -10768,6 +10768,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632"
+    },
+    {
+      "id": "0944",
+      "entryType": "avatar",
+      "displaySerial": "0836",
+      "nickname": "ルックやぁAkyo",
+      "avatarName": "やぁǃǃǃǃǃ",
+      "category": "チョコミント類,ギミック・特殊,ギミック・特殊/チャット",
+      "comment": "正面を切ってあいさつすることに特化したAkyo！\nやりすぎると怖がられるかも！？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053"
     }
   ]
 }
