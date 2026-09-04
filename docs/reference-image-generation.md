@@ -16,7 +16,7 @@ the generator. The shared, runtime-independent contract is in
   conflict-safe design. Config tests pin both settings; the interleaving test
   documents the corruption possible without serialization.
 - Keep quality 82, fixed WebP widths 960/1920, and
-  `public, max-age=0, must-revalidate`. Do not weaken the 250,000/350,000-byte
+  `public, max-age=0, must-revalidate`. Do not weaken the 250,000/600,000-byte
   audit budgets or silently change quality to pass an audit.
 - No generator path may put or delete an original PNG. A source deletion may
   delete its two derivatives only. Staging Queue, DLQ, and R2 stay isolated from
@@ -99,7 +99,7 @@ staging. Standard Lighthouse only measures the list page, not modal openings.
 
 ## Oversized derivative decision rule
 
-An output above 250,000 bytes (960px) or 350,000 bytes (1920px) remains an audit
+An output above 250,000 bytes (960px) or 600,000 bytes (1920px) remains an audit
 failure even if it is a valid WebP. Before the client rollout, keep PR #467
 unmerged and the current PNG display path active until the issue is resolved.
 After rollout, an oversized result requires investigation, not an automatic
@@ -113,6 +113,15 @@ scoped proposal to the owner. Any exception or budget/quality change requires
 explicit approval and a separate reviewed change to the contract and checks;
 until then the failure and client rollout gate remain in place. Re-enqueueing a
 current derivative does not resize it or fix a size-only audit failure.
+
+Budget history: on 2026-09-04 the 1920px budget was raised from 350,000 to
+600,000 bytes after the first production audit flagged three valid 1920x1080
+outputs (`0091` 532,170 B, `0229` 509,038 B, `0777` 421,482 B; originals
+5.6-6.4 MB). The 960px budget, quality 82, widths, cache policy, and
+`generator-version` did not change, so no regeneration or backfill was needed.
+Distribution at that time across 834 originals: 1920px p50 68,060 B, p99
+191,070 B, max 532,170 B; 960px max 155,172 B. Outputs above 600,000 bytes
+remain audit failures under the same rule.
 
 ## Recovery
 

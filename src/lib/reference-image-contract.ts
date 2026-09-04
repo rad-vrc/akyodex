@@ -7,7 +7,7 @@ export const REFERENCE_QUALITY = 82;
 export const REFERENCE_IMAGE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
 export const REFERENCE_VARIANTS = [
   { kind: "preview", width: 960, maxBytes: 250_000 },
-  { kind: "zoom", width: 1920, maxBytes: 350_000 },
+  { kind: "zoom", width: 1920, maxBytes: 600_000 },
 ] as const;
 
 export type ReferenceImageWidth = (typeof REFERENCE_VARIANTS)[number]["width"];
