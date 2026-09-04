@@ -90,7 +90,7 @@ test("audits derivative metadata, content type, cache policy, and size", async (
       "reference/0801-1920.webp",
       {
         CacheControl: "public, max-age=31536000, immutable",
-        ContentLength: 400_000,
+        ContentLength: 700_000,
         ContentType: "image/png",
         Metadata: {
           "generator-version": "old",
