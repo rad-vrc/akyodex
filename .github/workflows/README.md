@@ -21,7 +21,7 @@
 | CI | `ci.yml` | PR / push (`main`, `develop`) | 型チェック、Cloudflare Pages ビルド検証、Security Scan | ESLint と Dify CSP hash は advisory |
 | Deploy Workers staging | `deploy-cloudflare-workers-staging.yml` | non-draft PR (`main`) | 最新PRを本番相当の共有Workers環境へデプロイ | `X-Akyodex-Worker-Tag`でSHAを照合 |
 | Lighthouse CI | `lighthouse-ci.yml` | PR (`main`) / manual | Lighthouse 13.4.1のモバイルsimulated計測を3回実行 | 中央値を記録し、重大な性能退行だけを予算で停止 |
-| Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / manual | 本番候補のupload、手動activate、直前Workerへのrollback | `main` pushだけでは本番trafficを変更しない |
+| Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / dispatch | 本番候補のupload、手動activate、フォント更新のガード付き自動activate、Worker rollback | `main` pushだけでは本番trafficを変更しない |
 | Deploy Pages PR Preview | `deploy-cloudflare-pages-preview.yml` | non-draft same-repository PR (`main`) | PRごとの独立した読み取り専用Previewを作成 | Dependabotとfork PRは対象外 |
 | Conflict Check | `conflict-check.yml` | PR to `main`, push to `main` | `main` との競合をコメントで通知 | 競合解消時は古いコメントを削除 |
 | Sync JSON Data from CSV | `sync-json-data.yml` | `main` push (CSV変更時) / manual | CSV→JSON 変換、R2 アップロード、ISR 再検証 | GitHub へ自動コミットも行う |
@@ -50,7 +50,7 @@ Branch protection で最低限 Required にしたいのは次のチェックで�
 4. それ以外の shell では `npm run push:check-pr -- -u origin HEAD` を使うと push と PR 状態確認をまとめて実行できる。
 5. PR を開くと `CI`、共有Workers staging、PR別Pages Previewが走る。
 6. Pages Previewで表示を確認し、Workers固有機能は`staging.akyodex.com`で確認する。
-7. `main`へのマージではWorkers本番候補だけをuploadする。手動の`activate`を実行するまで現在の本番Workerが維持される。
+7. アプリ変更の`main`へのマージではWorkers本番候補だけをuploadする。手動の`activate`を実行するまで現在の本番Workerが維持される。
 8. CSV を更新したcommitが`main`に入ると`Sync JSON Data from CSV`が追加で走る。
 
 ## Cloudflare Pages PR Preview
@@ -117,7 +117,8 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 - 候補uploadに失敗した場合はfail closedで停止します。Durable Object migration追加時は、稼働中Worker向けのmigration手順を別途レビューして実行します。
 - Wrangler rollback cannot cross a Durable Object class lifecycle change. Durable Object migrationを追加・変更したversionを跨ぐ復帰は、通常の`rollback-worker`ではなく専用のmigration手順として別途レビューします。
 - 候補upload用configには本番domainを含めません。`akyodex.com/*`はroute専用configを使う手動`activate`だけがWorker routeとして設定できます。
-- 本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。
+- アプリ変更の本番切替は`workflow_dispatch`の`activate`を明示実行した場合だけです。例外は同期workflowが要求する`activate-fonts`で、本番との差分がフォントと指定カタログファイルだけ、かつWOFF2更新がある場合に限り自動反映します。通常の候補uploadは自動activateしません。
+- `activate-fonts`はビルド前の差分検査と直前の本番版再確認を行い、既存routeのまま切り替えます。配信WOFF2のバイト一致とページCSSの参照まで検証し、失敗時は記録した直前Worker versionに戻します。初回導入と停止条件は[Automatic Font Subset Activation](../../README.md#automatic-font-subset-activation)を参照してください。
 - `activate`は現在の本番がWorker tag付きで健全なこととWorker secretsを確認し、同じSHAタグが複数存在しても最新の候補version IDを一意に選んで100%へdeployします。
 - runtime検証に失敗した場合、またはactivation jobがキャンセルされた場合は`wrangler rollback`で直前のWorker deploymentへ戻します。Worker routeは外しません。
 - `rollback-worker`は既定で直前のWorker deploymentへ戻します。必要な場合は任意の`version-id`を指定でき、復帰後はWorker tagに加えて完全カタログのschema・件数を検証します。Worker routeは維持し、Pagesを本番rollback先には使用しません。

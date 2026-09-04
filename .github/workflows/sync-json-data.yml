@@ -86,12 +86,18 @@ jobs:
           echo "✅ CSV to JSON conversion completed successfully"
 
       - name: Regenerate font subsets from catalog characters
+        id: font-subsets
         run: |
           set -e
           # 新しい名前の文字を自己ホストの丸ゴシックサブセットへ反映する。
           # 生成失敗はデータ同期を止めない（未収録文字はシステムFBで表示される）。
           if ! npm run fonts:subset; then
             echo "::warning::Font subset regeneration failed; keeping existing subsets"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet -- src/fonts/mplus2-variable.subset.woff2; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Regenerate category canonical map
@@ -304,16 +310,22 @@ jobs:
       # このワークフローがpushしたbot commit（JSON+フォントサブセット）は、
       # GITHUB_TOKENによるpushのため on:push の本番デプロイを起動しない
       # （GitHub仕様: GITHUB_TOKEN起点のイベントは新しいworkflow runを作らない）。
-      # 新フォント/JSONを含む本番候補が作られない穴を塞ぐため、ここで明示的に
-      # workflow_dispatch(action=upload)する。activateは従来どおり手動。
-      - name: Trigger production candidate upload
+      # フォントのバイト列が変わった場合だけ、ガード付きの自動反映を要求する。
+      # 本番との差分にアプリ変更が含まれる場合、production workflow側で停止する。
+      - name: Trigger production font activation or candidate upload
         if: steps.commit-json.outputs.pushed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          FONT_CHANGED: ${{ steps.font-subsets.outputs.changed }}
         run: |
           set -e
+          action=upload
+          if [ "$FONT_CHANGED" = "true" ]; then
+            action=activate-fonts
+          fi
           gh workflow run deploy-cloudflare-workers-production.yml \
             --repo "${{ github.repository }}" \
             --ref main \
-            -f action=upload
-          echo "✅ Dispatched production candidate upload (includes regenerated font subsets)"
+            -f "action=$action"
+          echo "Dispatched production action: $action"
+          echo "- Production action: $action" >> "$GITHUB_STEP_SUMMARY"
