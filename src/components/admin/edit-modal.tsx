@@ -799,12 +799,12 @@ export function EditModal({
                   alt={`${formData.nickname || formData.avatarName || akyo.id} の現在の画像`}
                   width={240}
                   height={160}
-                  className="aspect-[3/2] w-full max-w-[240px] shrink-0 rounded-lg border border-gray-200 bg-gray-50 object-cover"
+                  className="aspect-[3/2] w-full rounded-lg border border-gray-200 bg-gray-50 object-cover sm:w-60 sm:shrink-0"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src = '/images/placeholder.webp';
                   }}
                 />
-                <p className="text-xs leading-snug text-gray-500 sm:pt-1">
+                <p className="min-w-0 text-xs leading-snug text-gray-500 sm:pt-1">
                   サムネイルは登録時に VRChat から取得したものを使っています。この画面からの差し替えは、画像最適化フローが整ってから対応予定です。
                 </p>
               </div>
