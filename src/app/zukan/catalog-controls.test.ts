@@ -42,16 +42,19 @@ test("SortControls renders outside FilterPanel and disables while loading", () =
   const sortMarkup = renderToStaticMarkup(
     createElement(SortControls, {
       onSortToggle: () => {},
+      onLatestClick: () => {},
       onRandomClick: () => {},
       onFavoritesClick: () => {},
       favoritesOnly: false,
       sortAscending: true,
+      latestMode: false,
       randomMode: false,
       disabled: true,
     }),
   );
   assert.match(sortMarkup, /<fieldset[^>]*disabled=""[^>]*aria-busy="true"/);
   assert.match(sortMarkup, /昇順/);
+  assert.match(sortMarkup, /最新100件/);
   assert.match(sortMarkup, /ランダム/);
 
   const panelMarkup = renderToStaticMarkup(
@@ -60,5 +63,28 @@ test("SortControls renders outside FilterPanel and disables while loading", () =
       creators: ["author"],
     }),
   );
-  assert.doesNotMatch(panelMarkup, /昇順|降順|ランダム/);
+  assert.doesNotMatch(panelMarkup, /昇順|降順|最新100件|ランダム/);
+});
+
+// 最新100件は昇順降順とランダムの間に置く（並び順そのものが要件）。
+test("SortControls places the latest-100 toggle between sort order and random", () => {
+  const markup = renderToStaticMarkup(
+    createElement(SortControls, {
+      onSortToggle: () => {},
+      onLatestClick: () => {},
+      onRandomClick: () => {},
+      onFavoritesClick: () => {},
+      favoritesOnly: false,
+      sortAscending: true,
+      latestMode: true,
+      randomMode: false,
+    }),
+  );
+
+  assert.ok(
+    markup.indexOf("昇順") < markup.indexOf("最新100件") &&
+      markup.indexOf("最新100件") < markup.indexOf("ランダム"),
+  );
+  // 有効時は aria-pressed と配色の両方で状態が分かる
+  assert.match(markup, /aria-pressed="true"[^>]*bg-orange-200/);
 });

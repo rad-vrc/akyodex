@@ -1,30 +1,34 @@
 'use client';
 
-import { IconDice, IconHeart, IconSortAsc, IconSortDesc } from '@/components/icons';
+import { IconDice, IconHeart, IconHistory, IconSortAsc, IconSortDesc } from '@/components/icons';
 import { t, type SupportedLanguage } from '@/lib/i18n';
 
 interface SortControlsProps {
   onSortToggle: () => void;
+  onLatestClick: () => void;
   onRandomClick: () => void;
   onFavoritesClick: () => void;
   favoritesOnly: boolean;
   sortAscending: boolean;
+  latestMode: boolean;
   randomMode: boolean;
   lang?: SupportedLanguage;
   disabled?: boolean;
 }
 
 /**
- * 昇順/降順・ランダム表示・お気に入りのみ の並び替えコントロール。
+ * 昇順/降順・最新100件・ランダム表示・お気に入りのみ の並び替えコントロール。
  * 元は FilterPanel の末尾にあったが、モバイルでは絞り込みフィルタが初期状態で
  * 閉じておりソートへ即アクセスできなかったため、折りたたみ領域の外へ独立させた。
  */
 export function SortControls({
   onSortToggle,
+  onLatestClick,
   onRandomClick,
   onFavoritesClick,
   favoritesOnly,
   sortAscending,
+  latestMode,
   randomMode,
   lang = 'ja',
   disabled = false,
@@ -48,6 +52,20 @@ export function SortControls({
       >
         {sortAscending ? <IconSortAsc size="w-4 h-4" /> : <IconSortDesc size="w-4 h-4" />}{' '}
         {sortAscending ? t('filter.ascending', lang) : t('filter.descending', lang)}
+      </button>
+
+      <button
+        type="button"
+        onClick={onLatestClick}
+        aria-pressed={latestMode}
+        aria-label={t('filter.latestToggle', lang)}
+        className={`attribute-badge quick-filter-badge transition-colors ${
+          latestMode
+            ? 'bg-orange-200 text-orange-800 hover:bg-orange-300'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+        }`}
+      >
+        <IconHistory size="w-4 h-4" /> {t('filter.latest', lang)}
       </button>
 
       <button

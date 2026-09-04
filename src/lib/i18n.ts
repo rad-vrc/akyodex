@@ -430,6 +430,16 @@ export const UI_TEXTS = {
     en: "Descending",
     ko: "내림차순",
   },
+  "filter.latestToggle": {
+    ja: "最新100件表示の切り替え",
+    en: "Toggle latest 100",
+    ko: "최신 100건 표시 전환",
+  },
+  "filter.latest": {
+    ja: "最新100件",
+    en: "Latest 100",
+    ko: "최신 100건",
+  },
   "filter.randomToggle": {
     ja: "ランダム表示の切り替え",
     en: "Toggle random mode",
