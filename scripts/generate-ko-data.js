@@ -278,6 +278,8 @@ const COMMENT_MAP = {
   '便宜上のニックネームは岩苔Akyoかな？\nなんでもいいと思う！': '편의상의 닉네임은 바위이끼 Akyo일까?\n아무거나 괜찮을 것 같아!',
   'Fket2026Summer-Parallel Bangkokに行ってみて！': 'Fket2026Summer-Parallel Bangkok에 가 봐!',
   '栄養たっぷり！': '영양 만점!',
+  '常にあいさつが表示されてるよ！\nあいさつ界最速のAkyoになれるかも！？': '항상 인사말이 표시돼!\n인사 속도만큼은 가장 빠른 Akyo가 될지도!?',
+  '正面を切ってあいさつすることに特化したAkyo！\nやりすぎると怖がられるかも！？': '정면으로 인사하는 데 특화된 Akyo!\n너무 과하면 무서워할지도!?',
 };
 
 function translateComment(jaComment, existingKoComment = "") {
