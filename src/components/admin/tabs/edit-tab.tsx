@@ -239,8 +239,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
         {userRole === 'owner' ? '編集・削除機能が利用可能です' : '編集機能が利用可能です（削除は上位管理者のみ）'}
       </p>
 
-      {/* Edit Modal */}
+      {/* Edit Modal — key で対象ごとに作り直し、フォーム初期値・画像プレビュー・
+          重複確認結果を前回の編集から引き継がないようにする */}
       <EditModal
+        key={selectedAkyo?.id ?? 'closed'}
         isOpen={showEditModal}
         onClose={() => {
           setShowEditModal(false);

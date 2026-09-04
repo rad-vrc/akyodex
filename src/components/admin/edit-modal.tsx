@@ -2,7 +2,21 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { IconClose, IconCloudUpload, IconCrop, IconEdit, IconRedo, IconSave, IconSearch, IconTag, IconTags, IconZoomIn, IconZoomOut } from '@/components/icons';
+import {
+  IconClose,
+  IconCloudUpload,
+  IconCrop,
+  IconEdit,
+  IconExternalLink,
+  IconRedo,
+  IconSave,
+  IconSearch,
+  IconTag,
+  IconTags,
+  IconUser,
+  IconZoomIn,
+  IconZoomOut,
+} from '@/components/icons';
 import {
   detectVrcEntryTypeFromUrl,
   ensureWorldCategory,
@@ -11,9 +25,12 @@ import {
   resolveDisplaySerialForSourceUrlChange,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
+import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AttributeModal } from './attribute-modal';
+import { Spinner } from './spinner';
+import { useModalDialog } from './use-modal-dialog';
 
 interface EditModalProps {
   isOpen: boolean;
@@ -26,6 +43,45 @@ interface EditModalProps {
 
   onSuccess: () => void;
 }
+
+interface EditFormData {
+  entryType: AkyoEntryType;
+  displaySerial: string;
+  nickname: string;
+  avatarName: string;
+  // UI上は複数選択UIを維持するため配列で扱う
+  categories: string[];
+  author: string;
+  sourceUrl: string;
+  avatarUrl: string;
+  boothUrl: string;
+  comment: string;
+}
+
+interface FieldStatusState {
+  message: string;
+  tone: 'neutral' | 'success' | 'error';
+}
+
+const EMPTY_STATUS: FieldStatusState = { message: '', tone: 'neutral' };
+
+const ENTRY_TYPE_LABEL: Record<AkyoEntryType, string> = {
+  avatar: 'アバター',
+  world: 'ワールド',
+  booth: 'BOOTH専用',
+};
+
+const NICKNAME_LABEL: Record<AkyoEntryType, string> = {
+  avatar: 'ニックネーム',
+  world: 'ワールド名',
+  booth: '名前',
+};
+
+const INPUT_CLASS =
+  'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500';
+const LABEL_CLASS = 'block text-gray-700 text-sm font-medium';
+const HELP_CLASS = 'mt-2 text-xs text-gray-500 leading-snug';
+const LEGEND_CLASS = 'flex items-center gap-2 text-sm font-bold text-gray-800 mb-3';
 
 function normalizeCategoriesForSubmit(
   categories: string[],
@@ -40,9 +96,116 @@ function normalizeCategoriesForSubmit(
     : Array.from(new Set(normalized));
 }
 
+function buildInitialFormData(akyo: AkyoData | null): EditFormData {
+  if (!akyo) {
+    return {
+      entryType: 'avatar',
+      displaySerial: '',
+      nickname: '',
+      avatarName: '',
+      categories: [],
+      author: '',
+      sourceUrl: '',
+      avatarUrl: '',
+      boothUrl: '',
+      comment: '',
+    };
+  }
+
+  // 新旧フィールド対応
+  const categoryStr = akyo.category || akyo.attribute || '';
+  const authorStr = akyo.author || akyo.creator || '';
+  const commentStr = akyo.comment || akyo.notes || '';
+  const sourceUrl = getAkyoSourceUrl(akyo);
+  const resolvedEntryType =
+    akyo.entryType || detectVrcEntryTypeFromUrl(sourceUrl) || 'avatar';
+
+  return {
+    entryType: resolvedEntryType,
+    displaySerial: akyo.displaySerial || (resolvedEntryType === 'world' ? '' : akyo.id),
+    nickname: akyo.nickname || '',
+    avatarName: akyo.avatarName || '',
+    categories: normalizeCategoriesForSubmit(
+      categoryStr ? categoryStr.split(/[、,]/).map((a) => a.trim()) : [],
+      resolvedEntryType
+    ),
+    author: authorStr,
+    sourceUrl,
+    avatarUrl: akyo.avatarUrl || sourceUrl,
+    boothUrl: akyo.boothUrl || '',
+    comment: commentStr,
+  };
+}
+
+/**
+ * 重複確認ボタン。ラベル行の右端に置く（登録画面と同じ位置）。
+ * 可視文言は短く共通にし、対象フィールド名は aria-label で補って
+ * 2つのボタンを読み上げで区別できるようにする（可視文言は aria-label に含める）。
+ */
+function DuplicateCheckButton({
+  checking,
+  onClick,
+  fieldLabel,
+}: {
+  checking: boolean;
+  onClick: () => void;
+  fieldLabel: string;
+}) {
+  const label = '重複を確認';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={checking}
+      aria-label={`${fieldLabel}の${label}`}
+      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-orange-200 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {checking ? (
+        <>
+          <Spinner className="w-3.5 h-3.5" />
+          確認中...
+        </>
+      ) : (
+        <>
+          <IconSearch size="w-4 h-4" />
+          {label}
+        </>
+      )}
+    </button>
+  );
+}
+
+/**
+ * 重複確認の結果表示。常に DOM に置いておき、文言が入ったときだけ見せる。
+ * aria-live 領域は更新前から存在している必要があるため、空でも消さない。
+ */
+function FieldStatus({ id, status }: { id: string; status: FieldStatusState }) {
+  const toneClass =
+    status.tone === 'error'
+      ? 'text-red-600'
+      : status.tone === 'success'
+      ? 'text-green-600'
+      : 'text-gray-600';
+
+  return (
+    <p
+      id={id}
+      role="status"
+      aria-live="polite"
+      className={status.message ? `mt-2 text-sm ${toneClass}` : 'sr-only'}
+    >
+      {status.message}
+    </p>
+  );
+}
+
 /**
  * Edit Modal Component
- * Akyoデータの編集モーダル（元のadmin.htmlを完全再現）
+ * Akyoデータの編集モーダル。
+ *
+ * レイアウトは登録画面（add-tab.tsx）を基準に揃えている。
+ * 親（EditTab）が akyo.id を key に渡して開くたびに作り直すので、
+ * 初期値は useState の初期化子で一度だけ組み立てればよい。
  */
 export function EditModal({
   isOpen,
@@ -52,29 +215,18 @@ export function EditModal({
   attributes,
   onSuccess,
 }: EditModalProps) {
-  const [formData, setFormData] = useState({
-    entryType: 'avatar' as AkyoEntryType,
-    displaySerial: '',
-    nickname: '',
-    avatarName: '',
-    // UI上は複数選択UIを維持するため配列で扱う
-    categories: [] as string[],
-    author: '',
-    sourceUrl: '',
-    avatarUrl: '',
-    boothUrl: '',
-    comment: '',
-  });
+  const [formData, setFormData] = useState<EditFormData>(() => buildInitialFormData(akyo));
+  const initialFormJson = useMemo(() => JSON.stringify(buildInitialFormData(akyo)), [akyo]);
 
   const [showAttributeModal, setShowAttributeModal] = useState(false);
   const [fetchingName, setFetchingName] = useState(false);
   const [fetchingImage, setFetchingImage] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Image cropping states
-  // ... (省略: 変更なし) ...
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
-  const formRef = useRef<HTMLFormElement | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [imageScale, setImageScale] = useState(1);
   const [imageX, setImageX] = useState(0);
   const [imageY, setImageY] = useState(0);
@@ -85,52 +237,42 @@ export function EditModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Duplicate check states
-  // ... (省略: 変更なし) ...
-  const [nicknameStatus, setNicknameStatus] = useState<{
-    message: string;
-    tone: 'neutral' | 'success' | 'error';
-  }>({ message: '', tone: 'neutral' });
-  const [avatarNameStatus, setAvatarNameStatus] = useState<{
-    message: string;
-    tone: 'neutral' | 'success' | 'error';
-  }>({ message: '', tone: 'neutral' });
+  const [nicknameStatus, setNicknameStatus] = useState<FieldStatusState>(EMPTY_STATUS);
+  const [avatarNameStatus, setAvatarNameStatus] = useState<FieldStatusState>(EMPTY_STATUS);
   const [checkingNickname, setCheckingNickname] = useState(false);
   const [checkingAvatarName, setCheckingAvatarName] = useState(false);
 
-  // Initialize form data when akyo changes
-  useEffect(() => {
-    if (akyo) {
-      // 新旧フィールド対応
-      const categoryStr = akyo.category || akyo.attribute || '';
-      const authorStr = akyo.author || akyo.creator || '';
-      const commentStr = akyo.comment || akyo.notes || '';
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-      const resolvedEntryType =
-        akyo.entryType || detectVrcEntryTypeFromUrl(getAkyoSourceUrl(akyo)) || 'avatar';
+  const isWorldEntry = formData.entryType === 'world';
+  const isBoothEntry = formData.entryType === 'booth';
+  const isAvatarEntry = !isWorldEntry && !isBoothEntry;
+  const detectedEntryType = detectVrcEntryTypeFromUrl(formData.sourceUrl.trim());
 
-      setFormData({
-        entryType: resolvedEntryType,
-        displaySerial: akyo.displaySerial || (resolvedEntryType === 'world' ? '' : akyo.id),
-        nickname: akyo.nickname || '',
-        avatarName: akyo.avatarName || '',
-        categories: normalizeCategoriesForSubmit(
-          categoryStr ? categoryStr.split(/[、,]/).map(a => a.trim()) : [],
-          resolvedEntryType
-        ),
-        author: authorStr,
-        sourceUrl: getAkyoSourceUrl(akyo),
-        avatarUrl: akyo.avatarUrl || getAkyoSourceUrl(akyo),
-        boothUrl: akyo.boothUrl || '',
-        comment: commentStr,
-      });
-      setShowImagePreview(false);
-      setOriginalImageSrc(null);
-      setNicknameStatus({ message: '', tone: 'neutral' });
-      setAvatarNameStatus({ message: '', tone: 'neutral' });
+  const isDirty = showImagePreview || JSON.stringify(formData) !== initialFormJson;
+
+  const currentImageUrl = useMemo(
+    () => (akyo ? buildAvatarImageUrl(akyo.id, getAkyoSourceUrl(akyo), 512) : null),
+    [akyo]
+  );
+
+  // 未保存の変更があるときは閉じる前に確認する（Escape / 背景クリック / ×ボタン / キャンセル共通）
+  const requestClose = useCallback(() => {
+    if (isDirty && !confirm('保存していない変更があります。\nこのまま閉じますか？')) {
+      return;
     }
-  }, [akyo]);
+    onClose();
+  }, [isDirty, onClose]);
 
-  // ... (画像処理系ロジックは変更なし) ...
+  useModalDialog({
+    isOpen: isOpen && akyo !== null,
+    onRequestClose: requestClose,
+    dialogRef,
+    initialFocusRef: closeButtonRef,
+    suspended: showAttributeModal,
+  });
+
   // Update image transform when position or scale changes
   useEffect(() => {
     const img = cropImageRef.current;
@@ -157,11 +299,8 @@ export function EditModal({
     }
   };
 
-  const isWorldEntry = formData.entryType === 'world';
-  const isBoothEntry = formData.entryType === 'booth';
-
   const zoomImage = (factor: number) => {
-    setImageScale(prev => {
+    setImageScale((prev) => {
       const newScale = prev * factor;
       return Math.max(0.5, Math.min(3, newScale));
     });
@@ -213,6 +352,7 @@ export function EditModal({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setIsDragOver(false);
     const files = e.dataTransfer.files;
     if (files.length > 0 && files[0].type.startsWith('image/')) {
       handleImageFile(files[0]);
@@ -221,6 +361,11 @@ export function EditModal({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    if (!isDragOver) setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -286,11 +431,11 @@ export function EditModal({
         const containerAspect = cw / ch;
         const imageAspect = iw / ih;
 
-        const baseScale = imageAspect > containerAspect ? (ch / ih) : (cw / iw);
+        const baseScale = imageAspect > containerAspect ? ch / ih : cw / iw;
         const totalScale = baseScale * imageScale;
 
-        const sx = Math.max(0, (-imageX) / totalScale);
-        const sy = Math.max(0, (-imageY) / totalScale);
+        const sx = Math.max(0, -imageX / totalScale);
+        const sy = Math.max(0, -imageY / totalScale);
         const sw = Math.min(iw - sx, cw / totalScale);
         const sh = Math.min(ih - sy, ch / totalScale);
 
@@ -298,15 +443,19 @@ export function EditModal({
         ctx.fillRect(0, 0, canvasW, canvasH);
         ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
 
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          } else {
-            resolve(null);
-          }
-        }, 'image/webp', 0.9);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            } else {
+              resolve(null);
+            }
+          },
+          'image/webp',
+          0.9
+        );
       };
       image.onerror = () => {
         console.error('Failed to load image for cropping');
@@ -317,16 +466,17 @@ export function EditModal({
     });
   };
 
-  const handleInputChange = (field: string, value: string | string[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (field: keyof EditFormData, value: string | string[]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSourceUrlChange = (value: string) => {
-    const detectedEntryType = detectVrcEntryTypeFromUrl(value.trim());
+    const nextDetectedEntryType = detectVrcEntryTypeFromUrl(value.trim());
     setFormData((prev) => {
       // sourceUrlが空になった場合、boothUrlがあればboothに戻す
-      const resolvedEntryType = detectedEntryType
-        ?? (!value.trim() && prev.boothUrl.trim() ? 'booth' : prev.entryType);
+      const resolvedEntryType =
+        nextDetectedEntryType ??
+        (!value.trim() && prev.boothUrl.trim() ? 'booth' : prev.entryType);
       return {
         ...prev,
         sourceUrl: value,
@@ -337,7 +487,7 @@ export function EditModal({
           : {}),
         displaySerial: resolveDisplaySerialForSourceUrlChange({
           currentDisplaySerial: prev.displaySerial,
-          detectedEntryType,
+          detectedEntryType: nextDetectedEntryType,
           id: akyo?.id ?? prev.displaySerial,
           originalDisplaySerial: akyo?.displaySerial,
           originalEntryType: akyo?.entryType,
@@ -346,21 +496,17 @@ export function EditModal({
     });
   };
 
-  // ... (重複チェック系ロジックは変更なし) ...
   // Duplicate check for nickname
   const handleCheckNicknameDuplicate = async () => {
     const value = formData.nickname.trim();
 
     if (!value) {
-      setNicknameStatus({
-        message: '名前を入力してください',
-        tone: 'neutral',
-      });
+      setNicknameStatus({ message: '名前を入力してください', tone: 'neutral' });
       return;
     }
 
     setCheckingNickname(true);
-    setNicknameStatus({ message: '', tone: 'neutral' });
+    setNicknameStatus(EMPTY_STATUS);
 
     try {
       const response = await fetch('/api/check-duplicate', {
@@ -384,10 +530,7 @@ export function EditModal({
       });
     } catch (error) {
       console.error('Nickname duplicate check error:', error);
-      setNicknameStatus({
-        message: '重複チェックに失敗しました',
-        tone: 'error',
-      });
+      setNicknameStatus({ message: '重複チェックに失敗しました', tone: 'error' });
     } finally {
       setCheckingNickname(false);
     }
@@ -398,15 +541,12 @@ export function EditModal({
     const value = formData.avatarName.trim();
 
     if (!value) {
-      setAvatarNameStatus({
-        message: 'アバター名を入力してください',
-        tone: 'neutral',
-      });
+      setAvatarNameStatus({ message: 'アバター名を入力してください', tone: 'neutral' });
       return;
     }
 
     setCheckingAvatarName(true);
-    setAvatarNameStatus({ message: '', tone: 'neutral' });
+    setAvatarNameStatus(EMPTY_STATUS);
 
     try {
       const response = await fetch('/api/check-duplicate', {
@@ -430,23 +570,14 @@ export function EditModal({
       });
     } catch (error) {
       console.error('Avatar name duplicate check error:', error);
-      setAvatarNameStatus({
-        message: '重複チェックに失敗しました',
-        tone: 'error',
-      });
+      setAvatarNameStatus({ message: '重複チェックに失敗しました', tone: 'error' });
     } finally {
       setCheckingAvatarName(false);
     }
   };
 
-  // ... (VRChat連携ロジックは変更なし) ...
   // VRChat URLからアバター名を取得
   const handleFetchAvatarName = async () => {
-    if (isWorldEntry) {
-      alert('ワールド名は登録時にURLから自動取得されます。変更する場合はニックネーム欄を編集してください');
-      return;
-    }
-
     const url = formData.sourceUrl.trim();
     if (!url) {
       alert('VRChat URLを入力してください');
@@ -493,11 +624,6 @@ export function EditModal({
 
   // VRChat URLから画像を取得
   const handleFetchImage = async () => {
-    if (isWorldEntry) {
-      alert('ワールド画像は登録画面の自動取得を利用してください。必要なら手動で画像をアップロードしてください。');
-      return;
-    }
-
     const url = formData.sourceUrl.trim();
     if (!url) {
       alert('VRChat URLを入力してください');
@@ -547,10 +673,10 @@ export function EditModal({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!akyo) return;
+    if (!akyo || submitting) return;
 
     // Validate required fields
-    if (!isWorldEntry && !isBoothEntry && !formData.avatarName.trim()) {
+    if (isAvatarEntry && !formData.avatarName.trim()) {
       alert('アバター名は必須です');
       return;
     }
@@ -582,29 +708,13 @@ export function EditModal({
       }
     }
 
-    // Get form element and button BEFORE await
-
-    const formEl = e.currentTarget as HTMLFormElement | null;
-    if (!formEl) {
-      console.error('Form element not found on submit');
-      return;
-    }
-
-
-    const submitBtn = formEl.querySelector('button[type="submit"]') as HTMLButtonElement | null;
-    const originalText = submitBtn?.innerHTML || '';
-
     // Generate cropped image if available
     let croppedImageData: string | null = null;
     if (showImagePreview && originalImageSrc) {
       croppedImageData = await generateCroppedImage();
     }
 
-    // Show loading state
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = '⛳ 更新中...';
-    }
+    setSubmitting(true);
 
     try {
       const submitData = new FormData();
@@ -622,7 +732,7 @@ export function EditModal({
       submitData.append('entryType', formData.entryType);
       submitData.append('displaySerial', displaySerialForSubmit);
       submitData.append('nickname', formData.nickname);
-      submitData.append('avatarName', (isWorldEntry || isBoothEntry) ? '' : formData.avatarName);
+      submitData.append('avatarName', isAvatarEntry ? formData.avatarName : '');
       submitData.append('sourceUrl', formData.sourceUrl);
       submitData.append('avatarUrl', formData.avatarUrl || formData.sourceUrl);
       if (formData.boothUrl.trim()) {
@@ -656,235 +766,158 @@ export function EditModal({
 
       alert(
         `✅ ${result.message}\n\n` +
-        `ID: #${akyo.id}\n` +
-        `${isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}: ${(isWorldEntry || isBoothEntry) ? formData.nickname : formData.avatarName}\n` +
-        `作者: ${formData.author}\n\n` +
-        (result.commitUrl ? `コミット: ${result.commitUrl}` : '')
+          `ID: #${akyo.id}\n` +
+          `${isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}: ${
+            isAvatarEntry ? formData.avatarName : formData.nickname
+          }\n` +
+          `作者: ${formData.author}\n\n` +
+          (result.commitUrl ? `コミット: ${result.commitUrl}` : '')
       );
 
       onSuccess();
       onClose();
-
     } catch (error) {
       console.error('Form submission error:', error);
       alert(
         '❌ 更新に失敗しました\n\n' +
-        (error instanceof Error ? error.message : '不明なエラーが発生しました') +
-        '\n\nもう一度お試しください。'
+          (error instanceof Error ? error.message : '不明なエラーが発生しました') +
+          '\n\nもう一度お試しください。'
       );
     } finally {
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-      }
+      setSubmitting(false);
+    }
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      requestClose();
     }
   };
 
   if (!isOpen || !akyo) return null;
 
+  const formId = 'edit-akyo-form';
+  const nicknameLabel = NICKNAME_LABEL[formData.entryType];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
-      <div className="relative flex items-center justify-center min-h-screen p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
-            <h2 className="text-2xl font-bold flex items-center">
-              <IconEdit size="w-5 h-5" className="text-blue-500 mr-2" />
-              Akyoを編集
-            </h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <IconClose size="w-6 h-6" />
+    <div className="fixed inset-0 z-50 overflow-y-auto" onClick={handleBackdropClick}>
+      <div className="modal-backdrop fixed inset-0" aria-hidden="true" />
+
+      <div
+        className="relative flex min-h-full items-start justify-center p-4 sm:items-center sm:p-8"
+        onClick={handleBackdropClick}
+      >
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-modal-title"
+          aria-describedby="edit-modal-meta"
+          tabIndex={-1}
+          className="modal-show relative flex w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] focus:outline-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* ヘッダー: 何を編集しているか（ID・種別）を常に見せる。ID は入力欄ではなく情報。
+              <header> 要素は globals.css のサイトヘッダー用グラデーションを !important で
+              受けてしまうので、ここは div にしている */}
+          <div className="flex items-start justify-between gap-4 rounded-t-2xl border-b border-gray-200 bg-gradient-to-r from-red-50 to-orange-50 px-6 py-4">
+            <div className="min-w-0">
+              <h2 id="edit-modal-title" className="flex items-center gap-2 text-xl font-bold text-gray-800">
+                <IconEdit size="w-5 h-5" className="text-red-500" />
+                Akyoを編集
+              </h2>
+              <p id="edit-modal-meta" className="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                <span className="font-mono font-bold text-gray-800">#{akyo.id}</span>
+                <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">
+                  {ENTRY_TYPE_LABEL[formData.entryType]}
+                </span>
+                {isWorldEntry && formData.displaySerial && (
+                  <span className="text-xs">表示番号: World{formData.displaySerial}</span>
+                )}
+              </p>
+            </div>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={requestClose}
+              aria-label="閉じる"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-white hover:text-gray-800"
+            >
+              <IconClose size="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-6">
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* ID（変更不可） */}
-                <div>
-                  <label htmlFor="edit-id" className="block text-gray-700 text-sm font-medium mb-1">
-                    ID（変更不可）
+          {/* 本文: ここだけスクロールする。フッターの操作は常に見える */}
+          <form
+            id={formId}
+            onSubmit={handleSubmit}
+            className="flex-1 space-y-6 overflow-y-auto px-6 py-5"
+          >
+            {/* ── 基本情報 ── */}
+            <fieldset className="space-y-4">
+              <legend className={LEGEND_CLASS}>
+                <IconUser size="w-4 h-4" className="text-red-500" />
+                基本情報
+              </legend>
+
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <label htmlFor="edit-nickname" className={LABEL_CLASS}>
+                    {nicknameLabel}
                   </label>
-                  <input
-                    id="edit-id"
-                    type="text"
-                    value={akyo.id}
-                    disabled
-                    className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg font-mono font-bold"
+                  <DuplicateCheckButton
+                    checking={checkingNickname}
+                    onClick={handleCheckNicknameDuplicate}
+                    fieldLabel={nicknameLabel}
                   />
                 </div>
+                <input
+                  id="edit-nickname"
+                  type="text"
+                  value={formData.nickname}
+                  onChange={(e) => {
+                    handleInputChange('nickname', e.target.value);
+                    setNicknameStatus(EMPTY_STATUS);
+                  }}
+                  aria-describedby="edit-nickname-status"
+                  className={`mt-2 ${INPUT_CLASS}`}
+                  placeholder="例: チョコミントAkyo"
+                />
+                <FieldStatus id="edit-nickname-status" status={nicknameStatus} />
+              </div>
 
-                {/* 通称 */}
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <label htmlFor="edit-nickname" className="block text-gray-700 text-sm font-medium">
-                      名前
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleCheckNicknameDuplicate}
-                      disabled={checkingNickname}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-orange-200 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {checkingNickname ? (
-                        <>
-                          <svg className="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          確認中...
-                        </>
-                      ) : (
-                        <>
-                          <IconSearch size="w-4 h-4" />
-                          同じニックネームがすでに登録されているか確認
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <input
-                    id="edit-nickname"
-                    type="text"
-                    value={formData.nickname}
-                    onChange={(e) => {
-                      handleInputChange('nickname', e.target.value);
-                      setNicknameStatus({ message: '', tone: 'neutral' });
-                    }}
-                    className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: チョコミントAkyo"
-                  />
-                  {nicknameStatus.message && (
-                    <p
-                      className={`mt-2 text-sm ${
-                        nicknameStatus.tone === 'error'
-                          ? 'text-red-600'
-                          : nicknameStatus.tone === 'success'
-                          ? 'text-green-600'
-                          : 'text-gray-600'
-                      }`}
-                    >
-                      {nicknameStatus.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* アバター名 */}
-                <div>
-                  <label
-                    htmlFor={(isWorldEntry || isBoothEntry) ? 'edit-world-name-note' : 'edit-avatar-name'}
-                    className="block text-gray-700 text-sm font-medium mb-1"
-                  >
-                    {isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}
-                  </label>
-                  {(isWorldEntry || isBoothEntry) ? (
-                    <input
-                      id="edit-world-name-note"
-                      type="text"
-                      value={isBoothEntry ? 'BOOTH専用エントリは「名前」欄を使用します' : 'ワールドは「名前」欄を名称として使用します'}
-                      disabled
-                      className="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500"
-                    />
-                  ) : (
-                    <>
-                      <input
-                        id="edit-avatar-name"
-                        type="text"
-                        value={formData.avatarName}
-                        onChange={(e) => {
-                          handleInputChange('avatarName', e.target.value);
-                          setAvatarNameStatus({ message: '', tone: 'neutral' });
-                        }}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="例: Akyo origin"
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {isAvatarEntry && (
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label htmlFor="edit-avatar-name" className={LABEL_CLASS}>
+                        アバター名
+                      </label>
+                      <DuplicateCheckButton
+                        checking={checkingAvatarName}
+                        onClick={handleCheckAvatarNameDuplicate}
+                        fieldLabel="アバター名"
                       />
-                      <div className="mt-2 flex flex-col sm:flex-row sm:items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleCheckAvatarNameDuplicate}
-                          disabled={checkingAvatarName}
-                          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-orange-200 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {checkingAvatarName ? (
-                            <>
-                              <svg
-                                className="w-3 h-3 animate-spin"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true"
-                                focusable="false"
-                              >
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              確認中...
-                            </>
-                          ) : (
-                            <>
-                              <IconSearch size="w-4 h-4" />
-                              同じアバター名が既に登録されているか確認
-                            </>
-                          )}
-                        </button>
-                        {avatarNameStatus.message && (
-                          <p
-                            className={`text-sm ${
-                              avatarNameStatus.tone === 'error'
-                                ? 'text-red-600'
-                                : avatarNameStatus.tone === 'success'
-                                ? 'text-green-600'
-                                : 'text-gray-600'
-                            }`}
-                          >
-                            {avatarNameStatus.message}
-                          </p>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* カテゴリ (旧: 属性) */}
-                <div>
-                  <label className="block text-gray-700 text-sm font-medium mb-1">カテゴリ</label>
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowAttributeModal(true)}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-green-100 text-green-800 border border-green-300 rounded-lg hover:bg-green-200 transition-colors"
-                    >
-                      <IconTags size="w-4 h-4" />
-                      カテゴリを管理
-                    </button>
-                    <div className="border border-dashed border-green-200 rounded-lg bg-white/60 p-3 min-h-[60px]">
-                      {formData.categories.length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          選択されたカテゴリがここに表示されます
-                        </p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {formData.categories.map((cat) => (
-                            <span
-                              key={cat}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full"
-                            >
-                              <IconTag size="w-3 h-3" />
-                              {cat}
-                            </span>
-                          ))}
-                        </div>
-                        )}
                     </div>
-                    <p className="text-xs text-gray-500 leading-snug">
-                      ワールドならワールドカテゴリは自動追加されますが、階層型カテゴリを設定する場合は手動で設定してください。
-                    </p>
+                    <input
+                      id="edit-avatar-name"
+                      type="text"
+                      value={formData.avatarName}
+                      onChange={(e) => {
+                        handleInputChange('avatarName', e.target.value);
+                        setAvatarNameStatus(EMPTY_STATUS);
+                      }}
+                      required
+                      aria-describedby="edit-avatar-name-status"
+                      className={`mt-2 ${INPUT_CLASS}`}
+                      placeholder="例: Akyo origin"
+                    />
+                    <FieldStatus id="edit-avatar-name-status" status={avatarNameStatus} />
                   </div>
-                </div>
+                )}
 
-                {/* 作者 */}
-                <div>
-                  <label htmlFor="edit-author" className="block text-gray-700 text-sm font-medium mb-1">
+                <div className={isAvatarEntry ? '' : 'md:col-span-2'}>
+                  <label htmlFor="edit-author" className={LABEL_CLASS}>
                     作者
                   </label>
                   <input
@@ -893,214 +926,278 @@ export function EditModal({
                     value={formData.author}
                     onChange={(e) => handleInputChange('author', e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`mt-2 ${INPUT_CLASS}`}
                     placeholder="例: ugai"
                   />
                 </div>
+              </div>
+            </fieldset>
 
-                {/* VRChat URL */}
+            {/* ── カテゴリ ── */}
+            <fieldset>
+              <legend className={LEGEND_CLASS}>
+                <IconTags size="w-4 h-4" className="text-green-600" />
+                カテゴリ
+              </legend>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAttributeModal(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-green-300 bg-green-100 px-3 py-2 text-green-800 transition-colors hover:bg-green-200"
+                >
+                  <IconTags size="w-4 h-4" />
+                  カテゴリを管理
+                </button>
+                <div className="min-h-[60px] rounded-lg border border-dashed border-green-200 bg-white/60 p-3">
+                  {formData.categories.length === 0 ? (
+                    <p className="text-sm text-gray-500">選択されたカテゴリがここに表示されます</p>
+                  ) : (
+                    <ul className="flex flex-wrap gap-2">
+                      {formData.categories.map((cat) => (
+                        <li
+                          key={cat}
+                          className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-sm text-green-800"
+                        >
+                          <IconTag size="w-3 h-3" />
+                          {cat}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <p className="text-xs leading-snug text-gray-500">
+                  ワールドならワールドカテゴリは自動追加されますが、階層型カテゴリを設定する場合は手動で設定してください。
+                </p>
+              </div>
+            </fieldset>
+
+            {/* ── リンク ── */}
+            <fieldset>
+              <legend className={LEGEND_CLASS}>
+                <IconExternalLink size="w-4 h-4" className="text-blue-600" />
+                リンク
+              </legend>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-                    <label htmlFor="edit-source-url" className="text-gray-700 text-sm font-medium">
-                      VRChat URL
-                    </label>
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <label htmlFor="edit-source-url" className={LABEL_CLASS}>
+                    VRChat URL（アバターまたはワールド）
+                  </label>
+                  <input
+                    id="edit-source-url"
+                    type="url"
+                    value={formData.sourceUrl}
+                    onChange={(e) => handleSourceUrlChange(e.target.value)}
+                    aria-describedby="edit-source-url-help"
+                    className={`mt-2 ${INPUT_CLASS}`}
+                    placeholder="https://vrchat.com/home/avatar/avtr_... または https://vrchat.com/home/world/wrld_..."
+                  />
+                  {detectedEntryType && (
+                    <p className="mt-2 text-xs font-medium text-blue-600">
+                      検出: {detectedEntryType === 'world' ? 'ワールド' : 'アバター'}
+                    </p>
+                  )}
+                  {isAvatarEntry ? (
+                    <div className="mt-2 flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={handleFetchAvatarName}
                         disabled={fetchingName}
-                        className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center gap-1.5 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={isWorldEntry ? 'ワールドでは利用できません' : 'VRChat URLからアバター名を自動取得'}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {fetchingName ? (
-                          <>
-                            <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>取得中...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                            <span>{isWorldEntry ? '名称自動取得は不要' : 'URLからアバター名を取得'}</span>
-                          </>
-                        )}
+                        {fetchingName ? <Spinner /> : <IconEdit size="w-4 h-4" />}
+                        {fetchingName ? '取得中...' : 'URLからアバター名を取得'}
                       </button>
                       <button
                         type="button"
                         onClick={handleFetchImage}
                         disabled={fetchingImage}
-                        className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center gap-1.5 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={isWorldEntry ? 'ワールドでは既存URLからの画像再取得は非対応です' : 'VRChat URLから画像を自動取得'}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {fetchingImage ? (
-                          <>
-                            <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>取得中...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                            <span>{isWorldEntry ? 'ワールド画像は手動更新' : 'URLから画像を取得'}</span>
-                          </>
-                        )}
+                        {fetchingImage ? <Spinner /> : <IconCloudUpload size="w-4 h-4" />}
+                        {fetchingImage ? '取得中...' : 'URLから画像を取得'}
                       </button>
                     </div>
-                  </div>
+                  ) : null}
+                  <p id="edit-source-url-help" className={HELP_CLASS}>
+                    {isWorldEntry
+                      ? 'ワールドの名称・画像は登録時に取得済みです。画像を差し替える場合は下の画像欄から手動でアップロードしてください。'
+                      : isBoothEntry
+                      ? 'BOOTH専用エントリです。VRChat URLを入力すると種別が自動で切り替わります。'
+                      : 'URLを変えた場合は、上のボタンでアバター名と画像を取り直せます。'}
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="edit-booth-url" className={LABEL_CLASS}>
+                    BOOTH URL（任意）
+                  </label>
                   <input
-                    id="edit-source-url"
+                    id="edit-booth-url"
                     type="url"
-                    value={formData.sourceUrl}
-                    onChange={(e) => {
-                      handleSourceUrlChange(e.target.value);
+                    value={formData.boothUrl}
+                    onChange={(e) => handleInputChange('boothUrl', e.target.value)}
+                    aria-describedby="edit-booth-url-help"
+                    className={`mt-2 ${INPUT_CLASS}`}
+                    placeholder="https://booth.pm/ja/items/..."
+                  />
+                  <p id="edit-booth-url-help" className={HELP_CLASS}>
+                    BOOTHの販売ページURLを入力すると、図鑑にBOOTHリンクボタンが表示されます。
+                  </p>
+                </div>
+              </div>
+            </fieldset>
+
+            {/* ── あきょうちしき ── */}
+            <div>
+              <label htmlFor="edit-comment" className={LABEL_CLASS}>
+                あきょうちしき
+              </label>
+              <textarea
+                id="edit-comment"
+                value={formData.comment}
+                onChange={(e) => handleInputChange('comment', e.target.value)}
+                rows={3}
+                className={`mt-2 ${INPUT_CLASS}`}
+                placeholder="Quest対応、特殊機能など"
+              />
+            </div>
+
+            {/* ── 画像 ── */}
+            <fieldset>
+              <legend className={LEGEND_CLASS}>
+                <IconCloudUpload size="w-4 h-4" className="text-blue-500" />
+                画像
+              </legend>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,180px)_1fr]">
+                {/* 現在の画像。編集中に「今どれが出ているか」が見えないと差し替え判断ができない */}
+                <div>
+                  <p className="text-xs font-medium text-gray-600">現在の画像</p>
+                  <img
+                    src={currentImageUrl ?? '/images/placeholder.webp'}
+                    alt={`${formData.nickname || formData.avatarName || akyo.id} の現在の画像`}
+                    width={180}
+                    height={120}
+                    className="mt-2 aspect-[3/2] w-full rounded-lg border border-gray-200 bg-gray-50 object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = '/images/placeholder.webp';
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://vrchat.com/..."
                   />
                 </div>
-              </div>
 
-              {/* BOOTH URL */}
-              <div>
-                <label htmlFor="edit-booth-url" className="block text-gray-700 text-sm font-medium mb-1">
-                  BOOTH URL（任意）
-                </label>
-                <input
-                  id="edit-booth-url"
-                  type="url"
-                  value={formData.boothUrl}
-                  onChange={(e) => handleInputChange('boothUrl', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://booth.pm/ja/items/..."
-                />
-                <p className="text-xs text-gray-500 mt-2 leading-snug">
-                  BOOTHの販売ページURLを入力すると、図鑑にBOOTHリンクボタンが表示されます。
-                </p>
-              </div>
-
-              {/* あきょうちしき（comment） */}
-              <div>
-                <label htmlFor="edit-comment" className="block text-gray-700 text-sm font-medium mb-1">
-                  あきょうちしき
-                </label>
-                <textarea
-                  id="edit-comment"
-                  value={formData.comment}
-                  onChange={(e) => handleInputChange('comment', e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Quest対応、特殊機能など"
-                />
-              </div>
-
-              {/* 画像アップロード */}
-              <div>
-                <label htmlFor="edit-image-file" className="block text-gray-700 text-sm font-medium mb-1">
-                  画像
-                </label>
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center"
-                >
-                  <IconCloudUpload size="w-10 h-10" className="text-gray-400 mb-2 mx-auto" />
-                  <p className="text-gray-600">画像をドラッグ&ドロップ または</p>
-                  <input
-                    id="edit-image-file"
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileInputChange}
-                    accept=".webp,.png,.jpg,.jpeg"
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                <div>
+                  <p className="text-xs font-medium text-gray-600">新しい画像（任意）</p>
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    className={`mt-2 rounded-lg border-2 border-dashed p-5 text-center transition-colors ${
+                      isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'
+                    }`}
                   >
-                    ファイルを選択
-                  </button>
-                </div>
-
-                {/* Image Cropping Preview */}
-                {showImagePreview && (
-                  <div className="mt-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h3 className="text-sm font-medium text-gray-700 mb-3">
-                        <IconCrop size="w-4 h-4" className="mr-2" />画像のトリミング調整
-                      </h3>
-
-                      <div
-                        ref={cropContainerRef}
-                        className="relative mx-auto mb-4 overflow-hidden border-2 border-indigo-500 rounded-lg"
-                        style={{ width: '300px', height: '200px' }}
-                        onWheel={handleWheel}
-                      >
-                        <img
-                          ref={cropImageRef}
-                          src={originalImageSrc || ''}
-                          alt="Crop preview"
-                          onMouseDown={handleMouseDown}
-                          onMouseMove={handleMouseMove}
-                          onMouseUp={handleMouseUp}
-                          onMouseLeave={handleMouseUp}
-                          className="absolute cursor-move"
-                          style={{
-                            transform: `translate(${imageX}px, ${imageY}px) scale(${imageScale})`,
-                            transformOrigin: 'center',
-                          }}
-                          draggable={false}
-                        />
-                      </div>
-
-                      <div className="flex justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={resetImagePosition}
-                          className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
-                        >
-                          <IconRedo size="w-3.5 h-3.5" className="mr-1" /> リセット
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => zoomImage(1.1)}
-                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                        >
-                          <IconZoomIn size="w-3.5 h-3.5" className="mr-1" /> 拡大
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => zoomImage(0.9)}
-                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                        >
-                          <IconZoomOut size="w-3.5 h-3.5" className="mr-1" /> 縮小
-                        </button>
-                      </div>
-                    </div>
+                    <IconCloudUpload size="w-8 h-8" className="mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">画像をドラッグ&ドロップ または</p>
+                    <label htmlFor="edit-image-file" className="sr-only">
+                      画像ファイル
+                    </label>
+                    <input
+                      id="edit-image-file"
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileInputChange}
+                      accept=".webp,.png,.jpg,.jpeg"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-2 rounded-lg bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300"
+                    >
+                      ファイルを選択
+                    </button>
                   </div>
-                )}
-
-                <p className="text-xs text-gray-500 mt-3">
-                  「更新する」を押すと画像も公開環境へ反映されます。
-                </p>
+                </div>
               </div>
 
-              {/* 更新ボタン */}
+              {/* Image Cropping Preview */}
+              {showImagePreview && (
+                <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <IconCrop size="w-4 h-4" />
+                    画像のトリミング調整
+                  </h3>
+
+                  <div
+                    ref={cropContainerRef}
+                    className="relative mx-auto mb-4 overflow-hidden rounded-lg border-2 border-indigo-500"
+                    style={{ width: '300px', height: '200px' }}
+                    onWheel={handleWheel}
+                  >
+                    <img
+                      ref={cropImageRef}
+                      src={originalImageSrc || ''}
+                      alt="Crop preview"
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseUp}
+                      className="absolute cursor-move"
+                      style={{
+                        transform: `translate(${imageX}px, ${imageY}px) scale(${imageScale})`,
+                        transformOrigin: 'center',
+                      }}
+                      draggable={false}
+                    />
+                  </div>
+
+                  <div className="flex justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={resetImagePosition}
+                      className="inline-flex items-center gap-1 rounded bg-gray-500 px-3 py-1.5 text-sm text-white hover:bg-gray-600"
+                    >
+                      <IconRedo size="w-3.5 h-3.5" /> リセット
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => zoomImage(1.1)}
+                      className="inline-flex items-center gap-1 rounded bg-blue-500 px-3 py-1.5 text-sm text-white hover:bg-blue-600"
+                    >
+                      <IconZoomIn size="w-3.5 h-3.5" /> 拡大
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => zoomImage(0.9)}
+                      className="inline-flex items-center gap-1 rounded bg-blue-500 px-3 py-1.5 text-sm text-white hover:bg-blue-600"
+                    >
+                      <IconZoomOut size="w-3.5 h-3.5" /> 縮小
+                    </button>
+                  </div>
+                </div>
+              )}
+            </fieldset>
+          </form>
+
+          {/* フッター: 操作は常に見える位置に固定。form 属性で本文のフォームと結びつける */}
+          <div className="flex flex-col-reverse gap-3 rounded-b-2xl border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-gray-500">「更新する」を押すと画像も公開環境へ反映されます。</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={requestClose}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-100"
+              >
+                キャンセル
+              </button>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
+                form={formId}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 px-5 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <IconSave size="w-4 h-4" className="mr-2" /> 更新する
+                {submitting ? <Spinner /> : <IconSave size="w-4 h-4" />}
+                {submitting ? '更新中...' : '更新する'}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       </div>
@@ -1110,7 +1207,7 @@ export function EditModal({
         isOpen={showAttributeModal}
         onClose={() => setShowAttributeModal(false)}
         currentAttributes={formData.categories}
-        onApply={(categories) => handleInputChange('categories', categories)}
+        onApply={(nextCategories) => handleInputChange('categories', nextCategories)}
         allAttributes={categories || attributes}
       />
     </div>
