@@ -8,6 +8,9 @@
  * SVG paths sourced from FontAwesome 6 Free (solid).
  * License: CC BY 4.0 / SIL OFL 1.1
  * https://fontawesome.com/license/free
+ *
+ * Exception: IconNew comes from Material Symbols (Apache License 2.0), since
+ * FontAwesome 6 Free ships no "NEW" lettermark. See that component for details.
  */
 
 import type { SVGProps } from "react";
@@ -261,6 +264,29 @@ export function IconSortDesc({ size, className, ...props }: IconProps) {
     <Icon size={size} className={className} viewBox="0 0 576 512" {...props}>
       <path d="M160 448c17.7 0 32-14.3 32-32V163.3l41.4 41.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-96-96c-12.5-12.5-32.8-12.5-45.3 0l-96 96c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L128 163.3V416c0 17.7 14.3 32 32 32z" />
       <path d="M336 112c0-8.8 7.2-16 16-16H544c8.8 0 16 7.2 16 16s-7.2 16-16 16H352c-8.8 0-16-7.2-16-16zm0 112c0-8.8 7.2-16 16-16H496c8.8 0 16 7.2 16 16s-7.2 16-16 16H352c-8.8 0-16-7.2-16-16zm0 112c0-8.8 7.2-16 16-16H432c8.8 0 16 7.2 16 16s-7.2 16-16 16H352c-8.8 0-16-7.2-16-16z" />
+    </Icon>
+  );
+}
+
+/**
+ * "NEW" badge icon for the latest-entries sort mode.
+ *
+ * Path sourced from Material Symbols Rounded `fiber_new` (Google).
+ * License: Apache License 2.0
+ * https://github.com/google/material-design-icons
+ *
+ * FontAwesome 6 Free has no "NEW" lettermark, so this one icon comes from a
+ * different set. Its grid is 960 with a negative-Y origin, hence the viewBox.
+ * The horizontal scale condenses the mark ~12% so the three letters read
+ * tighter at w-4; raise the 0.88 toward 1 to loosen it again.
+ * @param props - Icon properties
+ */
+export function IconNew({ size, className, ...props }: IconProps) {
+  return (
+    <Icon size={size} className={className} viewBox="0 -960 960 960" {...props}>
+      <g transform="translate(480 0) scale(0.88 1) translate(-480 0)">
+        <path d="M120-160q-33 0-56.5-23.5T40-240v-480q0-33 23.5-56.5T120-800h720q33 0 56.5 23.5T920-720v480q0 33-23.5 56.5T840-160H120Zm0-80h720v-480H120v480Zm70-260 95 130q3 5 8 7.5t11 2.5h12q10 0 17-7t7-17v-191q0-11-7-18t-18-7q-11 0-18 7t-7 18v115l-93-130q-4-5-9-7.5t-11-2.5h-12q-11 0-18 7t-7 18v190q0 11 7 18t18 7q11 0 18-7t7-18v-115Zm210 140h115q11 0 18-7t7-18q0-11-7-18t-18-7h-75v-44h75q11 0 18-7t7-18q0-11-7-18t-18-7h-75v-46h75q11 0 18-7t7-18q0-11-7-18t-18-7H400q-8 0-14 6t-6 14v200q0 8 6 14t14 6Zm220 0h160q17 0 28.5-11.5T820-400v-175q0-11-7-18t-18-7q-11 0-18 7t-7 18v155h-44v-115q0-11-7-18t-18-7q-11 0-18 7t-7 18v115h-46v-155q0-11-7-18t-18-7q-11 0-18 7t-7 18v175q0 17 11.5 28.5T620-360ZM120-240v-480 480Z" />
+      </g>
     </Icon>
   );
 }

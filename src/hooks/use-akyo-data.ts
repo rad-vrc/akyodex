@@ -4,6 +4,7 @@ import type { AkyoData, AkyoFilterOptions } from "@/types/akyo";
 import {
   getDisplaySerialNumber,
   resolveEntryType,
+  selectLatestEntries,
 } from "@/lib/akyo-entry";
 import {
   applyFavoritesToPreparedCatalog,
@@ -306,6 +307,12 @@ export function useAkyoData(initialData: AkyoData[] = []) {
           .sort((a, b) => a.sort - b.sort)
           .map(({ value }) => value)
           .slice(0, options.randomCount);
+      } else if (options.latestCount) {
+        // Latest-N mode: newest internal IDs first, across every entry type.
+        // The regular sort below keys on displaySerial, which worlds and
+        // avatars number independently, so it interleaves two unrelated
+        // sequences and can never answer "what was added most recently".
+        filtered = selectLatestEntries(filtered, options.latestCount);
       } else {
         // Sort by display serial for worlds, by ID for avatars
         filtered.sort((a, b) => {

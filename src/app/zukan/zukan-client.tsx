@@ -129,6 +129,7 @@ const MOBILE_BREAKPOINT = 768;
 const DESKTOP_RENDER_LIMIT = 20;
 const MOBILE_RENDER_LIMIT = 12;
 const RENDER_CHUNK = 30;
+const LATEST_ENTRY_COUNT = 100;
 const MINI_AKYO_BG_DELAY_MS = 2500;
 
 function useResponsiveLayout() {
@@ -261,6 +262,7 @@ export function ZukanClient({
   const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [sortAscending, setSortAscending] = useState(true);
+  const [latestMode, setLatestMode] = useState(false);
   const [randomMode, setRandomMode] = useState(false);
   const [entryTypeFilter, setEntryTypeFilter] = useState<
     AkyoEntryType | undefined
@@ -583,6 +585,7 @@ export function ZukanClient({
     selectedCreators,
     favoritesOnly,
     sortAscending,
+    latestMode,
     randomMode,
     isMobile,
   ]);
@@ -632,6 +635,18 @@ export function ZukanClient({
       );
       return;
     }
+    if (latestMode) {
+      // 最新100件もランダムと同じくエントリ種別フィルターのみ反映する
+      filterData(
+        {
+          searchQuery: "",
+          latestCount: LATEST_ENTRY_COUNT,
+          entryTypeFilter,
+        },
+        sortAscending,
+      );
+      return;
+    }
     filterData(
       {
         searchQuery,
@@ -657,6 +672,7 @@ export function ZukanClient({
     selectedCreators,
     favoritesOnly,
     sortAscending,
+    latestMode,
     randomMode,
     entryTypeFilter,
     filterData,
@@ -668,13 +684,38 @@ export function ZukanClient({
     setSortAscending((prev) => !prev);
   };
 
+  // 最新100件表示
+  const handleLatestClick = () => {
+    if (latestMode) {
+      setLatestMode(false);
+    } else {
+      setLatestMode(true);
+      // ランダムとは排他。エントリ種別フィルターは維持し、他はリセット
+      setRandomMode(false);
+      setSearchQuery("");
+      setSelectedAttributes([]);
+      setCategoryMatchMode("or");
+      setSelectedCreators([]);
+      setFavoritesOnly(false);
+      filterData(
+        {
+          searchQuery: "",
+          latestCount: LATEST_ENTRY_COUNT,
+          entryTypeFilter,
+        },
+        sortAscending,
+      );
+    }
+  };
+
   // ランダム表示
   const handleRandomClick = () => {
     if (randomMode) {
       setRandomMode(false);
     } else {
       setRandomMode(true);
-      // エントリ種別フィルターは維持し、他のフィルタ状態をリセット
+      // 最新100件とは排他。エントリ種別フィルターは維持し、他はリセット
+      setLatestMode(false);
       setSearchQuery("");
       setSelectedAttributes([]);
       setCategoryMatchMode("or");
@@ -944,10 +985,12 @@ export function ZukanClient({
           >
             <SortControls
               onSortToggle={handleSortToggle}
+              onLatestClick={handleLatestClick}
               onRandomClick={handleRandomClick}
               onFavoritesClick={handleFavoritesClick}
               favoritesOnly={favoritesOnly}
               sortAscending={sortAscending}
+              latestMode={latestMode}
               randomMode={randomMode}
               lang={lang}
               disabled={catalogControlsDisabled}
@@ -1008,10 +1051,12 @@ export function ZukanClient({
           >
             <SortControls
               onSortToggle={handleSortToggle}
+              onLatestClick={handleLatestClick}
               onRandomClick={handleRandomClick}
               onFavoritesClick={handleFavoritesClick}
               favoritesOnly={favoritesOnly}
               sortAscending={sortAscending}
+              latestMode={latestMode}
               randomMode={randomMode}
               lang={lang}
               disabled={catalogControlsDisabled}
