@@ -61,7 +61,7 @@ export function SortControls({
         aria-label={t('filter.latestToggle', lang)}
         className={`attribute-badge quick-filter-badge transition-colors ${
           latestMode
-            ? 'bg-purple-200 text-purple-800 hover:bg-purple-300'
+            ? 'bg-orange-200 text-orange-800 hover:bg-orange-300'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
       >

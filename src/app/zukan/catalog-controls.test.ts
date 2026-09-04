@@ -86,5 +86,5 @@ test("SortControls places the latest-100 toggle between sort order and random", 
       markup.indexOf("最新100件") < markup.indexOf("ランダム"),
   );
   // 有効時は aria-pressed と配色の両方で状態が分かる
-  assert.match(markup, /aria-pressed="true"[^>]*bg-purple-200/);
+  assert.match(markup, /aria-pressed="true"[^>]*bg-orange-200/);
 });
