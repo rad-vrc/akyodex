@@ -11,6 +11,7 @@ import {
   type HeadObjectResult,
   type ListedR2Object,
 } from "./reference-image-maintenance";
+import { REFERENCE_VARIANTS } from "../src/lib/reference-image-contract";
 
 const SOURCES: ListedR2Object[] = [
   { ETag: '"etag-0800"', Key: "0800.png", Size: 4_000_000 },
@@ -324,4 +325,42 @@ test("reports audit issues in input order even when HEADs finish in reverse orde
     "reference/0800-960.webp", "reference/0800-1920.webp",
     "reference/0801-960.webp", "reference/0801-1920.webp",
   ]);
+});
+
+test("size budgets are enforced exactly at the boundary for each width", async () => {
+  const budgets = Object.fromEntries(
+    REFERENCE_VARIANTS.map(({ width, maxBytes }) => [width, maxBytes]),
+  );
+  assert.deepEqual(budgets, { 960: 250_000, 1920: 600_000 });
+
+  const head = (size: number, width: number, etag: string): HeadObjectResult => ({
+    CacheControl: "public, max-age=0, must-revalidate",
+    ContentLength: size,
+    ContentType: "image/webp",
+    Metadata: {
+      "generator-version": "v1",
+      quality: "82",
+      "source-etag": etag,
+      width: String(width),
+    },
+  });
+  const objects = new Map<string, HeadObjectResult | null>([
+    ["reference/0800-960.webp", head(250_000, 960, "etag-0800")],
+    ["reference/0800-1920.webp", head(600_000, 1920, "etag-0800")],
+    ["reference/0801-960.webp", head(250_001, 960, "etag-0801")],
+    ["reference/0801-1920.webp", head(600_001, 1920, "etag-0801")],
+  ]);
+
+  const report = await auditReferenceImages(SOURCES, async (key) =>
+    objects.get(key) ?? null,
+  );
+
+  assert.equal(report.validDerivativeCount, 2, "exactly at the budget passes");
+  assert.deepEqual(
+    report.issues.map(({ key, reasons }) => ({ key, reasons })),
+    [
+      { key: "reference/0801-960.webp", reasons: ["size"] },
+      { key: "reference/0801-1920.webp", reasons: ["size"] },
+    ],
+  );
 });

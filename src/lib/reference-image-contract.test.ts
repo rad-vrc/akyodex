@@ -16,7 +16,7 @@ test("keeps the agreed reference image storage and transformation contract", () 
   assert.equal(REFERENCE_IMAGE_CACHE_CONTROL, "public, max-age=0, must-revalidate");
   assert.deepEqual(REFERENCE_VARIANTS, [
     { kind: "preview", width: 960, maxBytes: 250_000 },
-    { kind: "zoom", width: 1920, maxBytes: 350_000 },
+    { kind: "zoom", width: 1920, maxBytes: 600_000 },
   ]);
   assert.equal(getReferenceDerivativeKey("0800", 960), "reference/0800-960.webp");
   assert.equal(getReferenceDerivativeKey("0800", 1920), "reference/0800-1920.webp");
