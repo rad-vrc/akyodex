@@ -379,8 +379,14 @@ export function AkyoDetailModal({
                 {/* Info Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Name Card — ワールドは正式名称なので「ニックネーム」でなく
-                      「ワールド名」+地球儀（フィルターUIと同じアイコン言語）で示す */}
-                  <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4">
+                      「ワールド名」+地球儀（フィルターUIと同じアイコン言語）で示す。
+                      ワールドはアバター名カードが無く3枚になるため、先頭のこのカードを
+                      全幅にして、2段目を つくったひと｜カテゴリ の並びに保つ */}
+                  <div
+                    className={`bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-4 ${
+                      isWorldEntry ? 'md:col-span-2' : ''
+                    }`}
+                  >
                     <h3 className="text-sm font-bold mb-2" style={{ color: '#FF6B9D' }}>
                       {isWorldEntry ? (
                         <IconGlobe size="w-3.5 h-3.5" className="mr-1" />
@@ -420,14 +426,8 @@ export function AkyoDetailModal({
                     <p className="text-xl font-bold">{authorStr || ''}</p>
                   </div>
 
-                  {/* Categories Card — 件数で高さが変わるので最後に置く。
-                      ワールドはアバター名カードが無く3枚になるため、末尾のこのカードを
-                      全幅にして左下だけ空く形を避ける */}
-                  <div
-                    className={`bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4 ${
-                      isWorldEntry ? 'md:col-span-2' : ''
-                    }`}
-                  >
+                  {/* Categories Card — 件数で高さが変わるので最後（右下）に置く */}
+                  <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4">
                     <h3 className="text-sm font-bold text-orange-600 mb-2">
                       <IconSparkles size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.category', lang)}
