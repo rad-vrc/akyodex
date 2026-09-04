@@ -77,7 +77,9 @@ test("全ての入力欄に対応する label がある（WCAG 1.3.1 / 3.3.2）"
   for (const akyo of [avatar, world]) {
     const markup = render(akyo);
     const ids = [...markup.matchAll(/<(?:input|textarea)[^>]*\sid="([^"]+)"/g)].map((m) => m[1]);
-    assert.ok(ids.length >= 6, `入力欄が少なすぎる: ${ids.length}`);
+    // アバター: ニックネーム / アバター名 / 作者 / VRChat URL / BOOTH URL / あきょうちしき
+    // ワールド: アバター名が無いので 5
+    assert.ok(ids.length >= 5, `入力欄が少なすぎる: ${ids.length}`);
     for (const id of ids) {
       assert.match(markup, new RegExp(`<label[^>]*for="${id}"`), `label for="${id}" が無い`);
     }
@@ -115,19 +117,26 @@ test("アバターのときだけアバター名欄と URL 取得ボタンを出
   const avatarMarkup = render(avatar);
   assert.match(avatarMarkup, /id="edit-avatar-name"/);
   assert.match(avatarMarkup, /URLからアバター名を取得/);
-  assert.match(avatarMarkup, /URLから画像を取得/);
   assert.match(avatarMarkup, /for="edit-nickname"[^>]*>ニックネーム</);
 
   const worldMarkup = render(world);
   assert.doesNotMatch(worldMarkup, /id="edit-avatar-name"/);
   assert.doesNotMatch(worldMarkup, /URLからアバター名を取得/);
-  assert.doesNotMatch(worldMarkup, /URLから画像を取得/);
   assert.match(worldMarkup, /for="edit-nickname"[^>]*>ワールド名</);
+});
+
+test("画像は表示のみで、差し替え UI（ファイル入力・トリミング・画像取得）を持たない", () => {
+  for (const akyo of [avatar, world]) {
+    const markup = render(akyo);
+    assert.doesNotMatch(markup, /type="file"/);
+    assert.doesNotMatch(markup, /トリミング/);
+    assert.doesNotMatch(markup, /URLから画像を取得/);
+    assert.doesNotMatch(markup, /ドラッグ&amp;ドロップ|ドラッグ&ドロップ/);
+  }
 });
 
 test("現在の画像を表示し、更新ボタンはフッターから form 属性でフォームに結びつく", () => {
   const markup = render(avatar);
-  assert.match(markup, /現在の画像/);
   assert.match(markup, /<img[^>]*alt="[^"]*現在の画像"/);
 
   const formId = markup.match(/<form[^>]*\sid="([^"]+)"/)?.[1];

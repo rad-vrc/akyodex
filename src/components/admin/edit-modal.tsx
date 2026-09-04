@@ -4,18 +4,14 @@
 
 import {
   IconClose,
-  IconCloudUpload,
-  IconCrop,
+  IconCloudDownload,
   IconEdit,
   IconExternalLink,
-  IconRedo,
   IconSave,
   IconSearch,
   IconTag,
   IconTags,
   IconUser,
-  IconZoomIn,
-  IconZoomOut,
 } from '@/components/icons';
 import {
   detectVrcEntryTypeFromUrl,
@@ -27,7 +23,7 @@ import {
 } from '@/lib/akyo-entry';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useCallback, useMemo, useRef, useState } from 'react';
 import { AttributeModal } from './attribute-modal';
 import { Spinner } from './spinner';
 import { useModalDialog } from './use-modal-dialog';
@@ -206,6 +202,9 @@ function FieldStatus({ id, status }: { id: string; status: FieldStatusState }) {
  * レイアウトは登録画面（add-tab.tsx）を基準に揃えている。
  * 親（EditTab）が akyo.id を key に渡して開くたびに作り直すので、
  * 初期値は useState の初期化子で一度だけ組み立てればよい。
+ *
+ * 画像の差し替えはこの画面では扱わない。サムネイルは登録時に VRChat から
+ * 取得したものを使い、差し替えは最適化フローが落ち着いてから別途対応する。
  */
 export function EditModal({
   isOpen,
@@ -220,21 +219,7 @@ export function EditModal({
 
   const [showAttributeModal, setShowAttributeModal] = useState(false);
   const [fetchingName, setFetchingName] = useState(false);
-  const [fetchingImage, setFetchingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  // Image cropping states
-  const [showImagePreview, setShowImagePreview] = useState(false);
-  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [imageScale, setImageScale] = useState(1);
-  const [imageX, setImageX] = useState(0);
-  const [imageY, setImageY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const cropImageRef = useRef<HTMLImageElement>(null);
-  const cropContainerRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Duplicate check states
   const [nicknameStatus, setNicknameStatus] = useState<FieldStatusState>(EMPTY_STATUS);
@@ -250,7 +235,7 @@ export function EditModal({
   const isAvatarEntry = !isWorldEntry && !isBoothEntry;
   const detectedEntryType = detectVrcEntryTypeFromUrl(formData.sourceUrl.trim());
 
-  const isDirty = showImagePreview || JSON.stringify(formData) !== initialFormJson;
+  const isDirty = JSON.stringify(formData) !== initialFormJson;
 
   const currentImageUrl = useMemo(
     () => (akyo ? buildAvatarImageUrl(akyo.id, getAkyoSourceUrl(akyo), 512) : null),
@@ -272,199 +257,6 @@ export function EditModal({
     initialFocusRef: closeButtonRef,
     suspended: showAttributeModal,
   });
-
-  // Update image transform when position or scale changes
-  useEffect(() => {
-    const img = cropImageRef.current;
-    if (img) {
-      img.style.transform = `translate(${imageX}px, ${imageY}px) scale(${imageScale})`;
-    }
-  }, [imageX, imageY, imageScale]);
-
-  // Image cropping functions (matching original implementation)
-  const resetImagePosition = () => {
-    setImageScale(1);
-    const container = cropContainerRef.current;
-    const img = cropImageRef.current;
-    if (container && img) {
-      const cw = container.offsetWidth;
-      const ch = container.offsetHeight;
-      const iw = img.offsetWidth;
-      const ih = img.offsetHeight;
-      setImageX((cw - iw) / 2);
-      setImageY((ch - ih) / 2);
-    } else {
-      setImageX(0);
-      setImageY(0);
-    }
-  };
-
-  const zoomImage = (factor: number) => {
-    setImageScale((prev) => {
-      const newScale = prev * factor;
-      return Math.max(0.5, Math.min(3, newScale));
-    });
-  };
-
-  const handleImageFile = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const imgSrc = e.target?.result as string;
-      setOriginalImageSrc(imgSrc);
-      setShowImagePreview(true);
-
-      setTimeout(() => {
-        const img = cropImageRef.current;
-        const container = cropContainerRef.current;
-        if (img && container) {
-          img.onload = () => {
-            const containerWidth = container.offsetWidth;
-            const containerHeight = container.offsetHeight;
-            const imgAspect = img.naturalWidth / img.naturalHeight;
-            const containerAspect = containerWidth / containerHeight;
-
-            if (imgAspect > containerAspect) {
-              img.style.height = containerHeight + 'px';
-              img.style.width = 'auto';
-            } else {
-              img.style.width = containerWidth + 'px';
-              img.style.height = 'auto';
-            }
-
-            const imgWidth = img.offsetWidth;
-            const imgHeight = img.offsetHeight;
-            setImageX((containerWidth - imgWidth) / 2);
-            setImageY((containerHeight - imgHeight) / 2);
-            setImageScale(1);
-          };
-        }
-      }, 50);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      handleImageFile(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].type.startsWith('image/')) {
-      handleImageFile(files[0]);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (!isDragOver) setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - imageX,
-      y: e.clientY - imageY,
-    });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setImageX(e.clientX - dragStart.x);
-      setImageY(e.clientY - dragStart.y);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    zoomImage(delta);
-  };
-
-  const generateCroppedImage = (): Promise<string | null> => {
-    return new Promise((resolve) => {
-      const container = cropContainerRef.current;
-      const imgEl = cropImageRef.current;
-      if (!container || !imgEl || !imgEl.src || !originalImageSrc) {
-        resolve(null);
-        return;
-      }
-
-      if (container.offsetWidth === 0 || container.offsetHeight === 0) {
-        resolve(null);
-        return;
-      }
-
-      const canvasW = 300;
-      const canvasH = 200;
-      const canvas = document.createElement('canvas');
-      canvas.width = canvasW;
-      canvas.height = canvasH;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        resolve(null);
-        return;
-      }
-
-      const image = new Image();
-      image.onload = () => {
-        const cw = container.offsetWidth;
-        const ch = container.offsetHeight;
-        const iw = image.naturalWidth;
-        const ih = image.naturalHeight;
-        if (ch === 0 || ih === 0) {
-          resolve(null);
-          return;
-        }
-        const containerAspect = cw / ch;
-        const imageAspect = iw / ih;
-
-        const baseScale = imageAspect > containerAspect ? ch / ih : cw / iw;
-        const totalScale = baseScale * imageScale;
-
-        const sx = Math.max(0, -imageX / totalScale);
-        const sy = Math.max(0, -imageY / totalScale);
-        const sw = Math.min(iw - sx, cw / totalScale);
-        const sh = Math.min(ih - sy, ch / totalScale);
-
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvasW, canvasH);
-        ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvasW, canvasH);
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.readAsDataURL(blob);
-            } else {
-              resolve(null);
-            }
-          },
-          'image/webp',
-          0.9
-        );
-      };
-      image.onerror = () => {
-        console.error('Failed to load image for cropping');
-        resolve(null);
-      };
-      image.crossOrigin = 'anonymous';
-      image.src = originalImageSrc;
-    });
-  };
 
   const handleInputChange = (field: keyof EditFormData, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -622,54 +414,6 @@ export function EditModal({
     }
   };
 
-  // VRChat URLから画像を取得
-  const handleFetchImage = async () => {
-    const url = formData.sourceUrl.trim();
-    if (!url) {
-      alert('VRChat URLを入力してください');
-      return;
-    }
-
-    const avtrId = extractVRChatAvatarIdFromUrl(url);
-    if (!avtrId) {
-      alert('有効なVRChatアバターURLを入力してください\n例: https://vrchat.com/home/avatar/avtr_xxx...');
-      return;
-    }
-
-    setFetchingImage(true);
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-    try {
-      const response = await fetch(`/api/vrc-avatar-image?avtr=${avtrId}&w=1024`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`画像取得に失敗しました: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const file = new File([blob], `${avtrId}.webp`, { type: 'image/webp' });
-
-      handleImageFile(file);
-
-      setTimeout(() => setFetchingImage(false), 1000);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      console.error('VRChat画像取得エラー:', error);
-
-      if (error instanceof Error && error.name === 'AbortError') {
-        alert('リクエストがタイムアウトしました。\nもう一度お試しください。');
-      } else {
-        alert('VRChatから画像を取得できませんでした。\nURLが正しいか、アバターが公開設定か確認してください。');
-      }
-      setFetchingImage(false);
-    }
-  };
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -708,12 +452,6 @@ export function EditModal({
       }
     }
 
-    // Generate cropped image if available
-    let croppedImageData: string | null = null;
-    if (showImagePreview && originalImageSrc) {
-      croppedImageData = await generateCroppedImage();
-    }
-
     setSubmitting(true);
 
     try {
@@ -748,10 +486,6 @@ export function EditModal({
       submitData.append('creator', formData.author);
       submitData.append('attributes', normalizedCategories.join(','));
       submitData.append('notes', formData.comment);
-
-      if (croppedImageData) {
-        submitData.append('imageData', croppedImageData);
-      }
 
       const response = await fetch('/api/update-akyo', {
         method: 'POST',
@@ -997,7 +731,7 @@ export function EditModal({
                     </p>
                   )}
                   {isAvatarEntry ? (
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2">
                       <button
                         type="button"
                         onClick={handleFetchAvatarName}
@@ -1007,23 +741,14 @@ export function EditModal({
                         {fetchingName ? <Spinner /> : <IconEdit size="w-4 h-4" />}
                         {fetchingName ? '取得中...' : 'URLからアバター名を取得'}
                       </button>
-                      <button
-                        type="button"
-                        onClick={handleFetchImage}
-                        disabled={fetchingImage}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {fetchingImage ? <Spinner /> : <IconCloudUpload size="w-4 h-4" />}
-                        {fetchingImage ? '取得中...' : 'URLから画像を取得'}
-                      </button>
                     </div>
                   ) : null}
                   <p id="edit-source-url-help" className={HELP_CLASS}>
                     {isWorldEntry
-                      ? 'ワールドの名称・画像は登録時に取得済みです。画像を差し替える場合は下の画像欄から手動でアップロードしてください。'
+                      ? 'ワールドの名称・画像は登録時に取得済みです。'
                       : isBoothEntry
                       ? 'BOOTH専用エントリです。VRChat URLを入力すると種別が自動で切り替わります。'
-                      : 'URLを変えた場合は、上のボタンでアバター名と画像を取り直せます。'}
+                      : 'URLを変えた場合は、上のボタンでアバター名を取り直せます。'}
                   </p>
                 </div>
 
@@ -1062,124 +787,33 @@ export function EditModal({
               />
             </div>
 
-            {/* ── 画像 ── */}
+            {/* ── 画像（表示のみ） ── */}
             <fieldset>
               <legend className={LEGEND_CLASS}>
-                <IconCloudUpload size="w-4 h-4" className="text-blue-500" />
+                <IconCloudDownload size="w-4 h-4" className="text-blue-500" />
                 画像
               </legend>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,180px)_1fr]">
-                {/* 現在の画像。編集中に「今どれが出ているか」が見えないと差し替え判断ができない */}
-                <div>
-                  <p className="text-xs font-medium text-gray-600">現在の画像</p>
-                  <img
-                    src={currentImageUrl ?? '/images/placeholder.webp'}
-                    alt={`${formData.nickname || formData.avatarName || akyo.id} の現在の画像`}
-                    width={180}
-                    height={120}
-                    className="mt-2 aspect-[3/2] w-full rounded-lg border border-gray-200 bg-gray-50 object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/images/placeholder.webp';
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <p className="text-xs font-medium text-gray-600">新しい画像（任意）</p>
-                  <div
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    className={`mt-2 rounded-lg border-2 border-dashed p-5 text-center transition-colors ${
-                      isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'
-                    }`}
-                  >
-                    <IconCloudUpload size="w-8 h-8" className="mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600">画像をドラッグ&ドロップ または</p>
-                    <label htmlFor="edit-image-file" className="sr-only">
-                      画像ファイル
-                    </label>
-                    <input
-                      id="edit-image-file"
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileInputChange}
-                      accept=".webp,.png,.jpg,.jpeg"
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="mt-2 rounded-lg bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300"
-                    >
-                      ファイルを選択
-                    </button>
-                  </div>
-                </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <img
+                  src={currentImageUrl ?? '/images/placeholder.webp'}
+                  alt={`${formData.nickname || formData.avatarName || akyo.id} の現在の画像`}
+                  width={240}
+                  height={160}
+                  className="aspect-[3/2] w-full max-w-[240px] shrink-0 rounded-lg border border-gray-200 bg-gray-50 object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/images/placeholder.webp';
+                  }}
+                />
+                <p className="text-xs leading-snug text-gray-500 sm:pt-1">
+                  サムネイルは登録時に VRChat から取得したものを使っています。この画面からの差し替えは、画像最適化フローが整ってから対応予定です。
+                </p>
               </div>
-
-              {/* Image Cropping Preview */}
-              {showImagePreview && (
-                <div className="mt-4 rounded-lg bg-gray-50 p-4">
-                  <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <IconCrop size="w-4 h-4" />
-                    画像のトリミング調整
-                  </h3>
-
-                  <div
-                    ref={cropContainerRef}
-                    className="relative mx-auto mb-4 overflow-hidden rounded-lg border-2 border-indigo-500"
-                    style={{ width: '300px', height: '200px' }}
-                    onWheel={handleWheel}
-                  >
-                    <img
-                      ref={cropImageRef}
-                      src={originalImageSrc || ''}
-                      alt="Crop preview"
-                      onMouseDown={handleMouseDown}
-                      onMouseMove={handleMouseMove}
-                      onMouseUp={handleMouseUp}
-                      onMouseLeave={handleMouseUp}
-                      className="absolute cursor-move"
-                      style={{
-                        transform: `translate(${imageX}px, ${imageY}px) scale(${imageScale})`,
-                        transformOrigin: 'center',
-                      }}
-                      draggable={false}
-                    />
-                  </div>
-
-                  <div className="flex justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={resetImagePosition}
-                      className="inline-flex items-center gap-1 rounded bg-gray-500 px-3 py-1.5 text-sm text-white hover:bg-gray-600"
-                    >
-                      <IconRedo size="w-3.5 h-3.5" /> リセット
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => zoomImage(1.1)}
-                      className="inline-flex items-center gap-1 rounded bg-blue-500 px-3 py-1.5 text-sm text-white hover:bg-blue-600"
-                    >
-                      <IconZoomIn size="w-3.5 h-3.5" /> 拡大
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => zoomImage(0.9)}
-                      className="inline-flex items-center gap-1 rounded bg-blue-500 px-3 py-1.5 text-sm text-white hover:bg-blue-600"
-                    >
-                      <IconZoomOut size="w-3.5 h-3.5" /> 縮小
-                    </button>
-                  </div>
-                </div>
-              )}
             </fieldset>
           </form>
 
           {/* フッター: 操作は常に見える位置に固定。form 属性で本文のフォームと結びつける */}
           <div className="flex flex-col-reverse gap-3 rounded-b-2xl border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-gray-500">「更新する」を押すと画像も公開環境へ反映されます。</p>
+            <p className="text-xs text-gray-500">「更新する」を押すと公開環境へ反映されます。</p>
             <div className="flex gap-3">
               <button
                 type="button"
