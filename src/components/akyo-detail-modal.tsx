@@ -7,7 +7,7 @@
  * Features:
  * - Header with gradient background
  * - Profile icon + ID + name
- * - Large image on grid-paper background (PNG reference sheet preferred, WebP fallback)
+ * - Pre-generated reference sheets on grid-paper background, with original/card fallbacks
  * - Info grid (4 sections: name, avatar, attributes, creator)
  * - VRChat URL section
  * - Notes section (if available)
@@ -28,16 +28,20 @@ import { ensureContrastForWhiteText, getCategoryColor, parseAndSortCategories } 
 import { formatDisplayId, getAkyoSourceUrl, getDisplaySerial, resolveEntryType } from '@/lib/akyo-entry';
 import type { SupportedLanguage } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
+import {
+  getReferenceImageIdentity,
+  getReferenceImageUrls,
+  type ReferenceImageUrls,
+} from '@/lib/reference-image';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData } from '@/types/akyo';
 import Image from 'next/image';
 import type {
-  KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   RefObject,
-  TouchEvent as ReactTouchEvent,
 } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ReferenceImageViewer } from './reference-image-viewer';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]:not([tabindex="-1"])',
@@ -120,55 +124,32 @@ export function AkyoDetailModal({
     return null;
   }, [sourceUrl]);
 
-  // 三面図（PNG）優先、WebPフォールバック用の状態
+  // 事前生成WebP優先、原本PNG・カード画像フォールバック用の状態
   // Note: Hooks はすべて早期リターンの前に配置する必要がある (React Hooks ルール)
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imageLoadAttempt, setImageLoadAttempt] = useState(0);
-
-  // ズーム機能の状態
-  const [isZoomed, setIsZoomed] = useState(false);
-  const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 }); // パーセンテージ
-
-  // ドラッグ機能の状態
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
-  const originStartRef = useRef({ x: 50, y: 50 });
-
-  // ダブルタップ検出用（モバイル対応）
-  const lastTapRef = useRef<number>(0);
-  const hasDraggedRef = useRef<boolean>(false); // 実際にドラッグ（移動）したか
-  const justZoomedOutRef = useRef<boolean>(false); // ダブルタップでズーム解除した直後か
+  const referenceR2Base =
+    process.env.NEXT_PUBLIC_REFERENCE_R2_BASE || `${r2Base.replace(/\/+$/, '')}/reference`;
+  const cardImageUrl = localAkyo ? buildAvatarImageUrl(localAkyo.id, sourceUrl, 800) : '';
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const wasOpenRef = useRef(false);
-  const DOUBLE_TAP_DELAY = 300; // ミリ秒
-  const DRAG_THRESHOLD = 5; // ピクセル（これ以上動いたらドラッグとみなす）
 
   // Sync local state with prop changes
   useEffect(() => {
     setLocalAkyo(akyo);
   }, [akyo]);
 
-  // akyo変更時に画像URLをリセット
-  // Note: localAkyo?.id のみを依存にすることで、同一IDのプロパティ変更（isFavoriteなど）で
-  // 画像URLがリセットされるのを防ぐ
-  useEffect(() => {
-    if (localAkyo) {
-      const nextSourceUrl = getAkyoSourceUrl(localAkyo);
-      const isWorldEntry = resolveEntryType(localAkyo) === 'world';
-      if (isWorldEntry) {
-        setImageUrl(buildAvatarImageUrl(localAkyo.id, nextSourceUrl, 800));
-        setImageLoadAttempt(1);
-      } else {
-        const pngUrl = `${r2Base}/${getDisplaySerial(localAkyo)}.png`;
-        setImageUrl(pngUrl);
-        setImageLoadAttempt(0);
-      }
-      setIsZoomed(false); // ズーム状態もリセット
+  const referenceImageUrls = useMemo<ReferenceImageUrls | null>(() => {
+    if (!localAkyo || resolveEntryType(localAkyo) === 'world') {
+      return null;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- localAkyo.id の変更時のみ発火させたい
-  }, [localAkyo?.id, r2Base]);
+    return getReferenceImageUrls({
+      cardUrl: cardImageUrl,
+      originalBaseUrl: r2Base,
+      referenceBaseUrl: referenceR2Base,
+      serial: getDisplaySerial(localAkyo),
+    });
+  }, [localAkyo, r2Base, referenceR2Base, cardImageUrl]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -249,194 +230,6 @@ export function AkyoDetailModal({
 
     wasOpenRef.current = isOpen;
   }, [isOpen, returnFocusRef]);
-
-  // PNG→WebPフォールバック処理
-  const handleImageError = useCallback(() => {
-    if (!localAkyo) return;
-
-    if (imageLoadAttempt === 0) {
-      // PNG失敗 → WebPにフォールバック
-      const webpUrl = buildAvatarImageUrl(localAkyo.id, sourceUrl, 800);
-      console.log(`[detail-modal] PNG not found for ${localAkyo.id}, falling back to WebP`);
-      setImageUrl(webpUrl);
-      setImageLoadAttempt(1);
-      return;
-    }
-
-    // WebPも失敗した場合だけ画像を装飾扱いにする
-    setImageLoadAttempt(2);
-  }, [imageLoadAttempt, localAkyo, sourceUrl]);
-
-  // シングルクリックでズームイン（クリック位置を中心に）
-  const handleImageClick = useCallback(
-    (e: ReactMouseEvent<HTMLDivElement>) => {
-      // ドラッグ中やズーム中はクリックとして扱わない
-      if (isDragging || isZoomed) return;
-
-      // ダブルタップでズーム解除した直後のclickイベントは無視（再ズーム防止）
-      if (justZoomedOutRef.current) {
-        justZoomedOutRef.current = false;
-        return;
-      }
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-      // ズームイン：クリック位置を中心に
-      setZoomOrigin({ x, y });
-      setIsZoomed(true);
-    },
-    [isZoomed, isDragging]
-  );
-
-  const handleImageKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        if (isZoomed) {
-          setIsZoomed(false);
-          return;
-        }
-
-        setZoomOrigin({ x: 50, y: 50 });
-        setIsZoomed(true);
-        return;
-      }
-
-      if (!isZoomed) {
-        return;
-      }
-
-      const step = 10;
-      if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        setZoomOrigin((current) => ({ ...current, x: Math.max(0, current.x - step) }));
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        setZoomOrigin((current) => ({ ...current, x: Math.min(100, current.x + step) }));
-      } else if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        setZoomOrigin((current) => ({ ...current, y: Math.max(0, current.y - step) }));
-      } else if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        setZoomOrigin((current) => ({ ...current, y: Math.min(100, current.y + step) }));
-      }
-    },
-    [isZoomed]
-  );
-
-  // ダブルクリックでズームアウト
-  const handleImageDoubleClick = useCallback(() => {
-    if (isZoomed) {
-      setIsZoomed(false);
-    }
-  }, [isZoomed]);
-
-  // ドラッグ開始（マウス）
-  const handleDragStart = useCallback(
-    (e: ReactMouseEvent<HTMLDivElement>) => {
-      if (!isZoomed) return;
-      e.preventDefault();
-      setIsDragging(true);
-      dragStartRef.current = { x: e.clientX, y: e.clientY };
-      originStartRef.current = { ...zoomOrigin };
-    },
-    [isZoomed, zoomOrigin]
-  );
-
-  // ドラッグ開始（タッチ）
-  const handleTouchStart = useCallback(
-    (e: ReactTouchEvent<HTMLDivElement>) => {
-      if (!isZoomed || e.touches.length !== 1) return;
-      // ネイティブスクロールを防止
-      e.preventDefault();
-      setIsDragging(true);
-      hasDraggedRef.current = false; // ドラッグ開始時はまだ移動していない
-      dragStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      originStartRef.current = { ...zoomOrigin };
-    },
-    [isZoomed, zoomOrigin]
-  );
-
-  // ドラッグ中（マウス）
-  const handleDragMove = useCallback(
-    (e: ReactMouseEvent<HTMLDivElement>) => {
-      if (!isDragging || !isZoomed) return;
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const deltaX = ((e.clientX - dragStartRef.current.x) / rect.width) * 100;
-      const deltaY = ((e.clientY - dragStartRef.current.y) / rect.height) * 100;
-
-      // ドラッグ方向と逆に origin を移動（自然な操作感）
-      const newX = Math.max(0, Math.min(100, originStartRef.current.x - deltaX));
-      const newY = Math.max(0, Math.min(100, originStartRef.current.y - deltaY));
-
-      setZoomOrigin({ x: newX, y: newY });
-    },
-    [isDragging, isZoomed]
-  );
-
-  // ドラッグ中（タッチ）
-  const handleTouchMove = useCallback(
-    (e: ReactTouchEvent<HTMLDivElement>) => {
-      if (!isDragging || !isZoomed || e.touches.length !== 1) return;
-
-      // ネイティブスクロールを防止
-      e.preventDefault();
-      e.stopPropagation();
-
-      const touchX = e.touches[0].clientX;
-      const touchY = e.touches[0].clientY;
-
-      // 移動量がしきい値を超えたらドラッグとみなす
-      const movedX = Math.abs(touchX - dragStartRef.current.x);
-      const movedY = Math.abs(touchY - dragStartRef.current.y);
-      if (movedX > DRAG_THRESHOLD || movedY > DRAG_THRESHOLD) {
-        hasDraggedRef.current = true;
-      }
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const deltaX = ((touchX - dragStartRef.current.x) / rect.width) * 100;
-      const deltaY = ((touchY - dragStartRef.current.y) / rect.height) * 100;
-
-      const newX = Math.max(0, Math.min(100, originStartRef.current.x - deltaX));
-      const newY = Math.max(0, Math.min(100, originStartRef.current.y - deltaY));
-
-      setZoomOrigin({ x: newX, y: newY });
-    },
-    [isDragging, isZoomed]
-  );
-
-  // ドラッグ終了（マウス用）
-  const handleDragEnd = useCallback(() => {
-    // 少し遅延させてクリックイベントとの競合を防ぐ
-    setTimeout(() => setIsDragging(false), 50);
-  }, []);
-
-  // タッチ終了（ダブルタップ検出付き）
-  const handleTouchEnd = useCallback(() => {
-    const now = Date.now();
-    const timeSinceLastTap = now - lastTapRef.current;
-
-    // ズーム中のみダブルタップ判定を行う
-    if (isZoomed) {
-      if (!hasDraggedRef.current && timeSinceLastTap < DOUBLE_TAP_DELAY) {
-        // ダブルタップでズームアウト
-        setIsZoomed(false);
-        lastTapRef.current = 0;
-        justZoomedOutRef.current = true; // 直後のclickイベントをブロックするためのフラグ
-      } else if (!hasDraggedRef.current) {
-        // ズーム中のタップのみ、タップ時刻を記録
-        lastTapRef.current = now;
-      }
-    }
-    // 非ズーム時は lastTapRef を更新しない（ズームイン→即ダブルタップ判定を防ぐ）
-
-    // ドラッグ状態をリセット
-    setIsDragging(false);
-    hasDraggedRef.current = false;
-  }, [isZoomed]);
 
   // 早期リターン - すべての Hooks 呼び出しの後に配置
   if (!localAkyo || !isOpen) return null;
@@ -569,79 +362,19 @@ export function AkyoDetailModal({
             <div className="p-6 bg-gradient-to-b from-white to-blue-50">
               <div className="space-y-6">
                 {/* Image Section with Zoom & Drag */}
-                <div className="relative">
-                  <div
-                    className={`h-64 overflow-hidden rounded-3xl bg-white p-2 select-none ${isZoomed ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
-                      }`}
-                    style={{
-                      touchAction: isZoomed ? 'none' : 'auto',
-                      // 三面図の背景は方眼紙（白地+極薄グリッド）。「三面図=設計資料」の
-                      // メタファーで、枠線はレイアウトを変えないinset影で描く
-                      backgroundImage:
-                        'linear-gradient(#eef2f6 1px, transparent 1px), linear-gradient(90deg, #eef2f6 1px, transparent 1px)',
-                      backgroundSize: '22px 22px',
-                      boxShadow: 'inset 0 0 0 1px #e2e8f0',
-                      // フォーカス表示はグローバルCSSの3px outline（[tabindex="0"]:focus-visible）
-                      // に任せ、色だけ方眼と同系のslate-500へ（白背景4.76:1・方眼#eef2f6に
-                      // 4.23:1でWCAG 1.4.11の3:1を満たす。slate-400は2.56:1で不適合）。
-                      // Tailwindのringはこのinset影のインラインbox-shadowに上書きされて
-                      // 描画されないため使わない
-                      outlineColor: '#64748b',
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={isZoomed}
-                    aria-roledescription={t('modal.imageViewerRoleDescription', lang)}
-                    aria-label={
-                      isZoomed
-                        ? `${displayName} ${t('modal.imageMoveZoom', lang)}`
-                        : `${displayName} ${t('modal.imageZoomControl', lang)}`
-                    }
-                    onClick={handleImageClick}
-                    onKeyDown={handleImageKeyDown}
-                    onDoubleClick={handleImageDoubleClick}
-                    onMouseDown={handleDragStart}
-                    onMouseMove={handleDragMove}
-                    onMouseUp={handleDragEnd}
-                    onMouseLeave={handleDragEnd}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                  >
-                    <div
-                      className={`w-full h-full relative ${isDragging ? '' : 'transition-transform duration-300 ease-out'}`}
-                      style={{
-                        transform: isZoomed ? 'scale(2.5)' : 'scale(1)',
-                        transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                      }}
-                    >
-                      {imageUrl && (
-                        <Image
-                          src={imageUrl}
-                          alt={imageLoadAttempt >= 2 ? "" : displayName}
-                          role={imageLoadAttempt >= 2 ? "presentation" : undefined}
-                          width={800}
-                          height={533}
-                          className="w-full h-full object-contain rounded-2xl"
-                          unoptimized
-                          draggable={false}
-                          onError={handleImageError}
-                        />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Zoom/Drag Hint — 三面図と重ならないよう右上（旧キラキラ位置）に表示 */}
-                  {!isZoomed ? (
-                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
-                      {t('modal.zoomHint', lang)}
-                    </div>
-                  ) : (
-                    <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-1 rounded-full pointer-events-none">
-                      {t('modal.dragHint', lang)}
-                    </div>
-                  )}
-                </div>
+                <ReferenceImageViewer
+                  key={getReferenceImageIdentity({
+                    id: localAkyo.id,
+                    entryType: resolveEntryType(localAkyo),
+                    serial: getDisplaySerial(localAkyo),
+                    cardUrl: cardImageUrl,
+                    urls: referenceImageUrls,
+                  })}
+                  displayName={displayName}
+                  lang={lang}
+                  cardUrl={cardImageUrl}
+                  referenceImageUrls={referenceImageUrls}
+                />
 
                 {/* Info Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

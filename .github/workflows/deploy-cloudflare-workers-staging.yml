@@ -37,6 +37,7 @@ jobs:
       NEXT_PUBLIC_SITE_URL: https://staging.akyodex.com
       NEXT_PUBLIC_APP_URL: https://staging.akyodex.com
       NEXT_PUBLIC_R2_BASE: ${{ vars.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com' }}
+      NEXT_PUBLIC_REFERENCE_R2_BASE: https://images-staging.akyodex.com/reference
       NEXT_PUBLIC_SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}
       NEXT_PUBLIC_SENTRY_ENVIRONMENT: staging
       SENTRY_DSN: ${{ vars.NEXT_PUBLIC_SENTRY_DSN }}

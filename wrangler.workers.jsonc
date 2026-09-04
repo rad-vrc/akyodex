@@ -29,6 +29,7 @@
     "NEXT_PUBLIC_APP_URL": "https://staging.akyodex.com",
     "NEXT_PUBLIC_SITE_URL": "https://staging.akyodex.com",
     "NEXT_PUBLIC_R2_BASE": "https://images.akyodex.com",
+    "NEXT_PUBLIC_REFERENCE_R2_BASE": "https://images-staging.akyodex.com/reference",
     "NEXT_PUBLIC_USE_JSON_DATA": "true",
     "NEXT_PUBLIC_USE_KV_DATA": "true",
     "AKYODEX_DEPLOYMENT_ENVIRONMENT": "staging",

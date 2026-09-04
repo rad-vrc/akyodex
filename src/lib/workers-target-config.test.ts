@@ -74,6 +74,10 @@ test('Workers production config uses production data without exposing a route', 
   assert.equal(config.vars?.AKYODEX_DEPLOYMENT_ENVIRONMENT, 'production');
   assert.equal(config.vars?.SENTRY_ENVIRONMENT, 'production');
   assert.equal(config.vars?.GITHUB_BRANCH, 'main');
+  assert.equal(
+    config.vars?.NEXT_PUBLIC_REFERENCE_R2_BASE,
+    'https://images.akyodex.com/reference'
+  );
   assert.equal(dataNamespace?.id, '42b435eff5ca4de9a33d70faff6c6abc');
   assert.equal(imageBucket?.bucket_name, 'akyo-images');
   assert.equal(cacheBucket?.bucket_name, 'akyodex-workers-production-cache');
@@ -206,6 +210,14 @@ test('CI builds and dry-runs the production Workers target on Linux', async () =
 
   assert.match(workflow, /run: npm run build:workers:production/);
   assert.match(workflow, /run: npm run dry-run:workers:production/);
+  assert.match(workflow, /run: npm run test:reference-images/);
+  assert.match(workflow, /run: npm run typecheck:reference-images/);
+  assert.match(workflow, /run: npm run dry-run:reference-images:staging/);
+  assert.match(workflow, /run: npm run dry-run:reference-images:production/);
+  assert.match(
+    workflow,
+    /NEXT_PUBLIC_REFERENCE_R2_BASE: https:\/\/images\.akyodex\.com\/reference/
+  );
 });
 
 test('Workers runtime selects the Workers OpenNext cache adapters', async () => {
@@ -214,6 +226,10 @@ test('Workers runtime selects the Workers OpenNext cache adapters', async () => 
 
   assert.equal(config.vars?.CLOUDFLARE_DEPLOY_TARGET, 'workers');
   assert.equal(config.vars?.AKYODEX_DEPLOYMENT_ENVIRONMENT, 'staging');
+  assert.equal(
+    config.vars?.NEXT_PUBLIC_REFERENCE_R2_BASE,
+    'https://images-staging.akyodex.com/reference'
+  );
 });
 
 test('Workers staging keeps admin image mutations out of the production R2 bucket', async () => {
@@ -236,6 +252,10 @@ test('Workers staging CI deploys a tagged version and verifies that exact revisi
   assert.match(workflow, /x-robots-tag/);
   assert.match(workflow, /actions\/checkout@v7/);
   assert.match(workflow, /actions\/setup-node@v7/);
+  assert.match(
+    workflow,
+    /NEXT_PUBLIC_REFERENCE_R2_BASE: https:\/\/images-staging\.akyodex\.com\/reference/
+  );
   assert.match(workflow, /tolower\(\$0\)/);
   assert.doesNotMatch(workflow, /IGNORECASE/);
   assert.doesNotMatch(workflow, /grep --ignore-case/);
