@@ -1,8 +1,97 @@
 import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { deflateSync } from "node:zlib";
 import { createCatalogPayload } from "../src/lib/catalog-payload";
 import type { AkyoData } from "../src/types/akyo";
+
+/** 半透明の単色 PNG を作る。二重合成されると色が濃くなるので、最終描画の重なりを判定できる。 */
+function createTranslucentImage(width: number, height: number, alpha: number): Buffer {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc32 = (buf: Buffer) => {
+    let c = 0xffffffff;
+    for (const byte of buf) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const typed = Buffer.concat([Buffer.from(type, "ascii"), data]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(typed));
+    return Buffer.concat([length, typed, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 6; // RGBA
+  const raw = Buffer.alloc((width * 4 + 1) * height);
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * (width * 4 + 1);
+    raw[rowStart] = 0; // filter: none
+    for (let x = 0; x < width; x += 1) {
+      const p = rowStart + 1 + x * 4;
+      raw[p] = 0;
+      raw[p + 1] = 0;
+      raw[p + 2] = 0;
+      raw[p + 3] = alpha;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", ihdr),
+    chunk("IDAT", deflateSync(raw)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+/**
+ * 要素の中央 16x16 の平均色を、ページ自身に自分のスクリーンショットを復号させて読む。
+ * 要素基準で撮るので、ダイアログの出現アニメーションによる座標のずれに影響されない。
+ * 方眼の細線を拾わないよう平均を取る。
+ */
+async function centerColor(page: Page, target: Locator): Promise<number[]> {
+  await settle(page);
+  const shot = await target.screenshot();
+  return page.evaluate(async (base64) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${base64}`;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d")!;
+    context.drawImage(image, 0, 0);
+    const size = 16;
+    const data = context.getImageData(
+      Math.floor(image.width / 2) - size / 2,
+      Math.floor(image.height / 2) - size / 2,
+      size,
+      size,
+    ).data;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+    }
+    const pixels = data.length / 4;
+    return [Math.round(r / pixels), Math.round(g / pixels), Math.round(b / pixels)];
+  }, shot.toString("base64"));
+}
+
+/** CSS トランジション（モーダルの出現・ズームの 300ms）が終わるまで待つ。 */
+async function settle(page: Page): Promise<void> {
+  await page.waitForTimeout(500);
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+}
 
 const imageBody = readFileSync(
   path.join(process.cwd(), "public", "images", "profileIcon.webp"),
@@ -367,5 +456,68 @@ test.describe("Pre-generated reference sheet modal", () => {
     await dialog.locator('[role="button"][aria-roledescription]').click({ position: { x: 120, y: 80 } });
     await expect(dialog.locator("[data-reference-zoom-image]")).toHaveCount(0);
     expect(requested.slice(before).filter((url) => url.includes("/reference/"))).toHaveLength(0);
+  });
+
+  test("ズーム表示中は 960px を重ねず、半透明画像でも一枚分の描画になる", async ({ page }) => {
+    // 50% の半透明を白地に重ねると約 rgb(127)、二重に重なると約 rgb(63) になる
+    const translucent = createTranslucentImage(96, 54, 128);
+    const serve = (route: Route) =>
+      route.fulfill({ status: 200, contentType: "image/webp", body: translucent });
+    await page.route("**/reference/0001-960.webp", serve);
+    await page.route("**/reference/0001-1920.webp", serve);
+
+    await page.goto("/zukan");
+    const dialog = await openFirstAvatarDetail(page);
+    const primary = dialog.locator("[data-reference-primary-image]");
+    await expectImageLoaded(primary);
+    const viewer = dialog.locator('[role="button"][aria-roledescription]');
+    const beforeZoom = await centerColor(page, viewer);
+    expect(beforeZoom[0], `ズーム前は一枚分のはず: ${beforeZoom.join(",")}`).toBeGreaterThan(100);
+
+    await viewer.click({ position: { x: 120, y: 80 } });
+    const zoomImage = dialog.locator("[data-reference-zoom-image]");
+    await expect(zoomImage).toHaveClass(/opacity-100/);
+    await expectImageLoaded(zoomImage);
+
+    // 最終描画が一枚分であること（二重合成なら半透明部分が濃くなる）を先に確かめる
+    const zoomed = await centerColor(page, viewer);
+    expect(
+      Math.abs(zoomed[0] - beforeZoom[0]),
+      `ズーム後も一枚分のはず（前 ${beforeZoom.join(",")} / 後 ${zoomed.join(",")}）`,
+    ).toBeLessThanOrEqual(8);
+
+    // 下地の 960px は視覚的に隠れるが、代替テキストのため DOM には残る
+    await expect(primary).toHaveClass(/opacity-0/);
+    await expect(primary).toHaveAttribute("alt", "オリジンAkyo");
+    await expect(primary).toHaveAttribute("src", /\/reference\/0001-960\.webp$/);
+
+    // ズーム解除で 960px が戻る
+    await viewer.dblclick({ position: { x: 120, y: 80 } });
+    await expect(zoomImage).toHaveClass(/opacity-0/);
+    await expect(primary).not.toHaveClass(/opacity-0/);
+    const afterZoomOut = await centerColor(page, viewer);
+    expect(Math.abs(afterZoomOut[0] - beforeZoom[0])).toBeLessThanOrEqual(8);
+  });
+
+  test("ズーム画像が失敗したら 960px を隠さない", async ({ page }) => {
+    const translucent = createTranslucentImage(96, 54, 128);
+    await page.route("**/reference/0001-960.webp", (route) =>
+      route.fulfill({ status: 200, contentType: "image/webp", body: translucent }),
+    );
+    await page.route("**/reference/0001-1920.webp", (route) =>
+      route.fulfill({ status: 404, body: "missing zoom" }),
+    );
+
+    await page.goto("/zukan");
+    const dialog = await openFirstAvatarDetail(page);
+    const primary = dialog.locator("[data-reference-primary-image]");
+    await expectImageLoaded(primary);
+    const viewer = dialog.locator('[role="button"][aria-roledescription]');
+    await viewer.press("Enter");
+
+    await expect(dialog.locator("[data-reference-zoom-image]")).toHaveCount(0);
+    await expect(primary).not.toHaveClass(/opacity-0/);
+    await expect(primary).toHaveAttribute("src", /\/reference\/0001-960\.webp$/);
+    await expectImageLoaded(primary);
   });
 });

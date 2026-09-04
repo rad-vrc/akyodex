@@ -61,6 +61,16 @@ export function ReferenceImageViewer({
     if (dragEndTimerRef.current) clearTimeout(dragEndTimerRef.current);
   }, []);
 
+  // ズーム画像が実際に見えている間だけ 960px を視覚的に隠す。両方を不透明のまま重ねると、
+  // 半透明部分が二重に合成されて線が濃く・ぼやける。読み込み中と失敗時とズーム解除後は
+  // 960px を表示したままにし、代替テキストのために DOM からは外さない（opacity のみ）。
+  const zoomOverlayVisible =
+    Boolean(referenceImageUrls?.zoom) &&
+    zoomImageRequested &&
+    imageStage === 'preview' &&
+    isZoomed &&
+    zoomImageReady;
+
   const isReferenceImage = referenceImageUrls !== null;
   const handleImageError = useCallback(() => {
     setImageStage((current) => isReferenceImage ? getNextReferenceImageStage(current) : 'unavailable');
@@ -304,7 +314,8 @@ export function ReferenceImageViewer({
               alt={displayName}
               width={imageDimensions.width}
               height={imageDimensions.height}
-              className="w-full h-full object-contain rounded-2xl"
+              data-reference-primary-image
+              className={`w-full h-full object-contain rounded-2xl ${zoomOverlayVisible ? 'opacity-0' : ''}`}
               unoptimized
               loading="eager"
               fetchPriority="high"
@@ -321,7 +332,7 @@ export function ReferenceImageViewer({
               data-reference-zoom-image
               width={1920}
               height={1080}
-              className={`absolute inset-0 w-full h-full object-contain rounded-2xl ${isZoomed && zoomImageReady ? 'opacity-100' : 'opacity-0'}`}
+              className={`absolute inset-0 w-full h-full object-contain rounded-2xl ${zoomOverlayVisible ? 'opacity-100' : 'opacity-0'}`}
               unoptimized
               loading="eager"
               fetchPriority="high"
