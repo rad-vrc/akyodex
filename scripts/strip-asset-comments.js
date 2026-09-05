@@ -8,9 +8,14 @@
  * Assets under `_next/` are skipped: the bundler already emits them minified.
  *
  * The rewrite only reprints the parsed AST — no compression, no identifier
- * mangling — so the output stays readable and, unlike a bundler pass, does not
- * gain an implicit `"use strict"`. Equivalence is asserted per file rather than
- * assumed, because a broken Service Worker persists in visitors' browsers.
+ * mangling — so names stay traceable in DevTools and, unlike a bundler pass, the
+ * output does not gain an implicit `"use strict"`. Equivalence is asserted per
+ * file rather than assumed, because a broken Service Worker persists in
+ * visitors' browsers.
+ *
+ * Printing is compact rather than beautified so that feeding an already-minified
+ * asset through here cannot inflate it; a file that still grows fails the build
+ * instead of shipping.
  */
 
 const fs = require('node:fs');
@@ -18,8 +23,9 @@ const path = require('node:path');
 const { minify } = require('terser');
 
 const SKIPPED_DIRECTORIES = new Set(['_next']);
+const SCRIPT_EXTENSIONS = ['.js', '.mjs', '.cjs'];
 
-/** Collect deployable `.js` assets, skipping already-minified bundler output. */
+/** Collect deployable scripts, skipping already-minified bundler output. */
 function collectAssetScripts(assetsDir) {
   const found = [];
 
@@ -28,7 +34,10 @@ function collectAssetScripts(assetsDir) {
       const entryPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         if (!SKIPPED_DIRECTORIES.has(entry.name)) walk(entryPath);
-      } else if (entry.isFile() && entry.name.endsWith('.js')) {
+      } else if (
+        entry.isFile() &&
+        SCRIPT_EXTENSIONS.some((extension) => entry.name.endsWith(extension))
+      ) {
         found.push(entryPath);
       }
     }
@@ -43,7 +52,7 @@ async function stripComments(source) {
   const { code } = await minify(source, {
     compress: false,
     mangle: false,
-    format: { comments: false, beautify: true, indent_level: 2 },
+    format: { comments: false, beautify: false },
   });
 
   if (typeof code !== 'string') {
@@ -83,14 +92,18 @@ async function main() {
   console.log(`🧹 Stripping comments from ${scripts.length} static script(s)...`);
 
   for (const scriptPath of scripts) {
+    const name = path.relative(assetsDir, scriptPath);
     const original = fs.readFileSync(scriptPath, 'utf8');
     const stripped = await stripComments(original);
     await assertSameProgram(original, stripped);
-    fs.writeFileSync(scriptPath, stripped);
 
-    const name = path.relative(assetsDir, scriptPath);
-    const saved = original.length - stripped.length;
-    console.log(`✅ ${name} (-${saved} bytes)`);
+    const saved = Buffer.byteLength(original) - Buffer.byteLength(stripped);
+    if (saved < 0) {
+      throw new Error(`${name} grew by ${-saved} bytes; refusing to ship it`);
+    }
+
+    fs.writeFileSync(scriptPath, stripped);
+    console.log(`✅ ${name} (${saved} bytes smaller)`);
   }
 }
 

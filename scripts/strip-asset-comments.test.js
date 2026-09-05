@@ -21,19 +21,27 @@ function makeAssetsDir(files) {
   return dir;
 }
 
-test('collects deployable scripts but skips bundler output', () => {
+test('collects deployable scripts but skips bundler output', (t) => {
   const dir = makeAssetsDir({
     'sw.js': '// worker\n',
     'nested/helper.js': '// helper\n',
+    'analytics.mjs': '// module\n',
+    'legacy.cjs': '// commonjs\n',
     '_next/static/chunks/app.js': '// already minified\n',
     'catalog/catalog-v1-ja.json': '{}',
   });
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
 
   const found = collectAssetScripts(dir).map((p) =>
     path.relative(dir, p).split(path.sep).join('/'),
   );
 
-  assert.deepEqual(found.sort(), ['nested/helper.js', 'sw.js'].sort());
+  assert.deepEqual(found.sort(), [
+    'analytics.mjs',
+    'legacy.cjs',
+    'nested/helper.js',
+    'sw.js',
+  ]);
 });
 
 test('removes line, block and JSDoc comments', async () => {
@@ -64,6 +72,15 @@ test('preserves identifiers and does not introduce strict mode', async () => {
   assert.ok(stripped.includes('CACHE_VERSION'));
   assert.ok(stripped.includes('getScope'));
   assert.ok(!stripped.includes('use strict'));
+});
+
+test('never inflates an already-minified asset', async () => {
+  const minified =
+    'function a(x){return x+1}function b(y){return a(y)*2}console.log(b(3));';
+
+  const stripped = await stripComments(minified);
+
+  assert.ok(Buffer.byteLength(stripped) <= Buffer.byteLength(minified));
 });
 
 test('rejects a rewrite that changes the program', async () => {
