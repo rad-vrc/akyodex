@@ -26,6 +26,7 @@ import {
 } from '@/components/icons';
 import { ensureContrastForWhiteText, getCategoryColor, parseAndSortCategories } from '@/lib/akyo-data-helpers';
 import { formatDisplayId, getAkyoSourceUrl, getDisplaySerial, resolveEntryType } from '@/lib/akyo-entry';
+import { getFocusableElements } from '@/lib/focusable-elements';
 import type { SupportedLanguage } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
 import {
@@ -42,30 +43,6 @@ import type {
 } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ReferenceImageViewer } from './reference-image-viewer';
-
-const FOCUSABLE_SELECTOR = [
-  'a[href]:not([tabindex="-1"])',
-  'button:not([disabled]):not([tabindex="-1"])',
-  'input:not([disabled]):not([type="hidden"]):not([tabindex="-1"])',
-  'select:not([disabled]):not([tabindex="-1"])',
-  'textarea:not([disabled]):not([tabindex="-1"])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(', ');
-
-function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
-  if (!container) {
-    return [];
-  }
-
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((element) => {
-    const computedStyle = window.getComputedStyle(element);
-    return (
-      computedStyle.display !== 'none' &&
-      computedStyle.visibility !== 'hidden' &&
-      element.closest('[aria-hidden="true"]') === null
-    );
-  });
-}
 
 /**
  * Props for the AkyoDetailModal component
