@@ -419,6 +419,41 @@ test.describe("Pre-generated reference sheet modal", () => {
     ]);
   });
 
+  test("initial focus fallback does not steal keyboard focus from the image viewer", async ({ page }) => {
+    let zoomRequests = 0;
+    await page.route("**/reference/0001-960.webp", fulfillWebP);
+    await page.route("**/reference/0001-1920.webp", (route) => {
+      zoomRequests += 1;
+      return route.fulfill({ status: 404, body: "missing zoom" });
+    });
+    await page.goto("/zukan");
+    const detailButton = page.locator("article.akyo-card .detail-button").first();
+    await expect(detailButton).toBeVisible();
+    await detailButton.scrollIntoViewIfNeeded();
+    await page.clock.install();
+    await page.clock.pauseAt(new Date());
+    await detailButton.click({ force: true });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    const image = dialog.getByAltText("オリジンAkyo", { exact: true });
+    await expectImageLoaded(image);
+
+    // Run the initial animation-frame focus, but not the 50ms fallback timer.
+    await page.clock.runFor(16);
+    await expect(dialog.getByRole("button", { name: "閉じる", exact: true })).toBeFocused();
+    await page.keyboard.press("Tab");
+    const viewer = dialog.locator('[role="button"][aria-roledescription]');
+    await expect(viewer).toBeFocused();
+    await page.clock.runFor(60);
+    await expect(viewer).toBeFocused();
+
+    await page.keyboard.press("Enter");
+    await expect.poll(() => zoomRequests).toBe(1);
+    await expect(viewer).toHaveAttribute("aria-pressed", "true");
+    await expect(dialog).toBeVisible();
+    await expect(image).toHaveAttribute("src", /\/0001-960\.webp$/);
+  });
+
   test("retains 960px after zoom failure and does not retry until another session", async ({ page }) => {
     let zoomRequests = 0;
     await page.route("**/reference/0001-960.webp", fulfillWebP);
