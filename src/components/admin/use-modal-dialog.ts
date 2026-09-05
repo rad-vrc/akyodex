@@ -73,10 +73,24 @@ export function useModalDialog({
     document.body.style.overflow = 'hidden';
 
     const focusInitialElement = () => {
+      // 子モーダル表示中は子側にフォーカスを任せる
+      if (suspendedRef.current) {
+        return;
+      }
+
+      // rAF で既に入った後、あるいは利用者が先に別の入力欄へ移った後に
+      // 50ms のフォールバックが走っても、その移動先を奪わない。
+      // フォールバックは「まだどこにも入っていない」ときだけ働けばよい
+      const dialog = dialogRef.current;
+      const active = document.activeElement;
+      if (dialog && active && dialog.contains(active)) {
+        return;
+      }
+
       const target =
         initialFocusRef?.current ??
-        getFocusableElements(dialogRef.current)[0] ??
-        dialogRef.current;
+        getFocusableElements(dialog)[0] ??
+        dialog;
       target?.focus();
     };
     const initialFocusFrame = window.requestAnimationFrame(focusInitialElement);

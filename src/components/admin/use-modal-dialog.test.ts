@@ -99,7 +99,8 @@ function Dialog({ onRequestClose, suspended = false }: DialogProps) {
     // eslint-disable-next-line react-hooks/refs
     { ref: dialogRef, role: "dialog", tabIndex: -1 },
     // eslint-disable-next-line react-hooks/refs
-    createElement("input", { ref: inputRef, type: "text" }),
+    createElement("input", { ref: inputRef, id: "first", type: "text" }),
+    createElement("input", { id: "second", type: "text" }),
     createElement("button", { type: "button" }, "ok"),
   );
 }
@@ -185,7 +186,56 @@ test("開いたら initialFocusRef の要素にフォーカスが移る", async 
     });
     await flush();
 
-    assert.equal(h.win.document.activeElement?.tagName, "INPUT");
+    assert.equal(h.win.document.activeElement?.id, "first");
+
+    await act(async () => {
+      h.root.unmount();
+    });
+  } finally {
+    h.cleanup();
+  }
+});
+
+// レビュー指摘（#497 P2）: 初回 rAF で入った後に利用者が別の入力欄へ移ると、
+// 50ms のフォールバックが元の要素へ引き戻していた。
+test("初期フォーカス後に利用者が移動した先を、50ms のフォールバックが上書きしない", async () => {
+  const h = await createHarness();
+  try {
+    await act(async () => {
+      h.root.render(createElement(Dialog, { onRequestClose: () => {} }));
+    });
+    await flush(); // rAF（0ms）で first へ
+    assert.equal(h.win.document.activeElement?.id, "first");
+
+    // 利用者の操作に相当: 別の入力欄へ移動
+    (h.win.document.getElementById("second") as HTMLInputElement).focus();
+    assert.equal(h.win.document.activeElement?.id, "second");
+
+    // 50ms のフォールバックタイマーを確実に発火させる
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 80));
+    });
+    assert.equal(h.win.document.activeElement?.id, "second", "フォールバックが移動先を奪ってはいけない");
+
+    await act(async () => {
+      h.root.unmount();
+    });
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("suspended で開いた場合は初期フォーカスを奪わない（子モーダル優先）", async () => {
+  const h = await createHarness();
+  try {
+    await act(async () => {
+      h.root.render(createElement(Dialog, { onRequestClose: () => {}, suspended: true }));
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 80));
+    });
+
+    assert.equal(h.win.document.activeElement?.tagName, "BODY");
 
     await act(async () => {
       h.root.unmount();
