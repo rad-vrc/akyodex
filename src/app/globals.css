@@ -669,9 +669,27 @@ select:focus {
   animation: fadeInScale 0.3s ease-out;
 }
 
+/* モーダルの外枠（fixed; inset:0 のスクロール容器）。
+   ここには高さを足さない。overflow-y-auto でモーダル全体のスクロールを受け持つ
+   要素なので、min-height: 100lvh を与えるとブラウザ UI 表示中は可視領域より
+   容器が高くなり、末尾の「お気に入りに追加」「VRChatで見る」へ到達できなくなる
+   （#506 レビューで実測: 可視 724px に対し外枠 824px、ボタン下端 768px）。
+   overscroll-behavior はモーダル内のスクロールが背面へ連鎖するのを止める */
+.modal-overlay {
+  overscroll-behavior: contain;
+}
+
+/* 背景の暗転だけを最大ビューポート（lvh = ブラウザ UI が全て隠れた状態）まで
+   伸ばす。iPhone Chrome で「ツールバーを引っ込めて詳細を開くと、ツールバーが
+   あった帯だけ暗転せず一覧が見える」症状が報告されたことへの対策候補。
+   fixed; inset:0 の要素が UI 収納前の小さいレイアウトビューポートの高さに
+   留まる場合を想定している。原因の特定と実機での解消は未確認。
+   backdrop は操作を持たないので、可視領域より高くても害はない。
+   lvh 非対応環境では宣言が捨てられ、従来の inset:0 だけが残る */
 .modal-backdrop {
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
+  min-height: 100lvh;
 }
 
 /* Service Worker Update Notification Animation */
