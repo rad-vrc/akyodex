@@ -38,6 +38,38 @@ export function isComposingKeyboardEvent(
 }
 
 /**
+ * body スクロールロックの参照カウント。
+ *
+ * 親（EditModal）と子（AttributeModal）が両方このフックを使うので、各自が
+ * `body.style.overflow` を保存・復元すると、親子同時アンマウント時に
+ * 「親が元の値へ戻す → 子が親の設定した hidden を戻す」の順で走り、
+ * モーダルが消えた後も hidden が残る。最初のロックで元の値を保存し、
+ * 最後のロック解除でだけ復元することで、解除順序に依存しなくする。
+ */
+let bodyScrollLockCount = 0;
+let bodyOverflowBeforeLock = '';
+
+function lockBodyScroll(): () => void {
+  if (bodyScrollLockCount === 0) {
+    bodyOverflowBeforeLock = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  }
+  bodyScrollLockCount += 1;
+
+  let released = false;
+  return () => {
+    if (released) {
+      return;
+    }
+    released = true;
+    bodyScrollLockCount -= 1;
+    if (bodyScrollLockCount === 0) {
+      document.body.style.overflow = bodyOverflowBeforeLock;
+    }
+  };
+}
+
+/**
  * WAI-ARIA APG の Modal Dialog パターンに沿った挙動をまとめたフック。
  *
  * - 開いたらパネル内へフォーカスを移す
@@ -75,8 +107,7 @@ export function useModalDialog({
     const activeElementAtOpen =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const unlockBodyScroll = lockBodyScroll();
 
     const focusInitialElement = () => {
       // 子モーダル表示中は子側にフォーカスを任せる
@@ -159,7 +190,7 @@ export function useModalDialog({
       window.cancelAnimationFrame(initialFocusFrame);
       window.clearTimeout(fallbackFocusTimer);
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockBodyScroll();
 
       // returnFocusRef を渡された場合はそれだけを見る（呼び出し側が復帰先を管理している）。
       // 閉じる時点の current を読むので、開いている間に差し替えられても追従する。
