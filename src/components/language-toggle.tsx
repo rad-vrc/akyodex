@@ -4,7 +4,8 @@
  * Language Toggle Button Component
  *
  * Features:
- * - Floating button (like original site)
+ * - variant="floating": 画面右下の浮遊ボタン（sm 以上で表示）
+ * - variant="inline": ヘッダー右上に並べる小さいボタン（スマホ用）
  * - Cycle through Japanese, English, and Korean
  * - Toggle order: ja → en → ko → ja
  * - Persistent via cookie
@@ -26,11 +27,14 @@ import { useEffect, useState } from 'react';
 interface LanguageToggleProps {
   initialLang?: SupportedLanguage;
   className?: string;
+  /** floating: 右下の浮遊ボタン（既定）。inline: ヘッダー内に置く非固定のボタン */
+  variant?: 'floating' | 'inline';
 }
 
 export function LanguageToggle({
   initialLang = DEFAULT_LANGUAGE,
   className = '',
+  variant = 'floating',
 }: LanguageToggleProps) {
   const [currentLang, setCurrentLang] = useState<SupportedLanguage>(initialLang);
   const [isChanging, setIsChanging] = useState(false);
@@ -83,7 +87,7 @@ export function LanguageToggle({
       onClick={handleToggle}
       disabled={isChanging}
       className={`
-        language-toggle-btn
+        ${variant === 'inline' ? 'header-control-btn' : 'language-toggle-btn'}
         ${isChanging ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
     `}

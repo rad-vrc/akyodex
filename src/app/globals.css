@@ -616,22 +616,40 @@ select:focus {
   transform: translateY(-2px) scale(1.02);
 }
 
-@media (max-width: 640px) {
-  .admin-button {
-    bottom: 84px;
-    right: 16px;
-    width: 48px;
-    height: 48px;
-    font-size: 14px;
-  }
-
+/* スマホ（Tailwind の sm 未満 = 40rem 未満）では右下の浮遊ボタンを出さず、
+   ヘッダー右上の .header-control-btn（zukan-client.tsx）に切り替える。
+   浮遊ボタンは一覧のカードやソートチップに被っていた */
+@media (width < 40rem) {
+  .admin-button,
   .language-toggle-btn {
-    bottom: 148px;
-    right: 16px;
-    width: 48px;
-    height: 48px;
-    font-size: 14px;
+    display: none;
   }
+}
+
+/* ヘッダー内コントロール（スマホ用の言語切替・管理画面ボタン）。
+   ヘッダー自体がピンク→オレンジのグラデーションなので、浮遊ボタンと同じ
+   配色だと埋もれる。白い丸にブランドピンク系の文字・アイコンで置く。
+   #d62a68 は白地で 4.78:1（WCAG 1.4.3 の 4.5:1 を満たす。ブランド原色
+   #ee4180 は 3.68:1 で不足）。44px は SC 2.5.8 の 24px 以上を余裕で満たす */
+.header-control-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff !important;
+  color: #d62a68 !important;
+  border: 2px solid rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.header-control-btn:active {
+  transform: scale(0.96);
 }
 
 /* Modal Animations */

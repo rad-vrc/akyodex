@@ -806,20 +806,41 @@ export function ZukanClient({
           aria-label={t("nav.primary", lang)}
           className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4"
         >
-          {/* ロゴ */}
-          <Link href="/" className="flex-shrink-0">
-            <Image
-              src={LOGO_BY_LANG[lang] || LOGO_BY_LANG.default}
-              alt={t("logo.alt", lang)}
-              width={454}
-              height={70}
-              unoptimized
-              priority
-              fetchPriority="high"
-              sizes="(max-width: 640px) 260px, (max-width: 1024px) 420px, 454px"
-              className="logo-animation h-10 sm:h-12 w-auto"
-            />
-          </Link>
+          {/* ロゴ + スマホ用コントロール。sm 以上ではラッパーが display:contents になり、
+              ロゴは従来どおり nav 直下の flex 子として並ぶ */}
+          <div className="flex items-center justify-between gap-3 sm:contents">
+            <Link href="/" className="min-w-0 shrink sm:shrink-0">
+              <Image
+                src={LOGO_BY_LANG[lang] || LOGO_BY_LANG.default}
+                alt={t("logo.alt", lang)}
+                width={454}
+                height={70}
+                unoptimized
+                priority
+                fetchPriority="high"
+                sizes="(max-width: 640px) 260px, (max-width: 1024px) 420px, 454px"
+                className="logo-animation h-10 sm:h-12 w-auto max-w-full object-contain"
+              />
+            </Link>
+
+            {/* スマホでは右下の浮遊ボタン（言語・歯車）が一覧の操作に被るので、
+                ヘッダー右上の空きに収める。左が言語切替、右が管理画面。
+                sm 以上では非表示にし、従来の浮遊ボタン（ページ末尾）に戻す */}
+            <div className="flex shrink-0 items-center gap-2 sm:hidden">
+              <LanguageToggle initialLang={lang} variant="inline" />
+              <Link
+                href="/admin"
+                className="header-control-btn group"
+                aria-label={t("admin.panel", lang)}
+                title={t("admin.panel", lang)}
+              >
+                <IconCog
+                  size="w-5 h-5"
+                  className="group-hover:rotate-90 transition-transform duration-300"
+                />
+              </Link>
+            </div>
+          </div>
 
           {/* 統計情報 */}
           <dl className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-4 text-sm sm:text-base font-bold text-white w-full sm:w-auto">
