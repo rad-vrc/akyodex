@@ -1,0 +1,1354 @@
+{
+  "Booth": {
+    "en": "Booth",
+    "ko": "Booth"
+  },
+  "Booth/アバター": {
+    "en": "Booth/Avatar",
+    "ko": "Booth/아바타"
+  },
+  "おくりもの": {
+    "en": "Gift",
+    "ko": "선물"
+  },
+  "お大事に": {
+    "en": "Get Well Soon",
+    "ko": "쾌차를 빕니다"
+  },
+  "まめ": {
+    "en": "Bean",
+    "ko": "마메"
+  },
+  "まめAkyo": {
+    "en": "Bean Akyo",
+    "ko": "마메Akyo"
+  },
+  "エネルギー": {
+    "en": "Energy",
+    "ko": "에너지"
+  },
+  "エネルギー/植物": {
+    "en": "Energy/Plant",
+    "ko": "에너지/식물"
+  },
+  "エネルギー/水": {
+    "en": "Energy/Water",
+    "ko": "에너지/물"
+  },
+  "エネルギー/熱": {
+    "en": "Energy/Heat",
+    "ko": "에너지/열"
+  },
+  "エネルギー/電気": {
+    "en": "Energy/Electricity",
+    "ko": "에너지/전기"
+  },
+  "ギミック・特殊": {
+    "en": "Gimmick・Special",
+    "ko": "기믹・특수"
+  },
+  "ギミック・特殊/AudioLink": {
+    "en": "Gimmick・Special/AudioLink",
+    "ko": "기믹・특수/AudioLink"
+  },
+  "ギミック・特殊/アニメーション": {
+    "en": "Gimmick・Special/Animation",
+    "ko": "기믹・특수/애니메이션"
+  },
+  "ギミック・特殊/ダンス": {
+    "en": "Gimmick・Special/Dance",
+    "ko": "기믹・특수/댄스"
+  },
+  "ギミック・特殊/チャット": {
+    "en": "Gimmick・Special/Chat",
+    "ko": "기믹・특수/채팅"
+  },
+  "ギミック・特殊/ライト": {
+    "en": "Gimmick・Special/Light",
+    "ko": "기믹・특수/라이트"
+  },
+  "ギミック・特殊/発光": {
+    "en": "Gimmick・Special/Glow",
+    "ko": "기믹・특수/발광"
+  },
+  "ギミック・特殊/色変え": {
+    "en": "Gimmick・Special/Color Change",
+    "ko": "기믹・특수/색상 변경"
+  },
+  "ギミック・特殊/飛行": {
+    "en": "Gimmick・Special/Flying",
+    "ko": "기믹・특수/비행"
+  },
+  "グッズ": {
+    "en": "Goods",
+    "ko": "굿즈"
+  },
+  "グッズ/揺れ物": {
+    "en": "Goods/Dangling",
+    "ko": "굿즈/흔들리는"
+  },
+  "チョコミント類": {
+    "en": "Mint Chocolate",
+    "ko": "초코민트류"
+  },
+  "パロディ": {
+    "en": "Parody",
+    "ko": "패러디"
+  },
+  "パロディ/Among Us": {
+    "en": "Parody/Among Us",
+    "ko": "패러디/Among Us"
+  },
+  "パロディ/Backrooms": {
+    "en": "Parody/Backrooms",
+    "ko": "패러디/Backrooms"
+  },
+  "パロディ/Cyberpunk": {
+    "en": "Parody/Cyberpunk",
+    "ko": "패러디/Cyberpunk"
+  },
+  "パロディ/Fall Guys": {
+    "en": "Parody/Fall Guys",
+    "ko": "패러디/Fall Guys"
+  },
+  "パロディ/Fallout": {
+    "en": "Parody/Fallout",
+    "ko": "패러디/Fallout"
+  },
+  "パロディ/Lobotomy Corporation": {
+    "en": "Parody/Lobotomy Corporation",
+    "ko": "패러디/Lobotomy Corporation"
+  },
+  "パロディ/SCP": {
+    "en": "Parody/SCP",
+    "ko": "패러디/SCP"
+  },
+  "パロディ/VRChat": {
+    "en": "Parody/VRChat",
+    "ko": "패러디/VRChat"
+  },
+  "パロディ/VTuber": {
+    "en": "Parody/VTuber",
+    "ko": "패러디/VTuber"
+  },
+  "パロディ/Wormiesock": {
+    "en": "Parody/Wormiesock",
+    "ko": "패러디/Wormiesock"
+  },
+  "パロディ/ずんだもん": {
+    "en": "Parody/Zundamon",
+    "ko": "패러디/즌다몬"
+  },
+  "パロディ/となりのトトロ": {
+    "en": "Parody/Totoro",
+    "ko": "패러디/이웃집 토토로"
+  },
+  "パロディ/どんどん亭": {
+    "en": "Parody/Dondon-tei",
+    "ko": "패러디/동동점"
+  },
+  "パロディ/びっくりチキン": {
+    "en": "Parody/Rubber Chicken",
+    "ko": "패러디/닭삑삑이"
+  },
+  "パロディ/エヴァ": {
+    "en": "Parody/Evangelion",
+    "ko": "패러디/에반게리온"
+  },
+  "パロディ/カービィ": {
+    "en": "Parody/Kirby",
+    "ko": "패러디/커비"
+  },
+  "パロディ/ガンダム": {
+    "en": "Parody/Gundam",
+    "ko": "패러디/건담"
+  },
+  "パロディ/ゴブリン・ノーム・ホーン": {
+    "en": "Parody/Goblin Gnome Horn",
+    "ko": "패러디/고블린 노움 혼"
+  },
+  "パロディ/シナモロール": {
+    "en": "Parody/Sinnamoroll",
+    "ko": "패러디/시나모롤"
+  },
+  "パロディ/シャルベ": {
+    "en": "Parody/Syarube",
+    "ko": "패러디/Syarube"
+  },
+  "パロディ/ジャム・ザ・ハウスネイル": {
+    "en": "Parody/Jam the House Nail",
+    "ko": "패러디/잼 더 하우스네일"
+  },
+  "パロディ/ストレッチマン": {
+    "en": "Parody/Stretchman",
+    "ko": "패러디/스트레치맨"
+  },
+  "パロディ/ディズニー": {
+    "en": "Parody/Disney",
+    "ko": "패러디/디즈니"
+  },
+  "パロディ/ハローキティ": {
+    "en": "Parody/Hello Kitty",
+    "ko": "패러디/헬로키티"
+  },
+  "パロディ/ピクミン": {
+    "en": "Parody/Pikmin",
+    "ko": "패러디/Pikmin"
+  },
+  "パロディ/ファミリーマート": {
+    "en": "Parody/Family Mart",
+    "ko": "패러디/패밀리마트"
+  },
+  "パロディ/ファンタスティック・フォー": {
+    "en": "Parody/Fantastic Four",
+    "ko": "패러디/판타스틱 4"
+  },
+  "パロディ/ボカロ系": {
+    "en": "Parody/Vocaloid",
+    "ko": "패러디/보컬로이드"
+  },
+  "パロディ/ボンバーマン": {
+    "en": "Parody/Bomberman",
+    "ko": "패러디/봄버맨"
+  },
+  "パロディ/ポケモン": {
+    "en": "Parody/Pokemon",
+    "ko": "패러디/포켓몬"
+  },
+  "パロディ/ミスタードーナツ": {
+    "en": "Parody/Mister Donut",
+    "ko": "패러디/미스터도넛"
+  },
+  "パロディ/ミャクミャク": {
+    "en": "Parody/Myakumyaku",
+    "ko": "패러디/먀쿠먀쿠"
+  },
+  "パロディ/ミーム": {
+    "en": "Parody/Meme",
+    "ko": "패러디/밈"
+  },
+  "パロディ/ムーイ": {
+    "en": "Parody/Muy",
+    "ko": "패러디/Muy"
+  },
+  "パロディ/メイドインアビス": {
+    "en": "Parody/Made in Abyss",
+    "ko": "패러디/메이드 인 어비스"
+  },
+  "パロディ/メタルギアソリッド": {
+    "en": "Parody/Metal Gear Solid",
+    "ko": "패러디/Metal Gear Solid"
+  },
+  "パロディ/モクリ": {
+    "en": "Parody/Mokuri",
+    "ko": "패러디/Mokuri"
+  },
+  "パロディ/モンハン": {
+    "en": "Parody/Monster Hunter",
+    "ko": "패러디/몬스터 헌터"
+  },
+  "パロディ/リーチャ隊長": {
+    "en": "Parody/Capt.Rietzscha",
+    "ko": "패러디/Capt.Rietzscha"
+  },
+  "パロディ/人物": {
+    "en": "Parody/Person",
+    "ko": "패러디/인물"
+  },
+  "パロディ/仮面ライダー": {
+    "en": "Parody/Kamen Rider",
+    "ko": "패러디/가면라이더"
+  },
+  "パロディ/変な家": {
+    "en": "Parody/Strange Houses",
+    "ko": "패러디/이상한 집"
+  },
+  "パロディ/東方": {
+    "en": "Parody/Touhou",
+    "ko": "패러디/동방 프로젝트"
+  },
+  "パロディ/相棒": {
+    "en": "Parody/AIBOU",
+    "ko": "패러디/AIBOU"
+  },
+  "パロディ/超かぐや姫！": {
+    "en": "Parody/Super Princess Kaguya!",
+    "ko": "패러디/초 카구야 공주!"
+  },
+  "パロディ/遊戯王": {
+    "en": "Parody/Yu-Gi-Oh!",
+    "ko": "패러디/유희왕"
+  },
+  "パロディ/頭文字D": {
+    "en": "Parody/Initial D",
+    "ko": "패러디/이니셜 D"
+  },
+  "ファッション・装備": {
+    "en": "Fashion・Equipment",
+    "ko": "패션・장비"
+  },
+  "ファッション・装備/なりきり・仮装": {
+    "en": "Fashion・Equipment/Roleplay",
+    "ko": "패션・장비/코스프레"
+  },
+  "ファッション・装備/ひげ": {
+    "en": "Fashion・Equipment/Beard",
+    "ko": "패션・장비/수염"
+  },
+  "ファッション・装備/ぼうし": {
+    "en": "Fashion・Equipment/Hat",
+    "ko": "패션・장비/모자"
+  },
+  "ファッション・装備/フード": {
+    "en": "Fashion・Equipment/Hood",
+    "ko": "패션・장비/후드"
+  },
+  "ファッション・装備/マスク": {
+    "en": "Fashion・Equipment/Mask",
+    "ko": "패션・장비/마스크"
+  },
+  "ファッション・装備/メガネ": {
+    "en": "Fashion・Equipment/Glasses",
+    "ko": "패션・장비/안경"
+  },
+  "ファッション・装備/厚着": {
+    "en": "Fashion・Equipment/Warm Clothing",
+    "ko": "패션・장비/두꺼운 옷"
+  },
+  "ファッション・装備/手袋": {
+    "en": "Fashion・Equipment/Gloves",
+    "ko": "패션・장비/장갑"
+  },
+  "ファッション・装備/武器": {
+    "en": "Fashion・Equipment/Weapon",
+    "ko": "패션・장비/무기"
+  },
+  "ファッション・装備/水着": {
+    "en": "Fashion・Equipment/Swimsuit",
+    "ko": "패션・장비/수영복"
+  },
+  "ファッション・装備/薄着": {
+    "en": "Fashion・Equipment/Light Clothing",
+    "ko": "패션・장비/가벼운 옷"
+  },
+  "ファッション・装備/迷彩": {
+    "en": "Fashion・Equipment/Camouflage",
+    "ko": "패션・장비/위장"
+  },
+  "ファッション・装備/髪型": {
+    "en": "Fashion・Equipment/Hair Style",
+    "ko": "패션・장비/헤어스타일"
+  },
+  "ファッション・装備/髪型/ちょんまげ": {
+    "en": "Fashion・Equipment/Hair Style/Chonmage",
+    "ko": "패션・장비/헤어스타일/상투"
+  },
+  "ファッション・装備/髪型/モヒカン": {
+    "en": "Fashion・Equipment/Hair Style/Mohawk",
+    "ko": "패션・장비/헤어스타일/모히칸"
+  },
+  "フィジカル": {
+    "en": "Physical",
+    "ko": "피지컬"
+  },
+  "フィジカル/体育会系": {
+    "en": "Physical/Athletic",
+    "ko": "피지컬/체육계"
+  },
+  "レア": {
+    "en": "Rare",
+    "ko": "레어"
+  },
+  "ワールド": {
+    "en": "World",
+    "ko": "월드"
+  },
+  "ワールド/ペデスタル": {
+    "en": "World/Pedestal",
+    "ko": "월드/페데스탈"
+  },
+  "乗り物": {
+    "en": "Vehicle",
+    "ko": "탈것"
+  },
+  "乗り物/航空": {
+    "en": "Vehicle/Aviation",
+    "ko": "탈것/항공"
+  },
+  "乗り物/陸上": {
+    "en": "Vehicle/Land",
+    "ko": "탈것/육상"
+  },
+  "体型": {
+    "en": "Body Type",
+    "ko": "체형"
+  },
+  "体型/豊満": {
+    "en": "Body Type/Plump",
+    "ko": "체형/풍만"
+  },
+  "体型/高身長": {
+    "en": "Body Type/Tall",
+    "ko": "체형/장신"
+  },
+  "作風・スタイル": {
+    "en": "Style",
+    "ko": "스타일"
+  },
+  "作風・スタイル/SF": {
+    "en": "Style/Sci-Fi",
+    "ko": "스타일/SF"
+  },
+  "作風・スタイル/グロテスク": {
+    "en": "Style/Grotesque",
+    "ko": "스타일/그로테스크"
+  },
+  "作風・スタイル/サイバーチック": {
+    "en": "Style/Cyber",
+    "ko": "스타일/사이버풍"
+  },
+  "作風・スタイル/デフォルメ": {
+    "en": "Style/Deformed",
+    "ko": "스타일/디포르메"
+  },
+  "作風・スタイル/プリティ": {
+    "en": "Style/Pretty",
+    "ko": "스타일/프리티"
+  },
+  "作風・スタイル/ホラー": {
+    "en": "Style/Horror",
+    "ko": "스타일/호러"
+  },
+  "作風・スタイル/ローポリ": {
+    "en": "Style/Low-poly",
+    "ko": "스타일/로우폴리"
+  },
+  "作風・スタイル/和風": {
+    "en": "Style/Japanese",
+    "ko": "스타일/일본풍"
+  },
+  "作風・スタイル/実写": {
+    "en": "Style/Real Photo",
+    "ko": "스타일/실사"
+  },
+  "動物": {
+    "en": "Animal",
+    "ko": "동물"
+  },
+  "動物/あざらし": {
+    "en": "Animal/Seal",
+    "ko": "동물/물범"
+  },
+  "動物/いぬ": {
+    "en": "Animal/Dog",
+    "ko": "동물/개"
+  },
+  "動物/いのしし": {
+    "en": "Animal/Boar",
+    "ko": "동물/멧돼지"
+  },
+  "動物/うさぎ": {
+    "en": "Animal/Rabbit",
+    "ko": "동물/토끼"
+  },
+  "動物/うし": {
+    "en": "Animal/Cow",
+    "ko": "동물/소"
+  },
+  "動物/うま": {
+    "en": "Animal/Horse",
+    "ko": "동물/말"
+  },
+  "動物/おおかみ": {
+    "en": "Animal/Wolf",
+    "ko": "동물/늑대"
+  },
+  "動物/かたつむり": {
+    "en": "Animal/Snail",
+    "ko": "동물/달팽이"
+  },
+  "動物/かめ": {
+    "en": "Animal/Turtle",
+    "ko": "동물/거북이"
+  },
+  "動物/きつね": {
+    "en": "Animal/Fox",
+    "ko": "동물/여우"
+  },
+  "動物/くま": {
+    "en": "Animal/Bear",
+    "ko": "동물/곰"
+  },
+  "動物/さる": {
+    "en": "Animal/Monkey",
+    "ko": "동물/원숭이"
+  },
+  "動物/しか": {
+    "en": "Animal/Deer",
+    "ko": "동물/사슴"
+  },
+  "動物/すずめ": {
+    "en": "Animal/Sparrow",
+    "ko": "동물/참새"
+  },
+  "動物/ぞう": {
+    "en": "Animal/Elephant",
+    "ko": "동물/코끼리"
+  },
+  "動物/たぬき": {
+    "en": "Animal/Tanuki",
+    "ko": "동물/너구리"
+  },
+  "動物/とら": {
+    "en": "Animal/Tiger",
+    "ko": "동물/호랑이"
+  },
+  "動物/ねこ": {
+    "en": "Animal/Cat",
+    "ko": "동물/고양이"
+  },
+  "動物/ねずみ": {
+    "en": "Animal/Mouse",
+    "ko": "동물/쥐"
+  },
+  "動物/ひつじ": {
+    "en": "Animal/Sheep",
+    "ko": "동물/양"
+  },
+  "動物/へび": {
+    "en": "Animal/Snake",
+    "ko": "동물/뱀"
+  },
+  "動物/もぐら": {
+    "en": "Animal/Mole",
+    "ko": "동물/두더지"
+  },
+  "動物/アライグマ": {
+    "en": "Animal/Raccoon",
+    "ko": "동물/라쿤"
+  },
+  "動物/アリクイ": {
+    "en": "Animal/Anteater",
+    "ko": "동물/개미핥기"
+  },
+  "動物/アルパカ": {
+    "en": "Animal/Alpaca",
+    "ko": "동물/알파카"
+  },
+  "動物/ウミウシ": {
+    "en": "Animal/Sea Slug",
+    "ko": "동물/바다민달팽이"
+  },
+  "動物/オコジョ": {
+    "en": "Animal/Ermine",
+    "ko": "동물/족제비"
+  },
+  "動物/カエル": {
+    "en": "Animal/Frog",
+    "ko": "동물/개구리"
+  },
+  "動物/カニ": {
+    "en": "Animal/Crab",
+    "ko": "동물/게"
+  },
+  "動物/カワウソ": {
+    "en": "Animal/Otter",
+    "ko": "동물/수달"
+  },
+  "動物/カンガルー": {
+    "en": "Animal/Kangaroo",
+    "ko": "동물/캥거루"
+  },
+  "動物/キリン": {
+    "en": "Animal/Giraffe",
+    "ko": "동물/기린"
+  },
+  "動物/クラゲ": {
+    "en": "Animal/Jellyfish",
+    "ko": "동물/해파리"
+  },
+  "動物/サメ": {
+    "en": "Animal/Shark",
+    "ko": "동물/상어"
+  },
+  "動物/シャチ": {
+    "en": "Animal/Orca",
+    "ko": "동물/범고래"
+  },
+  "動物/タコ": {
+    "en": "Animal/Octopus",
+    "ko": "동물/문어"
+  },
+  "動物/タコ乳類": {
+    "en": "Animal/Octopoid Mammal",
+    "ko": "동물/문어류"
+  },
+  "動物/トナカイ": {
+    "en": "Animal/Reindeer",
+    "ko": "동물/순록"
+  },
+  "動物/ハムスター": {
+    "en": "Animal/Hamster",
+    "ko": "동물/햄스터"
+  },
+  "動物/ハリネズミ": {
+    "en": "Animal/Hedgehog",
+    "ko": "동물/고슴도치"
+  },
+  "動物/パンダ": {
+    "en": "Animal/Panda",
+    "ko": "동물/판다"
+  },
+  "動物/フィッシュヘッド": {
+    "en": "Animal/Fish Head",
+    "ko": "동물/피시헤드"
+  },
+  "動物/ペンギン": {
+    "en": "Animal/Penguin",
+    "ko": "동물/펭귄"
+  },
+  "動物/マンモス": {
+    "en": "Animal/Mammoth",
+    "ko": "동물/매머드"
+  },
+  "動物/ヤギ": {
+    "en": "Animal/Goat",
+    "ko": "동물/염소"
+  },
+  "動物/ヤモリ": {
+    "en": "Animal/Gecko",
+    "ko": "동물/도마뱀붙이"
+  },
+  "動物/ライオン": {
+    "en": "Animal/Lion",
+    "ko": "동물/사자"
+  },
+  "動物/リス": {
+    "en": "Animal/Squirrel",
+    "ko": "동물/다람쥐"
+  },
+  "動物/レッサーパンダ": {
+    "en": "Animal/Red Panda",
+    "ko": "동물/레서판다"
+  },
+  "動物/ワニ": {
+    "en": "Animal/Crocodile",
+    "ko": "동물/악어"
+  },
+  "動物/両生類": {
+    "en": "Animal/Amphibian",
+    "ko": "동물/양서류"
+  },
+  "動物/人間・人類": {
+    "en": "Animal/Human",
+    "ko": "동물/인간"
+  },
+  "動物/恐竜": {
+    "en": "Animal/Dinosaur",
+    "ko": "동물/공룡"
+  },
+  "動物/海の生き物": {
+    "en": "Animal/Marine Life",
+    "ko": "동물/해양생물"
+  },
+  "動物/爬虫類": {
+    "en": "Animal/Reptile",
+    "ko": "동물/파충류"
+  },
+  "動物/虫": {
+    "en": "Animal/Bug",
+    "ko": "동물/벌레"
+  },
+  "動物/虫/蝶": {
+    "en": "Animal/Bug/Butterfly",
+    "ko": "동물/벌레/나비"
+  },
+  "動物/軟体": {
+    "en": "Animal/Mollusk",
+    "ko": "동물/연체동물"
+  },
+  "動物/魚": {
+    "en": "Animal/Fish",
+    "ko": "동물/물고기"
+  },
+  "動物/鳥": {
+    "en": "Animal/Bird",
+    "ko": "동물/새"
+  },
+  "危険物": {
+    "en": "Hazardous Material",
+    "ko": "위험물"
+  },
+  "危険物/爆発物": {
+    "en": "Hazardous Material/Explosive",
+    "ko": "위험물/폭발물"
+  },
+  "器官": {
+    "en": "Body Part",
+    "ko": "기관"
+  },
+  "器官/しっぽ": {
+    "en": "Body Part/Tail",
+    "ko": "기관/꼬리"
+  },
+  "器官/歯": {
+    "en": "Body Part/Teeth",
+    "ko": "기관/이빨"
+  },
+  "器官/翼": {
+    "en": "Body Part/Wing",
+    "ko": "기관/날개"
+  },
+  "器官/耳": {
+    "en": "Body Part/Ear",
+    "ko": "기관/귀"
+  },
+  "器官/骨": {
+    "en": "Body Part/Bone",
+    "ko": "기관/뼈"
+  },
+  "器官/鼻": {
+    "en": "Body Part/Nose",
+    "ko": "기관/코"
+  },
+  "国": {
+    "en": "Country",
+    "ko": "나라"
+  },
+  "国/エジプト": {
+    "en": "Country/Egypt",
+    "ko": "나라/이집트"
+  },
+  "国/タイ王国": {
+    "en": "Country/Thailand",
+    "ko": "나라/태국"
+  },
+  "国/日本": {
+    "en": "Country/Japan",
+    "ko": "나라/일본"
+  },
+  "季節・行事": {
+    "en": "Season・Event",
+    "ko": "계절・행사"
+  },
+  "季節・行事/VRChat": {
+    "en": "Season・Event/VRChat",
+    "ko": "계절・행사/VRChat"
+  },
+  "季節・行事/お正月": {
+    "en": "Season・Event/New Year",
+    "ko": "계절・행사/설날"
+  },
+  "季節・行事/お盆": {
+    "en": "Season・Event/Obon",
+    "ko": "계절・행사/오봉"
+  },
+  "季節・行事/お盆/精霊馬": {
+    "en": "Season・Event/Obon/Spirit Horse",
+    "ko": "계절・행사/오봉/정령마"
+  },
+  "季節・行事/クリスマス": {
+    "en": "Season・Event/Christmas",
+    "ko": "계절・행사/크리스마스"
+  },
+  "季節・行事/ハロウィン": {
+    "en": "Season・Event/Halloween",
+    "ko": "계절・행사/할로윈"
+  },
+  "季節・行事/七夕": {
+    "en": "Season・Event/Tanabata",
+    "ko": "계절・행사/칠석"
+  },
+  "季節・行事/冬": {
+    "en": "Season・Event/Winter",
+    "ko": "계절・행사/겨울"
+  },
+  "季節・行事/夏": {
+    "en": "Season・Event/Summer",
+    "ko": "계절・행사/여름"
+  },
+  "季節・行事/恋愛": {
+    "en": "Season・Event/Romance",
+    "ko": "계절・행사/연애"
+  },
+  "季節・行事/春": {
+    "en": "Season・Event/Spring",
+    "ko": "계절・행사/봄"
+  },
+  "季節・行事/秋": {
+    "en": "Season・Event/Autumn",
+    "ko": "계절・행사/가을"
+  },
+  "季節・行事/端午の節句": {
+    "en": "Season・Event/Tango no Sekku",
+    "ko": "계절・행사/단오"
+  },
+  "学校": {
+    "en": "School",
+    "ko": "학교"
+  },
+  "家電・家具": {
+    "en": "Appliances・Furniture",
+    "ko": "가전・가구"
+  },
+  "家電・家具/お布団": {
+    "en": "Appliances・Furniture/Futon",
+    "ko": "가전・가구/이불"
+  },
+  "家電・家具/枕": {
+    "en": "Appliances・Furniture/Pillow",
+    "ko": "가전・가구/베개"
+  },
+  "年齢層": {
+    "en": "Age Group",
+    "ko": "연령층"
+  },
+  "年齢層/お年寄り": {
+    "en": "Age Group/Elderly",
+    "ko": "연령층/노인"
+  },
+  "年齢層/子ども": {
+    "en": "Age Group/Child",
+    "ko": "연령층/어린이"
+  },
+  "建物": {
+    "en": "Building",
+    "ko": "건물"
+  },
+  "形状・触り心地": {
+    "en": "Shape・Texture",
+    "ko": "형태・촉감"
+  },
+  "形状・触り心地/うろこ": {
+    "en": "Shape・Texture/Scales",
+    "ko": "형태・촉감/비늘"
+  },
+  "形状・触り心地/さらさら": {
+    "en": "Shape・Texture/Fine",
+    "ko": "형태・촉감/고운"
+  },
+  "形状・触り心地/ぬるぬる": {
+    "en": "Shape・Texture/Slippery",
+    "ko": "형태・촉감/미끈미끈"
+  },
+  "形状・触り心地/ふわふわ": {
+    "en": "Shape・Texture/Fluffy",
+    "ko": "형태・촉감/폭신폭신"
+  },
+  "形状・触り心地/ぺらぺら": {
+    "en": "Shape・Texture/Paper-thin",
+    "ko": "형태・촉감/팔랑팔랑"
+  },
+  "形状・触り心地/トゲトゲ": {
+    "en": "Shape・Texture/Spiky",
+    "ko": "형태・촉감/가시투성이"
+  },
+  "形状・触り心地/ムキムキ": {
+    "en": "Shape・Texture/Muscular",
+    "ko": "형태・촉감/근육질"
+  },
+  "形状・触り心地/モサモサ": {
+    "en": "Shape・Texture/Shaggy",
+    "ko": "형태・촉감/복슬복슬"
+  },
+  "形状・触り心地/丸い": {
+    "en": "Shape・Texture/Round",
+    "ko": "형태・촉감/둥근"
+  },
+  "形状・触り心地/冷たい": {
+    "en": "Shape・Texture/Cold",
+    "ko": "형태・촉감/차가운"
+  },
+  "形状・触り心地/四角い": {
+    "en": "Shape・Texture/Square",
+    "ko": "형태・촉감/네모"
+  },
+  "形状・触り心地/小さい": {
+    "en": "Shape・Texture/Small",
+    "ko": "형태・촉감/작은"
+  },
+  "形状・触り心地/柔らかい": {
+    "en": "Shape・Texture/Soft",
+    "ko": "형태・촉감/부드러운"
+  },
+  "形状・触り心地/硬い": {
+    "en": "Shape・Texture/Hard",
+    "ko": "형태・촉감/단단한"
+  },
+  "形状・触り心地/粘着質": {
+    "en": "Shape・Texture/Sticky",
+    "ko": "형태・촉감/끈적끈적"
+  },
+  "形状・触り心地/薄い": {
+    "en": "Shape・Texture/Thin",
+    "ko": "형태・촉감/얇은"
+  },
+  "性格・趣向": {
+    "en": "Personality・Preference",
+    "ko": "성격・취향"
+  },
+  "性格・趣向/くいしんぼう": {
+    "en": "Personality・Preference/Glutton",
+    "ko": "성격・취향/먹보"
+  },
+  "性格・趣向/人懐っこい": {
+    "en": "Personality・Preference/Friendly",
+    "ko": "성격・취향/사람을 잘 따름"
+  },
+  "性格・趣向/好奇心旺盛": {
+    "en": "Personality・Preference/Curious",
+    "ko": "성격・취향/호기심 왕성"
+  },
+  "惑星・衛星": {
+    "en": "Planet・Moon",
+    "ko": "행성・위성"
+  },
+  "技能・特性": {
+    "en": "Skill・Trait",
+    "ko": "기능・특성"
+  },
+  "技能・特性/せんすい": {
+    "en": "Skill・Trait/Diving",
+    "ko": "기능・특성/잠수"
+  },
+  "技能・特性/ひこう": {
+    "en": "Skill・Trait/Flying",
+    "ko": "기능・특성/비행"
+  },
+  "技能・特性/まほう": {
+    "en": "Skill・Trait/Magic",
+    "ko": "기능・특성/마법"
+  },
+  "技能・特性/合体・変身": {
+    "en": "Skill・Trait/Transformation",
+    "ko": "기능・특성/합체・변신"
+  },
+  "技能・特性/四足歩行": {
+    "en": "Skill・Trait/Quadruped",
+    "ko": "기능・특성/네발걸음"
+  },
+  "技能・特性/演奏": {
+    "en": "Skill・Trait/Musical Performance",
+    "ko": "기능・특성/연주"
+  },
+  "技能・特性/無重力耐性": {
+    "en": "Skill・Trait/Zero-G Resistance",
+    "ko": "기능・특성/무중력 내성"
+  },
+  "技能・特性/酸素欠乏耐性": {
+    "en": "Skill・Trait/Hypoxia Resistance",
+    "ko": "기능・특성/산소결핍 내성"
+  },
+  "技能・特性/頭脳明晰": {
+    "en": "Skill・Trait/Intelligent",
+    "ko": "기능・특성/명석한 두뇌"
+  },
+  "最強戦士": {
+    "en": "Strongest Warrior",
+    "ko": "최강 전사"
+  },
+  "架空の存在": {
+    "en": "Fictional Being",
+    "ko": "가상의 존재"
+  },
+  "架空の存在/りゅう・ドラゴン": {
+    "en": "Fictional Being/Dragon",
+    "ko": "가상의 존재/용・드래곤"
+  },
+  "架空の存在/モンスター": {
+    "en": "Fictional Being/Monster",
+    "ko": "가상의 존재/몬스터"
+  },
+  "架空の存在/人魚": {
+    "en": "Fictional Being/Mermaid",
+    "ko": "가상의 존재/인어"
+  },
+  "架空の存在/天使・神": {
+    "en": "Fictional Being/God",
+    "ko": "가상의 존재/천사・신"
+  },
+  "架空の存在/妖怪・おばけ": {
+    "en": "Fictional Being/Yokai・Ghost",
+    "ko": "가상의 존재/요괴・유령"
+  },
+  "架空の存在/幻獣・精霊": {
+    "en": "Fictional Being/Mythical Beast・Spirit",
+    "ko": "가상의 존재/환수・정령"
+  },
+  "架空の存在/悪魔・淫魔": {
+    "en": "Fictional Being/Devil・Succubus",
+    "ko": "가상의 존재/악마"
+  },
+  "機械": {
+    "en": "Machine",
+    "ko": "기계"
+  },
+  "次元": {
+    "en": "Dimension",
+    "ko": "차원"
+  },
+  "次元/3D": {
+    "en": "Dimension/3D",
+    "ko": "차원/3D"
+  },
+  "正体不明のUMAkyo": {
+    "en": "Unknown UMAkyo",
+    "ko": "정체불명의 UMAkyo"
+  },
+  "歴史": {
+    "en": "History",
+    "ko": "역사"
+  },
+  "液体": {
+    "en": "Liquid",
+    "ko": "액체"
+  },
+  "液体/水": {
+    "en": "Liquid/Water",
+    "ko": "액체/물"
+  },
+  "液体/点滴": {
+    "en": "Liquid/IV Drip",
+    "ko": "액체/점적"
+  },
+  "状態": {
+    "en": "Condition",
+    "ko": "상태"
+  },
+  "状態/囚われの身": {
+    "en": "Condition/Captive",
+    "ko": "상태/갇힌 몸"
+  },
+  "状態/復活": {
+    "en": "Condition/Revival",
+    "ko": "상태/부활"
+  },
+  "状態/死": {
+    "en": "Condition/Death",
+    "ko": "상태/죽음"
+  },
+  "状態/睡眠": {
+    "en": "Condition/Sleep",
+    "ko": "상태/수면"
+  },
+  "状態/経年劣化": {
+    "en": "Condition/Aging",
+    "ko": "상태/경년열화"
+  },
+  "環境・天候": {
+    "en": "Environment・Weather",
+    "ko": "환경・날씨"
+  },
+  "環境・天候/外宇宙": {
+    "en": "Environment・Weather/Outer Space",
+    "ko": "환경・날씨/우주"
+  },
+  "環境・天候/山": {
+    "en": "Environment・Weather/Mountain",
+    "ko": "환경・날씨/산"
+  },
+  "環境・天候/森": {
+    "en": "Environment・Weather/Forest",
+    "ko": "환경・날씨/숲"
+  },
+  "環境・天候/水域": {
+    "en": "Environment・Weather/Waters",
+    "ko": "환경・날씨/수역"
+  },
+  "環境・天候/砂漠": {
+    "en": "Environment・Weather/Desert",
+    "ko": "환경・날씨/사막"
+  },
+  "環境・天候/陸地": {
+    "en": "Environment・Weather/Land",
+    "ko": "환경・날씨/육지"
+  },
+  "環境・天候/雨": {
+    "en": "Environment・Weather/Rain",
+    "ko": "환경・날씨/비"
+  },
+  "環境・天候/雪・氷": {
+    "en": "Environment・Weather/Snow・Ice",
+    "ko": "환경・날씨/눈・얼음"
+  },
+  "病気・ウイルス": {
+    "en": "Illness",
+    "ko": "질병・바이러스"
+  },
+  "素材・原材料": {
+    "en": "Material・Raw Material",
+    "ko": "소재・원재료"
+  },
+  "素材・原材料/ガラス": {
+    "en": "Material・Raw Material/Glass",
+    "ko": "소재・원재료/유리"
+  },
+  "素材・原材料/動物": {
+    "en": "Material・Raw Material/Animal",
+    "ko": "소재・원재료/동물"
+  },
+  "素材・原材料/植物": {
+    "en": "Material・Raw Material/Plant",
+    "ko": "소재・원재료/식물"
+  },
+  "素材・原材料/植物/木": {
+    "en": "Material・Raw Material/Plant/Wood",
+    "ko": "소재・원재료/식물/나무"
+  },
+  "素材・原材料/氷": {
+    "en": "Material・Raw Material/Ice",
+    "ko": "소재・원재료/얼음"
+  },
+  "素材・原材料/牛乳": {
+    "en": "Material・Raw Material/Milk",
+    "ko": "소재・원재료/우유"
+  },
+  "素材・原材料/石": {
+    "en": "Material・Raw Material/Stone",
+    "ko": "소재・원재료/돌"
+  },
+  "素材・原材料/金属": {
+    "en": "Material・Raw Material/Metal",
+    "ko": "소재・원재료/금속"
+  },
+  "自然": {
+    "en": "Nature",
+    "ko": "자연"
+  },
+  "自然/岩石": {
+    "en": "Nature/Rock",
+    "ko": "자연/암석"
+  },
+  "自然/植物": {
+    "en": "Nature/Plant",
+    "ko": "자연/식물"
+  },
+  "自然/植物/木の実": {
+    "en": "Nature/Plant/Nuts",
+    "ko": "자연/식물/열매"
+  },
+  "自然/植物/苔": {
+    "en": "Nature/Plant/Moss",
+    "ko": "자연/식물/이끼"
+  },
+  "自然/菌類": {
+    "en": "Nature/Fungus",
+    "ko": "자연/균류"
+  },
+  "自然/貝": {
+    "en": "Nature/Shell",
+    "ko": "자연/조개"
+  },
+  "色": {
+    "en": "Color",
+    "ko": "색상"
+  },
+  "色/虹": {
+    "en": "Color/Rainbow",
+    "ko": "색상/무지개"
+  },
+  "色/黄": {
+    "en": "Color/Yellow",
+    "ko": "색상/노랑"
+  },
+  "色/黒": {
+    "en": "Color/Black",
+    "ko": "색상/검정"
+  },
+  "芸術": {
+    "en": "Art",
+    "ko": "예술"
+  },
+  "芸術/工芸品": {
+    "en": "Art/Craft",
+    "ko": "예술/공예품"
+  },
+  "芸術/建築": {
+    "en": "Art/Architecture",
+    "ko": "예술/건축"
+  },
+  "芸術/彫刻・像": {
+    "en": "Art/Sculpture・Statue",
+    "ko": "예술/조각・상"
+  },
+  "芸術/絵画・イラスト": {
+    "en": "Art/Painting・Illustration",
+    "ko": "예술/회화・일러스트"
+  },
+  "芸術/音楽・楽器": {
+    "en": "Art/Music・Instrument",
+    "ko": "예술/음악・악기"
+  },
+  "設備": {
+    "en": "Equipment",
+    "ko": "설비"
+  },
+  "設備/お風呂": {
+    "en": "Equipment/Bath",
+    "ko": "설비/욕실"
+  },
+  "調味料": {
+    "en": "Seasoning",
+    "ko": "조미료"
+  },
+  "身分・役割": {
+    "en": "Role・Status",
+    "ko": "신분・역할"
+  },
+  "身分・役割/サービス業従事者": {
+    "en": "Role・Status/Service Worker",
+    "ko": "신분・역할/서비스업 종사자"
+  },
+  "身分・役割/トラベラー": {
+    "en": "Role・Status/Traveler",
+    "ko": "신분・역할/트래블러"
+  },
+  "身分・役割/ヒーロー": {
+    "en": "Role・Status/Hero",
+    "ko": "신분・역할/히어로"
+  },
+  "身分・役割/公務員": {
+    "en": "Role・Status/Civil Servant",
+    "ko": "신분・역할/공무원"
+  },
+  "身分・役割/兵士": {
+    "en": "Role・Status/Soldier",
+    "ko": "신분・역할/병사"
+  },
+  "身分・役割/医療従事者": {
+    "en": "Role・Status/Healthcare Worker",
+    "ko": "신분・역할/의료종사자"
+  },
+  "身分・役割/受刑者": {
+    "en": "Role・Status/Convict",
+    "ko": "신분・역할/수형자"
+  },
+  "身分・役割/王族": {
+    "en": "Role・Status/Royalty",
+    "ko": "신분・역할/왕족"
+  },
+  "身分・役割/科学者": {
+    "en": "Role・Status/Scientist",
+    "ko": "신분・역할/과학자"
+  },
+  "身分・役割/職人": {
+    "en": "Role・Status/Artisan",
+    "ko": "신분・역할/장인"
+  },
+  "身分・役割/親": {
+    "en": "Role・Status/Parent",
+    "ko": "신분・역할/부모"
+  },
+  "身分・役割/農家": {
+    "en": "Role・Status/Farmer",
+    "ko": "신분・역할/농부"
+  },
+  "身分・役割/配達員": {
+    "en": "Role・Status/Delivery Worker",
+    "ko": "신분・역할/배달원"
+  },
+  "身分・役割/釣り師": {
+    "en": "Role・Status/Angler",
+    "ko": "신분・역할/낚시꾼"
+  },
+  "道具・文房具・生活用品": {
+    "en": "Daily Necessities",
+    "ko": "도구・문구・생활용품"
+  },
+  "道具・文房具・生活用品/ばんそうこう": {
+    "en": "Daily Necessities/Bandage",
+    "ko": "도구・문구・생활용품/반창고"
+  },
+  "道具・文房具・生活用品/釣り具": {
+    "en": "Daily Necessities/Fishing Gear",
+    "ko": "도구・문구・생활용품/낚시 도구"
+  },
+  "関係性": {
+    "en": "Relationship",
+    "ko": "관계"
+  },
+  "関係性/血縁": {
+    "en": "Relationship/Blood Relation",
+    "ko": "관계/혈연"
+  },
+  "集団・組織": {
+    "en": "Group・Organization",
+    "ko": "집단・조직"
+  },
+  "集団・組織/魚頭族": {
+    "en": "Group・Organization/Fishhead Tribe",
+    "ko": "집단・조직/어두족"
+  },
+  "頂に立つ者": {
+    "en": "Ruler",
+    "ko": "정상에 서는 자"
+  },
+  "願い事": {
+    "en": "Wish",
+    "ko": "소원"
+  },
+  "食べ物": {
+    "en": "Food",
+    "ko": "음식"
+  },
+  "食べ物/お寿司": {
+    "en": "Food/Sushi",
+    "ko": "음식/초밥"
+  },
+  "食べ物/お弁当": {
+    "en": "Food/Bento",
+    "ko": "음식/도시락"
+  },
+  "食べ物/お肉": {
+    "en": "Food/Meat",
+    "ko": "음식/고기"
+  },
+  "食べ物/スイーツ": {
+    "en": "Food/Sweets",
+    "ko": "음식/디저트"
+  },
+  "食べ物/パン": {
+    "en": "Food/Bread",
+    "ko": "음식/빵"
+  },
+  "食べ物/フルーツ": {
+    "en": "Food/Fruit",
+    "ko": "음식/과일"
+  },
+  "食べ物/料理": {
+    "en": "Food/Dish",
+    "ko": "음식/요리"
+  },
+  "食べ物/料理/揚げ物": {
+    "en": "Food/Dish/Fried",
+    "ko": "음식/요리/튀김"
+  },
+  "食べ物/野菜": {
+    "en": "Food/Vegetable",
+    "ko": "음식/채소"
+  },
+  "食べ物/野菜/きゅうり": {
+    "en": "Food/Vegetable/Cucumber",
+    "ko": "음식/채소/오이"
+  },
+  "食べ物/野菜/だいこん": {
+    "en": "Food/Vegetable/Japanese Radish",
+    "ko": "음식/채소/무"
+  },
+  "食べ物/野菜/にんじん": {
+    "en": "Food/Vegetable/Carrot",
+    "ko": "음식/채소/당근"
+  },
+  "食べ物/野菜/ねぎ": {
+    "en": "Food/Vegetable/Green Onion",
+    "ko": "음식/채소/파"
+  },
+  "食べ物/野菜/ナス": {
+    "en": "Food/Vegetable/Eggplant",
+    "ko": "음식/채소/가지"
+  },
+  "飲み物": {
+    "en": "Drink",
+    "ko": "음료"
+  }
+}

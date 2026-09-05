@@ -63,9 +63,8 @@ If rebase conflicts occur, resolve conflicts, `git rebase --continue`, and rerun
 
 Before running generation, confirm translation maps are updated when JA data changed:
 
-**Category maps** (when JA category tokens changed):
-- `scripts/category-ja-en-map.js` (JA -> EN category tokens)
-- `scripts/category-definitions-ko.js` (JA -> KO category tokens)
+**Category translations** (when JA category tokens changed):
+- `data/category-translations.json` (JA -> EN and KO category tokens, one entry per JA token in use; both generators fail listing the missing tokens, and `scripts/category-translations.test.js` rejects unused entries)
 
 **Nickname / Comment maps** (when new rows are added):
 - `scripts/sync-akyo-data-en-from-ja.js` → `overridesById` object (EN nickname + comment overrides)

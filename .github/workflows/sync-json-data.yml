@@ -36,6 +36,7 @@ on:
       - 'data/akyo-data-ja.csv'
       - 'data/akyo-data-en.csv'
       - 'data/akyo-data-ko.csv'
+      - 'data/category-translations.json'
   workflow_dispatch:
 
 concurrency:
@@ -74,6 +75,24 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Regenerate EN/KO CSV from the Japanese CSV
+        run: |
+          set -e
+          # JA CSV と data/category-translations.json を正として EN/KO CSV を作り直す。
+          # 管理画面は JA CSV しか書かないので、ここで回さないと EN/KO が置き去りになる。
+          # 対訳の無いカテゴリがあると生成スクリプトは書き込む前に失敗する。その場合は
+          # 直前の EN/KO をそのまま残して警告だけ出し、JA の反映は止めない。
+          CSV_EN="data/akyo-data-en.csv"
+          CSV_KO="data/akyo-data-ko.csv"
+          JSON_KO="data/${{ env.JSON_FILE_KO }}"
+          if node scripts/sync-akyo-data-en-from-ja.js && node scripts/generate-ko-data.js; then
+            echo "✅ EN/KO CSV regenerated from JA"
+            git diff --stat -- "$CSV_EN" "$CSV_KO"
+          else
+            echo "::warning::EN/KO regeneration failed (missing category translations?); keeping the previous EN/KO CSVs"
+            git checkout -- "$CSV_EN" "$CSV_KO" "$JSON_KO"
+          fi
 
       - name: Convert CSV to JSON
         run: |
@@ -116,13 +135,13 @@ jobs:
           JSON_JA="data/${{ env.JSON_FILE_JA }}"
           JSON_EN="data/${{ env.JSON_FILE_EN }}"
           JSON_KO="data/${{ env.JSON_FILE_KO }}"
-          if git diff --quiet -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/ src/lib/category-canonical.json; then
+          if git diff --quiet -- "$JSON_JA" "$JSON_EN" "$JSON_KO" data/akyo-data-en.csv data/akyo-data-ko.csv src/fonts/ src/lib/category-canonical.json; then
             echo "changed=false" >> $GITHUB_OUTPUT
             echo "No JSON changes detected"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
             echo "JSON changes detected:"
-            git diff --stat -- "$JSON_JA" "$JSON_EN" "$JSON_KO"
+            git diff --stat -- "$JSON_JA" "$JSON_EN" "$JSON_KO" data/akyo-data-en.csv data/akyo-data-ko.csv
           fi
 
       - name: Commit JSON changes
@@ -135,7 +154,7 @@ jobs:
           JSON_KO="data/${{ env.JSON_FILE_KO }}"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add -- "$JSON_JA" "$JSON_EN" "$JSON_KO" src/fonts/ src/lib/category-canonical.json
+          git add -- "$JSON_JA" "$JSON_EN" "$JSON_KO" data/akyo-data-en.csv data/akyo-data-ko.csv src/fonts/ src/lib/category-canonical.json
 
           # Skip commit if nothing staged (idempotent for re-runs)
           if git diff --cached --quiet; then

@@ -14,25 +14,15 @@ function readDataFile(relativePath) {
   return fs.readFileSync(path.join(rootDir, relativePath), 'utf8');
 }
 
-test('maps Japanese body part categories to hierarchical English categories', () => {
-  const categoryMap = require('./category-ja-en-map');
-
-  assert.equal(categoryMap['器官/耳'], 'Body Part/Ear');
-  assert.equal(categoryMap['器官/歯'], 'Body Part/Teeth');
-});
-
 test('keeps Aloha performers and the new fox translation consistent across locales', () => {
-  const categoryMapEn = require('./category-ja-en-map');
-  const { CATEGORY_MAP: categoryMapKo } = require('./category-definitions-ko');
+  // Category tokens are covered generically by category-translations.test.js.
   const expected = {
-    ja: ['技能・特性/演奏', 'アロハきつねAkyo', 'ウクレレを携えたAkyoの波がきてる！！'],
-    en: ['Skill・Trait/Musical Performance', 'Aloha Fox Akyo', 'Here comes a wave of ukulele-carrying Akyo!!'],
-    ko: ['기능・특성/연주', '알로하 여우 Akyo', '우쿨렐레를 든 Akyo의 물결이 밀려오고 있어!!'],
+    ja: ['アロハきつねAkyo', 'ウクレレを携えたAkyoの波がきてる！！'],
+    en: ['Aloha Fox Akyo', 'Here comes a wave of ukulele-carrying Akyo!!'],
+    ko: ['알로하 여우 Akyo', '우쿨렐레를 든 Akyo의 물결이 밀려오고 있어!!'],
   };
-  assert.equal(categoryMapEn[expected.ja[0]], expected.en[0]);
-  assert.equal(categoryMapKo[expected.ja[0]], expected.ko[0]);
 
-  for (const [locale, [category, nickname, comment]] of Object.entries(expected)) {
+  for (const [locale, [nickname, comment]] of Object.entries(expected)) {
     const csv = parse(readDataFile(`data/akyo-data-${locale}.csv`), {
       columns: true,
       skip_empty_lines: true,
@@ -46,10 +36,6 @@ test('keeps Aloha performers and the new fox translation consistent across local
       assert.equal(row.DisplaySerial, serial);
       assert.equal(item.displaySerial, serial);
       assert.equal(row.Category, item.category);
-      const categories = row.Category.split(',');
-      for (const token of [category.split('/')[0], category]) {
-        assert.equal(categories.filter((value) => value === token).length, 1, `${locale} ${id}: ${token}`);
-      }
       if (id === '0945') {
         assert.equal(row.Nickname, nickname);
         assert.equal(item.nickname, nickname);
@@ -160,8 +146,12 @@ test('preserves existing English BoothURL when Japanese CSV lacks BoothURL colum
     path.join(tempScriptsDir, 'sync-akyo-data-en-from-ja.js'),
   );
   fs.copyFileSync(
-    path.join(rootDir, 'scripts', 'category-ja-en-map.js'),
-    path.join(tempScriptsDir, 'category-ja-en-map.js'),
+    path.join(rootDir, 'scripts', 'category-translations.js'),
+    path.join(tempScriptsDir, 'category-translations.js'),
+  );
+  fs.copyFileSync(
+    path.join(rootDir, 'data', 'category-translations.json'),
+    path.join(tempDataDir, 'category-translations.json'),
   );
 
   fs.writeFileSync(

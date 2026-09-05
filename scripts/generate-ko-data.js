@@ -13,7 +13,7 @@ const path = require("path");
 const { parse } = require("csv-parse/sync");
 const { stringify } = require("csv-stringify/sync");
 const { NICKNAME_MAP } = require("./nickname-map-ko");
-const { CATEGORY_MAP } = require("./category-definitions-ko");
+const { createCategoryTranslator } = require("./category-translations");
 
 const VERBOSE = process.argv.includes("--verbose");
 let untranslatedCommentCount = 0;
@@ -45,30 +45,6 @@ function loadExistingKoCommentMap(csvPath) {
     );
     return new Map();
   }
-}
-
-// ============================================================
-// Category translation map: Japanese → Korean
-// ============================================================
-
-/**
- * Translate a single category string (comma-separated list)
- */
-function translateCategory(jaCategory) {
-  if (!jaCategory) return "";
-
-  return jaCategory
-    .split(/\s*,\s*/)
-    .map((cat) => {
-      const trimmed = cat.trim();
-      if (CATEGORY_MAP[trimmed]) {
-        return CATEGORY_MAP[trimmed];
-      }
-      // If no mapping found, keep original
-      console.warn(`[WARN] No Korean translation for category: "${trimmed}"`);
-      return trimmed;
-    })
-    .join(",");
 }
 
 /**
@@ -396,6 +372,7 @@ function main() {
 
   // === Translate rows ===
   console.log("🔄 Translating to Korean...");
+  const categoryTranslator = createCategoryTranslator("ko");
   const koRows = dataRows.map((row) => {
     const id = row[headerMap["ID"]] || "";
     const nickname = row[headerMap["Nickname"]] || "";
@@ -418,7 +395,7 @@ function main() {
     outRow[headerMap["ID"]] = id;
     outRow[headerMap["Nickname"]] = translateNickname(nickname);
     outRow[headerMap["AvatarName"]] = avatarName; // Keep as-is
-    outRow[headerMap["Category"]] = translateCategory(category);
+    outRow[headerMap["Category"]] = categoryTranslator.translate(category);
     outRow[headerMap["Comment"]] = translateComment(
       comment,
       existingKoComment,
@@ -439,6 +416,9 @@ function main() {
 
     return outRow;
   });
+
+  // Fail before writing so an untranslated category never lands in the Korean data as Japanese.
+  categoryTranslator.assertComplete();
 
   // === Write Korean CSV ===
   console.log("📝 Writing Korean CSV...");

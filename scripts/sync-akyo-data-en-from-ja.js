@@ -2,7 +2,8 @@
 
 /**
  * Sync `data/akyo-data-en.csv` to match `data/akyo-data-ja.csv` (ID set + Category),
- * translating categories token-by-token via `scripts/category-ja-en-map.js`.
+ * translating categories token-by-token via `data/category-translations.json`
+ * (see `scripts/category-translations.js`).
  *
  * - Japanese CSV is treated as source of truth for:
  *   - row existence / order
@@ -19,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const { parse } = require('csv-parse/sync');
 const { stringify } = require('csv-stringify/sync');
-const categoryMap = require('./category-ja-en-map');
+const { createCategoryTranslator } = require('./category-translations');
 
 const rootDir = path.resolve(__dirname, '..');
 const jaPath = path.join(rootDir, 'data', 'akyo-data-ja.csv');
@@ -548,14 +549,6 @@ function indexOfHeader(header, name) {
   return idx;
 }
 
-function splitTokens(value) {
-  return String(value || '')
-    .replace(/、/g, ',')
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean);
-}
-
 function normalizeLegacyQuotedCell(value) {
   const text = String(value || '').trim();
   if (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
@@ -614,7 +607,7 @@ function main() {
   const enById = new Map();
   for (const row of en.rows) enById.set(String(row[idx.ID]).trim(), row);
 
-  const missingCategoryTokens = new Set();
+  const categoryTranslator = createCategoryTranslator('en');
   const missingRowTranslations = [];
 
   const outRows = [outHeader];
@@ -624,13 +617,7 @@ function main() {
     const existingEnRow = enById.get(id);
     const override = overridesById[id];
 
-    const jaTokens = splitTokens(jaRow[jaIdx.Category]);
-    const enTokens = jaTokens.map((t) => {
-      const mapped = categoryMap[t];
-      if (!mapped) missingCategoryTokens.add(t);
-      return mapped || t;
-    });
-    const category = override?.Category ?? enTokens.join(',');
+    const category = override?.Category ?? categoryTranslator.translate(jaRow[jaIdx.Category]);
 
     const jaNickname = normalizeLegacyQuotedCell(jaRow[jaIdx.Nickname]);
     const jaComment = normalizeLegacyQuotedCell(jaRow[jaIdx.Comment]);
@@ -685,13 +672,8 @@ function main() {
     outRows.push(outRow);
   }
 
-  if (missingCategoryTokens.size > 0) {
-    const tokens = Array.from(missingCategoryTokens).sort();
-    throw new Error(
-      `Missing category translations (${tokens.length}). Add them to scripts/category-ja-en-map.js:\\n` +
-      tokens.map((t) => `- ${t}`).join('\\n'),
-    );
-  }
+  // Report every untranslated token at once, before anything is written.
+  categoryTranslator.assertComplete();
 
   if (missingRowTranslations.length > 0) {
     console.warn(
