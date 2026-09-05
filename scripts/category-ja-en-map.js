@@ -235,6 +235,7 @@ module.exports = {
   'ワールド': 'World',
   'ワールド/ペデスタル': 'World/Pedestal',
   '技能・特性': 'Skill・Trait',
+  '技能・特性/演奏': 'Skill・Trait/Musical Performance',
   '技能・特性/四足歩行': 'Skill・Trait/Quadruped',
   '技能・特性/頭脳明晰': 'Skill・Trait/Intelligent',
   '技能・特性/ひこう': 'Skill・Trait/Flying',

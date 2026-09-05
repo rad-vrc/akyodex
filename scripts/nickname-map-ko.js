@@ -1034,6 +1034,7 @@ const NICKNAME_MAP = {
   'デカケツ巨乳Akyo': '큰엉덩이 거유 Akyo',
   'やぁAkyo': '안녕 Akyo',
   'ルックやぁAkyo': '룩 안녕 Akyo',
+  'アロハきつねAkyo': '알로하 여우 Akyo',
 };
 
 module.exports = { NICKNAME_MAP };
