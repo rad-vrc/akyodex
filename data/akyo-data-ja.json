@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-05T00:01:28.002Z",
-  "count": 944,
+  "updatedAt": "2026-09-05T00:54:21.951Z",
+  "count": 945,
   "data": [
     {
       "id": "0001",
@@ -10780,6 +10780,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053"
+    },
+    {
+      "id": "0945",
+      "entryType": "avatar",
+      "displaySerial": "0837",
+      "nickname": "アロハきつねAkyo",
+      "avatarName": "akyo_きつねアロハ",
+      "category": "ファッション・装備,ファッション・装備/ぼうし,ファッション・装備/薄着,動物,動物/きつね,器官,器官/耳,器官/しっぽ,季節・行事,季節・行事/夏,技能・特性,技能・特性/演奏,芸術,芸術/音楽・楽器",
+      "comment": "ウクレレを携えたAkyoの波がきてる！！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e"
     }
   ]
 }
