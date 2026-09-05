@@ -2,13 +2,17 @@
 
 import { IconPlusCircle, IconRedo, IconTags } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
-import type { AdminRole } from '@/types/akyo';
+import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CategoryAssignPanel } from '../category-assign-panel';
 
 interface CategoriesTabProps {
   userRole: AdminRole;
   /** Called after a commit so the add/edit tabs can pick up new or renamed categories. */
   onCategoriesChanged?: () => void;
+  /** Catalog for bulk assignment (cards). Without it the tab only manages the categories. */
+  akyoData?: AkyoData[];
+  onPendingStateChange?: (pending: boolean, busy: boolean) => void;
 }
 
 interface CategoryEntry {
@@ -72,8 +76,22 @@ function isSelfOrDescendant(token: string, path: string): boolean {
  * GitHub の CSV と対訳 JSON を正とする）。各操作は 1 コミットで、EN/KO の CSV と JSON は
  * その後 Sync JSON Data が作り直す。Akyo への付け外しは編集タブで行う。
  */
-export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabProps) {
+export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendingStateChange }: CategoriesTabProps) {
   const isOwner = userRole === 'owner';
+  // Bulk assignment: the AND set of categories, and whether the panel holds unsaved changes.
+  // While changes are held, renaming/merging/deleting is locked: the held rows still carry
+  // the old names and the batch API would reject them as conflicts.
+  const [selected, setSelected] = useState<string[]>([]);
+  const [assignState, setAssignState] = useState({ pending: false, busy: false });
+  const handleAssignState = useCallback(
+    (pending: boolean, assignBusy: boolean) => {
+      setAssignState({ pending, busy: assignBusy });
+      onPendingStateChange?.(pending, assignBusy);
+    },
+    [onPendingStateChange],
+  );
+  const locked = assignState.pending || assignState.busy;
+  const LOCKED_TITLE = '保留中のカテゴリ変更を反映または取り消してから操作してください';
   const [entries, setEntries] = useState<CategoryEntry[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
   // Commit the list was read from. Sent with every change so the server refuses an edit
@@ -383,7 +401,8 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
       </div>
 
       <p className="mb-4 text-sm text-gray-600">
-        階層ごとに名前と対訳を変えられます。親を改名すると配下も一緒に変わり、親を削除すると配下も外れます。Akyo への付け外しは編集タブで行います。
+        階層ごとに名前と対訳を変えられます。親を改名すると配下も一緒に変わり、親を削除すると配下も外れます。
+        {akyoData && ' 行の「選択」でカテゴリを選ぶと、Akyo にまとめて付け外しできます。'}
       </p>
 
       {message && (
@@ -403,6 +422,15 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
         <p role="alert" className="mb-4 text-sm text-red-600">
           {formError}
         </p>
+      )}
+
+      {akyoData && selected.length > 0 && (
+        <CategoryAssignPanel
+          akyoData={akyoData}
+          selected={selected}
+          onClearSelection={() => setSelected([])}
+          onPendingStateChange={handleAssignState}
+        />
       )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row">
@@ -480,6 +508,29 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-sm">
+                      {akyoData && (
+                        <button
+                          type="button"
+                          aria-pressed={selected.includes(entry.path)}
+                          aria-label={`${entry.path} を付け外しの対象に${selected.includes(entry.path) ? 'しない' : 'する'}`}
+                          disabled={busy || locked}
+                          title={locked ? LOCKED_TITLE : undefined}
+                          onClick={() =>
+                            setSelected((previous) =>
+                              previous.includes(entry.path)
+                                ? previous.filter((path) => path !== entry.path)
+                                : [...previous, entry.path],
+                            )
+                          }
+                          className={`px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                            selected.includes(entry.path)
+                              ? 'border-green-500 bg-green-100 text-green-900 font-semibold'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {selected.includes(entry.path) ? '✓ 選択中' : '選択'}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'create', parent: entry.path })}
@@ -491,7 +542,8 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'rename', path: entry.path })}
-                        disabled={busy}
+                        disabled={busy || locked}
+                        title={locked ? LOCKED_TITLE : undefined}
                         className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                       >
                         {untranslated ? '対訳を登録' : isOwner ? '改名・対訳' : '対訳'}
@@ -499,8 +551,8 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'merge', path: entry.path })}
-                        disabled={busy || !isOwner}
-                        title={!isOwner ? OWNER_ONLY_TITLE : undefined}
+                        disabled={busy || !isOwner || locked}
+                        title={!isOwner ? OWNER_ONLY_TITLE : locked ? LOCKED_TITLE : undefined}
                         className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                       >
                         統合
@@ -508,8 +560,8 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
                       <button
                         type="button"
                         onClick={() => void handleDelete(entry)}
-                        disabled={busy || !isOwner}
-                        title={!isOwner ? OWNER_ONLY_TITLE : undefined}
+                        disabled={busy || !isOwner || locked}
+                        title={!isOwner ? OWNER_ONLY_TITLE : locked ? LOCKED_TITLE : undefined}
                         className="px-3 py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
                       >
                         削除

@@ -1,7 +1,7 @@
 'use client';
 
 import { IconEdit, IconPlusCircle, IconTags, IconTools } from '@/components/icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
 import { AddTab } from './tabs/add-tab';
 import { CategoriesTab } from './tabs/categories-tab';
@@ -48,6 +48,7 @@ async function fetchCategoryPaths(): Promise<string[] | null> {
 export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingEditsChange }: AdminTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('add');
   const [editVisited, setEditVisited] = useState(false);
+  const [categoriesVisited, setCategoriesVisited] = useState(false);
   const [applying, setApplying] = useState(false);
   const [refreshedCatalog, setRefreshedCatalog] = useState<AkyoData[] | null>(null);
   const [apiCategories, setApiCategories] = useState<string[]>([]);
@@ -70,14 +71,28 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
     apiCategories,
   );
   const currentCreators = refreshedCatalog ? extractAuthors(refreshedCatalog) : creators;
-  const handlePendingState = useCallback((pending: boolean, busy: boolean) => {
+  // The edit tab and the categories tab each hold their own unsaved changes; the header
+  // guard and the tab lock see the union.
+  const pendingByTab = useRef({ edit: { pending: false, busy: false }, categories: { pending: false, busy: false } });
+  const publishPendingState = useCallback(() => {
+    const states = Object.values(pendingByTab.current);
+    const busy = states.some((state) => state.busy);
     setApplying(busy);
-    onPendingEditsChange?.(pending, busy);
+    onPendingEditsChange?.(states.some((state) => state.pending), busy);
   }, [onPendingEditsChange]);
+  const handlePendingState = useCallback((pending: boolean, busy: boolean) => {
+    pendingByTab.current.edit = { pending, busy };
+    publishPendingState();
+  }, [publishPendingState]);
+  const handleCategoriesPendingState = useCallback((pending: boolean, busy: boolean) => {
+    pendingByTab.current.categories = { pending, busy };
+    publishPendingState();
+  }, [publishPendingState]);
 
   const handleTabChange = (nextTab: TabType) => {
     if (applying) return;
     if (nextTab === 'edit') setEditVisited(true);
+    if (nextTab === 'categories') setCategoriesVisited(true);
     // Pick up categories created or renamed elsewhere (another admin, or the Categories tab).
     if (nextTab === 'add' || nextTab === 'edit') void refreshCategories();
     setActiveTab(nextTab);
@@ -167,8 +182,16 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
           />
           </div>
         )}
-        {activeTab === 'categories' && (
-          <CategoriesTab userRole={userRole} onCategoriesChanged={() => void refreshCategories()} />
+        {/* Kept mounted like the edit tab so held category changes survive a tab switch. */}
+        {categoriesVisited && (
+          <div hidden={activeTab !== 'categories'}>
+            <CategoriesTab
+              userRole={userRole}
+              akyoData={refreshedCatalog ?? akyoData}
+              onCategoriesChanged={() => void refreshCategories()}
+              onPendingStateChange={handleCategoriesPendingState}
+            />
+          </div>
         )}
         {activeTab === 'tools' && <ToolsTab />}
       </div>

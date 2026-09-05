@@ -35,6 +35,14 @@ interface AkyoCardProps {
   onShowDetail?: (akyo: AkyoData, triggerElement?: HTMLElement | null) => void;
   /** Prioritize image loading for above-the-fold cards */
   priority?: boolean;
+  /**
+   * Admin selection mode: the card is a toggle instead of opening the detail dialog.
+   * Favourite and download actions are hidden; the VRChat link stays.
+   */
+  selection?: {
+    selected: boolean;
+    onToggle: () => void;
+  };
 }
 
 export function shouldBypassImageOptimization(
@@ -87,6 +95,7 @@ function AkyoCardComponent({
   onToggleFavorite,
   onShowDetail,
   priority = false,
+  selection,
 }: AkyoCardProps) {
   const cloudflareImagesEnabled =
     process.env.NEXT_PUBLIC_ENABLE_CLOUDFLARE_IMAGES === "true";
@@ -128,6 +137,10 @@ function AkyoCardComponent({
    * Handles clicks on the card body to open detail view
    */
   const handleCardClick = (triggerElement?: HTMLElement | null) => {
+    if (selection) {
+      selection.onToggle();
+      return;
+    }
     onShowDetail?.(akyo, triggerElement);
   };
 
@@ -164,8 +177,9 @@ function AkyoCardComponent({
 
   return (
     <article
-      className="akyo-card relative flex h-full flex-col"
+      className={`akyo-card relative flex h-full flex-col${selection?.selected ? " ring-4 ring-green-500 ring-offset-2" : ""}`}
       aria-labelledby={`card-title-${akyo.id}`}
+      data-selected={selection ? String(selection.selected) : undefined}
     >
       <button
         type="button"
@@ -215,7 +229,7 @@ function AkyoCardComponent({
         />
 
         {/* お気に入りボタン */}
-        <button
+        {!selection && <button
           type="button"
           onClick={handleFavoriteClick}
           className={`favorite-btn absolute top-2 right-2 z-20${akyo.isFavorite ? " is-active" : ""}`}
@@ -230,7 +244,7 @@ function AkyoCardComponent({
           ) : (
             <IconHeartOutline size="w-5 h-5" className="text-pink-300" />
           )}
-        </button>
+        </button>}
       </div>
 
       {/* カード情報 */}
@@ -252,7 +266,7 @@ function AkyoCardComponent({
               />
             </button>
           )}
-          {entryType === "avatar" && (
+          {entryType === "avatar" && !selection && (
             <button
               type="button"
               onClick={handleDownloadClick}
@@ -317,18 +331,31 @@ function AkyoCardComponent({
         {/* 属性バッジ（最上位カテゴリごとにまとめた表示） */}
         {category && <CategoryBadges categories={sortedCategories} className="mb-2" />}
 
-        {/* くわしく見るボタン */}
-        <button
-          ref={detailButtonRef}
-          type="button"
-          onClick={(e) => handleCardClick(e.currentTarget)}
-          className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
-          aria-haspopup="dialog"
-        >
-          <span aria-hidden="true">🌟</span>
-          <span>{t("card.detail", lang)}</span>
-          <span aria-hidden="true">🌟</span>
-        </button>
+        {/* くわしく見るボタン（選択モードでは付け外しのトグル） */}
+        {selection ? (
+          <button
+            ref={detailButtonRef}
+            type="button"
+            onClick={() => selection.onToggle()}
+            className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
+            aria-pressed={selection.selected}
+          >
+            <span aria-hidden="true">{selection.selected ? "✅" : "⬜"}</span>
+            <span>{selection.selected ? "選択中（押すと外す）" : "選択する（押すと付ける）"}</span>
+          </button>
+        ) : (
+          <button
+            ref={detailButtonRef}
+            type="button"
+            onClick={(e) => handleCardClick(e.currentTarget)}
+            className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
+            aria-haspopup="dialog"
+          >
+            <span aria-hidden="true">🌟</span>
+            <span>{t("card.detail", lang)}</span>
+            <span aria-hidden="true">🌟</span>
+          </button>
+        )}
       </div>
     </article>
   );
