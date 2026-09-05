@@ -34,10 +34,16 @@ interface CategoryMutationResponse {
   changedRows?: number;
 }
 
-type Editor =
+/**
+ * `head` is the commit the list showed when the form was opened. It travels with the form,
+ * not with the list: refreshing the list while a form is open must not lend the form a newer
+ * head, or a stale translation typed before the refresh would pass the server's check.
+ */
+type EditorTarget =
   | { kind: 'create'; parent: string | null }
   | { kind: 'rename'; path: string }
   | { kind: 'merge'; path: string };
+type Editor = EditorTarget & { head: string };
 
 const OWNER_ONLY_TITLE = '改名・統合・削除はらど（上位管理者）のみ使用できます';
 
@@ -120,7 +126,8 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
     );
   }, [entries, query]);
 
-  const openEditor = (next: Editor) => {
+  const openEditor = (opened: EditorTarget) => {
+    const next: Editor = { ...opened, head };
     setFormError('');
     setMessage('');
     setCommitUrl('');
@@ -143,7 +150,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
     setFormError('');
   };
 
-  const submit = async (body: Record<string, unknown>) => {
+  const submit = async (body: Record<string, unknown>, baseHead: string) => {
     if (busyRef.current) return false;
     busyRef.current = true;
     setBusy(true);
@@ -154,7 +161,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, head }),
+        body: JSON.stringify({ ...body, head: baseHead }),
       });
       const data = (await response.json()) as CategoryMutationResponse;
       if (!response.ok || !data.success) {
@@ -180,7 +187,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
     if (editor.kind === 'create') {
       const leaf = form.ja.trim();
       const path = editor.parent ? `${editor.parent}/${leaf}` : leaf;
-      await submit({ action: 'create', path, en: form.en.trim(), ko: form.ko.trim() });
+      await submit({ action: 'create', path, en: form.en.trim(), ko: form.ko.trim() }, editor.head);
       return;
     }
     if (editor.kind === 'rename') {
@@ -190,9 +197,9 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
       // Unchanged Japanese name = translation only. That action is open to admins,
       // renaming is not, so the two must not share a request.
       if (to === editor.path) {
-        await submit({ action: 'translate', path: editor.path, en, ko });
+        await submit({ action: 'translate', path: editor.path, en, ko }, editor.head);
       } else {
-        await submit({ action: 'rename', from: editor.path, to, en, ko });
+        await submit({ action: 'rename', from: editor.path, to, en, ko }, editor.head);
       }
       return;
     }
@@ -209,7 +216,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
         'この操作は取り消せません。実行しますか？',
     );
     if (!confirmed) return;
-    await submit({ action: 'merge', from: editor.path, into });
+    await submit({ action: 'merge', from: editor.path, into }, editor.head);
   };
 
   const handleDelete = async (entry: CategoryEntry) => {
@@ -222,17 +229,20 @@ export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabPr
     );
     if (!confirmed) return;
     setEditor(null);
-    await submit({ action: 'delete', path: entry.path });
+    // No form here: the confirm text came from the list on screen, so its head is the base.
+    await submit({ action: 'delete', path: entry.path }, head);
   };
 
   const mergeTargets = (path: string) =>
     entries.filter((entry) => !isSelfOrDescendant(entry.path, path) && !isSelfOrDescendant(path, entry.path));
 
-  const renderEditor = (context: Editor) => {
+  const renderEditor = (context: EditorTarget) => {
     if (!editor) return null;
     const matches =
       editor.kind === context.kind &&
-      (editor.kind === 'create' ? editor.parent === (context as { parent: string | null }).parent : editor.path === (context as { path: string }).path);
+      (context.kind === 'create'
+        ? editor.kind === 'create' && editor.parent === context.parent
+        : editor.kind !== 'create' && editor.path === context.path);
     if (!matches) return null;
     const title =
       editor.kind === 'create'

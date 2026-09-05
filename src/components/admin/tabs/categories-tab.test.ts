@@ -20,6 +20,7 @@ async function setup(role: 'owner' | 'admin') {
   const calls: Call[] = [];
   const confirms: string[] = [];
   let confirmAnswer = true;
+  let listHead = 'h';
   let categories = [
     { path: '動物', en: 'Animal', ko: '동물', count: 3 },
     { path: '動物/うま', en: 'Animal/Horse', ko: '동물/말', count: 2 },
@@ -47,7 +48,7 @@ async function setup(role: 'owner' | 'admin') {
       const method = init?.method ?? 'GET';
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (method === 'GET') {
-        return new Response(JSON.stringify({ success: true, head: 'h', categories, colors: { '動物': '#111111' } }), {
+        return new Response(JSON.stringify({ success: true, head: listHead, categories, colors: { '動物': '#111111' } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -117,8 +118,9 @@ async function setup(role: 'owner' | 'admin') {
     setPostResponse: (factory: () => Response) => {
       postResponse = factory;
     },
-    setCategories: (next: typeof categories) => {
+    setCategories: (next: typeof categories, nextHead?: string) => {
       categories = next;
+      if (nextHead) listHead = nextHead;
     },
   };
 }
@@ -221,6 +223,46 @@ test('shows the server error inside the editor and keeps it open; admins cannot 
     assert.deepEqual(admin.calls.find((call) => call.method === 'POST')?.body, { action: 'translate', path: '動物', en: 'Beast', ko: '동물', head: 'h' });
   } finally {
     await admin.cleanup();
+  }
+});
+
+test('a form keeps the head it was opened on: refreshing the list must not lend it a newer one', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    await h.type('category-editor-rename-ja', '動物/ウマ');
+    // Someone else changes the EN name and main moves on.
+    h.setCategories(
+      [
+        { path: '動物', en: 'Animal', ko: '동물', count: 3 },
+        { path: '動物/うま', en: 'Animal/Equine', ko: '동물/말', count: 2 },
+        { path: '乗り物', en: 'Vehicle', ko: '탈것', count: 1 },
+        { path: '未翻訳', en: null, ko: null, count: 1 },
+      ],
+      'new-head',
+    );
+    await h.click(h.win.document.querySelector<HTMLButtonElement>('[aria-label="最新のカテゴリを再取得"]')!);
+    assert.match(h.rowOf('動物/うま').textContent!, /Animal\/Equine/, 'the list shows the newer name');
+    assert.ok(h.win.document.getElementById('category-editor-rename-ja'), 'the form is still open');
+    // What the server does with a stale head.
+    const staleResponse = () => new Response(JSON.stringify({ success: false, error: '一覧を表示してから他の更新が入りました', head: 'new-head' }), { status: 409 });
+    const okResponse = () => new Response(JSON.stringify({ success: true, message: 'done', commitUrl: 'https://github.com/x/commit/2', changedRows: 2 }), { status: 200 });
+    h.setPostResponse(staleResponse);
+    await h.click(h.buttons('決定')[0]);
+    const post = h.calls.find((call) => call.method === 'POST');
+    assert.equal(post?.body?.head, 'h', 'the stale form still claims the head it was opened on, so the server rejects it');
+    assert.equal(post?.body?.en, 'Horse');
+    assert.match(h.win.document.querySelector('[role="alert"]')!.textContent!, /他の更新が入りました/);
+    // Reopening after the refresh picks up the newer head and the newer translation.
+    h.setPostResponse(okResponse);
+    await h.click(h.buttons('キャンセル')[0]);
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    assert.equal((h.win.document.getElementById('category-editor-rename-en') as HTMLInputElement).value, 'Equine');
+    await h.type('category-editor-rename-ja', '動物/ウマ');
+    await h.click(h.buttons('決定')[0]);
+    assert.equal(h.calls.filter((call) => call.method === 'POST').at(-1)?.body?.head, 'new-head');
+  } finally {
+    await h.cleanup();
   }
 });
 
