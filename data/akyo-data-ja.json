@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-02T10:20:42.876Z",
-  "count": 942,
+  "updatedAt": "2026-09-05T00:54:21.951Z",
+  "count": 945,
   "data": [
     {
       "id": "0001",
@@ -10756,6 +10756,42 @@
       "author": "long-potato",
       "sourceUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/"
+    },
+    {
+      "id": "0943",
+      "entryType": "avatar",
+      "displaySerial": "0835",
+      "nickname": "やぁAkyo",
+      "avatarName": "やぁ",
+      "category": "ギミック・特殊,ギミック・特殊/チャット,チョコミント類",
+      "comment": "常にあいさつが表示されてるよ！\nあいさつ界最速のAkyoになれるかも！？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632"
+    },
+    {
+      "id": "0944",
+      "entryType": "avatar",
+      "displaySerial": "0836",
+      "nickname": "ルックやぁAkyo",
+      "avatarName": "やぁǃǃǃǃǃ",
+      "category": "チョコミント類,ギミック・特殊,ギミック・特殊/チャット",
+      "comment": "正面を切ってあいさつすることに特化したAkyo！\nやりすぎると怖がられるかも！？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053"
+    },
+    {
+      "id": "0945",
+      "entryType": "avatar",
+      "displaySerial": "0837",
+      "nickname": "アロハきつねAkyo",
+      "avatarName": "akyo_きつねアロハ",
+      "category": "ファッション・装備,ファッション・装備/ぼうし,ファッション・装備/薄着,動物,動物/きつね,器官,器官/耳,器官/しっぽ,季節・行事,季節・行事/夏,技能・特性,技能・特性/演奏,芸術,芸術/音楽・楽器",
+      "comment": "ウクレレを携えたAkyoの波がきてる！！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e"
     }
   ]
 }

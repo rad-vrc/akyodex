@@ -1032,6 +1032,8 @@ const NICKNAME_MAP = {
   '岩苔Akyo/Akyo法師': '바위이끼 Akyo/Akyo 법사',
   'kuro5963ブースAkyo/Akyoのかくれんぼ': 'kuro5963 부스 Akyo/Akyo의 숨바꼭질',
   'デカケツ巨乳Akyo': '큰엉덩이 거유 Akyo',
+  'やぁAkyo': '안녕 Akyo',
+  'ルックやぁAkyo': '룩 안녕 Akyo',
 };
 
 module.exports = { NICKNAME_MAP };

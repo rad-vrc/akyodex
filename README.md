@@ -455,7 +455,7 @@ npm run data:convert     # Convert CSV to JSON (npx tsx scripts/csv-to-json.ts)
 ### Current Deployment Model
 
 - Production runs on `akyodex-workers-production`; `push` to `main` uploads a tagged candidate without changing traffic.
-- Production traffic changes only through the manual `activate` action in `.github/workflows/deploy-cloudflare-workers-production.yml`.
+- Application changes still require the manual `activate` action in `.github/workflows/deploy-cloudflare-workers-production.yml`. Regenerated font subsets can use the guarded `activate-fonts` action automatically; see below.
 - Production rollback uses Wrangler to restore the previous Worker deployment. The Worker route remains attached and Pages is not a production rollback target.
 - `npm run build` and `.github/workflows/deploy-cloudflare-pages-preview.yml` are retained only for isolated PR previews in the `akyodex-pr-preview` Pages project.
 
@@ -533,12 +533,31 @@ The current runtime code reads `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, a
 
 - **Production candidate**: push or merge to `main` → `deploy-cloudflare-workers-production.yml` uploads a zero-traffic Worker version
 - **Production activation**: Actions → `Deploy Cloudflare Workers Production` → `activate`
+- **Font-only activation**: successful CSV sync with a changed WOFF2 → `activate-fonts`, subject to the production-diff guard below
 - **Production rollback**: the same workflow → `rollback-worker`; optionally specify a Worker `version-id`, and the production route stays on Workers
 - **PR preview**: `deploy-cloudflare-pages-preview.yml` deploys an isolated, read-only Pages preview
 - **Reference image generator**: [read-only audit, serialization constraints, and staged rollout](docs/reference-image-generation.md)
 
 PagesはPRの画面確認専用です。本番のsource of truth、activation、rollbackはすべてWorkers workflowです。
 Worker rollback cannot cross a Durable Object class lifecycle change; Durable Object migrationを跨ぐ復帰は専用のmigration手順として扱います。
+
+### Automatic Font Subset Activation
+
+`Sync JSON Data from CSV` requests `activate-fonts` only after font generation succeeds, the WOFF2 bytes change, the generated commit is pushed, and the R2 upload completes. When the font is unchanged or generation fails, sync retains the existing candidate-upload-only behavior. Font generation failure still does not block catalog synchronization.
+
+Fonts remain bundled with the Worker. This is a guarded Worker release, not a separate R2 font upload. Before building or uploading, `scripts/font-only-release.js` compares the candidate with the full commit ID reported by the **live production Worker**, not just the preceding sync commit. Automatic activation requires all of these conditions:
+
+- Production is healthy and reports a full Git commit ID and Worker version UUID; its commit is an ancestor of the candidate.
+- The actual `src/fonts/mplus2-variable.subset.woff2` has changed.
+- Every changed path is an existing file in the allowlist: that WOFF2, `src/fonts/subset-manifest.json`, `src/lib/category-canonical.json`, or `data/akyo-data-{ja,en,ko}.{csv,json}`. Added/deleted files and all other paths are rejected.
+- Font inventory verification and the production Workers build succeed. The built font must exactly match the generated WOFF2.
+- Production still has the same commit **and version** immediately before deployment.
+
+Pending application code, dependencies, scripts, configuration, or workflow changes stop the automatic action with an explicit error; they are never silently activated together with a font. Review those changes and use normal manual activation first. The existing locale-ID regression test remains unchanged; automatic font activation does not translate or repair missing EN/KO records.
+
+The action retains production runtime checks, downloads the deployed font to verify byte-for-byte equality, and checks that the live page's stylesheets reference it. A failed post-deploy check restores the recorded previous Worker version. It never attaches, removes, or changes the production route, and never switches to Pages. Open browser tabs pick up the new hashed font after a page reload; they are not forcibly reloaded.
+
+**Initial rollout:** after reviewing and merging this workflow change, activate it once through the normal manual path. Until that baseline is live, the workflow/script changes themselves correctly block `activate-fonts`. Subsequent qualifying catalog/font updates no longer need manual activation. A blocked or interrupted run can be retried with `activate-fonts` on `main`; the same guards apply.
 
 ---
 

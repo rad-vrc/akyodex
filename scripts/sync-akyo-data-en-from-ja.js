@@ -481,6 +481,14 @@ const overridesById = {
   '0938': { Nickname: 'Rock Moss Akyo / Akyo Hoshi', Comment: 'I guess the nickname for convenience is Rock Moss Akyo?\nAnything works, really!' },
   '0939': { Nickname: 'kuro5963 Booth Akyo / Akyo\'s Hide-and-Seek', Comment: 'Go check out Fket2026Summer-Parallel Bangkok!' },
   '0940': { Nickname: 'Big-Butt Busty Akyo', Comment: 'Packed with nutrients!' },
+  '0943': {
+    Nickname: 'Hi Akyo',
+    Comment: 'A greeting is always on display!\nCould this be the fastest-greeting Akyo around!?',
+  },
+  '0944': {
+    Nickname: 'Look Hi Akyo',
+    Comment: 'An Akyo that specializes in greeting you face-to-face!\nOverdo it and you might scare someone!?',
+  },
 };
 
 function parseCsv(filePath) {

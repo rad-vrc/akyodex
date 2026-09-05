@@ -45,6 +45,7 @@ export interface AkyoFilterOptions {
   author?: string; // 新フィールド
   authors?: string[]; // 複数作者（将来互換）
   randomCount?: number;
+  latestCount?: number; // 内部ID降順で上位N件だけを表示（最新N件モード）
   favoritesOnly?: boolean;
   entryTypeFilter?: AkyoEntryType; // アバター/ワールド種別フィルタ
 

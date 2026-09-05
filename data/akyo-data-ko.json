@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-02T10:20:42.967Z",
-  "count": 942,
+  "updatedAt": "2026-09-05T00:54:22.008Z",
+  "count": 944,
   "data": [
     {
       "id": "0001",
@@ -11498,6 +11498,30 @@
       "author": "long-potato",
       "sourceUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/"
+    },
+    {
+      "id": "0943",
+      "entryType": "avatar",
+      "displaySerial": "0835",
+      "nickname": "안녕 Akyo",
+      "avatarName": "やぁ",
+      "category": "기믹・특수,기믹・특수/채팅,초코민트류",
+      "comment": "항상 인사말이 표시돼!\n인사 속도만큼은 가장 빠른 Akyo가 될지도!?",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632"
+    },
+    {
+      "id": "0944",
+      "entryType": "avatar",
+      "displaySerial": "0836",
+      "nickname": "룩 안녕 Akyo",
+      "avatarName": "やぁǃǃǃǃǃ",
+      "category": "초코민트류,기믹・특수,기믹・특수/채팅",
+      "comment": "정면으로 인사하는 데 특화된 Akyo!\n너무 과하면 무서워할지도!?",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053"
     }
   ]
 }

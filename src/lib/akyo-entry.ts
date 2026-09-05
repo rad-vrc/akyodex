@@ -60,6 +60,29 @@ export function getDisplaySerialNumber(
   return Number.isNaN(parsed) || parsed <= 0 ? null : parsed;
 }
 
+/**
+ * 内部ID（登録順の4桁連番）を数値で返す。
+ *
+ * displaySerial はアバターとワールドで別系列に振られるため、種別をまたいで
+ * 「登録が新しい順」に並べる用途では使えない。内部IDだけが全種別で一意な
+ * 登録順を持つので、最新N件モードはこちらを見る。
+ */
+export function getInternalIdNumber(akyo: Pick<AkyoData, "id">): number {
+  return Number.parseInt(akyo.id, 10) || 0;
+}
+
+/**
+ * 内部IDの新しい順に count 件を取り出す。入力は変更しない。
+ */
+export function selectLatestEntries<T extends Pick<AkyoData, "id">>(
+  entries: T[],
+  count: number,
+): T[] {
+  return [...entries]
+    .sort((a, b) => getInternalIdNumber(b) - getInternalIdNumber(a))
+    .slice(0, count);
+}
+
 export function formatWorldDisplaySerial(serialNumber: number): string {
   return String(serialNumber).padStart(4, "0");
 }

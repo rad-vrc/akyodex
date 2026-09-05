@@ -134,6 +134,25 @@ function fulfillWebP(route: Route): Promise<void> {
   });
 }
 
+async function holdModalChunk(page: Page) {
+  let release!: () => void;
+  let markRequested!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  const requested = new Promise<void>((resolve) => { markRequested = resolve; });
+  let held = false;
+  await page.route("**/_next/static/chunks/*.js", async (route) => {
+    const response = await route.fetch();
+    const body = await response.body();
+    if (!held && body.includes(Buffer.from("data-reference-primary-image"))) {
+      held = true;
+      markRequested();
+      await gate;
+    }
+    await route.fulfill({ response, body });
+  });
+  return { requested, release };
+}
+
 test.describe("Pre-generated reference sheet modal", () => {
   test.use({ serviceWorkers: "block" });
 
@@ -177,6 +196,69 @@ test.describe("Pre-generated reference sheet modal", () => {
     expect(requested.filter((url) => url.endsWith("/0001.png"))).toHaveLength(0);
     expect(requested.filter((url) => url.includes("/api/reference-image"))).toHaveLength(0);
     await expect(dialog.getByRole("status")).toHaveCount(0);
+  });
+
+  test("Escape cancels a pending modal import without requesting an image", async ({ page }) => {
+    const requested: string[] = [];
+    page.on("request", (request) => requested.push(request.url()));
+    await page.route("**/reference/*.webp", fulfillWebP);
+    await page.goto("/zukan");
+    const chunk = await holdModalChunk(page);
+    try {
+      await page.locator("article.akyo-card .detail-button").first().click();
+      await chunk.requested;
+      await page.keyboard.press("Escape");
+    } finally {
+      chunk.release();
+    }
+    await page.waitForTimeout(500);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(requested.filter((url) => url.includes("/reference/"))).toHaveLength(0);
+
+    const dialog = await openFirstAvatarDetail(page);
+    await expectImageLoaded(dialog.getByAltText("オリジンAkyo", { exact: true }));
+    expect(requested.filter((url) => url.includes("/reference/"))).toEqual([
+      expect.stringMatching(/\/0001-960\.webp$/),
+    ]);
+  });
+
+  test("a pending modal import opens only the latest selected Akyo", async ({ page }) => {
+    const requested: string[] = [];
+    page.on("request", (request) => requested.push(request.url()));
+    await page.route("**/reference/*.webp", fulfillWebP);
+    await page.goto("/zukan");
+    const chunk = await holdModalChunk(page);
+    try {
+      await page.locator('article[aria-labelledby="card-title-0001"] .detail-button').click();
+      await chunk.requested;
+      await page.locator('article[aria-labelledby="card-title-0002"] .detail-button').click();
+    } finally {
+      chunk.release();
+    }
+    const dialog = page.getByRole("dialog");
+    await expectImageLoaded(dialog.getByAltText("チョコミントAkyo", { exact: true }));
+    expect(requested.filter((url) => url.includes("/reference/"))).toEqual([
+      expect.stringMatching(/\/0002-960\.webp$/),
+    ]);
+  });
+
+  test("leaving the catalog cancels a pending modal import", async ({ page }) => {
+    const requested: string[] = [];
+    page.on("request", (request) => requested.push(request.url()));
+    await page.route("**/reference/*.webp", fulfillWebP);
+    await page.goto("/zukan");
+    const chunk = await holdModalChunk(page);
+    try {
+      await page.locator("article.akyo-card .detail-button").first().click();
+      await chunk.requested;
+      await page.locator("a.admin-button").click();
+      await expect(page).toHaveURL(/\/admin$/);
+    } finally {
+      chunk.release();
+    }
+    await page.waitForTimeout(500);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(requested.filter((url) => url.includes("/reference/"))).toHaveLength(0);
   });
 
   test("keeps the 960px image visible until the zoom derivative finishes", async ({ page }) => {
@@ -335,6 +417,41 @@ test.describe("Pre-generated reference sheet modal", () => {
     expect(requested.slice(before).filter((url) => url.includes("/reference/"))).toEqual([
       expect.stringMatching(/\/0002-960\.webp$/),
     ]);
+  });
+
+  test("initial focus fallback does not steal keyboard focus from the image viewer", async ({ page }) => {
+    let zoomRequests = 0;
+    await page.route("**/reference/0001-960.webp", fulfillWebP);
+    await page.route("**/reference/0001-1920.webp", (route) => {
+      zoomRequests += 1;
+      return route.fulfill({ status: 404, body: "missing zoom" });
+    });
+    await page.goto("/zukan");
+    const detailButton = page.locator("article.akyo-card .detail-button").first();
+    await expect(detailButton).toBeVisible();
+    await detailButton.scrollIntoViewIfNeeded();
+    await page.clock.install();
+    await page.clock.pauseAt(new Date());
+    await detailButton.click({ force: true });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    const image = dialog.getByAltText("オリジンAkyo", { exact: true });
+    await expectImageLoaded(image);
+
+    // Run the initial animation-frame focus, but not the 50ms fallback timer.
+    await page.clock.runFor(16);
+    await expect(dialog.getByRole("button", { name: "閉じる", exact: true })).toBeFocused();
+    await page.keyboard.press("Tab");
+    const viewer = dialog.locator('[role="button"][aria-roledescription]');
+    await expect(viewer).toBeFocused();
+    await page.clock.runFor(60);
+    await expect(viewer).toBeFocused();
+
+    await page.keyboard.press("Enter");
+    await expect.poll(() => zoomRequests).toBe(1);
+    await expect(viewer).toHaveAttribute("aria-pressed", "true");
+    await expect(dialog).toBeVisible();
+    await expect(image).toHaveAttribute("src", /\/0001-960\.webp$/);
   });
 
   test("retains 960px after zoom failure and does not retry until another session", async ({ page }) => {

@@ -15,6 +15,7 @@ on:
           - upload
           - configure-secrets
           - activate
+          - activate-fonts
           - rollback-worker
       version-id:
         description: 'Optional Worker version ID for rollback-worker'
@@ -42,9 +43,14 @@ jobs:
       github.ref_name == 'main' &&
       (github.event_name == 'push' ||
       inputs.action == 'upload' ||
-      inputs.action == 'activate')
+      inputs.action == 'activate' ||
+      inputs.action == 'activate-fonts')
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      font-base-tag: ${{ steps.font-gate.outputs.base-tag }}
+      font-base-version: ${{ steps.font-gate.outputs.base-version }}
+      font-asset: ${{ steps.font-asset.outputs.font-asset }}
     env:
       GITHUB_SHA: ${{ github.sha }}
       NEXT_PUBLIC_SITE_URL: https://akyodex.com
@@ -68,8 +74,20 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - name: Verify only fonts and catalog data differ from production
+        id: font-gate
+        if: inputs.action == 'activate-fonts'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --unshallow origin main
+          node scripts/font-only-release.js gate
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify generated font inventory
+        if: inputs.action == 'activate-fonts'
+        run: node --test scripts/font-subset-coverage.test.js
 
       - name: Verify Cloudflare credentials
         run: npx wrangler whoami
@@ -82,6 +100,11 @@ jobs:
           set -euo pipefail
           test -f .open-next/worker.js
           test -d .open-next/assets
+
+      - name: Identify the generated font in the built assets
+        id: font-asset
+        if: inputs.action == 'activate-fonts'
+        run: node scripts/font-only-release.js asset
 
       - name: Upload tagged production candidate without routing traffic
         run: |
@@ -97,7 +120,7 @@ jobs:
             echo ""
             echo "- Revision: ${GITHUB_SHA}"
             echo "- Worker: ${WORKERS_NAME}"
-            echo "- Traffic: 0% until the manual activate action"
+            echo "- Traffic: 0% until a manual activate or guarded activate-fonts action"
             echo "- Current production Worker remains active"
           } >> "${GITHUB_STEP_SUMMARY}"
 
@@ -222,7 +245,7 @@ jobs:
     if: >-
       github.ref_name == 'main' &&
       github.event_name == 'workflow_dispatch' &&
-      inputs.action == 'activate'
+      (inputs.action == 'activate' || inputs.action == 'activate-fonts')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -231,6 +254,10 @@ jobs:
     env:
       GITHUB_SHA: ${{ github.sha }}
       REQUIRED_WORKER_SECRETS: ADMIN_PASSWORD_OWNER,ADMIN_PASSWORD_ADMIN,SESSION_SECRET,GITHUB_TOKEN,REVALIDATE_SECRET,SENTRY_DSN
+      FONT_BASE_TAG: ${{ needs.prepare-version.outputs.font-base-tag }}
+      FONT_BASE_VERSION: ${{ needs.prepare-version.outputs.font-base-version }}
+      FONT_ASSET: ${{ needs.prepare-version.outputs.font-asset }}
+      AUTO_FONT_RELEASE: ${{ inputs.action == 'activate-fonts' }}
 
     steps:
       - name: Checkout main revision
@@ -280,6 +307,10 @@ jobs:
           SECRET_VERSION_PATH=/tmp/worker-candidate-version.json node -e 'const fs=require("node:fs");const version=JSON.parse(fs.readFileSync(process.env.SECRET_VERSION_PATH,"utf8"));const names=new Set((version.resources?.bindings??[]).filter(({type})=>type==="secret_text").map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
           echo "version-id=${candidate_version_id}" >> "${GITHUB_OUTPUT}"
 
+      - name: Recheck the font-only production baseline immediately before deployment
+        if: inputs.action == 'activate-fonts'
+        run: node scripts/font-only-release.js assert-base
+
       - name: Deploy candidate version to 100 percent
         id: deploy-version
         run: |
@@ -292,6 +323,7 @@ jobs:
 
       - name: Attach akyodex.com Worker route
         id: activate-route
+        if: inputs.action == 'activate'
         run: npx wrangler triggers deploy --config "${WORKERS_ROUTE_CONFIG}"
 
       - name: Verify production runtime
@@ -374,12 +406,20 @@ jobs:
           echo "::error::Production Worker did not pass runtime verification."
           exit 1
 
+      - name: Verify the exact generated font is served in production
+        if: inputs.action == 'activate-fonts'
+        run: node scripts/font-only-release.js verify
+
       - name: Roll back failed activation to the previous Worker
         id: rollback-worker
         if: ${{ always() && (failure() || cancelled()) && steps.deploy-version.outcome == 'success' }}
         run: |
           set -euo pipefail
-          npx wrangler rollback --config "${WORKERS_CONFIG}" \
+          rollback_args=()
+          if [ "${AUTO_FONT_RELEASE}" = "true" ]; then
+            rollback_args+=("${FONT_BASE_VERSION}")
+          fi
+          npx wrangler rollback "${rollback_args[@]}" --config "${WORKERS_CONFIG}" \
             --name "${WORKERS_NAME}" \
             --message "Automatic rollback after failed activation ${GITHUB_SHA}" \
             --yes
@@ -428,6 +468,7 @@ jobs:
             echo ""
             echo "- Revision: ${GITHUB_SHA}"
             echo "- URL: https://akyodex.com"
+            echo "- Action: ${{ inputs.action }}"
             echo "- Result: ${{ job.status }}"
             echo "- Rollback: previous Worker deployment; the Worker route remains attached"
           } >> "${GITHUB_STEP_SUMMARY}"

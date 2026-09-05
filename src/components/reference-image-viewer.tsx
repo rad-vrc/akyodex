@@ -180,22 +180,30 @@ export function ReferenceImageViewer({
     [isZoomed, zoomOrigin]
   );
 
+  // ポインタ位置から origin を再計算する。マウスとタッチで同一の計算なので、
+  // 片方だけ直して破綻しないよう 1 箇所にまとめている。
+  // ドラッグ方向と逆に origin を移動（自然な操作感）
+  const panToPointer = useCallback(
+    (clientX: number, clientY: number, rect: DOMRect) => {
+      const deltaX = ((clientX - dragStartRef.current.x) / rect.width) * 100;
+      const deltaY = ((clientY - dragStartRef.current.y) / rect.height) * 100;
+
+      setZoomOrigin({
+        x: Math.max(0, Math.min(100, originStartRef.current.x - deltaX)),
+        y: Math.max(0, Math.min(100, originStartRef.current.y - deltaY)),
+      });
+    },
+    []
+  );
+
   // ドラッグ中（マウス）
   const handleDragMove = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>) => {
       if (!isDragging || !isZoomed) return;
 
-      const rect = e.currentTarget.getBoundingClientRect();
-      const deltaX = ((e.clientX - dragStartRef.current.x) / rect.width) * 100;
-      const deltaY = ((e.clientY - dragStartRef.current.y) / rect.height) * 100;
-
-      // ドラッグ方向と逆に origin を移動（自然な操作感）
-      const newX = Math.max(0, Math.min(100, originStartRef.current.x - deltaX));
-      const newY = Math.max(0, Math.min(100, originStartRef.current.y - deltaY));
-
-      setZoomOrigin({ x: newX, y: newY });
+      panToPointer(e.clientX, e.clientY, e.currentTarget.getBoundingClientRect());
     },
-    [isDragging, isZoomed]
+    [isDragging, isZoomed, panToPointer]
   );
 
   // ドラッグ中（タッチ）
@@ -217,16 +225,9 @@ export function ReferenceImageViewer({
         hasDraggedRef.current = true;
       }
 
-      const rect = e.currentTarget.getBoundingClientRect();
-      const deltaX = ((touchX - dragStartRef.current.x) / rect.width) * 100;
-      const deltaY = ((touchY - dragStartRef.current.y) / rect.height) * 100;
-
-      const newX = Math.max(0, Math.min(100, originStartRef.current.x - deltaX));
-      const newY = Math.max(0, Math.min(100, originStartRef.current.y - deltaY));
-
-      setZoomOrigin({ x: newX, y: newY });
+      panToPointer(touchX, touchY, e.currentTarget.getBoundingClientRect());
     },
-    [isDragging, isZoomed]
+    [isDragging, isZoomed, panToPointer]
   );
 
   // ドラッグ終了（マウス用）
