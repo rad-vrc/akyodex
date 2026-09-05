@@ -191,11 +191,10 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                         return (
                           <span
                             key={index}
-                            className="attribute-badge"
+                            className="category-badge"
                             style={{
                               background: getTintedBadgeBackground(color),
                               color: ensureContrastOnTintedWhite(color),
-                              boxShadow: `0 6px 12px ${color}20`,
                             }}
                           >
                             {trimmedCat}

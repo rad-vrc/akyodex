@@ -326,11 +326,10 @@ function AkyoCardComponent({
               return (
                 <span
                   key={index}
-                  className="attribute-badge text-xs"
+                  className="category-badge"
                   style={{
                     background: getTintedBadgeBackground(color),
                     color: ensureContrastOnTintedWhite(color),
-                    boxShadow: `0 6px 12px ${color}20`,
                   }}
                 >
                   {trimmedCat}
