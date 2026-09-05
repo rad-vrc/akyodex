@@ -308,7 +308,10 @@ select:focus {
   font-weight: 700;
   letter-spacing: 0.01em;
   font-size: 0.6875rem; /* 11px */
-  line-height: 14px;
+  /* 14px / 11px。px 固定だとブラウザの文字サイズ設定（ルート rem の拡大）で文字だけ
+     大きくなり、縦積みや子の折り返しで行が重なる（Codex レビュー: html font-size 200% で再現）。
+     単位なしなら通常時は同じ 14px のまま文字拡大に追従する */
+  line-height: 1.2727;
 }
 
 /* 角丸はグループでなく親・子それぞれに持たせる。9px = 1 行の高さ 18px の半分で、
