@@ -1,6 +1,6 @@
 'use client';
 
-import { IconEdit, IconInfoCircle, IconSearch, IconTrash, IconSave, IconClose, IconRedo, IconGlobe, IconShoppingBag } from '@/components/icons';
+import { IconEdit, IconInfoCircle, IconSearch, IconTrash, IconSave, IconClose, IconRedo, IconGlobe, IconShoppingBag, IconClipboardClock } from '@/components/icons';
 import { FilterPanel } from '@/components/filter-panel';
 import { SortControls } from '@/components/sort-controls';
 import { SearchBar } from '@/components/search-bar';
@@ -263,7 +263,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
             className={`attribute-badge quick-filter-badge transition-colors ${pendingOnly
               ? 'bg-amber-200 text-amber-900 hover:bg-amber-300'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-            <IconEdit size="w-4 h-4" /> 編集保留中
+            <IconClipboardClock size="w-4 h-4" /> 編集保留中
           </button>
         </SortControls>
         <div className="flex flex-wrap gap-3 border-t border-gray-200 pt-4">
