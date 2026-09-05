@@ -15,6 +15,8 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
   };
   const requests: PendingAkyoUpdate[][] = [];
   let resolveRequest: (response: Response) => void = () => {};
+  let refreshResponse: Response | undefined;
+  let refreshes = 0;
   for (const [key, value] of Object.entries({
     window: win, document: win.document, navigator: win.navigator,
     HTMLElement: win.HTMLElement, Node: win.Node,
@@ -23,6 +25,11 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     getComputedStyle: win.getComputedStyle.bind(win),
     confirm: () => true, alert: () => {}, IS_REACT_ACT_ENVIRONMENT: true,
     fetch: async (url: string, init: RequestInit) => {
+      if (url.startsWith('/api/catalog/ja?refresh=')) {
+        refreshes++;
+        assert.equal(init.cache, 'no-store');
+        return refreshResponse!;
+      }
       assert.equal(url, '/api/update-akyo-batch', 'holding must never call the single-update API');
       requests.push(JSON.parse(String(init.body)));
       return new Promise<Response>((resolve) => { resolveRequest = resolve; });
@@ -41,10 +48,16 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
   data.push({ ...data[0], id: '0003', entryType: 'world', displaySerial: '0001',
     nickname: 'World', avatarName: 'Saved world name', category: 'ワールド', attribute: 'ワールド',
     sourceUrl: worldUrl, avatarUrl: worldUrl });
-  const button = (text: string) => [...win.document.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!;
+  const button = (text: string) => {
+    const dialogs = win.document.querySelectorAll('[role="dialog"]');
+    const scope = dialogs[dialogs.length - 1] ?? win.document;
+    return [...scope.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!;
+  };
+  const rowFor = (index: number) => [...win.document.querySelectorAll('tbody tr')]
+    .find(row => row.children[1]?.textContent === '#' + data[index].id)!;
   const edit = async (index: number, value: string) => {
     await act(async () => {
-      [...win.document.querySelectorAll('tbody tr')][index].querySelector('button')!.click();
+      rowFor(index).querySelector('button')!.click();
     });
     const input = win.document.querySelector<HTMLInputElement>('#edit-nickname')!;
     await act(async () => {
@@ -88,7 +101,7 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     // Category-first workflow: create once, reuse on other pending records, and reopen.
     requests.length = 0;
     const open = async (index: number) => act(async () => {
-      [...win.document.querySelectorAll('tbody tr')][index].querySelector('button')!.click();
+      rowFor(index).querySelector('button')!.click();
     });
     const click = async (text: string) => act(async () => button(text).click());
     await open(0);
@@ -129,6 +142,33 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
       assert.deepEqual(newFields, oldFields, 'category edits must preserve names, URLs, serials and comments, including hidden world names');
     }
     await act(async () => resolveRequest(Response.json({ success: false, error: 'fixture complete' }, { status: 409 })));
+    const heldBefore = structuredClone(requests[0]);
+    refreshResponse = Response.json({
+      schemaVersion: 1, language: 'ja', revision: 'a'.repeat(64), count: 3,
+      data: data.map(item => ({ ...item, nickname: 'Remote edit', category: 'Remote category' })),
+    });
+    await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!.click());
+    assert.equal(refreshes, 1);
+    assert.match(win.document.body.textContent!, /保留 3件/);
+    await open(0);
+    await click('カテゴリを管理');
+    assert.ok(button('Remote category'), 'refresh exposes new categories without clearing pending edits');
+    await click('選択を決定');
+    await click('更新を保留');
+    await click('更新を反映する');
+    assert.deepEqual(requests[1], heldBefore, 'refresh must preserve both pending changes and conflict snapshots');
+    await act(async () => resolveRequest(Response.json({ success: false, error: 'conflict preserved' }, { status: 409 })));
+    refreshResponse = new Response('', { status: 503 });
+    await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!.click());
+    assert.match(win.document.body.textContent!, /再取得に失敗/);
+    assert.match(win.document.body.textContent!, /保留 3件/);
+    // A remotely removed pending record remains editable and cannot vanish from the batch.
+    refreshResponse = Response.json({ schemaVersion: 1, language: 'ja', revision: 'b'.repeat(64), count: 1, data: [data[0]] });
+    await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!.click());
+    assert.ok(rowFor(2));
+    await click('更新を反映する');
+    assert.deepEqual(requests[2], heldBefore);
+    await act(async () => resolveRequest(Response.json({ success: false, error: 'deleted remotely' }, { status: 409 })));
   } finally {
     await act(async () => root.unmount());
     dom.window.close();
