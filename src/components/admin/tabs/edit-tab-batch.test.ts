@@ -116,6 +116,50 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     assert.equal(requests[2][0].original.nickname, 'Second edit', 'next batch uses committed data, not stale initial props');
     await act(async () => resolveRequest(Response.json({ success: true, message: 'ok', data: [applyAkyoEditFields(saved[0], requests[2][0].changes)] })));
 
+    const refreshWith = async (items: AkyoData[]) => {
+      refreshResponse = Response.json({ schemaVersion: 1, language: 'ja', revision: 'c'.repeat(64), count: items.length, data: items });
+      await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!.click());
+    };
+    // Multiple local commits can precede the public JSON sync.
+    await refreshWith(data);
+    assert.match(rowFor(0).textContent!, /Third edit/, 'the initial unsynced snapshot must not undo local saves');
+    await refreshWith([saved[0], saved[1], data[2]]);
+    assert.match(rowFor(0).textContent!, /Third edit/, 'an intermediate unsynced save must not undo the latest save');
+
+    const external = { ...data[0], nickname: 'Newer remote edit' };
+    await refreshWith([external, saved[1], data[2]]);
+    assert.match(rowFor(0).textContent!, /Newer remote edit/, 'a new external edit must replace the saved overlay');
+    await act(async () => rowFor(0).querySelector('button')!.click());
+    assert.equal(win.document.querySelector<HTMLInputElement>('#edit-nickname')!.value, external.nickname);
+    await act(async () => button('更新を保留').click());
+    assert.match(win.document.body.textContent!, /保留 0件/, 'unchanged external data is not staged as an edit');
+    await edit(0, 'Local after external');
+    await act(async () => button('更新を反映する').click());
+    assert.equal(requests[3][0].original.nickname, external.nickname, 'the next save must use the refreshed baseline');
+    const afterExternal = applyAkyoEditFields(external, requests[3][0].changes);
+    await act(async () => resolveRequest(Response.json({ success: true, message: 'ok', data: [afterExternal] })));
+    await refreshWith([external, saved[1], data[2]]);
+    assert.match(rowFor(0).textContent!, /Local after external/, 'sync-lag protection remains after accepting an external update');
+
+    await edit(0, 'Pending over saved');
+    const newerExternal = { ...external, nickname: 'Another external edit' };
+    await refreshWith([newerExternal, saved[1], data[2]]);
+    assert.match(rowFor(0).textContent!, /Pending over saved/, 'external refresh must not replace pending changes');
+    await act(async () => button('更新を反映する').click());
+    assert.equal(requests[4][0].original.nickname, afterExternal.nickname, 'pending conflict baseline must not be rebased');
+    assert.equal(requests[4][0].changes.nickname, 'Pending over saved');
+    await act(async () => resolveRequest(Response.json({ success: false, error: 'expected conflict' }, { status: 409 })));
+    await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="#0001 の保留を取り消す"]')!.click());
+    assert.match(rowFor(0).textContent!, /Another external edit/, 'discarding pending changes reveals the fresh remote data');
+    await edit(0, 'Synced save');
+    await act(async () => button('更新を反映する').click());
+    const synced = applyAkyoEditFields(newerExternal, requests[5][0].changes);
+    await act(async () => resolveRequest(Response.json({ success: true, message: 'ok', data: [synced] })));
+    await refreshWith([synced, saved[1], data[2]]);
+    await refreshWith([newerExternal, saved[1], data[2]]);
+    assert.match(rowFor(0).textContent!, /Another external edit/, 'once synced, even a return to pre-save content is accepted');
+    refreshes = 0;
+
     // Category-first workflow: create once, reuse on other pending records, and reopen.
     requests.length = 0;
     const open = async (index: number) => act(async () => {

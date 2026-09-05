@@ -25,6 +25,11 @@ interface EditTabProps {
   onCatalogRefresh?: (data: AkyoData[]) => void;
 }
 
+interface SavedAkyoUpdate {
+  data: AkyoData;
+  before: AkyoEditFields[];
+}
+
 /**
  * Edit Tab Component
  * 編集・削除タブ（完全再現）
@@ -46,14 +51,14 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   const [selectedAkyo, setSelectedAkyo] = useState<AkyoData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [pending, setPending] = useState<Record<string, PendingAkyoUpdate>>({});
-  const [saved, setSaved] = useState<Record<string, AkyoData>>({});
+  const [saved, setSaved] = useState<Record<string, SavedAkyoUpdate>>({});
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [message, setMessage] = useState('');
   const [commitUrl, setCommitUrl] = useState('');
   const pendingCount = Object.keys(pending).length;
   const visibleData = useMemo(() => catalogData.map((akyo) => {
-    const current = saved[akyo.id] ?? akyo;
+    const current = saved[akyo.id]?.data ?? akyo;
     const item = pending[akyo.id] ? applyAkyoEditFields(current, pending[akyo.id].changes) : current;
     // Pending edits invalidate the public catalog's precomputed search fields.
     return { ...item, parsedCategory: undefined, parsedAuthor: undefined, _searchIndex: undefined };
@@ -83,7 +88,12 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       setCatalogData([...next, ...retained]);
       setSaved(previous => Object.fromEntries(Object.entries(previous).filter(([id, item]) => {
         const remote = next.find(candidate => candidate.id === id);
-        return !remote || !sameAkyoEditFields(getAkyoEditFields(item), getAkyoEditFields(remote));
+        if (!remote) return false;
+        const fields = getAkyoEditFields(remote);
+        // Ignore only known pre-save snapshots while JSON sync catches up.
+        // Matching the saved result, or a different external edit, retires the overlay.
+        return !sameAkyoEditFields(getAkyoEditFields(item.data), fields)
+          && item.before.some(before => sameAkyoEditFields(before, fields));
       })));
       onCatalogRefresh?.(next);
       setRefreshMessage('データを再取得しました。');
@@ -114,7 +124,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
     if (!pending[changes.id] && pendingCount >= MAX_BATCH_UPDATES) {
       throw new Error('保留は100件までです。先に更新を反映してください。');
     }
-    const originalData = saved[changes.id] ?? catalogData.find((akyo) => akyo.id === changes.id);
+    const originalData = saved[changes.id]?.data ?? catalogData.find((akyo) => akyo.id === changes.id);
     if (!originalData) return;
     setPending((previous) => {
       const original = previous[changes.id]?.original ?? getAkyoEditFields(originalData);
@@ -140,7 +150,11 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || '更新に失敗しました');
-      setSaved((previous) => ({ ...previous, ...Object.fromEntries((result.data as AkyoData[]).map((akyo) => [akyo.id, akyo])) }));
+      setSaved((previous) => ({ ...previous, ...Object.fromEntries((result.data as AkyoData[]).map((akyo) => [akyo.id, {
+        data: akyo,
+        // Consecutive saves may all land before the public snapshot is updated.
+        before: [...(previous[akyo.id]?.before ?? []), pending[akyo.id].original],
+      }])) }));
       setPending({});
       setMessage(result.message);
       setCommitUrl(result.commitUrl || '');
