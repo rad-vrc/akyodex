@@ -40,6 +40,36 @@ test("selectLatestEntries は count 件で打ち切る", () => {
   assert.equal(latest[99].id, "0051");
 });
 
+test("selectLatestEntries は最新100件を維持したまま昇順と降順を切り替える", () => {
+  const entries = Array.from({ length: 150 }, (_, index) => ({
+    id: String(index + 1).padStart(4, "0"),
+    displaySerial: String(150 - index).padStart(4, "0"),
+  }));
+  const ascending = selectLatestEntries(entries, 100, true);
+  const descending = selectLatestEntries(entries, 100, false);
+
+  assert.deepEqual(ascending, [...descending].reverse());
+  assert.equal(ascending.length, 100);
+  assert.equal(ascending[0].id, "0051");
+  assert.equal(ascending[99].id, "0150");
+  assert.equal(entries[0].id, "0001");
+  assert.equal(entries[149].id, "0150");
+});
+
+test("selectLatestEntries は対象種別内で選んだ最新件数を昇順にする", () => {
+  const entries = [
+    { id: "0001", entryType: "world", displaySerial: "0001" },
+    { id: "0100", entryType: "world", displaySerial: "0002" },
+    { id: "0200", entryType: "avatar", displaySerial: "0198" },
+    { id: "0300", entryType: "world", displaySerial: "0003" },
+  ];
+  assert.deepEqual(
+    selectLatestEntries(entries.filter((entry) => entry.entryType === "world"), 2, true)
+      .map((entry) => entry.id),
+    ["0100", "0300"],
+  );
+});
+
 test("selectLatestEntries は入力配列を書き換えない", () => {
   const entries = [{ id: "0001" }, { id: "0003" }, { id: "0002" }];
 

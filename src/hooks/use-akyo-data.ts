@@ -308,11 +308,11 @@ export function useAkyoData(initialData: AkyoData[] = []) {
           .map(({ value }) => value)
           .slice(0, options.randomCount);
       } else if (options.latestCount) {
-        // Latest-N mode: newest internal IDs first, across every entry type.
+        // Select the newest internal IDs first, then apply the requested direction.
         // The regular sort below keys on displaySerial, which worlds and
         // avatars number independently, so it interleaves two unrelated
         // sequences and can never answer "what was added most recently".
-        filtered = selectLatestEntries(filtered, options.latestCount);
+        filtered = selectLatestEntries(filtered, options.latestCount, sortAsc);
       } else {
         // Sort by display serial for worlds, by ID for avatars
         filtered.sort((a, b) => {
