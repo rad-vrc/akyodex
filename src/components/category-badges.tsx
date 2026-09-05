@@ -1,4 +1,6 @@
-import { Fragment } from 'react';
+'use client';
+
+import { Fragment, useLayoutEffect, useRef } from 'react';
 
 import {
   ensureContrastForWhiteText,
@@ -12,6 +14,34 @@ interface CategoryBadgesProps {
   /** parseAndSortCategories 済みのカテゴリ名 */
   categories: string[];
   className?: string;
+}
+
+const STACKED = 'category-group--stacked';
+const WIDE_CHILD = 'category-group--wide-child';
+
+/**
+ * 親と子が 1 行に収まらず子が 2 行目に落ちたグループに印を付ける。
+ *
+ * 望ましい形は「親が広ければ子は親の幅に揃う、子が広ければ親はそのまま」で、これは
+ * 折り返した後に親子の幅を比べないと決まらないため CSS だけでは書けない。
+ * 1 行に収まるグループには何もしない。判定は印を外した状態で行い、印を付けた後の
+ * レイアウト（縦積み）で再判定しないようにまとめて読んでからまとめて書く。
+ */
+function markStackedGroups(root: HTMLElement) {
+  const groups = Array.from(root.querySelectorAll<HTMLElement>('.category-group'));
+  for (const group of groups) group.classList.remove(STACKED, WIDE_CHILD);
+  const marks = groups.map((group) => {
+    const parent = group.querySelector<HTMLElement>('.category-group__parent');
+    const child = group.querySelector<HTMLElement>('.category-group__children');
+    if (!parent || !child) return null;
+    const stacked = child.offsetTop > parent.offsetTop;
+    return { group, stacked, wideChild: stacked && child.offsetWidth > parent.offsetWidth };
+  });
+  for (const mark of marks) {
+    if (!mark?.stacked) continue;
+    mark.group.classList.add(STACKED);
+    if (mark.wideChild) mark.group.classList.add(WIDE_CHILD);
+  }
 }
 
 /**
@@ -32,16 +62,30 @@ interface CategoryBadgesProps {
  * 空白テキストはレイアウトに影響しない。
  */
 export function CategoryBadges({ categories, className }: CategoryBadgesProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const groups = groupCategoriesByParent(categories);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    markStackedGroups(root);
+    if (typeof ResizeObserver === 'undefined') return;
+    // 幅が変わる（ウィンドウのリサイズ、列数の変化）と折り返しも変わるので再判定する。
+    // 印の付け外しで root の高さが変わると再度呼ばれるが、結果が同じなら DOM は変わらず止まる
+    const observer = new ResizeObserver(() => markStackedGroups(root));
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [categories]);
+
   if (groups.length === 0) return null;
   return (
-    <div className={`flex flex-wrap gap-1${className ? ` ${className}` : ''}`}>
+    <div ref={rootRef} className={`flex flex-wrap gap-1${className ? ` ${className}` : ''}`}>
       {groups.map(({ parent, children }, index) => {
         const color = getCategoryColor(parent);
         return (
           <Fragment key={parent}>
             {index > 0 && ' '}
-            <span className="category-group">
+            <span className="category-group category-chip">
               <span
                 className="category-group__parent"
                 style={{ background: ensureContrastForWhiteText(color) }}
