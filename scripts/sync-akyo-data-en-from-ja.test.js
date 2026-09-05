@@ -21,6 +21,49 @@ test('maps Japanese body part categories to hierarchical English categories', ()
   assert.equal(categoryMap['器官/歯'], 'Body Part/Teeth');
 });
 
+test('keeps Aloha performers and the new fox translation consistent across locales', () => {
+  const categoryMapEn = require('./category-ja-en-map');
+  const { CATEGORY_MAP: categoryMapKo } = require('./category-definitions-ko');
+  const expected = {
+    ja: ['技能・特性/演奏', 'アロハきつねAkyo', 'ウクレレを携えたAkyoの波がきてる！！'],
+    en: ['Skill・Trait/Musical Performance', 'Aloha Fox Akyo', 'Here comes a wave of ukulele-carrying Akyo!!'],
+    ko: ['기능・특성/연주', '알로하 여우 Akyo', '우쿨렐레를 든 Akyo의 물결이 밀려오고 있어!!'],
+  };
+  assert.equal(categoryMapEn[expected.ja[0]], expected.en[0]);
+  assert.equal(categoryMapKo[expected.ja[0]], expected.ko[0]);
+
+  for (const [locale, [category, nickname, comment]] of Object.entries(expected)) {
+    const csv = parse(readDataFile(`data/akyo-data-${locale}.csv`), {
+      columns: true,
+      skip_empty_lines: true,
+    });
+    const json = JSON.parse(readDataFile(`data/akyo-data-${locale}.json`)).data;
+    for (const [id, serial] of [['0921', '0823'], ['0945', '0837']]) {
+      const row = csv.find((record) => record.ID === id);
+      const item = json.find((record) => record.id === id);
+      assert.ok(row, `${locale} CSV must contain ${id}`);
+      assert.ok(item, `${locale} JSON must contain ${id}`);
+      assert.equal(row.DisplaySerial, serial);
+      assert.equal(item.displaySerial, serial);
+      assert.equal(row.Category, item.category);
+      const categories = row.Category.split(',');
+      for (const token of [category.split('/')[0], category]) {
+        assert.equal(categories.filter((value) => value === token).length, 1, `${locale} ${id}: ${token}`);
+      }
+      if (id === '0945') {
+        assert.equal(row.Nickname, nickname);
+        assert.equal(item.nickname, nickname);
+        assert.equal(row.Comment, comment);
+        assert.equal(item.comment, comment);
+        assert.equal(row.AvatarName, 'akyo_きつねアロハ');
+        assert.equal(item.avatarName, row.AvatarName);
+        assert.equal(row.Author, 'ささのき');
+        assert.equal(item.author, row.Author);
+      }
+    }
+  }
+});
+
 test('keeps Tanabata Akyo bonus comment in Japanese data', () => {
   const rows = parse(readDataFile('data/akyo-data-ja.csv'), {
     columns: true,
