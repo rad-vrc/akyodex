@@ -424,7 +424,7 @@
     "ko": "스타일/로우폴리"
   },
   "作風・スタイル/和風": {
-    "en": "Style/Japanese",
+    "en": "Style/Japanese Style",
     "ko": "스타일/일본풍"
   },
   "作風・スタイル/実写": {
@@ -836,8 +836,8 @@
     "ko": "형태・촉감/폭신폭신"
   },
   "形状・触り心地/ぺらぺら": {
-    "en": "Shape・Texture/Paper-thin",
-    "ko": "형태・촉감/팔랑팔랑"
+    "en": "Shape・Texture/Paper-Thin",
+    "ko": "형태・촉감/종잇장처럼 얇은"
   },
   "形状・触り心地/トゲトゲ": {
     "en": "Shape・Texture/Spiky",

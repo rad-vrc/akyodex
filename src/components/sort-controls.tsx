@@ -2,18 +2,20 @@
 
 import { IconDice, IconHeart, IconHistory, IconSortAsc, IconSortDesc } from '@/components/icons';
 import { t, type SupportedLanguage } from '@/lib/i18n';
+import type { ReactNode } from 'react';
 
 interface SortControlsProps {
   onSortToggle: () => void;
   onLatestClick: () => void;
-  onRandomClick: () => void;
-  onFavoritesClick: () => void;
-  favoritesOnly: boolean;
+  onRandomClick?: () => void;
+  onFavoritesClick?: () => void;
+  favoritesOnly?: boolean;
   sortAscending: boolean;
   latestMode: boolean;
-  randomMode: boolean;
+  randomMode?: boolean;
   lang?: SupportedLanguage;
   disabled?: boolean;
+  children?: ReactNode;
 }
 
 /**
@@ -32,6 +34,7 @@ export function SortControls({
   randomMode,
   lang = 'ja',
   disabled = false,
+  children,
 }: SortControlsProps) {
   return (
     <fieldset
@@ -68,7 +71,9 @@ export function SortControls({
         <IconHistory size="w-4 h-4" /> {t('filter.latest', lang)}
       </button>
 
-      <button
+      {children}
+
+      {onRandomClick && <button
         type="button"
         onClick={onRandomClick}
         aria-pressed={randomMode}
@@ -80,9 +85,9 @@ export function SortControls({
         }`}
       >
         <IconDice size="w-4 h-4" /> {t('filter.random', lang)}
-      </button>
+      </button>}
 
-      <button
+      {onFavoritesClick && <button
         type="button"
         onClick={onFavoritesClick}
         aria-pressed={favoritesOnly}
@@ -94,7 +99,7 @@ export function SortControls({
         }`}
       >
         <IconHeart size="w-4 h-4" /> {t('filter.favorites', lang)}
-      </button>
+      </button>}
     </fieldset>
   );
 }

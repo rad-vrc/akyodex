@@ -2,6 +2,7 @@
 
 import { IconEdit, IconPlusCircle, IconTools } from '@/components/icons';
 import { useCallback, useState } from 'react';
+import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
 import { AddTab } from './tabs/add-tab';
 import { EditTab } from './tabs/edit-tab';
 import { ToolsTab } from './tabs/tools-tab';
@@ -26,6 +27,9 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
   const [activeTab, setActiveTab] = useState<TabType>('add');
   const [editVisited, setEditVisited] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [refreshedCatalog, setRefreshedCatalog] = useState<AkyoData[] | null>(null);
+  const currentAttributes = refreshedCatalog ? extractCategories(refreshedCatalog) : attributes;
+  const currentCreators = refreshedCatalog ? extractAuthors(refreshedCatalog) : creators;
   const handlePendingState = useCallback((pending: boolean, busy: boolean) => {
     setApplying(busy);
     onPendingEditsChange?.(pending, busy);
@@ -93,8 +97,8 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
         <div hidden={activeTab !== 'add'}>
           <AddTab
             userRole={userRole}
-            attributes={attributes}
-            creators={creators}
+            attributes={currentAttributes}
+            creators={currentCreators}
           />
         </div>
         {editVisited && (
@@ -102,7 +106,8 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
           <EditTab
             userRole={userRole}
             akyoData={akyoData}
-            attributes={attributes}
+            attributes={currentAttributes}
+            onCatalogRefresh={setRefreshedCatalog}
             onDataChange={handleDataChange}
             onPendingStateChange={handlePendingState}
           />
