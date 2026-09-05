@@ -19,6 +19,20 @@ interface UseModalDialogOptions {
 }
 
 /**
+ * IME の変換セッション中に発生したキーイベントか。
+ *
+ * 日本語入力の変換取消に使う Escape をモーダルの終了操作として拾わないための判定。
+ * `isComposing` が標準（MDN: KeyboardEvent.isComposing）。`keyCode === 229` は
+ * 変換中のキー入力をそう報告する実装（Chromium 系の一部）向けの補助で、
+ * isComposing が false のまま 229 だけ立つケースを拾う。
+ */
+export function isComposingKeyboardEvent(
+  event: Pick<KeyboardEvent, 'isComposing' | 'keyCode'>,
+): boolean {
+  return event.isComposing === true || event.keyCode === 229;
+}
+
+/**
  * WAI-ARIA APG の Modal Dialog パターンに沿った挙動をまとめたフック。
  *
  * - 開いたらパネル内へフォーカスを移す
@@ -70,6 +84,12 @@ export function useModalDialog({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (suspendedRef.current) {
+        return;
+      }
+
+      // 変換中の Escape は IME が変換取消に使う。ここで拾うとモーダルが閉じる
+      // （未保存なら確認ダイアログが割り込む）ので、変換セッション中は何もしない
+      if (isComposingKeyboardEvent(event)) {
         return;
       }
 
