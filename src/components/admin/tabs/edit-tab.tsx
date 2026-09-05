@@ -36,6 +36,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   const [categoryMatchMode, setCategoryMatchMode] = useState<'or' | 'and'>('or');
   const [sortAscending, setSortAscending] = useState(true);
   const [latestMode, setLatestMode] = useState(false);
+  const [pendingOnly, setPendingOnly] = useState(false);
   const [entryTypeFilter, setEntryTypeFilter] = useState<AkyoEntryType>();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [catalogData, setCatalogData] = useState(akyoData);
@@ -151,13 +152,14 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
     }
   };
 
-  const filteredData = useMemo(() => filterCatalog(visibleData, latestMode
+  const filteredData = useMemo(() => filterCatalog(pendingOnly ? visibleData.filter(item => pending[item.id]) : visibleData, latestMode
     ? { latestCount: 100, entryTypeFilter }
     : { searchQuery, categories: selectedCategories, authors: selectedAuthors, categoryMatchMode, entryTypeFilter },
-  sortAscending), [visibleData, latestMode, entryTypeFilter, searchQuery, selectedCategories, selectedAuthors, categoryMatchMode, sortAscending]);
+  sortAscending), [visibleData, pendingOnly, pending, latestMode, entryTypeFilter, searchQuery, selectedCategories, selectedAuthors, categoryMatchMode, sortAscending]);
 
   const handleLatestClick = () => {
     if (!latestMode) {
+      setPendingOnly(false);
       setSearchQuery('');
       setSelectedCategories([]);
       setSelectedAuthors([]);
@@ -254,7 +256,16 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
         </div>
         <SortControls sortAscending={sortAscending} latestMode={latestMode}
           onSortToggle={() => setSortAscending(value => !value)} onLatestClick={handleLatestClick}
-          disabled={refreshing || submitting} />
+          disabled={refreshing || submitting}>
+          <button type="button" aria-pressed={pendingOnly} aria-label="編集保留中の表示切り替え"
+            title="編集保留中のAkyoのみ表示"
+            onClick={() => { setLatestMode(false); setPendingOnly(value => !value); }}
+            className={`attribute-badge quick-filter-badge transition-colors ${pendingOnly
+              ? 'bg-amber-200 text-amber-900 hover:bg-amber-300'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+            <IconEdit size="w-4 h-4" /> 編集保留中
+          </button>
+        </SortControls>
         <div className="flex flex-wrap gap-3 border-t border-gray-200 pt-4">
           <button type="button" title="アバターのみ" aria-label="アバターのみ" aria-pressed={entryTypeFilter === 'avatar'}
             className={`view-toggle-btn ${entryTypeFilter === 'avatar' ? 'active' : ''}`}

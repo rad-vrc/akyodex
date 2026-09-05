@@ -2,6 +2,7 @@
 
 import { IconDice, IconHeart, IconHistory, IconSortAsc, IconSortDesc } from '@/components/icons';
 import { t, type SupportedLanguage } from '@/lib/i18n';
+import type { ReactNode } from 'react';
 
 interface SortControlsProps {
   onSortToggle: () => void;
@@ -14,6 +15,7 @@ interface SortControlsProps {
   randomMode?: boolean;
   lang?: SupportedLanguage;
   disabled?: boolean;
+  children?: ReactNode;
 }
 
 /**
@@ -32,6 +34,7 @@ export function SortControls({
   randomMode,
   lang = 'ja',
   disabled = false,
+  children,
 }: SortControlsProps) {
   return (
     <fieldset
@@ -67,6 +70,8 @@ export function SortControls({
       >
         <IconHistory size="w-4 h-4" /> {t('filter.latest', lang)}
       </button>
+
+      {children}
 
       {onRandomClick && <button
         type="button"
