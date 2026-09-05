@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-05T09:46:57.423Z",
+  "updatedAt": "2026-09-05T10:12:38.793Z",
   "count": 948,
   "data": [
     {
@@ -297,9 +297,10 @@
     {
       "id": "0027",
       "entryType": "avatar",
+      "displaySerial": "0027",
       "nickname": "スプーンフォークAkyo",
       "avatarName": "spoon_fork_akyo",
-      "category": "道具・文房具・生活用品",
+      "category": "道具・文房具・生活用品,形状・触り心地,形状・触り心地/ぺらぺら",
       "comment": "",
       "author": "bbbbb_himiko",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_800ba63a-2ac7-4f4c-80da-16a2880e7972",
