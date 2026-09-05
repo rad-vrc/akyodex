@@ -16,6 +16,7 @@ import {
   shouldPrioritizeCatalogCardImage,
 } from "@/components/akyo-card";
 import { AkyoList } from "@/components/akyo-list";
+import { DeferredAkyoDetailModal } from "@/components/deferred-akyo-detail-modal";
 import {
   IconCog,
   IconGlobe,
@@ -100,13 +101,6 @@ const DEFAULT_R2_BASE_URL = "https://images.akyodex.com";
 
 const DeferredMiniAkyoBg = dynamic(
   () => import("@/components/mini-akyo-bg").then((mod) => mod.MiniAkyoBg),
-  { ssr: false },
-);
-const DeferredAkyoDetailModal = dynamic(
-  () =>
-    import("@/components/akyo-detail-modal").then(
-      (mod) => mod.AkyoDetailModal,
-    ),
   { ssr: false },
 );
 const DeferredFilterPanel = dynamic(

@@ -160,6 +160,8 @@ export function AkyoDetailModal({
     document.body.style.overflow = 'hidden';
 
     const focusInitialElement = () => {
+      // The delayed fallback must not undo focus already moved inside the modal.
+      if (dialogRef.current?.contains(document.activeElement)) return;
       const focusTarget =
         closeButtonRef.current ?? getFocusableElements(dialogRef.current)[0] ?? dialogRef.current;
       focusTarget?.focus();
