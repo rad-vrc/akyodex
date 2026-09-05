@@ -186,7 +186,7 @@ export function AkyoDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" onClick={handleBackdropClick}>
+    <div className="modal-overlay fixed inset-0 z-50 overflow-y-auto" onClick={handleBackdropClick}>
       {/* Backdrop - クリックで閉じる */}
       <div
         className="modal-backdrop fixed inset-0"

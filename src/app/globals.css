@@ -669,9 +669,23 @@ select:focus {
   animation: fadeInScale 0.3s ease-out;
 }
 
+/* モーダルの外枠（fixed; inset:0 のスクロール容器）。
+   Android Chrome は下部ツールバーが引っ込んだ直後、fixed; inset:0 の要素が
+   引っ込む前の（小さい）レイアウトビューポートの高さに留まることがあり、
+   ツールバーがあった帯だけ背面の一覧が見えたままになる（実機で断続的に再現）。
+   高さを最大ビューポート（lvh = ツールバーが全て隠れた状態）で明示し、どの
+   タイミングで開いても下端まで覆う。lvh 非対応環境では宣言が捨てられ、従来の
+   inset:0 だけが残る。overscroll-behavior はモーダル内のスクロールが背面へ
+   連鎖してツールバーを動かすのを止める */
+.modal-overlay {
+  min-height: 100lvh;
+  overscroll-behavior: contain;
+}
+
 .modal-backdrop {
   background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
+  min-height: 100lvh;
 }
 
 /* Service Worker Update Notification Animation */
