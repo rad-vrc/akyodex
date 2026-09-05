@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-04T23:06:21.040Z",
-  "count": 942,
+  "updatedAt": "2026-09-04T23:48:46.202Z",
+  "count": 944,
   "data": [
     {
       "id": "0001",
@@ -10756,6 +10756,30 @@
       "author": "long-potato",
       "sourceUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/",
       "avatarUrl": "https://vrchat.com/home/world/wrld_4f77777e-17ff-46e9-9ca4-1ab478c8454e/"
+    },
+    {
+      "id": "0943",
+      "entryType": "avatar",
+      "displaySerial": "0835",
+      "nickname": "Hi Akyo",
+      "avatarName": "やぁ",
+      "category": "Gimmick・Special,Gimmick・Special/Chat,Mint Chocolate",
+      "comment": "A greeting is always on display!\nCould this be the fastest-greeting Akyo around!?",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8737ea44-ae23-4398-b148-f72e6386d632"
+    },
+    {
+      "id": "0944",
+      "entryType": "avatar",
+      "displaySerial": "0836",
+      "nickname": "Look Hi Akyo",
+      "avatarName": "やぁǃǃǃǃǃ",
+      "category": "Mint Chocolate,Gimmick・Special,Gimmick・Special/Chat",
+      "comment": "An Akyo that specializes in greeting you face-to-face!\nOverdo it and you might scare someone!?",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053"
     }
   ]
 }

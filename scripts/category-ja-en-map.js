@@ -23,6 +23,7 @@ module.exports = {
   'まめAkyo': 'Bean Akyo',
   'ギミック・特殊': 'Gimmick・Special',
   'ギミック・特殊/ダンス': 'Gimmick・Special/Dance',
+  'ギミック・特殊/チャット': 'Gimmick・Special/Chat',
   '作風・スタイル/グロテスク': 'Style/Grotesque',
   'チョコミント類': 'Mint Chocolate',
   '作風・スタイル/デフォルメ': 'Style/Deformed',

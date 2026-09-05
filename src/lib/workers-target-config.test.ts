@@ -130,7 +130,7 @@ test('Workers production workflow keeps rollback entirely on Workers', async () 
   );
   assert.match(
     workflow,
-    /npx wrangler rollback --config "\$\{WORKERS_CONFIG\}"/
+    /npx wrangler rollback "\$\{rollback_args\[@\]\}" --config "\$\{WORKERS_CONFIG\}"/
   );
   assert.match(workflow, /version-id:/);
   assert.match(workflow, /inputs\['version-id'\]/);
@@ -177,6 +177,35 @@ test('Workers rollback documentation warns about Durable Object lifecycle change
   assert.match(operationsGuide, /rollback cannot cross a Durable Object class lifecycle change/i);
 });
 
+test('font activation is guarded, verifies delivery and never changes routes', async () => {
+  const workflow = await readFile(path.join(process.cwd(), '.github/workflows/deploy-cloudflare-workers-production.yml'), 'utf8');
+  const ordered = [
+    'node scripts/font-only-release.js gate',
+    'node --test scripts/font-subset-coverage.test.js',
+    'node scripts/font-only-release.js asset',
+    'npx wrangler versions upload',
+    'node scripts/font-only-release.js assert-base',
+    'npx wrangler versions deploy',
+    'node scripts/font-only-release.js verify',
+    'npx wrangler rollback',
+  ];
+  let previous = -1;
+  for (const command of ordered) {
+    const index = workflow.indexOf(command);
+    assert.ok(index > previous, `${command} must exist and run in safety order`);
+    previous = index;
+  }
+  assert.match(workflow, /needs: prepare-version\s+if:[\s\S]*?github\.ref_name == 'main'[\s\S]*?github\.event_name == 'workflow_dispatch'[\s\S]*?\(inputs\.action == 'activate' \|\| inputs\.action == 'activate-fonts'\)/);
+  assert.match(workflow, /id: activate-route\s+if: inputs\.action == 'activate'\s+run: npx wrangler triggers deploy/);
+  assert.match(workflow, /rollback_args\+=\("\$\{FONT_BASE_VERSION\}"\)/);
+
+  const sync = await readFile(path.join(process.cwd(), '.github/workflows/sync-json-data.yml'), 'utf8');
+  assert.match(sync, /elif git diff --quiet -- src\/fonts\/mplus2-variable\.subset\.woff2/);
+  assert.match(sync, /if: steps\.commit-json\.outputs\.pushed == 'true'/);
+  assert.match(sync, /FONT_CHANGED: \$\{\{ steps\.font-subsets\.outputs\.changed \}\}/);
+  assert.match(sync, /action=upload\s+if \[ "\$FONT_CHANGED" = "true" \]; then\s+action=activate-fonts/);
+});
+
 test('Workers production workflow configures managed secrets without activating traffic', async () => {
   const workflow = await readFile(
     path.join(
@@ -209,6 +238,7 @@ test('CI builds and dry-runs the production Workers target on Linux', async () =
   );
 
   assert.match(workflow, /run: npm run build:workers:production/);
+  assert.match(workflow, /node scripts\/font-only-release\.js asset/);
   assert.match(workflow, /run: npm run dry-run:workers:production/);
   assert.match(workflow, /run: npm run test:reference-images/);
   assert.match(workflow, /run: npm run typecheck:reference-images/);
