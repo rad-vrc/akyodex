@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-05T10:12:38.841Z",
-  "count": 945,
+  "updatedAt": "2026-09-05T15:42:34.240Z",
+  "count": 948,
   "data": [
     {
       "id": "0001",
@@ -325,7 +325,7 @@
       "displaySerial": "0027",
       "nickname": "숟가락포크 Akyo",
       "avatarName": "spoon_fork_akyo",
-      "category": "도구・문구・생활용품",
+      "category": "도구・문구・생활용품,형태・촉감,형태・촉감/종잇장처럼 얇은",
       "comment": "",
       "author": "bbbbb_himiko",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_800ba63a-2ac7-4f4c-80da-16a2880e7972",
@@ -11534,6 +11534,42 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e"
+    },
+    {
+      "id": "0946",
+      "entryType": "avatar",
+      "displaySerial": "0838",
+      "nickname": "달맞이 Akyo",
+      "avatarName": "おつきみAkyo",
+      "category": "초코민트류,스타일,스타일/일본풍,계절・행사,계절・행사/가을,행성・위성",
+      "comment": "달을 보며 술을 즐기는 Akyo!",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3c0a424a-79a3-4a0a-a7b9-800cd4d93349",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3c0a424a-79a3-4a0a-a7b9-800cd4d93349"
+    },
+    {
+      "id": "0947",
+      "entryType": "avatar",
+      "displaySerial": "0839",
+      "nickname": "애니메이션 Akyo",
+      "avatarName": "Animated_Akyo_2026",
+      "category": "초코민트류,기믹・특수,기믹・특수/애니메이션,형태・촉감,형태・촉감/종잇장처럼 얇은",
+      "comment": "이 Akyo, 움직인다!",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e"
+    },
+    {
+      "id": "0948",
+      "entryType": "avatar",
+      "displaySerial": "0840",
+      "nickname": "회전 애니메이션 Akyo",
+      "avatarName": "Animated_Akyo_2026x4",
+      "category": "초코민트류,기믹・특수,기믹・특수/애니메이션,형태・촉감,형태・촉감/종잇장처럼 얇은",
+      "comment": "결승점 따윈 없어\n계속 도는 거야",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a"
     }
   ]
 }

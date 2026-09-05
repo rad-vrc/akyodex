@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-05T10:12:38.823Z",
-  "count": 945,
+  "updatedAt": "2026-09-05T15:42:34.226Z",
+  "count": 948,
   "data": [
     {
       "id": "0001",
@@ -297,9 +297,10 @@
     {
       "id": "0027",
       "entryType": "avatar",
+      "displaySerial": "0027",
       "nickname": "Spoon Fork Akyo",
       "avatarName": "spoon_fork_akyo",
-      "category": "Daily Necessities",
+      "category": "Daily Necessities,Shape・Texture,Shape・Texture/Paper-Thin",
       "comment": "",
       "author": "bbbbb_himiko",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_800ba63a-2ac7-4f4c-80da-16a2880e7972",
@@ -10792,6 +10793,42 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e"
+    },
+    {
+      "id": "0946",
+      "entryType": "avatar",
+      "displaySerial": "0838",
+      "nickname": "Moon-Viewing Akyo",
+      "avatarName": "おつきみAkyo",
+      "category": "Mint Chocolate,Style,Style/Japanese Style,Season・Event,Season・Event/Autumn,Planet・Moon",
+      "comment": "Akyo enjoys sake under the moon!",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3c0a424a-79a3-4a0a-a7b9-800cd4d93349",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3c0a424a-79a3-4a0a-a7b9-800cd4d93349"
+    },
+    {
+      "id": "0947",
+      "entryType": "avatar",
+      "displaySerial": "0839",
+      "nickname": "Animated Akyo",
+      "avatarName": "Animated_Akyo_2026",
+      "category": "Mint Chocolate,Gimmick・Special,Gimmick・Special/Animation,Shape・Texture,Shape・Texture/Paper-Thin",
+      "comment": "This Akyo moves!",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e"
+    },
+    {
+      "id": "0948",
+      "entryType": "avatar",
+      "displaySerial": "0840",
+      "nickname": "Spinning Animated Akyo",
+      "avatarName": "Animated_Akyo_2026x4",
+      "category": "Mint Chocolate,Gimmick・Special,Gimmick・Special/Animation,Shape・Texture,Shape・Texture/Paper-Thin",
+      "comment": "There is no finish line\nJust keep on spinning",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a"
     }
   ]
 }

@@ -381,4 +381,8 @@ module.exports = {
   '関係性/血縁': 'Relationship/Blood Relation',
   'グッズ': 'Goods',
   'グッズ/揺れ物': 'Goods/Dangling',
+  '形状・触り心地/ぺらぺら': 'Shape・Texture/Paper-Thin',
+  '作風・スタイル/和風': 'Style/Japanese Style',
+  '季節・行事/秋': 'Season・Event/Autumn',
+  'ギミック・特殊/アニメーション': 'Gimmick・Special/Animation',
 };

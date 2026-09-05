@@ -493,6 +493,9 @@ const overridesById = {
     Nickname: 'Aloha Fox Akyo',
     Comment: 'Here comes a wave of ukulele-carrying Akyo!!',
   },
+  '0946': { Nickname: 'Moon-Viewing Akyo', Comment: 'Akyo enjoys sake under the moon!' },
+  '0947': { Nickname: 'Animated Akyo', Comment: 'This Akyo moves!' },
+  '0948': { Nickname: 'Spinning Animated Akyo', Comment: 'There is no finish line\nJust keep on spinning' },
 };
 
 function parseCsv(filePath) {

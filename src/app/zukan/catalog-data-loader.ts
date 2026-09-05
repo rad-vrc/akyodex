@@ -246,6 +246,21 @@ async function fetchCatalogSource(args: {
   }
 }
 
+// Administrative refresh must not silently fall back to an older snapshot.
+export async function loadLatestAdminCatalog(signal?: AbortSignal): Promise<AkyoData[]> {
+  const result = await fetchCatalogSource({
+    url: `/api/catalog/ja?refresh=${Date.now()}`,
+    signal,
+    fetchImpl: (url, options) => fetch(url, { ...options, cache: "no-store" }),
+    timeoutMs: DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
+    expectedLanguage: "ja",
+  });
+  if (result.droppedCount || new Set(result.items.map(item => item.id)).size !== result.items.length) {
+    throw new Error("Invalid administrative catalog");
+  }
+  return result.items;
+}
+
 export async function loadCompleteCatalogData(
   options: LoadCompleteCatalogDataOptions,
 ): Promise<CompleteCatalogResult> {

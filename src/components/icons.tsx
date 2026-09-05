@@ -5,7 +5,7 @@
  * tree-shakeable inline SVG components. Only icons actually used
  * are included in the bundle.
  *
- * SVG paths sourced from FontAwesome 6 Free (solid).
+ * SVG paths sourced from FontAwesome 6 Free (solid), unless noted below.
  * License: CC BY 4.0 / SIL OFL 1.1
  * https://fontawesome.com/license/free
  */
@@ -384,6 +384,20 @@ export function IconEdit({ size, className, ...props }: IconProps) {
   return (
     <Icon size={size} className={className} viewBox="0 0 512 512" {...props}>
       <path d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s16 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 149.7 339.8 51.8 172.4 241.7z" />
+    </Icon>
+  );
+}
+
+/** Lucide clipboard-clock. ISC license: /licenses/lucide.txt. */
+export function IconClipboardClock({ size, className, ...props }: IconProps) {
+  return (
+    <Icon size={size} className={className} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M16 14v2.2l1.6 1" />
+      <path d="M16 4h2a2 2 0 0 1 2 2v.832" />
+      <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2" />
+      <circle cx="16" cy="16" r="6" />
+      <rect x="8" y="2" width="8" height="4" rx="1" />
     </Icon>
   );
 }

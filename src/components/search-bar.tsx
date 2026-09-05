@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SearchBarProps {
+  id?: string;
   onSearch: (query: string) => void;
   placeholder?: string;
   ariaLabel?: string;
@@ -21,6 +22,7 @@ interface SearchBarProps {
  * デバウンスを使用して入力が落ち着いてから onSearch を発火する。
  */
 export function SearchBar({
+  id,
   onSearch,
   placeholder = '名前・作者・属性で検索...',
   ariaLabel = '検索',
@@ -105,6 +107,7 @@ export function SearchBar({
 
       {/* 検索入力 */}
       <input
+        id={id}
         ref={inputRef}
         type="text"
         value={query}
