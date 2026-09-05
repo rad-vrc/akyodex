@@ -1,3 +1,5 @@
+import { Fragment } from 'react';
+
 import {
   ensureContrastForWhiteText,
   ensureContrastOnTintedWhite,
@@ -22,34 +24,46 @@ interface CategoryBadgesProps {
  * 子の区切りはデータと同じ「,」。「・」はカテゴリ名そのものに含まれるため使わない。
  * 押せないので WCAG 2.5.8（24px ターゲット）は対象外。文字色は白文字 4.5:1 と
  * 薄底上 4.5:1 をそれぞれ既存の補正関数で確保する。
+ *
+ * 親と子の境目は見た目では色で分かるが、テキストとしては何も無いので読み上げ・検索・
+ * コピーで「動物うま, 両生類」と連結してしまう（WCAG 1.3.1）。画面には出ない sr-only の
+ * 「/」を親子の間に置き、グループ同士の間にも空白を置いて「動物/うま, 両生類 次元」と
+ * データの正規トークン（動物/うま）が文字列として残るようにする。flex コンテナ内の
+ * 空白テキストはレイアウトに影響しない。
  */
 export function CategoryBadges({ categories, className }: CategoryBadgesProps) {
   const groups = groupCategoriesByParent(categories);
   if (groups.length === 0) return null;
   return (
     <div className={`flex flex-wrap gap-1${className ? ` ${className}` : ''}`}>
-      {groups.map(({ parent, children }) => {
+      {groups.map(({ parent, children }, index) => {
         const color = getCategoryColor(parent);
         return (
-          <span key={parent} className="category-group">
-            <span
-              className="category-group__parent"
-              style={{ background: ensureContrastForWhiteText(color) }}
-            >
-              {parent}
-            </span>
-            {children.length > 0 && (
+          <Fragment key={parent}>
+            {index > 0 && ' '}
+            <span className="category-group">
               <span
-                className="category-group__children"
-                style={{
-                  background: getTintedBadgeBackground(color),
-                  color: ensureContrastOnTintedWhite(color),
-                }}
+                className="category-group__parent"
+                style={{ background: ensureContrastForWhiteText(color) }}
               >
-                {children.join(', ')}
+                {parent}
               </span>
-            )}
-          </span>
+              {children.length > 0 && (
+                <>
+                  <span className="sr-only">/</span>
+                  <span
+                    className="category-group__children"
+                    style={{
+                      background: getTintedBadgeBackground(color),
+                      color: ensureContrastOnTintedWhite(color),
+                    }}
+                  >
+                    {children.join(', ')}
+                  </span>
+                </>
+              )}
+            </span>
+          </Fragment>
         );
       })}
     </div>
