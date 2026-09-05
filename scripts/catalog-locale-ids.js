@@ -1,11 +1,12 @@
 /**
  * Catalog locale ID-set consistency.
  *
- * EN/KO are produced from JA by separate manual steps
- * (`sync-akyo-data-en-from-ja.js` / `generate-ko-data.js`). The admin UI writes
- * only to the JA CSV, and `Sync JSON Data from CSV` merely converts the existing
- * per-locale CSVs to JSON — it never runs the translation scripts. So every new
- * registration silently widens the gap until someone notices.
+ * EN/KO are produced from JA by `sync-akyo-data-en-from-ja.js` /
+ * `generate-ko-data.js`. The admin UI writes only to the JA CSV; the
+ * `Sync JSON Data from CSV` workflow reruns both generators, but it keeps the
+ * previous EN/KO files whenever a category has no entry in
+ * `data/category-translations.json`. So a registration with an untranslated
+ * category still widens the gap until someone adds the translation.
  *
  * This module only *detects* that drift. It deliberately does not translate,
  * regenerate or repair anything: producing unreviewed translations and writing

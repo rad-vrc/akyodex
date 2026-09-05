@@ -24,7 +24,7 @@
 | Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / dispatch | 本番候補のupload、手動activate、フォント更新のガード付き自動activate、Worker rollback | `main` pushだけでは本番trafficを変更しない |
 | Deploy Pages PR Preview | `deploy-cloudflare-pages-preview.yml` | non-draft same-repository PR (`main`) | PRごとの独立した読み取り専用Previewを作成 | Dependabotとfork PRは対象外 |
 | Conflict Check | `conflict-check.yml` | PR to `main`, push to `main` | `main` との競合をコメントで通知 | 競合解消時は古いコメントを削除 |
-| Sync JSON Data from CSV | `sync-json-data.yml` | `main` push (CSV変更時) / manual | CSV→JSON 変換、R2 アップロード、ISR 再検証 | GitHub へ自動コミットも行う |
+| Sync JSON Data from CSV | `sync-json-data.yml` | `main` push (CSV / カテゴリ対訳変更時) / manual | JA→EN/KO CSV 再生成、CSV→JSON 変換、R2 アップロード、ISR 再検証 | GitHub へ自動コミットも行う |
 | Weekly Security Audit | `security-audit.yml` | weekly / manual | `npm audit`、Snyk、CodeQL、Issue 作成 | Snyk は token がある場合のみ有効 |
 | Validate Cloudflare Resources | `validate-cloudflare-resources.yml` | daily / manual | R2/KV/CSV の健全性確認 | CSV チェックは legacy path 前提 |
 | Next.js Health Check | `nextjs-health-check.yml` | PR (Next.js関連パス変更時) / manual | Next.js / Pages 互換性の advisory チェック | 警告中心で deploy の本線ではない |
@@ -189,7 +189,8 @@ repo ルートの `npm run push:check-pr` は次をまとめて行います。
 
 ### Sync JSON Data from CSV (`sync-json-data.yml`)
 
-- `data/akyo-data-ja.csv`, `data/akyo-data-en.csv`, `data/akyo-data-ko.csv` の変更で起動
+- `data/akyo-data-ja.csv`, `data/akyo-data-en.csv`, `data/akyo-data-ko.csv`, `data/category-translations.json` の変更で起動
+- `scripts/sync-akyo-data-en-from-ja.js` と `scripts/generate-ko-data.js` で JA CSV から EN/KO CSV を再生成（対訳は `data/category-translations.json`。対訳の無いカテゴリがあると警告を出して直前の EN/KO CSV を残す）
 - `npm run data:convert` で JSON を再生成
 - 差分があれば JSON をコミットして push
 - R2 へ `data/akyo-data-*.json` をアップロード

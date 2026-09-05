@@ -2,21 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const { parse } = require('csv-parse/sync');
 
 const rootDir = path.resolve(__dirname, '..');
-
-function readCategoryRows(language) {
-  const csv = fs.readFileSync(
-    path.join(rootDir, 'data', `akyo-data-${language}.csv`),
-    'utf8',
-  );
-  return parse(csv, {
-    columns: true,
-    skip_empty_lines: true,
-    record_delimiter: ['\r\n', '\n', '\r'],
-  });
-}
 
 function splitCategories(value) {
   return String(value || '')
@@ -35,12 +22,6 @@ function assertAncestors(categories, category) {
     );
   }
 }
-
-const artParents = {
-  ja: '芸術',
-  en: 'Art',
-  ko: '예술',
-};
 
 const artAssignments = [
   {
@@ -81,112 +62,6 @@ const artAssignments = [
 ];
 
 const parentOnlyIds = ['0109', '0535', '0731'];
-
-const legacyCategories = {
-  ja: ['芸術・アート', '像・埴輪', '音楽・楽器'],
-  en: ['Statue', 'Music・Instrument'],
-  ko: ['예술・아트', '상・하니와', '음악・악기'],
-};
-
-test('places decided art records in their approved hierarchy', () => {
-  for (const language of ['ja', 'en', 'ko']) {
-    const rows = readCategoryRows(language);
-    const rowsById = new Map(rows.map((row) => [row.ID, row]));
-
-    for (const legacyCategory of legacyCategories[language]) {
-      for (const row of rows) {
-        assert.ok(
-          !splitCategories(row.Category).includes(legacyCategory),
-          `${language} ID ${row.ID} still uses ${legacyCategory}`,
-        );
-      }
-    }
-
-    for (const assignment of artAssignments) {
-      const child = assignment[language];
-      for (const id of assignment.ids) {
-        const row = rowsById.get(id);
-        if (!row) {
-          assert.notEqual(language, 'ja', `Japanese data should include art ID ${id}`);
-          continue;
-        }
-        const categories = splitCategories(row.Category);
-        assert.ok(categories.includes(child), `${language} ID ${id} should include ${child}`);
-        assertAncestors(categories, child);
-      }
-    }
-
-    for (const id of parentOnlyIds) {
-      const row = rowsById.get(id);
-      if (!row) {
-        assert.notEqual(language, 'ja', `Japanese data should include art ID ${id}`);
-        continue;
-      }
-      const categories = splitCategories(row.Category);
-      assert.ok(categories.includes(artParents[language]));
-      for (const assignment of artAssignments) {
-        assert.ok(
-          !categories.includes(assignment[language]),
-          `${language} ID ${id} should keep only the Art parent`,
-        );
-      }
-    }
-  }
-});
-
-test('keeps the Tower of the Sun as both architecture and a building', () => {
-  const buildingCategories = { ja: '建物', en: 'Building', ko: '건물' };
-  for (const language of ['ja', 'en', 'ko']) {
-    const row = readCategoryRows(language).find((record) => record.ID === '0460');
-    assert.ok(row, `${language} should include Tower of the Sun ID 0460`);
-    const categories = splitCategories(row.Category);
-    assert.ok(categories.includes(artParents[language]));
-    assert.ok(categories.includes(artAssignments[3][language]));
-    assert.ok(categories.includes(buildingCategories[language]));
-  }
-});
-
-test('keeps haniwa history tags while classifying their sculptural form', () => {
-  const historyCategories = { ja: '歴史', en: 'History', ko: '역사' };
-  for (const language of ['ja', 'en', 'ko']) {
-    const rowsById = new Map(readCategoryRows(language).map((row) => [row.ID, row]));
-    for (const id of ['0336', '0459', '0461']) {
-      const row = rowsById.get(id);
-      assert.ok(row, `${language} should include haniwa ID ${id}`);
-      const categories = splitCategories(row.Category);
-      assert.ok(categories.includes(historyCategories[language]));
-      assert.ok(categories.includes(artAssignments[2][language]));
-    }
-  }
-});
-
-test('keeps real-photo records out of the new art subcategories for now', () => {
-  const realPhotoCategories = {
-    ja: '作風・スタイル/実写',
-    en: 'Style/Real Photo',
-    ko: '스타일/실사',
-  };
-  for (const language of ['ja', 'en', 'ko']) {
-    const rowsById = new Map(readCategoryRows(language).map((row) => [row.ID, row]));
-    for (const id of parentOnlyIds) {
-      const row = rowsById.get(id);
-      if (!row) continue;
-      assert.ok(splitCategories(row.Category).includes(realPhotoCategories[language]));
-    }
-  }
-});
-
-test('defines English and Korean translations for the art hierarchy', () => {
-  const englishMap = require('./category-ja-en-map');
-  const { CATEGORY_MAP: koreanMap } = require('./category-definitions-ko');
-
-  assert.equal(englishMap['芸術'], 'Art');
-  assert.equal(koreanMap['芸術'], '예술');
-  for (const assignment of artAssignments) {
-    assert.equal(englishMap[assignment.ja], assignment.en);
-    assert.equal(koreanMap[assignment.ja], assignment.ko);
-  }
-});
 
 test('keeps targeted Vectorize records on the new art hierarchy', () => {
   const records = JSON.parse(

@@ -349,8 +349,7 @@ Akyodex/
 │   ├── fix-categories-en.js         # English category fixes
 │   ├── category-definitions-ja.js   # Japanese category keywords
 │   ├── category-definitions-en.js   # English category keywords
-│   ├── category-definitions-ko.js   # Korean category keywords
-│   ├── category-ja-en-map.js        # Category translation map
+│   ├── category-translations.js     # Loads data/category-translations.json (JA → EN/KO)
 │   ├── generate-ko-data.js          # Generate KO data from JA source
 │   ├── nickname-map-ko.js           # KO nickname translation map
 │   ├── update-categories-v3.js      # Japanese category updater
