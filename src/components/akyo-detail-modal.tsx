@@ -129,7 +129,10 @@ export function AkyoDetailModal({
   const r2Base = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
   const referenceR2Base =
     process.env.NEXT_PUBLIC_REFERENCE_R2_BASE || `${r2Base.replace(/\/+$/, '')}/reference`;
-  const cardImageUrl = localAkyo ? buildAvatarImageUrl(localAkyo.id, sourceUrl, 800) : '';
+  // Worlds reuse the 512px catalog card thumbnail instead of fetching another size.
+  const cardImageUrl = localAkyo
+    ? buildAvatarImageUrl(localAkyo.id, sourceUrl, resolveEntryType(localAkyo) === 'world' ? 512 : 800)
+    : '';
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const wasOpenRef = useRef(false);

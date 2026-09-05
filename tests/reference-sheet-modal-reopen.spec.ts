@@ -550,7 +550,7 @@ test.describe("Pre-generated reference sheet modal", () => {
     });
   }
 
-  test("world images keep their existing URL and dimensions without reference requests", async ({ page }) => {
+  test("world details reuse the card thumbnail URL without requesting a larger image", async ({ page }) => {
     const requested: string[] = [];
     page.on("request", (request) => requested.push(request.url()));
     await replaceFirstCatalogEntry(page, {
@@ -562,17 +562,28 @@ test.describe("Pre-generated reference sheet modal", () => {
     await page.goto("/zukan");
     await page.getByRole("textbox", { name: "Akyo検索", exact: true }).fill("Reference test world");
     await expect(page.locator('article[aria-labelledby="card-title-0001"]')).toContainText("Reference test world");
+    const cardImage = page.locator('article[aria-labelledby="card-title-0001"] img').first();
+    await expectImageLoaded(cardImage);
+    const cardSrc = await cardImage.getAttribute("src");
+    expect(cardSrc).toMatch(/\/api\/vrc-world-image\?wrld=wrld_reference-test&w=512$/);
     const before = requested.length;
     await page.locator('article[aria-labelledby="card-title-0001"] .detail-button').click();
     const dialog = page.getByRole("dialog");
     const image = dialog.getByAltText("Reference test world", { exact: true });
     await expectImageLoaded(image);
-    await expect(image).toHaveAttribute("src", /\/api\/vrc-world-image\?wrld=wrld_reference-test&w=800$/);
+    await expect(image).toHaveAttribute("src", cardSrc!);
     await expect(image).toHaveAttribute("width", "800");
     await expect(image).toHaveAttribute("height", "533");
     await dialog.locator('[role="button"][aria-roledescription]').click({ position: { x: 120, y: 80 } });
     await expect(dialog.locator("[data-reference-zoom-image]")).toHaveCount(0);
     expect(requested.slice(before).filter((url) => url.includes("/reference/"))).toHaveLength(0);
+    expect(requested.slice(before).filter((url) => url.includes("/api/vrc-world-image") && url.includes("w=800"))).toHaveLength(0);
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await page.locator('article[aria-labelledby="card-title-0001"] .detail-button').click();
+    await expectImageLoaded(dialog.getByAltText("Reference test world", { exact: true }));
+    await expect(dialog.getByAltText("Reference test world", { exact: true })).toHaveAttribute("src", cardSrc!);
   });
 
   test("ズーム表示中は 960px を重ねず、半透明画像でも一枚分の描画になる", async ({ page }) => {
