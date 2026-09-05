@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-05T09:42:54.915Z",
-  "count": 947,
+  "updatedAt": "2026-09-05T09:46:57.423Z",
+  "count": 948,
   "data": [
     {
       "id": "0001",
@@ -10816,6 +10816,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e"
+    },
+    {
+      "id": "0948",
+      "entryType": "avatar",
+      "displaySerial": "0840",
+      "nickname": "回転アニメAkyo",
+      "avatarName": "Animated_Akyo_2026x4",
+      "category": "チョコミント類,ギミック・特殊,ギミック・特殊/アニメーション,形状・触り心地,形状・触り心地/ぺらぺら",
+      "comment": "ゴールなんてないさ\n回り続けるのさ",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a"
     }
   ]
 }
