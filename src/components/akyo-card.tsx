@@ -1,12 +1,8 @@
 "use client";
 
+import { CategoryBadges } from "@/components/category-badges";
 import { IconDownload, IconHeart, IconHeartOutline, IconVRChat } from "@/components/icons";
-import {
-  ensureContrastOnTintedWhite,
-  getTintedBadgeBackground,
-  getCategoryColor,
-  parseAndSortCategories,
-} from "@/lib/akyo-data-helpers";
+import { parseAndSortCategories } from "@/lib/akyo-data-helpers";
 import {
   formatDisplayId,
   getAkyoSourceUrl,
@@ -318,27 +314,8 @@ function AkyoCardComponent({
           {t("card.author", lang)}: {author}
         </p>
 
-        {/* 属性バッジ */}
-        {category && (
-          <div className="flex flex-wrap gap-1 mb-2">
-            {sortedCategories.map((trimmedCat, index) => {
-              const color = getCategoryColor(trimmedCat);
-              return (
-                <span
-                  key={index}
-                  className="attribute-badge text-xs"
-                  style={{
-                    background: getTintedBadgeBackground(color),
-                    color: ensureContrastOnTintedWhite(color),
-                    boxShadow: `0 6px 12px ${color}20`,
-                  }}
-                >
-                  {trimmedCat}
-                </span>
-              );
-            })}
-          </div>
-        )}
+        {/* 属性バッジ（最上位カテゴリごとにまとめた表示） */}
+        {category && <CategoryBadges categories={sortedCategories} className="mb-2" />}
 
         {/* くわしく見るボタン */}
         <button

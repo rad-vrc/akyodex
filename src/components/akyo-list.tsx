@@ -1,7 +1,8 @@
 'use client';
 
+import { CategoryBadges } from '@/components/category-badges';
 import { IconHeart, IconHeartOutline, IconInfoCircle, IconVRChat } from '@/components/icons';
-import { ensureContrastOnTintedWhite, getCategoryColor, getTintedBadgeBackground, parseAndSortCategories } from '@/lib/akyo-data-helpers';
+import { parseAndSortCategories } from '@/lib/akyo-data-helpers';
 import { formatDisplayId, getAkyoSourceUrl, resolveEntryType } from '@/lib/akyo-entry';
 import { generateBlurDataURL } from '@/lib/blur-data-url';
 import { t, type SupportedLanguage } from '@/lib/i18n';
@@ -185,24 +186,10 @@ export function AkyoList({ data, lang = 'ja', onToggleFavorite, onShowDetail }: 
                   {/* カテゴリ */}
                   <td className="relative">
                     {renderRowDetailTrigger(akyo, rowDetailLabel, { hiddenFromAssistiveTech: true })}
-                    <div className="relative z-10 pointer-events-none flex flex-wrap gap-1">
-                      {sortedCategories.map((trimmedCat, index) => {
-                        const color = getCategoryColor(trimmedCat);
-                        return (
-                          <span
-                            key={index}
-                            className="attribute-badge"
-                            style={{
-                              background: getTintedBadgeBackground(color),
-                              color: ensureContrastOnTintedWhite(color),
-                              boxShadow: `0 6px 12px ${color}20`,
-                            }}
-                          >
-                            {trimmedCat}
-                          </span>
-                        );
-                      })}
-                    </div>
+                    <CategoryBadges
+                      categories={sortedCategories}
+                      className="relative z-10 pointer-events-none"
+                    />
                   </td>
 
                   {/* 作者 */}

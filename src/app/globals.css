@@ -282,12 +282,84 @@ select:focus {
   white-space: nowrap;
 }
 
-/* リスト表示用の小さいバッジ */
-@media (max-width: 640px) {
-  .list-view-table .attribute-badge {
-    padding: 0.1rem 0.4rem;
-    font-size: 0.7rem;
-  }
+/* 一覧カード・リスト表示のカテゴリ表示（表示専用、押せない）。
+   最上位カテゴリごとに 1 グループ: 親 = 濃色ベタ＋白文字、子 = 薄底＋濃色文字を
+   横に連結する（components/category-badges.tsx）。
+   .attribute-badge（12px / padding 5.6×13.6 / 高さ約29px）はフィルターの
+   ボタンと共用なので触らず、こちらは 11px / 高さ18px。16件のカードで 781px → 579px
+   （幅227pxで実測）。押せないので WCAG 2.5.8 の 24px ターゲット要件は対象外。
+   子が長くて 1 行に入らないときは親の下に折り返す（flex-wrap）。折り返したグループには
+   category-badges.tsx が --stacked（親が広ければ子を親の幅に揃える）と --wide-child
+   （子の方が広い。親はそのまま）を付ける。 */
+
+/* カテゴリチップ（一覧のグループ、詳細モーダルのピル）共通のフォント。
+   app/fonts.ts の mPlus2Chip はアセント/ディセントを補正した M PLUS 2 で、
+   これを当てると文字が箱の上下中央に来る（素の M PLUS 2 は 0.75px 下に寄り、
+   パディングの振り分けでは DPR ごとに 1px 単位のずれが残った）。
+   body の font-family は !important だが継承値なので、要素に直接書くこちらが勝つ */
+.category-chip {
+  font-family: var(--font-m-plus-chip), var(--font-m-plus-rounded), var(--font-kosugi-maru), var(--font-noto-sans-jp), sans-serif;
+}
+
+.category-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-size: 0.6875rem; /* 11px */
+  /* 14px / 11px。px 固定だとブラウザの文字サイズ設定（ルート rem の拡大）で文字だけ
+     大きくなり、縦積みや子の折り返しで行が重なる（Codex レビュー: html font-size 200% で再現）。
+     単位なしなら通常時は同じ 14px のまま文字拡大に追従する */
+  line-height: 1.2727;
+}
+
+/* 角丸はグループでなく親・子それぞれに持たせる。9px = 1 行の高さ 18px の半分で、
+   1 行なら丸い両端＋まっすぐな境目のカプセル。折り返したときは下のルールで付け替える */
+.category-group__parent {
+  /* 丸い端は 9px、親と子の境目は 6px / 7px。端を境目より広く取るのは円弧のぶん */
+  padding: 2px 6px 2px 9px;
+  border-radius: 9px 0 0 9px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+/* 子のない親（単独チップ）は左右対称の丸。片側だけ 6px だと文字が右に寄って見える */
+.category-group__parent:last-child {
+  padding-right: 9px;
+  border-radius: 9px;
+}
+
+.category-group__children {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 9px 2px 7px;
+  border-radius: 0 9px 9px 0;
+  font-weight: 600;
+}
+
+/* 子が 2 行目に落ちたグループ: 縦積みにして幅を max(親, 子) にする（fit-content の
+   column flex）。子は align-self: stretch で親の幅まで広がり、親は自分の文字幅のまま */
+.category-group--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  width: fit-content;
+}
+
+.category-group--stacked .category-group__parent {
+  border-radius: 9px 9px 0 0;
+}
+
+.category-group--stacked .category-group__children {
+  align-self: stretch;
+  padding-left: 9px;
+  border-radius: 0 0 9px 9px;
+}
+
+/* 子の方が広いとき: 子の右上は親の外に出るので丸める（親が広いときは親の下に隠れるので角） */
+.category-group--wide-child .category-group__children {
+  border-radius: 0 9px 9px 9px;
 }
 
 /* クイックフィルターバッジ（ボタンサイズ調整） */

@@ -121,7 +121,7 @@ test("orders author metadata before categories and the detail action", () => {
   );
 
   const authorPosition = markup.indexOf("Test Author");
-  const categoryPosition = markup.indexOf("attribute-badge");
+  const categoryPosition = markup.indexOf("category-group");
   const detailPosition = markup.indexOf("detail-button");
 
   assert.notEqual(authorPosition, -1);

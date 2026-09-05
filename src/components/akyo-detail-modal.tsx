@@ -343,14 +343,19 @@ export function AkyoDetailModal({
                       <IconSparkles size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.category', lang)}
                     </h3>
-                    <div className="flex flex-wrap gap-2 mt-1">
+                    {/* 12px / 高さ20px の小型ピル（旧: 14px / 28px / shadow-md）。
+                        カードは件数で高さが変わり、16件で 340px → 224px（幅272px実測）。
+                        押せないチップなので WCAG 2.5.8 の 24px ターゲット要件は対象外。
+                        category-chip: 文字を上下中央に置くため、アセント/ディセントを補正した
+                        チップ専用フォント（app/fonts.ts の mPlus2Chip）を当てる。 */}
+                    <div className="flex flex-wrap gap-x-1.5 gap-y-1 mt-1">
                       {categories.map((cat, index) => {
                         const color = getCategoryColor(cat);
                         const bgColor = ensureContrastForWhiteText(color);
                         return (
                           <span
                             key={index}
-                            className="px-3 py-1 rounded-full text-sm font-bold text-white shadow-md"
+                            className="category-chip px-2 py-0.5 rounded-full text-xs font-bold text-white"
                             style={{
                               // 単色ベタ塗り。旧`${bgColor}dd`への半透明グラデは末端が
                               // 白と混ざり、補正の白文字4.5:1保証が実表示で3.7〜3.9台に
