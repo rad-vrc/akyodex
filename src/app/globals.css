@@ -296,7 +296,10 @@ select:focus {
   display: inline-flex;
   flex-wrap: wrap;
   max-width: 100%;
-  border-radius: 5px;
+  /* 9px = 1 行の高さ 18px の半分。1 行なら完全な丸（9999px と同じ）、子が 2 行目に
+     折り返した 36px のときは角の丸みが浅くなる。9999px のままだと半径 18px の円弧が
+     2 行目先頭の文字（「ひ」など）の下側に食い込んで見えた */
+  border-radius: 9px;
   overflow: hidden;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -308,15 +311,21 @@ select:focus {
   /* flex: 1 1 auto は、子が 2 行目に落ちたとき 1 行目の残り幅を親の色で埋めるため。
      これが無いと親チップの右に透明な切り欠きが出て L 字型になる（EN の実データで再現） */
   flex: 1 1 auto;
-  padding: 1.5px 6px 2.5px;
+  /* 丸い端は 9px、親と子の境目は 6px / 7px。端を境目より広く取るのは円弧のぶん */
+  padding: 1.5px 6px 2.5px 9px;
   color: #fff;
   white-space: nowrap;
+}
+
+/* 子のない親（単独チップ）は左右対称にする。片側だけ 6px だと文字が右に寄って見える */
+.category-group__parent:last-child {
+  padding-right: 9px;
 }
 
 .category-group__children {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 1.5px 6px 2.5px;
+  padding: 1.5px 9px 2.5px 7px;
   font-weight: 600;
 }
 
