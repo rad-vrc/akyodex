@@ -5,7 +5,14 @@ import { renderToStaticMarkup } from 'react-dom/server';
 
 import { CategoryBadges } from './category-badges';
 
-const textOf = (markup: string) => markup.replace(/<[^>]+>/g, '');
+// renderToStaticMarkup の出力からテキストノードだけを連結する（textContent 相当）。
+// サニタイズではないので、正規表現でタグを剥がす形は使わない（CodeQL の
+// js/incomplete-multi-character-sanitization に誤検知される）。
+const textOf = (markup: string) =>
+  markup
+    .split('<')
+    .map((segment) => segment.slice(segment.indexOf('>') + 1))
+    .join('');
 
 test('CategoryBadges: 親子の間と、グループ同士の間にテキストの区切りが残る', () => {
   const markup = renderToStaticMarkup(
