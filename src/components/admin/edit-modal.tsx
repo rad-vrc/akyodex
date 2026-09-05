@@ -26,7 +26,7 @@ import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useCallback, useMemo, useRef, useState } from 'react';
 import { AttributeModal } from './attribute-modal';
 import { Spinner } from './spinner';
-import { useModalDialog } from './use-modal-dialog';
+import { useModalDialog } from '@/hooks/use-modal-dialog';
 
 interface EditModalProps {
   isOpen: boolean;
