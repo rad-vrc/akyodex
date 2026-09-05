@@ -425,8 +425,9 @@ function main() {
 
   // === Write Korean CSV ===
   console.log("📝 Writing Korean CSV...");
+  // LF like the admin API's JA writer and the committed files (see sync-akyo-data-en-from-ja.js).
   const csvOutput = stringify([header, ...koRows], {
-    record_delimiter: "\r\n",
+    record_delimiter: "\n",
     quoted_match: /[\r\n]/,
   });
   fs.writeFileSync(csvKoPath, csvOutput, "utf-8");
