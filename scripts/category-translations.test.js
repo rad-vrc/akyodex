@@ -56,6 +56,14 @@ test('reports every untranslated token at once, in sorted order, without stoppin
   });
 });
 
+test('treats Object.prototype names as untranslated instead of returning an empty string', () => {
+  const translator = createCategoryTranslator('en', { '動物': { en: 'Animal', ko: '동물' } });
+  const tokens = ['constructor', 'toString', '__proto__', 'hasOwnProperty'];
+  assert.equal(translator.translate(tokens.join(',')), tokens.join(','));
+  assert.deepEqual([...translator.missing].sort(), [...tokens].sort());
+  assert.throws(() => translator.assertComplete(), /Missing en category translations \(4\)/);
+});
+
 test('rejects unsupported languages', () => {
   assert.throws(() => createCategoryTranslator('fr', {}), /Unsupported language: fr/);
 });
@@ -94,13 +102,19 @@ test('keeps the translation file sorted by Japanese key so every writer produces
 });
 
 test('translates every category token used in the Japanese CSV', () => {
-  const missing = [...usedTokens].filter((token) => !translations[token]).sort();
+  const missing = [...usedTokens].filter((token) => !Object.hasOwn(translations, token)).sort();
   assert.deepEqual(missing, [], `Add these tokens to data/category-translations.json: ${missing.join(', ')}`);
 });
 
-test('keeps no translation entry that the Japanese CSV no longer uses', () => {
+test('reports translation entries the Japanese CSV no longer uses', (t) => {
+  // Not a failure: deleting the last Akyo of a category (or creating a category before
+  // assigning it) legitimately leaves an entry unused. The admin UI is the place to prune.
   const unused = Object.keys(translations).filter((token) => !usedTokens.has(token));
-  assert.deepEqual(unused, [], `Remove these unused entries from data/category-translations.json: ${unused.join(', ')}`);
+  t.diagnostic(
+    unused.length === 0
+      ? 'no unused entries in data/category-translations.json'
+      : `unused entries in data/category-translations.json (${unused.length}): ${unused.join(', ')}`,
+  );
 });
 
 test('translates a child category under the translation of its parent', () => {
@@ -108,7 +122,7 @@ test('translates a child category under the translation of its parent', () => {
     const separator = token.lastIndexOf('/');
     if (separator < 0) continue;
     const parent = token.slice(0, separator);
-    assert.ok(translations[parent], `${token} needs its parent ${parent} in data/category-translations.json`);
+    assert.ok(Object.hasOwn(translations, parent), `${token} needs its parent ${parent} in data/category-translations.json`);
     for (const language of LANGUAGES) {
       const prefix = `${translations[parent][language]}/`;
       assert.ok(

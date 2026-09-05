@@ -5,8 +5,9 @@
  *   { "動物": { "en": "Animal", "ko": "동물" }, "動物/うま": { "en": "Animal/Horse", "ko": "동물/말" }, ... }
  *
  * - Keys are the exact category tokens used in `data/akyo-data-ja.csv` (comma-separated,
- *   hierarchical with `/`). Every token in use must have an entry; entries nobody uses are
- *   removed (see `scripts/category-translations.test.js`).
+ *   hierarchical with `/`). Every token in use must have an entry. Entries nobody uses are
+ *   allowed (a category exists before its first Akyo, and removing the last Akyo must not
+ *   break CI); `scripts/category-translations.test.js` only reports them.
  * - The file lives under `data/` rather than `scripts/` so the admin UI can commit new
  *   categories together with their translations, and so the `Sync JSON Data from CSV`
  *   workflow can regenerate EN/KO without a code change.
@@ -63,12 +64,13 @@ function createCategoryTranslator(language, translations = loadCategoryTranslati
     translate(value) {
       return splitCategoryTokens(value)
         .map((token) => {
-          const entry = translations[token];
-          if (!entry) {
+          // Own properties only: a category named "constructor" or "__proto__" must not
+          // resolve to Object.prototype and slip through as an empty translation.
+          if (!Object.hasOwn(translations, token)) {
             missing.add(token);
             return token;
           }
-          return entry[language];
+          return translations[token][language];
         })
         .join(',');
     },
