@@ -14,6 +14,8 @@ interface AdminHeaderProps {
   userRole: AuthRole;
   /** Callback to trigger logout */
   onLogout: () => void;
+  pendingEdits: boolean;
+  applyingEdits: boolean;
 }
 
 /**
@@ -23,7 +25,7 @@ interface AdminHeaderProps {
  * @param props - Component properties
  * @returns Header element
  */
-export function AdminHeader({ isAuthenticated, userRole, onLogout }: AdminHeaderProps) {
+export function AdminHeader({ isAuthenticated, userRole, onLogout, pendingEdits, applyingEdits }: AdminHeaderProps) {
   const roleText = userRole === 'owner' ? 'オーナー' : userRole === 'admin' ? '管理者' : '';
 
   return (
@@ -45,6 +47,12 @@ export function AdminHeader({ isAuthenticated, userRole, onLogout }: AdminHeader
             )}
             <Link
               href="/zukan"
+              aria-disabled={applyingEdits || undefined}
+              onNavigate={(event) => {
+                if (applyingEdits || (pendingEdits && !confirm('保留中の更新があります。破棄して図鑑に戻りますか？'))) {
+                  event.preventDefault();
+                }
+              }}
               className="px-3 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm transition-colors"
             >
               <IconHome size="w-4 h-4" className="mr-1" /> 図鑑に戻る

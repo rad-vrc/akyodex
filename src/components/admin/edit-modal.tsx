@@ -20,6 +20,7 @@ import {
   resolveDisplaySerialForSourceUrlChange,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
+import { EDIT_FIELD_NAMES, type AkyoEditFields } from '@/lib/akyo-edit-fields';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useCallback, useMemo, useRef, useState } from 'react';
@@ -37,7 +38,7 @@ interface EditModalProps {
   // 旧フィールド（互換性）
   attributes: string[];
 
-  onSuccess: () => void;
+  onStage: (fields: AkyoEditFields) => void;
 }
 
 interface EditFormData {
@@ -174,7 +175,7 @@ export function EditModal({
   akyo,
   categories,
   attributes,
-  onSuccess,
+  onStage,
 }: EditModalProps) {
   const [formData, setFormData] = useState<EditFormData>(() => buildInitialFormData(akyo));
   const initialFormJson = useMemo(() => JSON.stringify(buildInitialFormData(akyo)), [akyo]);
@@ -184,7 +185,6 @@ export function EditModal({
   // 既存候補にマージして「カテゴリを管理」を開き直しても候補に残るようにする
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [fetchingName, setFetchingName] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   // Duplicate check states
   const [nicknameStatus, setNicknameStatus] = useState<FieldStatusState>(EMPTY_STATUS);
@@ -397,10 +397,10 @@ export function EditModal({
     }
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!akyo || submitting) return;
+    if (!akyo) return;
 
     // Validate required fields
     if (isAvatarEntry && !formData.avatarName.trim()) {
@@ -435,8 +435,6 @@ export function EditModal({
       }
     }
 
-    setSubmitting(true);
-
     try {
       const submitData = new FormData();
       submitData.append('id', akyo.id);
@@ -453,7 +451,10 @@ export function EditModal({
       submitData.append('entryType', formData.entryType);
       submitData.append('displaySerial', displaySerialForSubmit);
       submitData.append('nickname', formData.nickname);
-      submitData.append('avatarName', isAvatarEntry ? formData.avatarName : '');
+      // Hidden world/BOOTH names still belong to the record during category-only edits.
+      const preserveHiddenName = formData.entryType === akyo.entryType &&
+        formData.sourceUrl.trim() === getAkyoSourceUrl(akyo).trim();
+      submitData.append('avatarName', isAvatarEntry || preserveHiddenName ? formData.avatarName : '');
       submitData.append('sourceUrl', formData.sourceUrl);
       submitData.append('avatarUrl', formData.avatarUrl || formData.sourceUrl);
       if (formData.boothUrl.trim()) {
@@ -470,38 +471,18 @@ export function EditModal({
       submitData.append('attributes', normalizedCategories.join(','));
       submitData.append('notes', formData.comment);
 
-      const response = await fetch('/api/update-akyo', {
-        method: 'POST',
-        body: submitData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'サーバーエラーが発生しました');
-      }
-
-      alert(
-        `✅ ${result.message}\n\n` +
-          `ID: #${akyo.id}\n` +
-          `${isBoothEntry ? '名前' : isWorldEntry ? '名称' : 'アバター名'}: ${
-            isAvatarEntry ? formData.avatarName : formData.nickname
-          }\n` +
-          `作者: ${formData.author}\n\n` +
-          (result.commitUrl ? `コミット: ${result.commitUrl}` : '')
-      );
-
-      onSuccess();
+      const staged = Object.fromEntries(
+        EDIT_FIELD_NAMES.map((key) => [key, String(submitData.get(key) ?? '').trim()])
+      ) as AkyoEditFields;
+      onStage(staged);
       onClose();
     } catch (error) {
       console.error('Form submission error:', error);
       alert(
-        '❌ 更新に失敗しました\n\n' +
+        '❌ 保留に失敗しました\n\n' +
           (error instanceof Error ? error.message : '不明なエラーが発生しました') +
           '\n\nもう一度お試しください。'
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -796,7 +777,7 @@ export function EditModal({
 
           {/* フッター: 操作は常に見える位置に固定。form 属性で本文のフォームと結びつける */}
           <div className="flex flex-col-reverse gap-3 rounded-b-2xl border-t border-gray-200 bg-gray-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-gray-500">「更新する」を押すと公開環境へ反映されます。</p>
+            <p className="text-xs text-gray-500">{isDirty ? '未反映の変更あり' : ''}</p>
             <div className="flex gap-3">
               <button
                 type="button"
@@ -808,11 +789,10 @@ export function EditModal({
               <button
                 type="submit"
                 form={formId}
-                disabled={submitting}
                 className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 px-5 py-2 font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {submitting ? <Spinner /> : <IconSave size="w-4 h-4" />}
-                {submitting ? '更新中...' : '更新する'}
+                <IconSave size="w-4 h-4" />
+                更新を保留
               </button>
             </div>
           </div>

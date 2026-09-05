@@ -1,7 +1,7 @@
 'use client';
 
 import { IconEdit, IconPlusCircle, IconTools } from '@/components/icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { AddTab } from './tabs/add-tab';
 import { ADD_TAB_DRAFT_KEY } from './draft-keys';
 import { EditTab } from './tabs/edit-tab';
@@ -14,6 +14,7 @@ interface AdminTabsProps {
   attributes: string[];
   creators: string[];
   akyoData: AkyoData[];
+  onPendingEditsChange?: (pending: boolean, busy: boolean) => void;
 }
 
 type TabType = 'add' | 'edit' | 'tools';
@@ -22,10 +23,18 @@ type TabType = 'add' | 'edit' | 'tools';
  * Admin Tabs Component
  * 管理画面のタブナビゲーション（完全再現）
  */
-export function AdminTabs({ userRole, attributes, creators, akyoData }: AdminTabsProps) {
+export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingEditsChange }: AdminTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('add');
+  const [editVisited, setEditVisited] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const handlePendingState = useCallback((pending: boolean, busy: boolean) => {
+    setApplying(busy);
+    onPendingEditsChange?.(pending, busy);
+  }, [onPendingEditsChange]);
 
   const handleTabChange = (nextTab: TabType) => {
+    if (applying) return;
+    if (nextTab === 'edit') setEditVisited(true);
     if (activeTab === 'add' && nextTab !== 'add' && typeof window !== 'undefined') {
       sessionStorage.removeItem(ADD_TAB_DRAFT_KEY);
     }
@@ -45,6 +54,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData }: AdminTab
         <div className="flex border-b">
           <button
             onClick={() => handleTabChange('add')}
+            disabled={applying}
             className={`px-6 py-4 font-medium text-gray-700 transition-colors ${
               activeTab === 'add'
                 ? 'border-b-2 border-red-500 text-red-500'
@@ -56,6 +66,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData }: AdminTab
           </button>
           <button
             onClick={() => handleTabChange('edit')}
+            disabled={applying}
             className={`px-6 py-4 font-medium text-gray-700 transition-colors ${
               activeTab === 'edit'
                 ? 'border-b-2 border-red-500 text-red-500'
@@ -67,6 +78,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData }: AdminTab
           </button>
           <button
             onClick={() => handleTabChange('tools')}
+            disabled={applying}
             className={`px-6 py-4 font-medium text-gray-700 transition-colors ${
               activeTab === 'tools'
                 ? 'border-b-2 border-red-500 text-red-500'
@@ -88,13 +100,16 @@ export function AdminTabs({ userRole, attributes, creators, akyoData }: AdminTab
             creators={creators}
           />
         )}
-        {activeTab === 'edit' && (
+        {editVisited && (
+          <div hidden={activeTab !== 'edit'}>
           <EditTab
             userRole={userRole}
             akyoData={akyoData}
             attributes={attributes}
             onDataChange={handleDataChange}
+            onPendingStateChange={handlePendingState}
           />
+          </div>
         )}
         {activeTab === 'tools' && <ToolsTab />}
       </div>
