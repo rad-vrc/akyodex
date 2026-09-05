@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-05T00:54:21.988Z",
-  "count": 944,
+  "updatedAt": "2026-09-05T01:00:40.701Z",
+  "count": 945,
   "data": [
     {
       "id": "0001",
@@ -10499,7 +10499,7 @@
       "displaySerial": "0823",
       "nickname": "Aloha Crocodile Akyo",
       "avatarName": "akyo_わにアロハ",
-      "category": "Season・Event,Season・Event/Summer,Fashion・Equipment,Fashion・Equipment/Glasses,Animal,Animal/Crocodile,Art,Art/Music・Instrument",
+      "category": "Season・Event,Season・Event/Summer,Fashion・Equipment,Fashion・Equipment/Glasses,Animal,Animal/Crocodile,Art,Art/Music・Instrument,Skill・Trait,Skill・Trait/Musical Performance",
       "comment": "(Sasanoki's notes)\nA crocodile Akyo with an aloha vibe. Playing the ukulele seems to be its hobby. A sunset beach suits it perfectly.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4f2bbe09-aae8-4067-bbb8-15e0542cd419",
@@ -10780,6 +10780,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053"
+    },
+    {
+      "id": "0945",
+      "entryType": "avatar",
+      "displaySerial": "0837",
+      "nickname": "Aloha Fox Akyo",
+      "avatarName": "akyo_きつねアロハ",
+      "category": "Fashion・Equipment,Fashion・Equipment/Hat,Fashion・Equipment/Light Clothing,Animal,Animal/Fox,Body Part,Body Part/Ear,Body Part/Tail,Season・Event,Season・Event/Summer,Skill・Trait,Skill・Trait/Musical Performance,Art,Art/Music・Instrument",
+      "comment": "Here comes a wave of ukulele-carrying Akyo!!",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e"
     }
   ]
 }

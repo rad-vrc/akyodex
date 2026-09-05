@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-05T00:54:22.008Z",
-  "count": 944,
+  "updatedAt": "2026-09-05T01:00:40.713Z",
+  "count": 945,
   "data": [
     {
       "id": "0001",
@@ -11241,7 +11241,7 @@
       "displaySerial": "0823",
       "nickname": "알로하 악어 Akyo",
       "avatarName": "akyo_わにアロハ",
-      "category": "계절・행사,계절・행사/여름,패션・장비,패션・장비/안경,동물,동물/악어,예술,예술/음악・악기",
+      "category": "계절・행사,계절・행사/여름,패션・장비,패션・장비/안경,동물,동물/악어,예술,예술/음악・악기,기능・특성,기능・특성/연주",
       "comment": "(사사노키의 수기)\n알로하~한 분위기의 악어 Akyo. 우쿨렐레를 연주하는 것이 취미인 듯하다. 노을 진 해변이 잘 어울린다",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4f2bbe09-aae8-4067-bbb8-15e0542cd419",
@@ -11522,6 +11522,18 @@
       "author": "NEET ENGINEER",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_fb55dcc7-6d55-41bd-909b-82eba1579053"
+    },
+    {
+      "id": "0945",
+      "entryType": "avatar",
+      "displaySerial": "0837",
+      "nickname": "알로하 여우 Akyo",
+      "avatarName": "akyo_きつねアロハ",
+      "category": "패션・장비,패션・장비/모자,패션・장비/가벼운 옷,동물,동물/여우,기관,기관/귀,기관/꼬리,계절・행사,계절・행사/여름,기능・특성,기능・특성/연주,예술,예술/음악・악기",
+      "comment": "우쿨렐레를 든 Akyo의 물결이 밀려오고 있어!!",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e"
     }
   ]
 }
