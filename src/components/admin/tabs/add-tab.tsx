@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { IconCloudDownload, IconCrop, IconPlusCircle, IconRedo, IconSave, IconSearch, IconTag, IconTags, IconZoomIn, IconZoomOut } from '@/components/icons';
+import { IconCloudDownload, IconCrop, IconPlusCircle, IconRedo, IconSave, IconTag, IconTags, IconZoomIn, IconZoomOut } from '@/components/icons';
 import {
   detectVrcEntryTypeFromUrl,
   ensureWorldCategory,
@@ -14,6 +14,7 @@ import { assertWorldRegistrationAssets } from '@/lib/world-registration';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { AttributeModal } from '../attribute-modal';
 import { ADD_TAB_DRAFT_KEY } from '../draft-keys';
+import { DuplicateCheckButton } from '../duplicate-check-button';
 import { resolveCropSourceImage } from './add-tab-image';
 import type { AdminRole, AkyoEntryType } from '@/types/akyo';
 
@@ -821,43 +822,11 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
                   ※ワールド名はURLから自動取得
                 </span>
               </label>
-              <button
-                type="button"
+              <DuplicateCheckButton
+                checking={checkingNickname}
                 onClick={handleCheckNicknameDuplicate}
-                disabled={checkingNickname}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-orange-200 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {checkingNickname ? (
-                  <>
-                    <svg
-                      className="w-3 h-3 animate-spin"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    確認中...
-                  </>
-                ) : (
-                  <>
-                    <IconSearch size="w-4 h-4" />
-                    同じニックネームがすでに登録されているか確認
-                  </>
-                )}
-              </button>
+                fieldLabel="ニックネーム"
+              />
             </div>
             <input
               id="add-tab-nickname"

@@ -8,7 +8,6 @@ import {
   IconEdit,
   IconExternalLink,
   IconSave,
-  IconSearch,
   IconTag,
   IconTags,
   IconUser,
@@ -25,6 +24,7 @@ import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useCallback, useMemo, useRef, useState } from 'react';
 import { AttributeModal } from './attribute-modal';
+import { DuplicateCheckButton } from './duplicate-check-button';
 import { Spinner } from './spinner';
 import { useModalDialog } from '@/hooks/use-modal-dialog';
 
@@ -131,44 +131,6 @@ function buildInitialFormData(akyo: AkyoData | null): EditFormData {
     boothUrl: akyo.boothUrl || '',
     comment: commentStr,
   };
-}
-
-/**
- * 重複確認ボタン。ラベル行の右端に置く（登録画面と同じ位置）。
- * 可視文言は短く共通にし、対象フィールド名は aria-label で補って
- * 2つのボタンを読み上げで区別できるようにする（可視文言は aria-label に含める）。
- */
-function DuplicateCheckButton({
-  checking,
-  onClick,
-  fieldLabel,
-}: {
-  checking: boolean;
-  onClick: () => void;
-  fieldLabel: string;
-}) {
-  const label = '重複を確認';
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={checking}
-      aria-label={`${fieldLabel}の${label}`}
-      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-orange-200 text-orange-700 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {checking ? (
-        <>
-          <Spinner className="w-3.5 h-3.5" />
-          確認中...
-        </>
-      ) : (
-        <>
-          <IconSearch size="w-4 h-4" />
-          {label}
-        </>
-      )}
-    </button>
-  );
 }
 
 /**
