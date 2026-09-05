@@ -72,15 +72,17 @@ export function getInternalIdNumber(akyo: Pick<AkyoData, "id">): number {
 }
 
 /**
- * 内部IDの新しい順に count 件を取り出す。入力は変更しない。
+ * 内部IDの新しい順に count 件を選び、その範囲内で表示順を適用する。入力は変更しない。
  */
 export function selectLatestEntries<T extends Pick<AkyoData, "id">>(
   entries: T[],
   count: number,
+  sortAscending = false,
 ): T[] {
-  return [...entries]
+  const latest = [...entries]
     .sort((a, b) => getInternalIdNumber(b) - getInternalIdNumber(a))
     .slice(0, count);
+  return sortAscending ? latest.reverse() : latest;
 }
 
 export function formatWorldDisplaySerial(serialNumber: number): string {
