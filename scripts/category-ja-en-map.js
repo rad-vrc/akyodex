@@ -358,7 +358,7 @@ module.exports = {
   '形状・触り心地/ムキムキ': 'Shape・Texture/Muscular',
   '形状・触り心地/粘着質': 'Shape・Texture/Sticky',
   '形状・触り心地/丸い': 'Shape・Texture/Round',
-  '惑星': 'Planet',
+  '惑星・衛星': 'Planet・Moon',
   '最強戦士': 'Strongest Warrior',
   '架空の存在/人魚': 'Fictional Being/Mermaid',
   '環境・天候/森': 'Environment・Weather/Forest',

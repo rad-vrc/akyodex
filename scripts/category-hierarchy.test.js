@@ -236,7 +236,7 @@ test('keeps the explicitly rejected categories at the root level', () => {
     '頂に立つ者',
     '最強戦士',
     '正体不明のUMAkyo',
-    '惑星',
+    '惑星・衛星',
     'まめ',
     'まめAkyo',
   ]) {
