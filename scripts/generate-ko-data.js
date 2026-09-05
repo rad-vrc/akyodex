@@ -93,6 +93,9 @@ function translateNickname(jaNickname) {
  * Common patterns translation
  */
 const COMMENT_MAP = {
+  "Akyoのつきみざけ！": "달을 보며 술을 즐기는 Akyo!",
+  "このAkyo、動くぞ！": "이 Akyo, 움직인다!",
+  "ゴールなんてないさ\n回り続けるのさ": "결승점 따윈 없어\n계속 도는 거야",
   すべてのはじまり: "모든 것의 시작",
   Quest対応〇: "Quest 지원〇",
   "Quest対応○": "Quest 지원○",

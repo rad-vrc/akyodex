@@ -1035,6 +1035,9 @@ const NICKNAME_MAP = {
   'やぁAkyo': '안녕 Akyo',
   'ルックやぁAkyo': '룩 안녕 Akyo',
   'アロハきつねAkyo': '알로하 여우 Akyo',
+  'おつきみAkyo': '달맞이 Akyo',
+  'アニメAkyo': '애니메이션 Akyo',
+  '回転アニメAkyo': '회전 애니메이션 Akyo',
 };
 
 module.exports = { NICKNAME_MAP };
