@@ -268,7 +268,9 @@ export function AkyoDetailModal({
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 bg-gradient-to-b from-white to-blue-50">
+            {/* rounded-b-3xl: パネル本体は rounded-3xl だが、この本文の背景グラデが
+                下2隅を塗りつぶして角が直角に見えていた。ヘッダー側の rounded-t-3xl と対にする */}
+            <div className="p-6 bg-gradient-to-b from-white to-blue-50 rounded-b-3xl">
               <div className="space-y-6">
                 {/* Image Section with Zoom & Drag */}
                 <ReferenceImageViewer
