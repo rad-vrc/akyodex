@@ -6,7 +6,7 @@ const test = require('node:test');
 const {
   collectAssetScripts,
   stripComments,
-  assertSameProgram,
+  assertReparsesIdentically,
 } = require('./strip-asset-comments');
 
 const rootDir = path.resolve(__dirname, '..');
@@ -85,8 +85,26 @@ test('never inflates an already-minified asset', async () => {
 
 test('rejects a rewrite that changes the program', async () => {
   await assert.rejects(
-    () => assertSameProgram('const a = 1;', 'const a = 2;'),
-    /changed the program/,
+    () => assertReparsesIdentically('const a = 1;', 'const a = 2;'),
+    /changed more than comments/,
+  );
+});
+
+// Compression would discard both of these before the comparison, so the check
+// only catches them while it stays off. Pin that.
+test('rejects drift that a compressing comparison would hide', async () => {
+  await assert.rejects(
+    () => assertReparsesIdentically('debugger; console.log(1);', 'console.log(1);'),
+    /changed more than comments/,
+  );
+
+  await assert.rejects(
+    () =>
+      assertReparsesIdentically(
+        'function f(){return 1; console.log(2);}self.f=f;',
+        'function f(){return 1;}self.f=f;',
+      ),
+    /changed more than comments/,
   );
 });
 
@@ -94,6 +112,6 @@ test('the shipped service worker survives the rewrite unchanged', async () => {
   const source = fs.readFileSync(path.join(rootDir, 'public', 'sw.js'), 'utf8');
   const stripped = await stripComments(source);
 
-  await assertSameProgram(source, stripped);
+  await assertReparsesIdentically(source, stripped);
   assert.equal(/^\s*(\/\/|\/\*|\*)/m.test(stripped), false);
 });

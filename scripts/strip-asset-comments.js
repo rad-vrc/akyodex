@@ -9,8 +9,8 @@
  *
  * The rewrite only reprints the parsed AST — no compression, no identifier
  * mangling — so names stay traceable in DevTools and, unlike a bundler pass, the
- * output does not gain an implicit `"use strict"`. Equivalence is asserted per
- * file rather than assumed, because a broken Service Worker persists in
+ * output does not gain an implicit `"use strict"`. Every file is then re-parsed
+ * and checked against its source, because a broken Service Worker persists in
  * visitors' browsers.
  *
  * Printing is compact rather than beautified so that feeding an already-minified
@@ -63,12 +63,18 @@ async function stripComments(source) {
 }
 
 /**
- * Fully minify both inputs and compare. Identical output means the two parse to
- * the same program, so the only thing the rewrite dropped was comments.
+ * Re-parse both inputs and print them through a second, differently-configured
+ * terser pass; a mismatch means the reprint dropped more than comments.
+ *
+ * This is a guard, not a proof of semantic identity. Mangling normalizes local
+ * names, so a difference confined to those would not surface. Compression stays
+ * off here on purpose: with it on, terser also discards `debugger` statements
+ * and unreachable code, which would hide exactly the kind of drift worth
+ * catching.
  */
-async function assertSameProgram(before, after) {
+async function assertReparsesIdentically(before, after) {
   const canonicalize = async (source) => {
-    const { code } = await minify(source, { compress: true, mangle: true });
+    const { code } = await minify(source, { compress: false, mangle: true });
     if (typeof code !== 'string') {
       throw new Error('terser returned no output while canonicalizing');
     }
@@ -76,7 +82,7 @@ async function assertSameProgram(before, after) {
   };
 
   if ((await canonicalize(before)) !== (await canonicalize(after))) {
-    throw new Error('comment removal changed the program');
+    throw new Error('comment removal changed more than comments');
   }
 }
 
@@ -95,7 +101,7 @@ async function main() {
     const name = path.relative(assetsDir, scriptPath);
     const original = fs.readFileSync(scriptPath, 'utf8');
     const stripped = await stripComments(original);
-    await assertSameProgram(original, stripped);
+    await assertReparsesIdentically(original, stripped);
 
     const saved = Buffer.byteLength(original) - Buffer.byteLength(stripped);
     if (saved < 0) {
@@ -114,4 +120,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { collectAssetScripts, stripComments, assertSameProgram };
+module.exports = { collectAssetScripts, stripComments, assertReparsesIdentically };
