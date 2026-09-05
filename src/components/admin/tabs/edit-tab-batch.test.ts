@@ -30,6 +30,11 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
         assert.equal(init.cache, 'no-store');
         return refreshResponse!;
       }
+      if (url === '/api/categories') {
+        // Creating a category commits it (with EN/KO) right away; that is not a batch write.
+        assert.deepEqual(JSON.parse(String(init.body)), { action: 'create', path: '技能・特性/演奏', en: 'Musical Performance', ko: '연주' });
+        return new Response(JSON.stringify({ success: true, message: 'created' }), { status: 200 });
+      }
       assert.equal(url, '/api/update-akyo-batch', 'holding must never call the single-update API');
       requests.push(JSON.parse(String(init.body)));
       return new Promise<Response>((resolve) => { resolveRequest = resolve; });
@@ -170,12 +175,20 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     await click('カテゴリを管理');
     await click('動物');
     await click('新しいカテゴリを作成');
-    await act(async () => {
-      const input = win.document.querySelector<HTMLInputElement>('#attributeNewInput')!;
-      Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, 'value')!.set!.call(input, '技能・特性/演奏');
-      input.dispatchEvent(new win.Event('input', { bubbles: true }));
-    });
+    for (const [selector, value] of [
+      ['#attributeNewInput', '技能・特性/演奏'],
+      ['#attributeNewEnInput', 'Musical Performance'],
+      ['#attributeNewKoInput', '연주'],
+    ] as const) {
+      await act(async () => {
+        const input = win.document.querySelector<HTMLInputElement>(selector)!;
+        Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, 'value')!.set!.call(input, value);
+        input.dispatchEvent(new win.Event('input', { bubbles: true }));
+      });
+    }
     await click('追加する');
+    // The create request resolves asynchronously before the modal adds the category.
+    await act(async () => { await Promise.resolve(); });
     await click('選択を決定');
     await click('更新を保留');
     await open(0);

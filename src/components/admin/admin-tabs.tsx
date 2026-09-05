@@ -1,9 +1,10 @@
 'use client';
 
-import { IconEdit, IconPlusCircle, IconTools } from '@/components/icons';
+import { IconEdit, IconPlusCircle, IconTags, IconTools } from '@/components/icons';
 import { useCallback, useState } from 'react';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
 import { AddTab } from './tabs/add-tab';
+import { CategoriesTab } from './tabs/categories-tab';
 import { EditTab } from './tabs/edit-tab';
 import { ToolsTab } from './tabs/tools-tab';
 
@@ -17,7 +18,7 @@ interface AdminTabsProps {
   onPendingEditsChange?: (pending: boolean, busy: boolean) => void;
 }
 
-type TabType = 'add' | 'edit' | 'tools';
+type TabType = 'add' | 'edit' | 'categories' | 'tools';
 
 /**
  * Admin Tabs Component
@@ -77,6 +78,18 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
             編集・削除
           </button>
           <button
+            onClick={() => handleTabChange('categories')}
+            disabled={applying}
+            className={`px-6 py-4 font-medium text-gray-700 transition-colors ${
+              activeTab === 'categories'
+                ? 'border-b-2 border-red-500 text-red-500'
+                : 'hover:bg-gray-50'
+            }`}
+          >
+            <IconTags size="w-4 h-4" className="mr-2" />
+            カテゴリ
+          </button>
+          <button
             onClick={() => handleTabChange('tools')}
             disabled={applying}
             className={`px-6 py-4 font-medium text-gray-700 transition-colors ${
@@ -113,6 +126,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
           />
           </div>
         )}
+        {activeTab === 'categories' && <CategoriesTab userRole={userRole} />}
         {activeTab === 'tools' && <ToolsTab />}
       </div>
     </div>

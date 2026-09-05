@@ -33,6 +33,10 @@ export function AttributeModal({
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newAttributeName, setNewAttributeName] = useState('');
+  const [newAttributeEn, setNewAttributeEn] = useState('');
+  const [newAttributeKo, setNewAttributeKo] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
   const [availableAttributes, setAvailableAttributes] = useState<string[]>(allAttributes);
   const dialogRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -78,10 +82,20 @@ export function AttributeModal({
     });
   };
 
-  const handleCreateAttribute = () => {
+  const resetCreateForm = () => {
+    setNewAttributeName('');
+    setNewAttributeEn('');
+    setNewAttributeKo('');
+    setCreateError('');
+  };
+
+  // カテゴリは対訳（EN/KO）とセットで登録し、その場で GitHub にコミットする。
+  // 名前だけで作ると EN/KO のデータに反映されず、CI が警告して EN/KO を置き去りにする。
+  const handleCreateAttribute = async () => {
+    if (creating) return;
     const trimmed = newAttributeName.trim();
     if (!trimmed) {
-      alert('カテゴリ名を入力してください');
+      setCreateError('カテゴリ名を入力してください');
       return;
     }
 
@@ -92,14 +106,38 @@ export function AttributeModal({
     );
 
     if (isDuplicate) {
-      alert('このカテゴリは既に存在します');
+      setCreateError('このカテゴリは既に存在します');
+      return;
+    }
+
+    setCreating(true);
+    setCreateError('');
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          path: trimmed,
+          en: newAttributeEn.trim(),
+          ko: newAttributeKo.trim(),
+        }),
+      });
+      const result = (await response.json()) as { success?: boolean; error?: string };
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'カテゴリを作成できませんでした');
+      }
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : 'カテゴリを作成できませんでした');
+      setCreating(false);
       return;
     }
 
     setAvailableAttributes((prev) => [...prev, trimmed].sort());
     setSelectedAttributes((prev) => [...prev, trimmed]);
     onCreateAttribute?.(trimmed);
-    setNewAttributeName('');
+    resetCreateForm();
+    setCreating(false);
     setShowCreateForm(false);
   };
 
@@ -197,39 +235,99 @@ export function AttributeModal({
                     htmlFor="attributeNewInput"
                     className="block text-sm font-medium text-green-900 mb-1"
                   >
-                    新しいカテゴリ名
+                    新しいカテゴリ名（階層は「/」で区切る）
                   </label>
                   <input
                     type="text"
                     id="attributeNewInput"
                     value={newAttributeName}
+                    disabled={creating}
                     onChange={(e) => setNewAttributeName(e.target.value)}
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter') {
-                        handleCreateAttribute();
+                        e.preventDefault();
+                        void handleCreateAttribute();
                       }
                     }}
                     className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    placeholder="例: チョコミント類"
+                    placeholder="例: 動物/ねこ"
                   />
                 </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="attributeNewEnInput"
+                      className="block text-sm font-medium text-green-900 mb-1"
+                    >
+                      英語名（この階層の分だけ）
+                    </label>
+                    <input
+                      type="text"
+                      id="attributeNewEnInput"
+                      value={newAttributeEn}
+                      disabled={creating}
+                      onChange={(e) => setNewAttributeEn(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void handleCreateAttribute();
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="例: Cat"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="attributeNewKoInput"
+                      className="block text-sm font-medium text-green-900 mb-1"
+                    >
+                      韓国語名（この階層の分だけ）
+                    </label>
+                    <input
+                      type="text"
+                      id="attributeNewKoInput"
+                      value={newAttributeKo}
+                      disabled={creating}
+                      onChange={(e) => setNewAttributeKo(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void handleCreateAttribute();
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                      placeholder="例: 고양이"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-green-800">
+                  親の英語名・韓国語名は自動で前に付きます。作成するとすぐに GitHub にコミットされ、英語・韓国語のデータは自動で追従します。
+                </p>
+                {createError && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {createError}
+                  </p>
+                )}
                 <div className="flex items-center justify-end gap-2">
                   <button
                     type="button"
+                    disabled={creating}
                     onClick={() => {
                       setShowCreateForm(false);
-                      setNewAttributeName('');
+                      resetCreateForm();
                     }}
-                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
+                    className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                   >
                     キャンセル
                   </button>
                   <button
                     type="button"
-                    onClick={handleCreateAttribute}
-                    className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600"
+                    disabled={creating}
+                    onClick={() => void handleCreateAttribute()}
+                    className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
                   >
-                    追加する
+                    {creating ? '作成中…' : '追加する'}
                   </button>
                 </div>
               </div>
