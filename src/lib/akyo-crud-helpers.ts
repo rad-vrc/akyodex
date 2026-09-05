@@ -87,6 +87,71 @@ function resolveEntryTypeFromRecord(
         : 'avatar';
 }
 
+type RecordData = Parameters<typeof createAkyoRecord>[0];
+
+/** Shared update semantics for the legacy single-update route and batch editing. */
+export function prepareAkyoUpdate(
+    form: AkyoFormData,
+    dataRecords: string[][],
+    header: string[],
+): string[][] {
+    const existingRecord = findRecordById(dataRecords, form.id);
+    if (!existingRecord) throw new Error(`ID: ${form.id} が見つかりませんでした`);
+    const isBoothOnly = !form.sourceUrl && !!form.boothUrl;
+    const entryType = isBoothOnly ? undefined : form.entryType === 'world' ? 'world' : 'avatar';
+    const category = entryType
+        ? normalizeCategoryFieldForEntryType(form.category, entryType)
+        : form.category;
+    const recordData: RecordData = {
+        ...form,
+        entryType,
+        category: ensureBoothCategories(category, form.boothUrl, entryType),
+        avatarUrl: form.sourceUrl || form.avatarUrl,
+    };
+    const id = form.id;
+    const originalEntryType = resolveEntryTypeFromRecord(existingRecord, header);
+
+    if (isBoothOnly) {
+        // BOOTH専用: 既存のBooth連番を維持、なければ新規割り当て
+        const displaySerialIndex = header.indexOf('DisplaySerial');
+        const existingSerial = displaySerialIndex >= 0
+            ? String(existingRecord[displaySerialIndex] || '').trim()
+            : '';
+        recordData.displaySerial = existingSerial.startsWith('Booth')
+            ? existingSerial
+            : getNextBoothDisplaySerialFromCsv(dataRecords, header);
+    } else if (recordData.entryType === 'world') {
+        const displaySerialIndex = header.indexOf('DisplaySerial');
+        const originalDisplaySerial =
+            originalEntryType === 'world'
+                ? (
+                    (displaySerialIndex >= 0
+                        ? String(existingRecord[displaySerialIndex] || '').trim()
+                        : '') ||
+                    getDisplaySerialForWorldRecord(dataRecords, header, id) ||
+                    undefined
+                )
+                : undefined;
+        recordData.displaySerial = resolveDisplaySerialForEntryUpdate({
+            entryType: 'world',
+            id,
+            currentDisplaySerial: recordData.displaySerial,
+            originalDisplaySerial,
+            originalEntryType,
+            nextWorldDisplaySerial: getNextDisplaySerial(dataRecords, header, 'world'),
+        });
+    } else {
+        // アバター更新: フォームの値 → 既存レコードの値 → ID の優先順で保持
+        const displaySerialIndex = header.indexOf('DisplaySerial');
+        const existingSerial = displaySerialIndex >= 0
+            ? String(existingRecord[displaySerialIndex] || '').trim()
+            : '';
+        recordData.displaySerial = recordData.displaySerial || existingSerial || id;
+    }
+    const updated = createAkyoRecord(recordData, header);
+    return replaceRecordById(dataRecords, form.id, updated);
+}
+
 /**
  * Process Akyo CRUD operation (Add/Update/Delete)
  * Handles CSV commit first, then image operation
@@ -201,49 +266,8 @@ export async function processAkyoCRUD(
                 if (!existingRecord) {
                     return jsonError(`ID: ${id} が見つかりませんでした`, 404);
                 }
-                const originalEntryType = resolveEntryTypeFromRecord(existingRecord, header);
-
-                if (isBoothOnly) {
-                    // BOOTH専用: 既存のBooth連番を維持、なければ新規割り当て
-                    const displaySerialIndex = header.indexOf('DisplaySerial');
-                    const existingSerial = displaySerialIndex >= 0
-                        ? String(existingRecord[displaySerialIndex] || '').trim()
-                        : '';
-                    recordData.displaySerial = existingSerial.startsWith('Booth')
-                        ? existingSerial
-                        : getNextBoothDisplaySerialFromCsv(dataRecords, header);
-                } else if (recordData.entryType === 'world') {
-                    const displaySerialIndex = header.indexOf('DisplaySerial');
-                    const originalDisplaySerial =
-                        originalEntryType === 'world'
-                            ? (
-                                (displaySerialIndex >= 0
-                                    ? String(existingRecord[displaySerialIndex] || '').trim()
-                                    : '') ||
-                                getDisplaySerialForWorldRecord(dataRecords, header, id) ||
-                                undefined
-                            )
-                            : undefined;
-                    recordData.displaySerial = resolveDisplaySerialForEntryUpdate({
-                        entryType: 'world',
-                        id,
-                        currentDisplaySerial: recordData.displaySerial,
-                        originalDisplaySerial,
-                        originalEntryType,
-                        nextWorldDisplaySerial: getNextDisplaySerial(dataRecords, header, 'world'),
-                    });
-                } else {
-                    // アバター更新: フォームの値 → 既存レコードの値 → ID の優先順で保持
-                    const displaySerialIndex = header.indexOf('DisplaySerial');
-                    const existingSerial = displaySerialIndex >= 0
-                        ? String(existingRecord[displaySerialIndex] || '').trim()
-                        : '';
-                    recordData.displaySerial = recordData.displaySerial || existingSerial || id;
-                }
-
-                // Create updated record
-                const updatedRecord = createAkyoRecord(recordData, header);
-                updatedRecords = replaceRecordById(dataRecords, id, updatedRecord);
+                if (!('nickname' in formData)) return jsonError('更新データが不足しています', 400);
+                updatedRecords = prepareAkyoUpdate(formData, dataRecords, header);
                 commitMessageAction = 'Update';
                 successMessage = 'Akyoを更新しました';
                 break;

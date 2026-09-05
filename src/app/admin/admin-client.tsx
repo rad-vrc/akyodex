@@ -3,7 +3,7 @@
 import { AdminHeader } from '@/components/admin/admin-header';
 import { AdminLogin } from '@/components/admin/admin-login';
 import { AdminTabs } from '@/components/admin/admin-tabs';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { AdminRole, AkyoData, AuthRole } from '@/types/akyo';
 
@@ -30,6 +30,10 @@ export function AdminClient({
 }: AdminClientProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<AuthRole>(null);
+  const [editState, setEditState] = useState({ pending: false, busy: false });
+  const handlePendingEditsChange = useCallback((pending: boolean, busy: boolean) => {
+    setEditState({ pending, busy });
+  }, []);
 
   useEffect(() => {
     // サーバーサイドセッション検証を使用（セキュリティ向上）
@@ -57,6 +61,8 @@ export function AdminClient({
   };
 
   const handleLogout = async () => {
+    if (editState.busy) return;
+    if (editState.pending && !confirm('保留中の更新があります。破棄してログアウトしますか？')) return;
     try {
       // サーバーサイドセッションを削除
       await fetch('/api/admin/logout', {
@@ -68,6 +74,7 @@ export function AdminClient({
 
     setIsAuthenticated(false);
     setUserRole(null);
+    setEditState({ pending: false, busy: false });
   };
 
   return (
@@ -87,6 +94,7 @@ export function AdminClient({
           attributes={categories || attributes}
           creators={authors || creators}
           akyoData={akyoData}
+          onPendingEditsChange={handlePendingEditsChange}
         />
       )}
     </div>

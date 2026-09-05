@@ -46,7 +46,7 @@ function render(akyo: AkyoData | null, isOpen = true) {
       onClose: () => {},
       akyo,
       attributes: ["動物", "ワールド"],
-      onSuccess: () => {},
+      onStage: () => {},
     }),
   );
 }

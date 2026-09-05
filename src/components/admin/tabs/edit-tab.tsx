@@ -1,12 +1,13 @@
 'use client';
 
-import { IconEdit, IconInfoCircle, IconSearch, IconTrash } from '@/components/icons';
+import { IconEdit, IconInfoCircle, IconSearch, IconTrash, IconSave, IconClose } from '@/components/icons';
+import { MAX_BATCH_UPDATES, applyAkyoEditFields, getAkyoEditFields, sameAkyoEditFields, type AkyoEditFields, type PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
 import { getAkyoSourceUrl } from '@/lib/akyo-entry';
 import { generateBlurDataURL } from '@/lib/blur-data-url';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EditModal } from '../edit-modal';
 
 interface EditTabProps {
@@ -14,25 +15,97 @@ interface EditTabProps {
   akyoData: AkyoData[];
   attributes: string[];
   onDataChange: () => void;
+  onPendingStateChange?: (pending: boolean, busy: boolean) => void;
 }
 
 /**
  * Edit Tab Component
  * 編集・削除タブ（完全再現）
  */
-export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTabProps) {
+export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange }: EditTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAkyo, setSelectedAkyo] = useState<AkyoData | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [pending, setPending] = useState<Record<string, PendingAkyoUpdate>>({});
+  const [saved, setSaved] = useState<Record<string, AkyoData>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [message, setMessage] = useState('');
+  const [commitUrl, setCommitUrl] = useState('');
+  const pendingCount = Object.keys(pending).length;
+  const visibleData = useMemo(() => akyoData.map((akyo) => {
+    const current = saved[akyo.id] ?? akyo;
+    return pending[akyo.id] ? applyAkyoEditFields(current, pending[akyo.id].changes) : current;
+  }), [akyoData, pending, saved]);
+  const editAttributes = useMemo(() => [...new Set([
+    ...attributes,
+    ...visibleData.flatMap((akyo) => akyo.category.split(',').filter(Boolean)),
+  ])], [attributes, visibleData]);
+
+  useEffect(() => {
+    onPendingStateChange?.(pendingCount > 0, submitting);
+  }, [pendingCount, submitting, onPendingStateChange]);
+
+  useEffect(() => {
+    if (!pendingCount) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [pendingCount]);
+
+  const handleStage = (changes: AkyoEditFields) => {
+    if (!pending[changes.id] && pendingCount >= MAX_BATCH_UPDATES) {
+      throw new Error('保留は100件までです。先に更新を反映してください。');
+    }
+    const originalData = saved[changes.id] ?? akyoData.find((akyo) => akyo.id === changes.id);
+    if (!originalData) return;
+    setPending((previous) => {
+      const original = previous[changes.id]?.original ?? getAkyoEditFields(originalData);
+      const next = { ...previous };
+      if (sameAkyoEditFields(original, changes)) delete next[changes.id];
+      else next[changes.id] = { original, changes };
+      return next;
+    });
+    setMessage('');
+    setCommitUrl('');
+  };
+
+  const handleApply = async () => {
+    if (submittingRef.current || !pendingCount) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/update-akyo-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.values(pending)),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.error || '更新に失敗しました');
+      setSaved((previous) => ({ ...previous, ...Object.fromEntries((result.data as AkyoData[]).map((akyo) => [akyo.id, akyo])) }));
+      setPending({});
+      setMessage(result.message);
+      setCommitUrl(result.commitUrl || '');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '更新に失敗しました。保留内容は維持されています。');
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
+  };
 
   // Filter data based on search query
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) {
-      return akyoData;
+      return visibleData;
     }
 
     const query = searchQuery.toLowerCase();
-    return akyoData.filter((akyo) => {
+    return visibleData.filter((akyo) => {
       return (
         akyo.id.toLowerCase().includes(query) ||
         (akyo.nickname && akyo.nickname.toLowerCase().includes(query)) ||
@@ -40,7 +113,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
         (akyo.creator && akyo.creator.toLowerCase().includes(query))
       );
     });
-  }, [akyoData, searchQuery]);
+  }, [visibleData, searchQuery]);
 
   const handleEdit = (akyo: AkyoData) => {
     setSelectedAkyo(akyo);
@@ -91,10 +164,6 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
         '\n\nもう一度お試しください。'
       );
     }
-  };
-
-  const handleEditSuccess = () => {
-    onDataChange();
   };
 
   return (
@@ -191,6 +260,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
                       <div className="font-medium text-gray-900">
                         {akyo.nickname || '-'}
                       </div>
+                      {pending[akyo.id] && <span className="text-xs font-medium text-amber-700">更新保留中</span>}
                     </td>
 
                     {/* アバター名 */}
@@ -210,15 +280,32 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEdit(akyo)}
-                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                          disabled={submitting}
+                          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <IconEdit size="w-3.5 h-3.5" className="mr-1" />
                           編集
                         </button>
+                        {pending[akyo.id] && (
+                          <button
+                            type="button"
+                            disabled={submitting}
+                            aria-label={`#${akyo.id} の保留を取り消す`}
+                            title="保留を取り消す"
+                            className="p-2 text-gray-600 hover:bg-gray-100 rounded"
+                            onClick={() => setPending((previous) => {
+                              const next = { ...previous };
+                              delete next[akyo.id];
+                              return next;
+                            })}
+                          ><IconClose size="w-4 h-4" /></button>
+                        )}
                         {userRole === 'owner' && (
                           <button
                             onClick={() => handleDelete(akyo)}
-                            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                            disabled={submitting || pendingCount > 0}
+                            title={pendingCount ? '保留中の更新を反映または取り消してから削除してください' : undefined}
+                            className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <IconTrash size="w-3.5 h-3.5" className="mr-1" />
                             削除
@@ -239,6 +326,22 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
         {userRole === 'owner' ? '編集・削除機能が利用可能です' : '編集機能が利用可能です（削除は上位管理者のみ）'}
       </p>
 
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-white py-4">
+        <p role="status" className="min-w-0 flex-1 text-sm text-gray-700 break-words">
+          {message}
+          {commitUrl && <a className="ml-2 text-blue-700 underline" href={commitUrl} target="_blank" rel="noopener noreferrer">コミット</a>}
+        </p>
+        <span className="text-sm text-gray-700">保留 {pendingCount}件</span>
+        <button type="button" disabled={submitting || !pendingCount} className="px-3 py-2 text-sm text-gray-600 disabled:opacity-50" onClick={() => {
+          if (confirm('保留中の更新をすべて取り消しますか？')) setPending({});
+        }}>すべて取り消す</button>
+        <button type="button" onClick={handleApply} disabled={submitting || !pendingCount}
+          aria-busy={submitting}
+          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-5 py-3 font-medium text-white hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed">
+          <IconSave size="w-4 h-4" />{submitting ? '反映中...' : '更新を反映する'}
+        </button>
+      </div>
+
       {/* Edit Modal — key で対象ごとに作り直し、フォーム初期値・画像プレビュー・
           重複確認結果を前回の編集から引き継がないようにする */}
       <EditModal
@@ -249,8 +352,8 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange }: EditTa
           setSelectedAkyo(null);
         }}
         akyo={selectedAkyo}
-        attributes={attributes}
-        onSuccess={handleEditSuccess}
+        attributes={editAttributes}
+        onStage={handleStage}
       />
     </div>
   );
