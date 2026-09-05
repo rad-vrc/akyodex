@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface CategoriesTabProps {
   userRole: AdminRole;
+  /** Called after a commit so the add/edit tabs can pick up new or renamed categories. */
+  onCategoriesChanged?: () => void;
 }
 
 interface CategoryEntry {
@@ -64,10 +66,13 @@ function isSelfOrDescendant(token: string, path: string): boolean {
  * GitHub の CSV と対訳 JSON を正とする）。各操作は 1 コミットで、EN/KO の CSV と JSON は
  * その後 Sync JSON Data が作り直す。Akyo への付け外しは編集タブで行う。
  */
-export function CategoriesTab({ userRole }: CategoriesTabProps) {
+export function CategoriesTab({ userRole, onCategoriesChanged }: CategoriesTabProps) {
   const isOwner = userRole === 'owner';
   const [entries, setEntries] = useState<CategoryEntry[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
+  // Commit the list was read from. Sent with every change so the server refuses an edit
+  // decided on a screen that no longer matches main (409 → reload).
+  const [head, setHead] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
@@ -90,6 +95,7 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
       }
       setEntries(data.categories);
       setColors(data.colors ?? {});
+      setHead(data.head ?? '');
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'カテゴリ一覧を取得できませんでした');
     } finally {
@@ -148,7 +154,7 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...body, head }),
       });
       const data = (await response.json()) as CategoryMutationResponse;
       if (!response.ok || !data.success) {
@@ -158,6 +164,7 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
       setCommitUrl(data.commitUrl || '');
       setEditor(null);
       await load();
+      onCategoriesChanged?.();
       return true;
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'カテゴリの更新に失敗しました');
@@ -178,7 +185,15 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
     }
     if (editor.kind === 'rename') {
       const to = form.ja.trim();
-      await submit({ action: 'rename', from: editor.path, to, en: form.en.trim(), ko: form.ko.trim() });
+      const en = form.en.trim();
+      const ko = form.ko.trim();
+      // Unchanged Japanese name = translation only. That action is open to admins,
+      // renaming is not, so the two must not share a request.
+      if (to === editor.path) {
+        await submit({ action: 'translate', path: editor.path, en, ko });
+      } else {
+        await submit({ action: 'rename', from: editor.path, to, en, ko });
+      }
       return;
     }
     const into = form.into;
@@ -225,7 +240,9 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
           ? `「${editor.parent}」の下にカテゴリを追加`
           : '最上位カテゴリを追加'
         : editor.kind === 'rename'
-          ? `「${editor.path}」の名前と対訳`
+          ? isOwner
+            ? `「${editor.path}」の名前と対訳`
+            : `「${editor.path}」の対訳`
           : `「${editor.path}」を別のカテゴリに統合`;
     const idBase = `category-editor-${editor.kind}`;
     return (
@@ -235,7 +252,11 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label htmlFor={`${idBase}-ja`} className="block text-sm font-medium text-green-900 mb-1">
-                {editor.kind === 'create' ? 'カテゴリ名（日本語）' : 'カテゴリ名（日本語、「/」で階層を変えると移動）'}
+                {editor.kind === 'create'
+                  ? 'カテゴリ名（日本語）'
+                  : isOwner
+                    ? 'カテゴリ名（日本語、「/」で階層を変えると移動）'
+                    : 'カテゴリ名（日本語の変更はらどのみ）'}
               </label>
               <div className="flex items-center gap-1">
                 {editor.kind === 'create' && editor.parent && (
@@ -245,7 +266,7 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
                   id={`${idBase}-ja`}
                   type="text"
                   value={form.ja}
-                  disabled={busy}
+                  disabled={busy || (editor.kind === 'rename' && !isOwner)}
                   onChange={(event) => setForm((previous) => ({ ...previous, ja: event.target.value }))}
                   className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
                   placeholder={editor.kind === 'create' ? '例: ねこ' : ''}
@@ -460,11 +481,10 @@ export function CategoriesTab({ userRole }: CategoriesTabProps) {
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'rename', path: entry.path })}
-                        disabled={busy || (!isOwner && !untranslated)}
-                        title={!isOwner && !untranslated ? OWNER_ONLY_TITLE : undefined}
+                        disabled={busy}
                         className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                       >
-                        {untranslated ? '対訳を登録' : '改名・対訳'}
+                        {untranslated ? '対訳を登録' : isOwner ? '改名・対訳' : '対訳'}
                       </button>
                       <button
                         type="button"

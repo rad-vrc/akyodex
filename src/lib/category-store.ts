@@ -9,6 +9,7 @@ import { parseLoadedAkyoCsvContent, stringifyAkyoCsv } from './csv-utils';
 import {
   CATEGORY_LANGUAGES,
   CategoryOperationError,
+  assertTranslationHierarchy,
   serializeCategoryColors,
   serializeCategoryTranslations,
   type CategoryChange,
@@ -166,6 +167,7 @@ export async function commitCategoryChange(
   change: CategoryChange,
   deps: CategoryStoreDeps = defaultDeps,
 ): Promise<GitHubCommitResponse & { sha: string; files: string[] }> {
+  assertTranslationHierarchy(change.dataset.translations);
   const files = buildCategoryCommitFiles(snapshot, change);
   if (files.length === 0) {
     throw new CategoryOperationError('変更がありません');

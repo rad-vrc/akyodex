@@ -145,7 +145,7 @@ test('lists categories from the API, then renames with leaf translations and rel
     await h.type('category-editor-rename-en', 'Horse');
     await h.click(h.buttons('決定')[0]);
     const post = h.calls.find((call) => call.method === 'POST');
-    assert.deepEqual(post?.body, { action: 'rename', from: '動物/うま', to: '動物/ウマ', en: 'Horse', ko: '말' });
+    assert.deepEqual(post?.body, { action: 'rename', from: '動物/うま', to: '動物/ウマ', en: 'Horse', ko: '말', head: 'h' }, 'the head the list was read from travels with the change');
     assert.equal(h.calls.filter((call) => call.method === 'GET').length, 2, 'the list is reloaded after a commit');
     assert.match(h.win.document.body.textContent!, /done/);
     assert.ok(h.win.document.querySelector('a[href="https://github.com/x/commit/1"]'));
@@ -163,7 +163,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
     await h.type('category-editor-create-en', 'Cat');
     await h.type('category-editor-create-ko', '고양이');
     await h.click(h.buttons('作成する')[0]);
-    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이' });
+    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', head: 'h' });
 
     await h.click(h.rowButton('乗り物', '統合'));
     const options = [...h.win.document.querySelectorAll('#category-editor-merge-into option')].map((option) => (option as HTMLOptionElement).value);
@@ -178,7 +178,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
     assert.equal(h.calls.filter((call) => call.body?.action === 'merge').length, 0, 'cancelling the confirm sends nothing');
     h.setConfirm(true);
     await h.click(h.buttons('統合する')[0]);
-    assert.deepEqual(h.calls.find((call) => call.body?.action === 'merge')?.body, { action: 'merge', from: '乗り物', into: '動物' });
+    assert.deepEqual(h.calls.find((call) => call.body?.action === 'merge')?.body, { action: 'merge', from: '乗り物', into: '動物', head: 'h' });
 
     h.setConfirm(false);
     await h.click(h.rowButton('動物', '削除'));
@@ -186,7 +186,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
     assert.equal(h.calls.filter((call) => call.body?.action === 'delete').length, 0);
     h.setConfirm(true);
     await h.click(h.rowButton('動物', '削除'));
-    assert.deepEqual(h.calls.find((call) => call.body?.action === 'delete')?.body, { action: 'delete', path: '動物' });
+    assert.deepEqual(h.calls.find((call) => call.body?.action === 'delete')?.body, { action: 'delete', path: '動物', head: 'h' });
   } finally {
     await h.cleanup();
   }
@@ -208,12 +208,31 @@ test('shows the server error inside the editor and keeps it open; admins cannot 
 
   const admin = await setup('admin');
   try {
-    assert.equal(admin.rowButton('動物', '改名・対訳').disabled, true);
     assert.equal(admin.rowButton('動物', '統合').disabled, true);
     assert.equal(admin.rowButton('動物', '削除').disabled, true);
     assert.equal(admin.rowButton('動物', '子を追加').disabled, false);
     assert.equal(admin.rowButton('未翻訳', '対訳を登録').disabled, false, 'adding a missing translation is not structural');
+    // Admins edit translations only: the Japanese name is locked and the request is `translate`.
+    await admin.click(admin.rowButton('動物', '対訳'));
+    const ja = admin.win.document.getElementById('category-editor-rename-ja') as HTMLInputElement;
+    assert.equal(ja.disabled, true);
+    await admin.type('category-editor-rename-en', 'Beast');
+    await admin.click(admin.buttons('決定')[0]);
+    assert.deepEqual(admin.calls.find((call) => call.method === 'POST')?.body, { action: 'translate', path: '動物', en: 'Beast', ko: '동물', head: 'h' });
   } finally {
     await admin.cleanup();
+  }
+});
+
+test('owner: an unchanged Japanese name sends translate instead of rename', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('未翻訳', '対訳を登録'));
+    await h.type('category-editor-rename-en', 'Untranslated');
+    await h.type('category-editor-rename-ko', '미번역');
+    await h.click(h.buttons('決定')[0]);
+    assert.deepEqual(h.calls.find((call) => call.method === 'POST')?.body, { action: 'translate', path: '未翻訳', en: 'Untranslated', ko: '미번역', head: 'h' });
+  } finally {
+    await h.cleanup();
   }
 });

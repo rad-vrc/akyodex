@@ -1,7 +1,7 @@
 'use client';
 
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
-import { useModalDialog } from '@/hooks/use-modal-dialog';
+import { isComposingKeyboardEvent, useModalDialog } from '@/hooks/use-modal-dialog';
 import { useState, useEffect, useRef } from 'react';
 
 interface AttributeModalProps {
@@ -244,7 +244,8 @@ export function AttributeModal({
                     disabled={creating}
                     onChange={(e) => setNewAttributeName(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      // IME の変換確定 Enter で永続的な作成を走らせない
+                      if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
                         e.preventDefault();
                         void handleCreateAttribute();
                       }
@@ -268,7 +269,7 @@ export function AttributeModal({
                       disabled={creating}
                       onChange={(e) => setNewAttributeEn(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
                           e.preventDefault();
                           void handleCreateAttribute();
                         }
@@ -291,7 +292,7 @@ export function AttributeModal({
                       disabled={creating}
                       onChange={(e) => setNewAttributeKo(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
                           e.preventDefault();
                           void handleCreateAttribute();
                         }

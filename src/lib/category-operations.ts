@@ -274,7 +274,18 @@ function rewriteRecords(dataset: CategoryDataset, from: string, to: string | nul
   return changedRows;
 }
 
-/** Move translation entries of `from` and its descendants under `to`, re-prefixing EN/KO. */
+function translationLeaf(value: string): string {
+  return value.slice(value.lastIndexOf('/') + 1);
+}
+
+/**
+ * Move translation entries of `from` and its descendants under `to`.
+ *
+ * Descendants are rebuilt top-down from the parent that ends up in the table, not from the
+ * source prefix: when a merge keeps an existing `to/child` (with its own EN/KO), the
+ * grandchildren must follow that kept entry, otherwise `to/child/grandchild` would carry
+ * the old child's name and break the parent-prefix invariant CI enforces.
+ */
 function moveTranslations(
   dataset: CategoryDataset,
   from: string,
@@ -282,27 +293,52 @@ function moveTranslations(
   target: CategoryTranslation,
   options: { keepExistingTarget: boolean },
 ): void {
-  const source = translationOf(dataset, from);
-  const keys = Object.keys(dataset.translations).filter((key) => isSelfOrDescendant(key, from));
-  for (const key of keys) {
-    const entry = dataset.translations[key];
-    delete dataset.translations[key];
+  const moved = Object.keys(dataset.translations)
+    .filter((key) => isSelfOrDescendant(key, from))
+    .sort((a, b) => a.split('/').length - b.split('/').length || a.localeCompare(b));
+  const entries = new Map(moved.map((key) => [key, dataset.translations[key]]));
+  for (const key of moved) delete dataset.translations[key];
+  for (const key of moved) {
     const nextKey = replacePathPrefix(key, from, to);
     if (options.keepExistingTarget && Object.hasOwn(dataset.translations, nextKey)) continue;
     if (key === from) {
       dataset.translations[nextKey] = { ...target };
       continue;
     }
-    const nextEntry = { ...entry };
-    for (const language of CATEGORY_LANGUAGES) {
-      const oldPrefix = source ? `${source[language]}/` : null;
-      if (oldPrefix && entry[language].startsWith(oldPrefix)) {
-        nextEntry[language] = `${target[language]}/${entry[language].slice(oldPrefix.length)}`;
-      }
-    }
-    dataset.translations[nextKey] = nextEntry;
+    const entry = entries.get(key)!;
+    const parentTranslation = translationOf(dataset, parentOf(nextKey)!);
+    dataset.translations[nextKey] = parentTranslation
+      ? {
+          en: `${parentTranslation.en}/${translationLeaf(entry.en)}`,
+          ko: `${parentTranslation.ko}/${translationLeaf(entry.ko)}`,
+        }
+      : { ...entry };
   }
   if (!Object.hasOwn(dataset.translations, to)) dataset.translations[to] = { ...target };
+}
+
+/**
+ * The invariant `scripts/category-translations.test.js` enforces on the committed file:
+ * every child key has its parent in the table and its EN/KO start with the parent's.
+ * Checked again right before a commit so no operation can write what CI would reject.
+ */
+export function assertTranslationHierarchy(translations: CategoryTranslations): void {
+  for (const [path, entry] of Object.entries(translations)) {
+    const parent = parentOf(path);
+    if (parent === null) continue;
+    if (!Object.hasOwn(translations, parent)) {
+      throw new CategoryOperationError(`対訳の整合性エラー: 「${path}」の親「${parent}」に対訳がありません`, 500);
+    }
+    for (const language of CATEGORY_LANGUAGES) {
+      const prefix = `${translations[parent][language]}/`;
+      if (!entry[language].startsWith(prefix)) {
+        throw new CategoryOperationError(
+          `対訳の整合性エラー: 「${path}」の ${language}「${entry[language]}」が親の「${prefix}」で始まっていません`,
+          500,
+        );
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

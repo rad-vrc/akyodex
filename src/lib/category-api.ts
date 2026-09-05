@@ -24,6 +24,7 @@ export type CategoryAction = (typeof CATEGORY_ACTIONS)[number];
 export const OWNER_ONLY_CATEGORY_ACTIONS: ReadonlySet<CategoryAction> = new Set(['rename', 'merge', 'delete']);
 
 const CONFLICT_MESSAGE = '他の更新が先に入りました。一覧を再読み込みしてからやり直してください';
+const STALE_LIST_MESSAGE = '一覧を表示してから他の更新が入りました。再読み込みして内容を確認してからやり直してください';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -93,8 +94,18 @@ export async function processCategoryRequest(
   if (OWNER_ONLY_CATEGORY_ACTIONS.has(action) && role !== 'owner') {
     return jsonError('カテゴリの改名・統合・削除はらど（上位管理者）のみ使用できます', 403);
   }
+  // The non-force ref update only guards the window inside this request. `head` is the
+  // commit the list was read from, so a rename decided on a stale screen cannot overwrite
+  // what someone else changed in between. `create` may omit it (the attribute modal has no
+  // list); it adds a key that a fresh snapshot already checks for duplicates.
+  if (action !== 'create' && typeof body.head !== 'string') {
+    return jsonError('一覧の版（head）がありません。一覧を再読み込みしてください', 400);
+  }
   try {
     const snapshot = await loadCategorySnapshot(deps);
+    if (typeof body.head === 'string' && body.head !== snapshot.head) {
+      return jsonError(STALE_LIST_MESSAGE, 409, { head: snapshot.head });
+    }
     const change = applyCategoryAction(action, snapshot.dataset, body);
     const commit = await commitCategoryChange(snapshot, change, deps);
     return Response.json({

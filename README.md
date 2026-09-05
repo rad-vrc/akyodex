@@ -993,7 +993,7 @@ Users can ask questions like:
 { "action": "merge",     "from": "乗り物", "into": "機械" }
 { "action": "delete",    "path": "動物/うま" }
 ```
-`en` / `ko` are the names of that level only; the parent's translations are prepended. Renaming or deleting a parent applies to every descendant. `Booth` and the world marker categories cannot be changed. A push that lands while the commit is being built returns `409`.
+`en` / `ko` are the names of that level only; the parent's translations are prepended. Renaming or deleting a parent applies to every descendant. `Booth` and the world marker categories cannot be changed. Every action except `create` must also send `head` (the commit returned by `GET`); a different current head, or a push that lands while the commit is being built, returns `409`.
 
 #### `POST /api/check-duplicate`
 **Check for duplicates**

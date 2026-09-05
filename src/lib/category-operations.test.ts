@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   CategoryOperationError,
+  assertTranslationHierarchy,
   createCategory,
   deleteCategory,
   mergeCategory,
@@ -146,6 +147,35 @@ test('merge: folds the source and its descendants into the target and drops its 
   assert.equal(categoriesOf(withChildren.dataset.records, '0002'), '動物,乗り物,乗り物/ポニー');
   assert.deepEqual(withChildren.dataset.translations['乗り物/ポニー'], { en: 'Vehicle/Pony', ko: '탈것/포니' });
   assert.equal(Object.hasOwn(withChildren.dataset.translations, '動物/うま'), false);
+});
+
+test('merge: grandchildren follow the child kept on the target side, not the source prefix', () => {
+  const base: CategoryDataset = {
+    header: HEADER,
+    records: [row('0001', 'A,A/子,A/子/孫'), row('0002', 'B,B/子')],
+    translations: {
+      A: { en: 'Alpha', ko: '알파' },
+      'A/子': { en: 'Alpha/Child', ko: '알파/자식' },
+      'A/子/孫': { en: 'Alpha/Child/Grandchild', ko: '알파/자식/손자' },
+      B: { en: 'Beta', ko: '베타' },
+      'B/子': { en: 'Beta/Kid', ko: '베타/꼬마' },
+    },
+    colors: {},
+  };
+  const change = mergeCategory(base, { from: 'A', into: 'B' });
+  assert.equal(categoriesOf(change.dataset.records, '0001'), 'B,B/子,B/子/孫');
+  assert.deepEqual(change.dataset.translations['B/子'], { en: 'Beta/Kid', ko: '베타/꼬마' }, 'kept');
+  assert.deepEqual(change.dataset.translations['B/子/孫'], { en: 'Beta/Kid/Grandchild', ko: '베타/꼬마/손자' });
+  assert.doesNotThrow(() => assertTranslationHierarchy(change.dataset.translations));
+});
+
+test('assertTranslationHierarchy rejects a child whose parent is missing or whose prefix differs', () => {
+  assert.throws(() => assertTranslationHierarchy({ 'A/子': { en: 'Alpha/Child', ko: '알파/자식' } }), /親「A」に対訳がありません/);
+  assert.throws(
+    () => assertTranslationHierarchy({ A: { en: 'Alpha', ko: '알파' }, 'A/子': { en: 'Beta/Child', ko: '알파/자식' } }),
+    /「Alpha\/」で始まっていません/,
+  );
+  assert.doesNotThrow(() => assertTranslationHierarchy(dataset().translations));
 });
 
 test('merge: refuses parent/child pairs, identical paths, protected and untranslated targets', () => {

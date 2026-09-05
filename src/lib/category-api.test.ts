@@ -70,14 +70,40 @@ test('POST create is open to admins and commits only the translation table', asy
   assert.equal(commits.length, 1);
 });
 
+test('POST checks the head the list was read from before applying a change', async () => {
+  const { deps: d, commits } = deps();
+  const missing = await json(await processCategoryRequest({ action: 'delete', path: '動物/うま' }, 'owner', d));
+  assert.equal(missing.status, 400);
+  assert.match(String(missing.body.error), /head/);
+  const stale = await json(await processCategoryRequest({ action: 'delete', path: '動物/うま', head: 'old-sha' }, 'owner', d));
+  assert.equal(stale.status, 409);
+  assert.equal(stale.body.head, 'head-sha');
+  assert.match(String(stale.body.error), /再読み込み/);
+  assert.equal(commits.length, 0);
+  const fresh = await json(await processCategoryRequest({ action: 'delete', path: '動物/うま', head: 'head-sha' }, 'owner', d));
+  assert.equal(fresh.status, 200);
+  // create may omit head (the picker modal has no list); a wrong head is still refused.
+  assert.equal((await processCategoryRequest({ action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이' }, 'admin', d)).status, 200);
+  assert.equal((await processCategoryRequest({ action: 'create', path: '動物/いぬ', en: 'Dog', ko: '개', head: 'old-sha' }, 'admin', d)).status, 409);
+});
+
+test('POST translate is open to admins while rename of the same category is not', async () => {
+  const { deps: d } = deps();
+  const translate = await json(await processCategoryRequest({ action: 'translate', path: '動物', en: 'Beast', ko: '짐승', head: 'head-sha' }, 'admin', d));
+  assert.equal(translate.status, 200);
+  assert.equal(translate.body.changedRows, 0);
+  assert.match(String(translate.body.message), /対訳を更新/);
+  assert.equal((await processCategoryRequest({ action: 'rename', from: '動物', to: '動物', en: 'Beast', ko: '짐승', head: 'head-sha' }, 'admin', d)).status, 403);
+});
+
 test('POST rename reports the row count and maps operation errors to their status', async () => {
   const { deps: d } = deps();
-  const ok = await json(await processCategoryRequest({ action: 'rename', from: '動物', to: '生き物', en: 'Creature', ko: '생물' }, 'owner', d));
+  const ok = await json(await processCategoryRequest({ action: 'rename', from: '動物', to: '生き物', en: 'Creature', ko: '생물', head: 'head-sha' }, 'owner', d));
   assert.equal(ok.status, 200);
   assert.equal(ok.body.changedRows, 1);
   assert.match(String(ok.body.message), /「動物」を「生き物」に変更しました（1 件の Akyo を更新）/);
 
-  const missing = await json(await processCategoryRequest({ action: 'delete', path: '無い' }, 'owner', d));
+  const missing = await json(await processCategoryRequest({ action: 'delete', path: '無い', head: 'head-sha' }, 'owner', d));
   assert.equal(missing.status, 404);
   const invalid = await json(await processCategoryRequest({ action: 'create', path: '動物,鳥', en: 'x', ko: 'x' }, 'owner', d));
   assert.equal(invalid.status, 400);
@@ -88,7 +114,7 @@ test('POST maps a moved branch to 409 and unexpected failures to 500', async () 
   const conflict = deps(async () => {
     throw new GitHubConflictError('moved');
   });
-  const { status, body } = await json(await processCategoryRequest({ action: 'delete', path: '動物/うま' }, 'owner', conflict.deps));
+  const { status, body } = await json(await processCategoryRequest({ action: 'delete', path: '動物/うま', head: 'head-sha' }, 'owner', conflict.deps));
   assert.equal(status, 409);
   assert.match(String(body.error), /再読み込み/);
 
@@ -98,7 +124,7 @@ test('POST maps a moved branch to 409 and unexpected failures to 500', async () 
   const originalError = console.error;
   console.error = () => {};
   try {
-    assert.equal((await processCategoryRequest({ action: 'delete', path: '動物/うま' }, 'owner', broken.deps)).status, 500);
+    assert.equal((await processCategoryRequest({ action: 'delete', path: '動物/うま', head: 'head-sha' }, 'owner', broken.deps)).status, 500);
   } finally {
     console.error = originalError;
   }

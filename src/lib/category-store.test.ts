@@ -94,4 +94,9 @@ test('commitCategoryChange commits on top of the snapshot head and refuses empty
   const noop = renameCategory(snapshot.dataset, { from: '乗り物', to: '乗り物', en: 'Vehicle', ko: '탈것' });
   await assert.rejects(() => commitCategoryChange(snapshot, noop, d), /変更がありません/);
   assert.equal(calls.commits.length, 1);
+
+  // A change whose translations break the parent-prefix invariant never reaches GitHub.
+  const broken = { ...rename, dataset: { ...rename.dataset, translations: { ...rename.dataset.translations, '生き物/うま': { en: 'Animal/Horse', ko: '생물/말' } } } };
+  await assert.rejects(() => commitCategoryChange(snapshot, broken, d), /対訳の整合性エラー/);
+  assert.equal(calls.commits.length, 1);
 });
