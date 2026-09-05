@@ -3,7 +3,6 @@
 import { IconEdit, IconPlusCircle, IconTools } from '@/components/icons';
 import { useCallback, useState } from 'react';
 import { AddTab } from './tabs/add-tab';
-import { ADD_TAB_DRAFT_KEY } from './draft-keys';
 import { EditTab } from './tabs/edit-tab';
 import { ToolsTab } from './tabs/tools-tab';
 
@@ -35,9 +34,6 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
   const handleTabChange = (nextTab: TabType) => {
     if (applying) return;
     if (nextTab === 'edit') setEditVisited(true);
-    if (activeTab === 'add' && nextTab !== 'add' && typeof window !== 'undefined') {
-      sessionStorage.removeItem(ADD_TAB_DRAFT_KEY);
-    }
     setActiveTab(nextTab);
   };
 
@@ -93,13 +89,14 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
 
       {/* タブコンテンツ */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        {activeTab === 'add' && (
+        {/* Keep registration state, including image/crop state, across tab switches. */}
+        <div hidden={activeTab !== 'add'}>
           <AddTab
             userRole={userRole}
             attributes={attributes}
             creators={creators}
           />
-        )}
+        </div>
         {editVisited && (
           <div hidden={activeTab !== 'edit'}>
           <EditTab
