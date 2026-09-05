@@ -345,7 +345,11 @@ export function AkyoDetailModal({
                     </h3>
                     {/* 12px / 高さ20px の小型ピル（旧: 14px / 28px / shadow-md）。
                         カードは件数で高さが変わり、16件で 340px → 224px（幅272px実測）。
-                        押せないチップなので WCAG 2.5.8 の 24px ターゲット要件は対象外。 */}
+                        押せないチップなので WCAG 2.5.8 の 24px ターゲット要件は対象外。
+                        上下パディングが 1.5px / 2.5px と非対称なのは M PLUS 2 のアセントが
+                        ディセントより大きく、対称パディングだと文字のインクが箱の中心より
+                        0.75px 下に寄るため（4倍拡大で実測。inline-flex 中央寄せでも同じ）。
+                        1px / 3px だと DPR 1.25 で逆に 0.8px 上に寄り、1.5 / 2.5 でずれ 0 になった。 */}
                     <div className="flex flex-wrap gap-x-1.5 gap-y-1 mt-1">
                       {categories.map((cat, index) => {
                         const color = getCategoryColor(cat);
@@ -353,7 +357,7 @@ export function AkyoDetailModal({
                         return (
                           <span
                             key={index}
-                            className="px-2 py-0.5 rounded-full text-xs font-bold text-white"
+                            className="px-2 pt-[1.5px] pb-[2.5px] rounded-full text-xs font-bold text-white"
                             style={{
                               // 単色ベタ塗り。旧`${bgColor}dd`への半透明グラデは末端が
                               // 白と混ざり、補正の白文字4.5:1保証が実表示で3.7〜3.9台に

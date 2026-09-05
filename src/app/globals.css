@@ -288,7 +288,10 @@ select:focus {
    .attribute-badge（12px / padding 5.6×13.6 / 高さ約29px）はフィルターの
    ボタンと共用なので触らず、こちらは 11px / 高さ18px。16件のカードで 781px → 579px
    （幅227pxで実測）。押せないので WCAG 2.5.8 の 24px ターゲット要件は対象外。
-   子が長くて 1 行に入らないときは親の下に折り返す（flex-wrap）。 */
+   子が長くて 1 行に入らないときは親の下に折り返す（flex-wrap）。
+   上下パディングが 1.5px / 2.5px と非対称なのは M PLUS 2 のアセントがディセントより
+   大きく、対称だと文字のインクが箱の中心より 0.75px 下に寄るため（4倍拡大で実測。
+   1px / 3px だと DPR 1.25 で逆に上へ寄り、1.5 / 2.5 でずれ 0）。 */
 .category-group {
   display: inline-flex;
   flex-wrap: wrap;
@@ -302,7 +305,10 @@ select:focus {
 }
 
 .category-group__parent {
-  padding: 2px 6px;
+  /* flex: 1 1 auto は、子が 2 行目に落ちたとき 1 行目の残り幅を親の色で埋めるため。
+     これが無いと親チップの右に透明な切り欠きが出て L 字型になる（EN の実データで再現） */
+  flex: 1 1 auto;
+  padding: 1.5px 6px 2.5px;
   color: #fff;
   white-space: nowrap;
 }
@@ -310,7 +316,7 @@ select:focus {
 .category-group__children {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 2px 6px;
+  padding: 1.5px 6px 2.5px;
   font-weight: 600;
 }
 
