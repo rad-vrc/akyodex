@@ -12,6 +12,11 @@ interface UseModalDialogOptions {
   /** 開いた直後にフォーカスを置く要素。未指定ならパネル内の最初の操作可能要素 */
   initialFocusRef?: RefObject<HTMLElement | null>;
   /**
+   * 閉じた後にフォーカスを戻す要素。閉じる時点の `current` を読む。
+   * 未指定なら、開いた時点の document.activeElement（= 開くきっかけになったボタン）へ戻す。
+   */
+  returnFocusRef?: RefObject<HTMLElement | null>;
+  /**
    * 子モーダル（カテゴリ管理など）が開いている間 true にする。
    * その間は Escape とフォーカストラップを止め、子側の操作を邪魔しない。
    */
@@ -39,15 +44,16 @@ export function isComposingKeyboardEvent(
  * - Tab / Shift+Tab はパネル内で循環する
  * - Escape で onRequestClose を呼ぶ
  * - 背面の body スクロールを止める
- * - 閉じたら開く前にフォーカスがあった要素へ戻す
+ * - 閉じたら returnFocusRef（未指定なら開く前にフォーカスがあった要素）へ戻す
  *
- * akyo-detail-modal.tsx が持つ同等の実装を、管理画面向けに切り出したもの。
+ * 公開側の akyo-detail-modal.tsx と管理画面の edit-modal.tsx が共用する。
  */
 export function useModalDialog({
   isOpen,
   onRequestClose,
   dialogRef,
   initialFocusRef,
+  returnFocusRef,
   suspended = false,
 }: UseModalDialogOptions) {
   // 呼び出し側が毎レンダー新しい関数を渡しても effect を張り直さないよう ref 経由で読む
@@ -65,8 +71,8 @@ export function useModalDialog({
       return;
     }
 
-    // 閉じた後にフォーカスを戻す先（= 開くきっかけになったボタン）
-    const returnFocusTarget =
+    // returnFocusRef が無い場合の復帰先（= 開くきっかけになったボタン）。開いた時点で控える
+    const activeElementAtOpen =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const previousOverflow = document.body.style.overflow;
@@ -155,9 +161,16 @@ export function useModalDialog({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousOverflow;
 
+      // returnFocusRef を渡された場合はそれだけを見る（呼び出し側が復帰先を管理している）。
+      // 閉じる時点の current を読むので、開いている間に差し替えられても追従する。
+      // react-hooks は「cleanup 時には ref が変わっている」と警告するが、ここではその
+      // 「閉じる時点の値」こそが欲しい値（呼び出し側が持つ復帰先の入れ物で、React の
+      // DOM ノードに attach された ref ではない）
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const returnFocusTarget = returnFocusRef ? returnFocusRef.current : activeElementAtOpen;
       if (returnFocusTarget?.isConnected) {
         window.requestAnimationFrame(() => returnFocusTarget.focus());
       }
     };
-  }, [isOpen, dialogRef, initialFocusRef]);
+  }, [isOpen, dialogRef, initialFocusRef, returnFocusRef]);
 }

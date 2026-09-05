@@ -24,9 +24,9 @@ import {
   IconTag,
   IconUser,
 } from '@/components/icons';
+import { useModalDialog } from '@/hooks/use-modal-dialog';
 import { ensureContrastForWhiteText, getCategoryColor, parseAndSortCategories } from '@/lib/akyo-data-helpers';
 import { formatDisplayId, getAkyoSourceUrl, getDisplaySerial, resolveEntryType } from '@/lib/akyo-entry';
-import { getFocusableElements } from '@/lib/focusable-elements';
 import type { SupportedLanguage } from '@/lib/i18n';
 import { t } from '@/lib/i18n';
 import {
@@ -109,7 +109,6 @@ export function AkyoDetailModal({
   const cardImageUrl = localAkyo ? buildAvatarImageUrl(localAkyo.id, sourceUrl, 800) : '';
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const wasOpenRef = useRef(false);
 
   // Sync local state with prop changes
   useEffect(() => {
@@ -128,87 +127,15 @@ export function AkyoDetailModal({
     });
   }, [localAkyo, r2Base, referenceR2Base, cardImageUrl]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const focusInitialElement = () => {
-      // The delayed fallback must not undo focus already moved inside the modal.
-      if (dialogRef.current?.contains(document.activeElement)) return;
-      const focusTarget =
-        closeButtonRef.current ?? getFocusableElements(dialogRef.current)[0] ?? dialogRef.current;
-      focusTarget?.focus();
-    };
-
-    const initialFocusFrame = window.requestAnimationFrame(focusInitialElement);
-    const fallbackFocusTimer = window.setTimeout(focusInitialElement, 50);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (event.key !== 'Tab') {
-        return;
-      }
-
-      const focusableElements = getFocusableElements(dialogRef.current);
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        dialogRef.current?.focus();
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement as HTMLElement | null;
-
-      if (!activeElement || !dialogRef.current?.contains(activeElement)) {
-        event.preventDefault();
-        firstElement.focus();
-        return;
-      }
-
-      if (event.shiftKey && (activeElement === firstElement || activeElement === dialogRef.current)) {
-        event.preventDefault();
-        lastElement.focus();
-        return;
-      }
-
-      if (!event.shiftKey && activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.cancelAnimationFrame(initialFocusFrame);
-      window.clearTimeout(fallbackFocusTimer);
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen && wasOpenRef.current) {
-      const elementToRestoreFocus = returnFocusRef?.current;
-      if (elementToRestoreFocus && elementToRestoreFocus.isConnected) {
-        window.requestAnimationFrame(() => {
-          elementToRestoreFocus.focus();
-        });
-      }
-    }
-
-    wasOpenRef.current = isOpen;
-  }, [isOpen, returnFocusRef]);
+  // body スクロールロック・初期フォーカス・Tab の循環・Escape・閉じた後の復帰は共有フックに任せる。
+  // 復帰先は呼び出し側の returnFocusRef（開くきっかけになったカードなど）
+  useModalDialog({
+    isOpen,
+    onRequestClose: onClose,
+    dialogRef,
+    initialFocusRef: closeButtonRef,
+    returnFocusRef,
+  });
 
   // 早期リターン - すべての Hooks 呼び出しの後に配置
   if (!localAkyo || !isOpen) return null;
