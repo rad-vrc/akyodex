@@ -56,8 +56,15 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
     if (paths) setApiCategories(paths);
   }, []);
   useEffect(() => {
-    void refreshCategories();
-  }, [refreshCategories]);
+    // Initial load; the disposed flag keeps an unmounted tab set from a late response.
+    let disposed = false;
+    void fetchCategoryPaths().then((paths) => {
+      if (!disposed && paths) setApiCategories(paths);
+    });
+    return () => {
+      disposed = true;
+    };
+  }, []);
   const currentAttributes = mergeCategoryLists(
     refreshedCatalog ? extractCategories(refreshedCatalog) : attributes,
     apiCategories,
