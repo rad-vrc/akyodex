@@ -225,6 +225,7 @@ Akyodex/                            # リポジトリルート (monorepoでは�
 │   │       ├── check-duplicate/    # 重複チェック
 │   │       ├── csv/                # CSV データ取得
 │   │       ├── delete-akyo/        # 削除
+│   │       ├── categories/         # カテゴリの一覧・作成・改名・統合・削除（1 コミット）
 │   │       ├── download-reference/ # 三面図ダウンロード (R2)
 │   │       ├── kv-migrate/         # KVデータ移行
 │   │       ├── manifest/           # PWA マニフェスト

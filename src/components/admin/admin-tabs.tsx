@@ -1,9 +1,10 @@
 'use client';
 
-import { IconEdit, IconPlusCircle, IconTools } from '@/components/icons';
-import { useCallback, useState } from 'react';
+import { IconEdit, IconPlusCircle, IconTags, IconTools } from '@/components/icons';
+import { useCallback, useEffect, useState } from 'react';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
 import { AddTab } from './tabs/add-tab';
+import { CategoriesTab } from './tabs/categories-tab';
 import { EditTab } from './tabs/edit-tab';
 import { ToolsTab } from './tabs/tools-tab';
 
@@ -17,7 +18,28 @@ interface AdminTabsProps {
   onPendingEditsChange?: (pending: boolean, busy: boolean) => void;
 }
 
-type TabType = 'add' | 'edit' | 'tools';
+type TabType = 'add' | 'edit' | 'categories' | 'tools';
+
+/**
+ * Categories the add/edit pickers can choose from: those carried by some Akyo (catalog)
+ * plus those registered in the category table but not yet assigned to any Akyo. Without
+ * the second set a category created in the Categories tab could never receive its first Akyo.
+ */
+export function mergeCategoryLists(fromCatalog: string[], fromCategoryApi: string[]): string[] {
+  return [...new Set([...fromCatalog, ...fromCategoryApi])].sort();
+}
+
+async function fetchCategoryPaths(): Promise<string[] | null> {
+  try {
+    const response = await fetch('/api/categories');
+    const data = (await response.json()) as { success?: boolean; categories?: { path: string }[] };
+    if (!response.ok || !data.success || !data.categories) return null;
+    return data.categories.map((entry) => entry.path);
+  } catch (error) {
+    console.error('[admin] Failed to load categories:', error);
+    return null;
+  }
+}
 
 /**
  * Admin Tabs Component
@@ -28,7 +50,25 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
   const [editVisited, setEditVisited] = useState(false);
   const [applying, setApplying] = useState(false);
   const [refreshedCatalog, setRefreshedCatalog] = useState<AkyoData[] | null>(null);
-  const currentAttributes = refreshedCatalog ? extractCategories(refreshedCatalog) : attributes;
+  const [apiCategories, setApiCategories] = useState<string[]>([]);
+  const refreshCategories = useCallback(async () => {
+    const paths = await fetchCategoryPaths();
+    if (paths) setApiCategories(paths);
+  }, []);
+  useEffect(() => {
+    // Initial load; the disposed flag keeps an unmounted tab set from a late response.
+    let disposed = false;
+    void fetchCategoryPaths().then((paths) => {
+      if (!disposed && paths) setApiCategories(paths);
+    });
+    return () => {
+      disposed = true;
+    };
+  }, []);
+  const currentAttributes = mergeCategoryLists(
+    refreshedCatalog ? extractCategories(refreshedCatalog) : attributes,
+    apiCategories,
+  );
   const currentCreators = refreshedCatalog ? extractAuthors(refreshedCatalog) : creators;
   const handlePendingState = useCallback((pending: boolean, busy: boolean) => {
     setApplying(busy);
@@ -38,6 +78,8 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
   const handleTabChange = (nextTab: TabType) => {
     if (applying) return;
     if (nextTab === 'edit') setEditVisited(true);
+    // Pick up categories created or renamed elsewhere (another admin, or the Categories tab).
+    if (nextTab === 'add' || nextTab === 'edit') void refreshCategories();
     setActiveTab(nextTab);
   };
 
@@ -77,6 +119,18 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
             編集・削除
           </button>
           <button
+            onClick={() => handleTabChange('categories')}
+            disabled={applying}
+            className={`px-6 py-4 font-medium text-gray-700 transition-colors ${
+              activeTab === 'categories'
+                ? 'border-b-2 border-red-500 text-red-500'
+                : 'hover:bg-gray-50'
+            }`}
+          >
+            <IconTags size="w-4 h-4" className="mr-2" />
+            カテゴリ
+          </button>
+          <button
             onClick={() => handleTabChange('tools')}
             disabled={applying}
             className={`px-6 py-4 font-medium text-gray-700 transition-colors ${
@@ -112,6 +166,9 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
             onPendingStateChange={handlePendingState}
           />
           </div>
+        )}
+        {activeTab === 'categories' && (
+          <CategoriesTab userRole={userRole} onCategoriesChanged={() => void refreshCategories()} />
         )}
         {activeTab === 'tools' && <ToolsTab />}
       </div>

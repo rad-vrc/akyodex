@@ -176,6 +176,11 @@ export async function commitAkyoCsv({
   return commitCSVToGitHub(content, fileSha, commitMessage, csvFileName, githubConfig);
 }
 
+/** CSV text in the same shape the admin API commits (every field quoted, LF). */
+export function stringifyAkyoCsv(header: string[], dataRecords: string[][]): string {
+  return stringifyCSV([header, ...dataRecords]);
+}
+
 export function formatAkyoCommitMessage(
   action: 'Add' | 'Update' | 'Delete',
   id: string,

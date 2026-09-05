@@ -8,6 +8,7 @@
  */
 
 import categoryCanonical from '@/lib/category-canonical.json';
+import categoryColors from '@/lib/category-colors.json';
 import type { AkyoData } from '@/types/akyo';
 /**
  * Delimiter pattern for splitting multi-value strings in CSV (comma or Japanese ideographic comma)
@@ -219,6 +220,12 @@ export function getCategoryColor(category: string): string {
     ? (categoryCanonical as Record<string, string>)[rawTopLevel]
     : undefined;
   const topLevelCategory = canonicalName ?? rawTopLevel;
+
+  // 名前ごとに固定した色（category-colors.json）。管理画面でカテゴリを改名しても
+  // キーが一緒に付け替わるので、下のキーワード一致やハッシュに落ちて色が変わらない。
+  if (Object.hasOwn(categoryColors, topLevelCategory)) {
+    return (categoryColors as Record<string, string>)[topLevelCategory];
+  }
 
   for (const [key, color] of Object.entries(CATEGORY_COLOR_MAP)) {
     if (topLevelCategory.includes(key)) {
