@@ -337,7 +337,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
         }}>すべて取り消す</button>
         <button type="button" onClick={handleApply} disabled={submitting || !pendingCount}
           aria-busy={submitting}
-          className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-5 py-3 font-medium text-white hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed">
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 px-5 py-3 font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
           <IconSave size="w-4 h-4" />{submitting ? '反映中...' : '更新を反映する'}
         </button>
       </div>

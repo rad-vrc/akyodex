@@ -451,7 +451,10 @@ export function EditModal({
       submitData.append('entryType', formData.entryType);
       submitData.append('displaySerial', displaySerialForSubmit);
       submitData.append('nickname', formData.nickname);
-      submitData.append('avatarName', isAvatarEntry ? formData.avatarName : '');
+      // Hidden world/BOOTH names still belong to the record during category-only edits.
+      const preserveHiddenName = formData.entryType === akyo.entryType &&
+        formData.sourceUrl.trim() === getAkyoSourceUrl(akyo).trim();
+      submitData.append('avatarName', isAvatarEntry || preserveHiddenName ? formData.avatarName : '');
       submitData.append('sourceUrl', formData.sourceUrl);
       submitData.append('avatarUrl', formData.avatarUrl || formData.sourceUrl);
       if (formData.boothUrl.trim()) {

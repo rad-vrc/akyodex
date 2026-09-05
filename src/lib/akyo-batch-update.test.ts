@@ -125,3 +125,26 @@ test('clearing comments and BOOTH links is saved without reviving legacy aliases
   assert.equal(data[0].notes, '');
   assert.equal(data[0].boothUrl, undefined);
 });
+
+test('category-only avatar/world/BOOTH edits preserve every other CSV column in one commit', async () => {
+  const f = fixture();
+  f.records[1] = createAkyoRecord({ id: '0002', nickname: 'World', avatarName: 'Stored world name',
+    author: 'World author', category: 'ワールド', comment: 'World notes', sourceUrl: worldUrl,
+    entryType: 'world', displaySerial: '0012' }, header);
+  f.records[2] = createAkyoRecord({ id: '0003', nickname: 'Booth item', avatarName: '', author: 'Seller',
+    category: 'Booth', comment: 'Item notes', boothUrl: 'https://booth.pm/ja/items/123', displaySerial: 'Booth0001' }, header);
+  const originalData = parseCsvToAkyoData(stringify([header, ...f.records]));
+  const updates = originalData.map((akyo) => {
+    const original = getAkyoEditFields(akyo);
+    return { original, changes: { ...original, category: `${original.category},技能・特性,技能・特性/演奏` } };
+  });
+  const response = await processAkyoBatchUpdate(updates, f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits.length, 1);
+  for (const [index, row] of f.commits[0].dataRecords.entries()) {
+    for (const [column, name] of header.entries()) {
+      if (name !== 'Category') assert.equal(row[column], f.records[index][column], `${index}: ${name}`);
+    }
+    assert.ok(row[header.indexOf('Category')].includes('技能・特性/演奏'));
+  }
+});

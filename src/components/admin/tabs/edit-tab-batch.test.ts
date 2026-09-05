@@ -37,6 +37,10 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     category: '動物', attribute: '動物', comment: '', notes: '', appearance: '',
     entryType: 'avatar', displaySerial: id, sourceUrl, avatarUrl: sourceUrl,
   }));
+  const worldUrl = 'https://vrchat.com/home/world/wrld_12345678-1234-1234-1234-123456789abc';
+  data.push({ ...data[0], id: '0003', entryType: 'world', displaySerial: '0001',
+    nickname: 'World', avatarName: 'Saved world name', category: 'ワールド', attribute: 'ワールド',
+    sourceUrl: worldUrl, avatarUrl: worldUrl });
   const button = (text: string) => [...win.document.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!;
   const edit = async (index: number, value: string) => {
     await act(async () => {
@@ -80,6 +84,51 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     await act(async () => button('更新を反映する').click());
     assert.equal(requests[2][0].original.nickname, 'Second edit', 'next batch uses committed data, not stale initial props');
     await act(async () => resolveRequest(Response.json({ success: true, message: 'ok', data: [applyAkyoEditFields(saved[0], requests[2][0].changes)] })));
+
+    // Category-first workflow: create once, reuse on other pending records, and reopen.
+    requests.length = 0;
+    const open = async (index: number) => act(async () => {
+      [...win.document.querySelectorAll('tbody tr')][index].querySelector('button')!.click();
+    });
+    const click = async (text: string) => act(async () => button(text).click());
+    await open(0);
+    await click('カテゴリを管理');
+    await click('動物');
+    await click('新しいカテゴリを作成');
+    await act(async () => {
+      const input = win.document.querySelector<HTMLInputElement>('#attributeNewInput')!;
+      Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, 'value')!.set!.call(input, '技能・特性/演奏');
+      input.dispatchEvent(new win.Event('input', { bubbles: true }));
+    });
+    await click('追加する');
+    await click('選択を決定');
+    await click('更新を保留');
+    await open(0);
+    await click('カテゴリを管理');
+    assert.ok(button('技能・特性/演奏').className.includes('bg-green-100'), 'staged categories reopen selected');
+    assert.ok(!button('動物').className.includes('bg-green-100'), 'removed category stays removed');
+    await click('選択を決定');
+    await click('更新を保留');
+    for (const index of [1, 2]) {
+      await open(index);
+      await click('カテゴリを管理');
+      assert.ok(button('技能・特性/演奏'), 'new category is available on a different record before committing');
+      await click('技能・特性/演奏');
+      await click('選択を決定');
+      await click('更新を保留');
+    }
+    assert.equal(requests.length, 0, 'category holding makes no write or VRChat metadata requests');
+    await click('更新を反映する');
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].length, 3);
+    for (const { original, changes } of requests[0]) {
+      assert.ok(changes.category.includes('技能・特性/演奏'));
+      const { category: oldCategory, ...oldFields } = original;
+      const { category: newCategory, ...newFields } = changes;
+      assert.notEqual(oldCategory, newCategory);
+      assert.deepEqual(newFields, oldFields, 'category edits must preserve names, URLs, serials and comments, including hidden world names');
+    }
+    await act(async () => resolveRequest(Response.json({ success: false, error: 'fixture complete' }, { status: 409 })));
   } finally {
     await act(async () => root.unmount());
     dom.window.close();
