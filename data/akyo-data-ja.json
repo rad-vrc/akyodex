@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-05T09:36:52.432Z",
-  "count": 945,
+  "updatedAt": "2026-09-05T09:42:54.915Z",
+  "count": 947,
   "data": [
     {
       "id": "0001",
@@ -10792,6 +10792,30 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_00eff476-474d-48ce-86fa-e43867b1083e"
+    },
+    {
+      "id": "0946",
+      "entryType": "avatar",
+      "displaySerial": "0838",
+      "nickname": "おつきみAkyo",
+      "avatarName": "おつきみAkyo",
+      "category": "チョコミント類,作風・スタイル,作風・スタイル/和風,季節・行事,季節・行事/秋,惑星・衛星",
+      "comment": "Akyoのつきみざけ！",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3c0a424a-79a3-4a0a-a7b9-800cd4d93349",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3c0a424a-79a3-4a0a-a7b9-800cd4d93349"
+    },
+    {
+      "id": "0947",
+      "entryType": "avatar",
+      "displaySerial": "0839",
+      "nickname": "アニメAkyo",
+      "avatarName": "Animated_Akyo_2026",
+      "category": "チョコミント類,ギミック・特殊,ギミック・特殊/アニメーション,形状・触り心地,形状・触り心地/ぺらぺら",
+      "comment": "このAkyo、動くぞ！",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0e69f77f-9d1f-4c55-a828-333f95de7c8e"
     }
   ]
 }
