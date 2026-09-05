@@ -684,8 +684,10 @@ function main() {
     );
   }
 
+  // LF like the admin API's JA writer (csv-utils stringifyCSV) and the committed files.
+  // CRLF here made the CI bot commit rewrite every line the first time it ran the script.
   const outCsv = stringify(outRows, {
-    record_delimiter: '\r\n',
+    record_delimiter: '\n',
     quoted_match: /[\r\n]/,
   });
   fs.writeFileSync(enPath, outCsv, 'utf8');
