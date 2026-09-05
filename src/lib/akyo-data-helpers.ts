@@ -72,6 +72,43 @@ export function parseAndSortCategories(category: string): string[] {
     .sort();
 }
 
+export interface CategoryGroup {
+  /** 最上位カテゴリ名（例: "動物"） */
+  parent: string;
+  /** 親を除いた残りのパス（例: "うま", "野菜/ナス"）。親だけのときは空 */
+  children: string[];
+}
+
+/**
+ * ソート済みカテゴリを最上位カテゴリごとにまとめる（一覧カード・リスト表示用）。
+ *
+ * データは子カテゴリを持つとき親も必ず持つ（2026-09 時点で 1,443 件中 0 件の例外）ので、
+ * 「動物」「動物/うま」「動物/両生類」を 1 グループ {動物 | うま, 両生類} にして
+ * 親名の繰り返しを表示から外す。3 階層（"食べ物/野菜/ナス"）は中間も必ず入っているため、
+ * 中間 "野菜" は "野菜/ナス" に含まれるとみなして落とし、"野菜/ナス" だけを残す。
+ * 親が単独で出てきた場合（子なし）は children が空のグループになる。
+ * 区切り記号はデータ側と同じ「,」を想定している（3 言語 334 カテゴリ名に「,」は 0 件、
+ * 「・」は 130 件あるので「・」は区切りに使えない）。
+ */
+export function groupCategoriesByParent(sortedCategories: string[]): CategoryGroup[] {
+  const groups = new Map<string, string[]>();
+  for (const name of sortedCategories) {
+    const slash = name.indexOf('/');
+    const parent = (slash === -1 ? name : name.slice(0, slash)).trim();
+    const rest = slash === -1 ? '' : name.slice(slash + 1).trim();
+    if (!parent) continue;
+    if (!groups.has(parent)) groups.set(parent, []);
+    if (rest) groups.get(parent)!.push(rest);
+  }
+  return [...groups].map(([parent, children]) => ({
+    parent,
+    // 他の子の祖先になっている中間ノードは落とす（"野菜" は "野菜/ナス" があれば不要）
+    children: children.filter(
+      (child) => !children.some((other) => other !== child && other.startsWith(`${child}/`)),
+    ),
+  }));
+}
+
 /**
  * Find a single Akyo item by ID
  * 

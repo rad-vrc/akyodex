@@ -282,21 +282,36 @@ select:focus {
   white-space: nowrap;
 }
 
-/* 一覧カード・リスト表示のカテゴリチップ（表示専用、押せない）。
+/* 一覧カード・リスト表示のカテゴリ表示（表示専用、押せない）。
+   最上位カテゴリごとに 1 グループ: 親 = 濃色ベタ＋白文字、子 = 薄底＋濃色文字を
+   横に連結する（components/category-badges.tsx）。
    .attribute-badge（12px / padding 5.6×13.6 / 高さ約29px）はフィルターの
-   ボタンと共用なので触らず、カテゴリ表示だけ 11px / 高さ18px に小型化する。
-   16件のカードで 781px → 649px（幅227pxで実測）。押せないので WCAG 2.5.8 の
-   24px ターゲット要件は対象外。影は小さいチップでは輪郭が濁るだけなので付けない。 */
-.category-badge {
+   ボタンと共用なので触らず、こちらは 11px / 高さ18px。16件のカードで 781px → 579px
+   （幅227pxで実測）。押せないので WCAG 2.5.8 の 24px ターゲット要件は対象外。
+   子が長くて 1 行に入らないときは親の下に折り返す（flex-wrap）。 */
+.category-group {
   display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 9999px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  border-radius: 5px;
+  overflow: hidden;
   font-weight: 700;
   letter-spacing: 0.01em;
   font-size: 0.6875rem; /* 11px */
   line-height: 14px;
+}
+
+.category-group__parent {
+  padding: 2px 6px;
+  color: #fff;
   white-space: nowrap;
+}
+
+.category-group__children {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 6px;
+  font-weight: 600;
 }
 
 /* クイックフィルターバッジ（ボタンサイズ調整） */
