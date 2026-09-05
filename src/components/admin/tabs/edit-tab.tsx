@@ -7,7 +7,7 @@ import { generateBlurDataURL } from '@/lib/blur-data-url';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { EditModal } from '../edit-modal';
 
 interface EditTabProps {
@@ -42,7 +42,8 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
     ...visibleData.flatMap((akyo) => akyo.category.split(',').filter(Boolean)),
   ])], [attributes, visibleData]);
 
-  useEffect(() => {
+  // Publish the navigation guard before the pending/busy UI becomes interactive.
+  useLayoutEffect(() => {
     onPendingStateChange?.(pendingCount > 0, submitting);
   }, [pendingCount, submitting, onPendingStateChange]);
 

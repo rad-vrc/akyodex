@@ -83,6 +83,8 @@ export function AdminClient({
         isAuthenticated={isAuthenticated}
         userRole={userRole}
         onLogout={handleLogout}
+        pendingEdits={editState.pending}
+        applyingEdits={editState.busy}
       />
 
       {!isAuthenticated ? (
