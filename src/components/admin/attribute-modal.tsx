@@ -1,7 +1,8 @@
 'use client';
 
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
-import { useState, useEffect } from 'react';
+import { useModalDialog } from '@/hooks/use-modal-dialog';
+import { useState, useEffect, useRef } from 'react';
 
 interface AttributeModalProps {
   isOpen: boolean;
@@ -33,6 +34,18 @@ export function AttributeModal({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newAttributeName, setNewAttributeName] = useState('');
   const [availableAttributes, setAvailableAttributes] = useState<string[]>(allAttributes);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // 親（EditModal）は showAttributeModal 中に suspended=true で自分のトラップを止めるので、
+  // ここで張るトラップと競合しない。復帰先は未指定 = 開いた時点の activeElement
+  // （「カテゴリを管理」ボタン）。AddTab から開いた場合も同じ経路で戻る
+  useModalDialog({
+    isOpen,
+    onRequestClose: onClose,
+    dialogRef,
+    initialFocusRef: searchInputRef,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -108,15 +121,11 @@ export function AttributeModal({
     listColumns === 4 ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-3' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 p-3';
 
   return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="attributeModalTitle"
-    >
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40"
+        aria-hidden="true"
         onClick={handleBackdropClick}
       />
 
@@ -125,9 +134,14 @@ export function AttributeModal({
         className="relative z-10 flex min-h-full items-center justify-center px-4 py-8 sm:py-12"
         onClick={handleBackdropClick}
       >
-        {/* Modal Content */}
+        {/* Modal Content — role="dialog" はフォーカストラップの範囲と一致させるためパネル側に置く */}
         <div
-          className={`w-full ${modalWidthClass} bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-5rem)]`}
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="attributeModalTitle"
+          tabIndex={-1}
+          className={`w-full ${modalWidthClass} bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-5rem)] focus:outline-none`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -156,7 +170,9 @@ export function AttributeModal({
               <div className="relative flex-1">
                 <IconSearch size="w-4 h-4" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
+                  ref={searchInputRef}
                   type="search"
+                  aria-label="カテゴリを検索"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
