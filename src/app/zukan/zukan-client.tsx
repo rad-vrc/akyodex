@@ -39,6 +39,7 @@ import {
 } from "./catalog-data-loader";
 import {
   CatalogLoadPerformance,
+  captureCatalogFailure,
   reportCatalogLoadToSentry,
 } from "./catalog-performance";
 import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
@@ -48,6 +49,10 @@ import {
   type CatalogTotals,
 } from "./catalog-initial-data";
 import { resolveClientCatalogUrl } from "./catalog-language";
+import {
+  shouldResumeCatalogLoad,
+  type CatalogResumeTrigger,
+} from "./catalog-resume";
 import {
   getNextFilterPanelOpenState,
   resolveFilterPanelOpenState,
@@ -281,6 +286,8 @@ export function ZukanClient({
     Map<SupportedLanguage, LanguageDatasetCacheEntry>
   >(new Map([[serverLang, serverDataset]]));
   const requestCoordinatorRef = useRef<CatalogRequestCoordinator | null>(null);
+  /** 自動の取り直しを最後に投げた時刻。復帰のたびに投げ直さないための下限に使う */
+  const lastAutoResumeAtRef = useRef<number | null>(null);
   if (!requestCoordinatorRef.current) {
     requestCoordinatorRef.current = new CatalogRequestCoordinator();
   }
@@ -455,12 +462,17 @@ export function ZukanClient({
         if (!coordinator.isCurrent(request.generation)) return;
         const telemetry = catalogPerformance.markFailure(err);
         if (telemetry) void reportCatalogLoadToSentry(telemetry);
+        // span はサンプリングで 9 割落ちるので、失敗は Issue としても送る
+        captureCatalogFailure(err, { language: lang, telemetry });
         if (catalogPerformanceRef.current === catalogPerformance) {
           catalogPerformanceRef.current = null;
         }
         console.error("[ZukanClient] Failed to load complete catalog:", err);
         setRefetchError(t("error.catalogUnavailable", lang));
       } finally {
+        // 中断・追い越しで抜けた場合もここは通る。決着を記録しておかないと
+        // 「進行中の取得がある」と見なされ続け、復帰時の取り直しが動かない
+        coordinator.settle(request.generation);
         if (coordinator.isCurrent(request.generation)) {
           setLoading(false);
         }
@@ -484,6 +496,47 @@ export function ZukanClient({
     setLoading,
     setError,
   ]);
+
+  // 取得が中断されたまま後続が始まらないと、フィルターはスピナーのまま戻らない
+  // （完全版が来るまで描画しないため）。画面にはエラーも再試行ボタンも出ないので、
+  // bfcache からの復帰とタブの復帰を合図に、止まっていれば取り直す
+  useEffect(() => {
+    if (isCurrentDatasetComplete) return;
+
+    const resumeIfStalled = (trigger: CatalogResumeTrigger) => {
+      const coordinator = requestCoordinatorRef.current;
+      if (!coordinator) return;
+      const lastResumeAt = lastAutoResumeAtRef.current;
+      const shouldResume = shouldResumeCatalogLoad(trigger, {
+        datasetComplete: isCurrentDatasetComplete,
+        stalled: coordinator.isStalled(),
+        msSinceLastResume:
+          lastResumeAt === null
+            ? Number.POSITIVE_INFINITY
+            : Date.now() - lastResumeAt,
+      });
+      if (!shouldResume) return;
+      lastAutoResumeAtRef.current = Date.now();
+      setRetryNonce((current) => current + 1);
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      resumeIfStalled({ type: "pageshow", persisted: event.persisted });
+    };
+    const handleVisibilityChange = () => {
+      resumeIfStalled({
+        type: "visibilitychange",
+        visibilityState: document.visibilityState,
+      });
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isCurrentDatasetComplete]);
 
   useEffect(() => {
     if (!isCurrentDatasetComplete) return;

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   CatalogLoadPerformance,
+  describeCatalogFailureCause,
   getCatalogFailureReason,
 } from "./catalog-performance";
 
@@ -116,4 +117,46 @@ test("getCatalogFailureReason keeps only the error class", () => {
     "AbortError",
   );
   assert.equal(getCatalogFailureReason("private response body"), "UnknownError");
+});
+
+test("describeCatalogFailureCause は取得元ごとの失敗を 1 行にまとめる", () => {
+  // 「全部失敗した」だけでは api / r2 / snapshot のどれがどう落ちたか分からない
+  const error = new Error("All complete catalog sources failed", {
+    cause: new AggregateError([
+      new Error("Catalog request failed with HTTP 503"),
+      new TypeError("Failed to fetch"),
+      new Error("Catalog payload must contain a non-empty data array"),
+    ]),
+  });
+
+  assert.equal(
+    describeCatalogFailureCause(error),
+    "Error: Catalog request failed with HTTP 503 | " +
+      "TypeError: Failed to fetch | " +
+      "Error: Catalog payload must contain a non-empty data array",
+  );
+});
+
+test("describeCatalogFailureCause は URL を落とす", () => {
+  const error = new Error("All complete catalog sources failed", {
+    cause: new AggregateError([
+      new TypeError("Failed to fetch https://images.akyodex.com/data/x.json"),
+    ]),
+  });
+
+  assert.equal(
+    describeCatalogFailureCause(error),
+    "TypeError: Failed to fetch [url]",
+  );
+});
+
+test("describeCatalogFailureCause は Error 以外の cause を要約しない", () => {
+  assert.equal(describeCatalogFailureCause(new Error("boom")), undefined);
+  assert.equal(
+    describeCatalogFailureCause(
+      new Error("wrapped", { cause: new Error("inner") }),
+    ),
+    undefined,
+  );
+  assert.equal(describeCatalogFailureCause("not an error"), undefined);
 });

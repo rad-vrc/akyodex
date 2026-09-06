@@ -313,14 +313,26 @@ export async function loadCompleteCatalogData(
   });
 }
 
+/**
+ * 取得が「止まっている」と見なすまでの時間。締切（`DEFAULT_CATALOG_FETCH_TIMEOUT_MS`）より
+ * 長めに取り、正常に遅いだけの取得を取り直しで潰さない
+ */
+export const CATALOG_STALL_AFTER_MS = DEFAULT_CATALOG_FETCH_TIMEOUT_MS + 5_000;
+
 export class CatalogRequestCoordinator {
   private generation = 0;
   private controller: AbortController | null = null;
+  private inFlight = false;
+  private startedAtMs = 0;
+
+  constructor(private readonly now: () => number = () => Date.now()) {}
 
   begin(): { generation: number; signal: AbortSignal } {
     this.controller?.abort();
     this.controller = new AbortController();
     this.generation += 1;
+    this.inFlight = true;
+    this.startedAtMs = this.now();
     return {
       generation: this.generation,
       signal: this.controller.signal,
@@ -331,9 +343,29 @@ export class CatalogRequestCoordinator {
     return generation === this.generation && !this.controller?.signal.aborted;
   }
 
+  /**
+   * 取得が決着したことを記録する。現行の取得のときだけ「進行中」を下ろすので、
+   * 追い越された古い取得が後続の在庫を消すことはない
+   */
+  settle(generation: number): void {
+    if (generation === this.generation) {
+      this.inFlight = false;
+    }
+  }
+
+  /**
+   * 取り直してよいか。進行中の取得が無い場合と、締切を過ぎても決着していない場合に真。
+   * 中断されたまま後続が始まっていない状態も前者に入る（`cancel` が在庫を下ろすため）
+   */
+  isStalled(stallAfterMs: number = CATALOG_STALL_AFTER_MS): boolean {
+    if (!this.inFlight) return true;
+    return this.now() - this.startedAtMs >= stallAfterMs;
+  }
+
   cancel(): void {
     this.controller?.abort();
     this.controller = null;
     this.generation += 1;
+    this.inFlight = false;
   }
 }

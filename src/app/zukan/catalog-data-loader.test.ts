@@ -286,6 +286,54 @@ test("CatalogRequestCoordinator aborts stale language requests and unmount work"
   assert.equal(coordinator.isCurrent(english.generation), false);
 });
 
+test("決着していない取得がある間は取り直しの対象にしない", () => {
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+
+  assert.equal(coordinator.isStalled(), true, "始まる前は取り直してよい");
+
+  const request = coordinator.begin();
+  assert.equal(coordinator.isStalled(), false, "進行中は待つ");
+
+  nowMs += 9_000;
+  assert.equal(coordinator.isStalled(), false, "締切内はまだ待つ");
+
+  nowMs += 11_000;
+  assert.equal(coordinator.isStalled(), true, "締切を過ぎたら当てにしない");
+
+  nowMs = 0;
+  const fresh = coordinator.begin();
+  coordinator.settle(fresh.generation);
+  assert.equal(coordinator.isStalled(), true, "決着したら取り直してよい");
+  void request;
+});
+
+test("追い越された取得の決着は後続の在庫を消さない", () => {
+  // 古い取得が中断されて catch を抜けても settle は現行世代のものだけを下ろす。
+  // ここを混ぜると、進行中の取得があるのに復帰のたび取り直してしまう
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const stale = coordinator.begin();
+  const current = coordinator.begin();
+
+  coordinator.settle(stale.generation);
+  assert.equal(coordinator.isStalled(), false, "現行の取得はまだ進行中");
+
+  coordinator.settle(current.generation);
+  assert.equal(coordinator.isStalled(), true);
+});
+
+test("中断されたまま後続が始まらなければ取り直しの対象になる", () => {
+  // 実害はここ。中断で抜けると画面はスピナーのまま、エラーも再試行ボタンも出ない
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  coordinator.begin();
+  assert.equal(coordinator.isStalled(), false);
+
+  coordinator.cancel();
+  assert.equal(coordinator.isStalled(), true);
+});
+
 test("all checked-in language catalogs pass client validation without dropped rows", async () => {
   for (const lang of ["ja", "en", "ko"] as const) {
     const payload = JSON.parse(
