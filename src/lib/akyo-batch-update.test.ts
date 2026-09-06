@@ -22,6 +22,9 @@ function fixture() {
   const commits: Parameters<typeof commitAkyoCsv>[0][] = [];
   let loads = 0;
   const dependencies = {
+    // Categories already carried by the CSV are always known; the registry adds the ones
+    // created but not yet assigned to any Akyo.
+    loadRegistry: async () => new Set<string>(),
     load: async () => { loads++; return { header, dataRecords: records, fileSha: 'original-sha' }; },
     commit: async (args: Parameters<typeof commitAkyoCsv>[0]) => {
       commits.push(args);
@@ -138,7 +141,8 @@ test('category-only avatar/world/BOOTH edits preserve every other CSV column in 
     const original = getAkyoEditFields(akyo);
     return { original, changes: { ...original, category: `${original.category},技能・特性,技能・特性/演奏` } };
   });
-  const response = await processAkyoBatchUpdate(updates, f.dependencies);
+  const registry = new Set(['技能・特性', '技能・特性/演奏']);
+  const response = await processAkyoBatchUpdate(updates, { ...f.dependencies, loadRegistry: async () => registry });
   assert.equal(response.status, 200);
   assert.equal(f.commits.length, 1);
   for (const [index, row] of f.commits[0].dataRecords.entries()) {
@@ -147,4 +151,26 @@ test('category-only avatar/world/BOOTH edits preserve every other CSV column in 
     }
     assert.ok(row[header.indexOf('Category')].includes('技能・特性/演奏'));
   }
+});
+
+test('a category no row carries and the registry does not know is refused before committing', async () => {
+  const f = fixture();
+  const carried = f.updates[0].original.category;
+  f.updates[0].changes.category = `${carried},存在しないカテゴリ`;
+  const response = await processAkyoBatchUpdate([f.updates[0]], f.dependencies);
+  assert.equal(response.status, 400);
+  const { error } = await response.json();
+  assert.match(error, /存在しないカテゴリが含まれています: 存在しないカテゴリ/);
+  assert.match(error, /再読み込み/);
+  assert.equal(f.commits.length, 0);
+
+  // Registered but not yet used by any Akyo: assigning it for the first time must work.
+  const fresh = fixture();
+  fresh.updates[0].changes.category = `${carried},新カテゴリ`;
+  const accepted = await processAkyoBatchUpdate([fresh.updates[0]], {
+    ...fresh.dependencies,
+    loadRegistry: async () => new Set(['新カテゴリ']),
+  });
+  assert.equal(accepted.status, 200);
+  assert.equal(fresh.commits.length, 1);
 });

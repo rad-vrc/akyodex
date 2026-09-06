@@ -6,64 +6,100 @@ import { SearchBar } from '@/components/search-bar';
 import { MAX_BATCH_UPDATES, applyAkyoEditFields, type PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
 import { categoriesOf, hasAllCategories, stageCategoryUpdate, toggleCategories } from '@/lib/category-assignment';
 import type { AkyoData } from '@/types/akyo';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 interface CategoryAssignPanelProps {
+  /** Catalog owned by AdminTabs; already carries rows committed by either tab. */
   akyoData: AkyoData[];
   /** Categories chosen in the list (AND) */
   selected: string[];
-  /** The panel stays mounted (held changes, saved results); this only shows or hides it. */
+  /** The panel stays mounted (held changes survive selection changes); this shows or hides it. */
   visible: boolean;
+  /** Ids the edit tab is holding; one row must not be held in two places (both stage `original`). */
+  blockedIds: ReadonlySet<string>;
   onClearSelection: () => void;
-  onPendingStateChange?: (pending: boolean, busy: boolean) => void;
-  /** Fresh category registry, read right before a commit. null when it cannot be read. */
-  loadKnownPaths: () => Promise<Set<string> | null>;
+  onPendingStateChange?: (pending: boolean, busy: boolean, pendingIds?: string[]) => void;
+  /** Rows as the server saved them, so the whole admin screen leaves the pre-commit state. */
+  onCommitted: (rows: AkyoData[]) => void;
 }
+
+/** Cards mounted at once; the catalog is ~950 entries and the admin only looks at a screenful. */
+const RENDER_STEP = 60;
 
 /**
  * Bulk category assignment: every Akyo as a zukan card, the ones carrying every selected
  * category highlighted. Clicking a card toggles the whole set (with ancestors when adding,
- * with descendants when removing); the changes are held and committed together through
- * the same batch API as the edit tab.
+ * with descendants when removing); clicking a card that already has a held change reverts
+ * that change. The changes are committed together through the same batch API as the edit tab.
  */
-export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelection, onPendingStateChange, loadKnownPaths }: CategoryAssignPanelProps) {
+export function CategoryAssignPanel({
+  akyoData,
+  selected,
+  visible,
+  blockedIds,
+  onClearSelection,
+  onPendingStateChange,
+  onCommitted,
+}: CategoryAssignPanelProps) {
   const [pending, setPending] = useState<Record<string, PendingAkyoUpdate>>({});
-  const [saved, setSaved] = useState<Record<string, AkyoData>>({});
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [message, setMessage] = useState('');
   const [commitUrl, setCommitUrl] = useState('');
   const [query, setQuery] = useState('');
   const [onlyMatching, setOnlyMatching] = useState(false);
-  const pendingCount = Object.keys(pending).length;
+  const [renderLimit, setRenderLimit] = useState(RENDER_STEP);
+  const pendingKey = Object.keys(pending).sort().join(',');
+  const pendingIds = useMemo(() => (pendingKey ? pendingKey.split(',') : []), [pendingKey]);
+  const pendingCount = pendingIds.length;
+
+  // A row that vanished from the catalog (deleted elsewhere) has no card to revert it with,
+  // so drop its hold instead of sending an update the server can only reject.
+  useEffect(() => {
+    setPending((previous) => {
+      const ids = new Set(akyoData.map((akyo) => akyo.id));
+      const kept = Object.entries(previous).filter(([id]) => ids.has(id));
+      return kept.length === Object.keys(previous).length ? previous : Object.fromEntries(kept);
+    });
+  }, [akyoData]);
 
   const visibleData = useMemo(
-    () =>
-      akyoData.map((akyo) => {
-        const current = saved[akyo.id] ?? akyo;
-        return pending[akyo.id] ? applyAkyoEditFields(current, pending[akyo.id].changes) : current;
-      }),
-    [akyoData, pending, saved],
+    () => akyoData.map((akyo) => (pending[akyo.id] ? applyAkyoEditFields(akyo, pending[akyo.id].changes) : akyo)),
+    [akyoData, pending],
+  );
+
+  /** Rows matching the selection right now (held changes included): highlight and count. */
+  const matching = useMemo(
+    () => new Set(visibleData.filter((akyo) => hasAllCategories(categoriesOf(akyo), selected)).map((akyo) => akyo.id)),
+    [visibleData, selected],
+  );
+  /**
+   * Rows that matched before the held changes. The "only matching" filter uses this so a card
+   * does not vanish from under the pointer the moment it is toggled off.
+   */
+  const matchingBase = useMemo(
+    () => new Set(akyoData.filter((akyo) => hasAllCategories(categoriesOf(akyo), selected)).map((akyo) => akyo.id)),
+    [akyoData, selected],
   );
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return visibleData.filter((akyo) => {
-      if (onlyMatching && !hasAllCategories(categoriesOf(akyo), selected)) return false;
+      if (onlyMatching && !matchingBase.has(akyo.id) && !pending[akyo.id]) return false;
       if (!needle) return true;
-      return [akyo.id, akyo.nickname, akyo.avatarName, akyo.author || akyo.creator || '']
-        .some((value) => (value || '').toLowerCase().includes(needle));
+      return [akyo.id, akyo.nickname, akyo.avatarName, akyo.author || akyo.creator || ''].some((value) =>
+        (value || '').toLowerCase().includes(needle),
+      );
     });
-  }, [visibleData, query, onlyMatching, selected]);
+  }, [visibleData, query, onlyMatching, matchingBase, pending]);
 
-  const matchingCount = useMemo(
-    () => visibleData.filter((akyo) => hasAllCategories(categoriesOf(akyo), selected)).length,
-    [visibleData, selected],
-  );
+  useEffect(() => {
+    setRenderLimit(RENDER_STEP);
+  }, [query, onlyMatching, selected]);
 
   useLayoutEffect(() => {
-    onPendingStateChange?.(pendingCount > 0, submitting);
-  }, [pendingCount, submitting, onPendingStateChange]);
+    onPendingStateChange?.(pendingCount > 0, submitting, pendingIds);
+  }, [pendingCount, pendingIds, submitting, onPendingStateChange]);
 
   useEffect(() => {
     if (!pendingCount) return;
@@ -75,25 +111,40 @@ export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelect
     return () => window.removeEventListener('beforeunload', warn);
   }, [pendingCount]);
 
-  const handleToggle = (akyo: AkyoData) => {
-    if (submitting || selected.length === 0) return;
-    const base = saved[akyo.id] ?? akyoData.find((entry) => entry.id === akyo.id);
+  // The card list is long-lived, so the toggle handler must keep a stable identity or every
+  // card re-renders on every state change (AkyoCard is memoized on its props).
+  const toggleRef = useRef<(akyo: AkyoData) => void>(() => {});
+  toggleRef.current = (akyo: AkyoData) => {
+    if (submitting) return;
+    // A second click on a card undoes what the first one staged, whatever the selection is now.
+    if (pending[akyo.id]) {
+      setPending((previous) => {
+        const next = { ...previous };
+        delete next[akyo.id];
+        return next;
+      });
+      setMessage('');
+      setCommitUrl('');
+      return;
+    }
+    if (selected.length === 0) return;
+    if (blockedIds.has(akyo.id)) {
+      setMessage(`#${akyo.id} は編集・削除タブで保留中です。先にそちらを反映または取り消してください。`);
+      return;
+    }
+    const base = akyoData.find((entry) => entry.id === akyo.id);
     if (!base) return;
-    if (!pending[akyo.id] && pendingCount >= MAX_BATCH_UPDATES) {
+    if (pendingCount >= MAX_BATCH_UPDATES) {
       setMessage(`保留は${MAX_BATCH_UPDATES}件までです。先に更新を反映してください。`);
       return;
     }
-    const next = toggleCategories(categoriesOf(akyo), selected);
-    setPending((previous) => {
-      const staged = stageCategoryUpdate(base, previous[akyo.id], next);
-      const result = { ...previous };
-      if (staged) result[akyo.id] = staged;
-      else delete result[akyo.id];
-      return result;
-    });
+    const staged = stageCategoryUpdate(base, undefined, toggleCategories(categoriesOf(akyo), selected));
+    if (!staged) return;
+    setPending((previous) => ({ ...previous, [akyo.id]: staged }));
     setMessage('');
     setCommitUrl('');
   };
+  const handleToggle = useCallback((akyo: AkyoData) => toggleRef.current(akyo), []);
 
   const handleApply = async () => {
     if (submittingRef.current || !pendingCount) return;
@@ -101,19 +152,6 @@ export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelect
     setSubmitting(true);
     setMessage('');
     try {
-      // Every category about to be written must still exist: a rename or delete by another
-      // admin (or by us, in a form opened earlier) must not resurrect an old name that has
-      // no translation any more.
-      const known = await loadKnownPaths();
-      if (!known) throw new Error('カテゴリ一覧を確認できませんでした。通信状況を確認して再試行してください。保留内容は維持されています。');
-      const missing = [...new Set(
-        Object.values(pending)
-          .flatMap((update) => update.changes.category.split(',').map((token) => token.trim()).filter(Boolean))
-          .filter((token) => !known.has(token)),
-      )];
-      if (missing.length > 0) {
-        throw new Error(`存在しなくなったカテゴリがあります: ${missing.join(', ')}。保留を取り消して、選択し直してください。`);
-      }
       const response = await fetch('/api/update-akyo-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,13 +159,10 @@ export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelect
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || '更新に失敗しました');
-      setSaved((previous) => ({
-        ...previous,
-        ...Object.fromEntries((result.data as AkyoData[]).map((akyo) => [akyo.id, akyo])),
-      }));
       setPending({});
       setMessage(result.message);
       setCommitUrl(result.commitUrl || '');
+      onCommitted(result.data as AkyoData[]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '更新に失敗しました。保留内容は維持されています。');
     } finally {
@@ -136,11 +171,21 @@ export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelect
     }
   };
 
+  // Without a selection there is nothing to toggle, but a held card must stay revertible.
+  const cardDisabled = (id: string) => submitting || (selected.length === 0 && !pending[id]);
+  const shown = filtered.slice(0, renderLimit);
+
   return (
-    <section aria-label="カテゴリの付け外し" hidden={!visible} className="mb-6 rounded-xl border border-green-200 bg-green-50/40 p-4">
+    <section
+      aria-label="カテゴリの付け外し"
+      hidden={!visible}
+      className="mb-6 rounded-xl border border-green-200 bg-green-50/40 p-4"
+    >
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-green-900">選択中のカテゴリ（すべて持つ Akyo が選択状態）:</span>
-        {selected.length === 0 && <span className="text-sm text-gray-600">なし。一覧の「選択」でカテゴリを選ぶとカードを押せます</span>}
+        {selected.length === 0 && (
+          <span className="text-sm text-gray-600">なし。一覧の「選択」でカテゴリを選ぶとカードを押せます</span>
+        )}
         {selected.map((path) => (
           <span key={path} className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-900">
             {path}
@@ -157,7 +202,7 @@ export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelect
       </div>
       <p className="mb-3 text-sm text-gray-700">
         カードを押すと、選択中のカテゴリをまとめて付けます（親は自動で付きます）。すでに全部持つ Akyo を押すと、まとめて外します（親を外すと配下も外れます）。
-        該当 {matchingCount} 件 / 全 {akyoData.length} 件
+        保留中のカードをもう一度押すと、その変更だけ取り消します。 該当 {matching.size} 件 / 全 {akyoData.length} 件
       </p>
       <fieldset disabled={submitting} className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex-1">
@@ -174,18 +219,37 @@ export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelect
         </button>
       </fieldset>
 
-      <div className="text-sm text-gray-600 mb-2">{filtered.length} 件を表示</div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {filtered.map((akyo) => (
-          <AkyoCard
-            key={akyo.id}
-            akyo={akyo}
-            selection={{ selected: hasAllCategories(categoriesOf(akyo), selected), onToggle: () => handleToggle(akyo) }}
-          />
-        ))}
+      <div className="text-sm text-gray-600 mb-2">
+        {filtered.length} 件中 {shown.length} 件を表示
       </div>
+      {/* Only render the grid while the panel is on screen: the catalog is ~950 cards. */}
+      {visible && (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {shown.map((akyo) => (
+              <AkyoCard
+                key={akyo.id}
+                akyo={akyo}
+                selectedForAssign={matching.has(akyo.id)}
+                assignDisabled={cardDisabled(akyo.id)}
+                assignPending={Boolean(pending[akyo.id])}
+                onAssignToggle={handleToggle}
+              />
+            ))}
+          </div>
+          {shown.length < filtered.length && (
+            <button
+              type="button"
+              onClick={() => setRenderLimit((value) => value + RENDER_STEP)}
+              className="mt-4 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              もっと見る（残り {filtered.length - shown.length} 件）
+            </button>
+          )}
+        </>
+      )}
 
-      <div className="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-white py-4">
+      <div className="sticky bottom-0 z-30 mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-white py-4">
         <p role="status" className="min-w-0 flex-1 text-sm text-gray-700 break-words">
           {message}
           {commitUrl && <a className="ml-2 text-blue-700 underline" href={commitUrl} target="_blank" rel="noopener noreferrer">コミット</a>}

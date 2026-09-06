@@ -77,7 +77,7 @@ export function parentOf(path: string): string | null {
   return index < 0 ? null : path.slice(0, index);
 }
 
-function isSelfOrDescendant(token: string, path: string): boolean {
+export function isSelfOrDescendant(token: string, path: string): boolean {
   return token === path || token.startsWith(`${path}/`);
 }
 
@@ -85,8 +85,13 @@ function replacePathPrefix(token: string, from: string, to: string): string {
   return token === from ? to : `${to}${token.slice(from.length)}`;
 }
 
-function isProtected(path: string): boolean {
+/** Categories the app adds and reads by name; they must not be renamed or assigned by hand. */
+export function isProtectedCategoryPath(path: string): boolean {
   return PROTECTED_TOP_LEVEL.has(topLevelOf(path).toLowerCase());
+}
+
+function isProtected(path: string): boolean {
+  return isProtectedCategoryPath(path);
 }
 
 /** Insert missing ancestors in front of each token and drop duplicates, keeping order. */

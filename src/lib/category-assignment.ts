@@ -9,7 +9,7 @@
  */
 
 import { getAkyoEditFields, sameAkyoEditFields, type PendingAkyoUpdate } from './akyo-edit-fields';
-import { splitCategoryCell, withAncestors } from './category-operations';
+import { isSelfOrDescendant, splitCategoryCell, withAncestors } from './category-operations';
 import type { AkyoData } from '@/types/akyo';
 
 export function hasAllCategories(tokens: string[], selected: string[]): boolean {
@@ -19,7 +19,7 @@ export function hasAllCategories(tokens: string[], selected: string[]): boolean 
 export function toggleCategories(tokens: string[], selected: string[]): string[] {
   if (selected.length === 0) return tokens;
   if (hasAllCategories(tokens, selected)) {
-    return tokens.filter((token) => !selected.some((path) => token === path || token.startsWith(`${path}/`)));
+    return tokens.filter((token) => !selected.some((path) => isSelfOrDescendant(token, path)));
   }
   return withAncestors([...tokens, ...selected]);
 }

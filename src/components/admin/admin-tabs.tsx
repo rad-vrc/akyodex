@@ -1,7 +1,7 @@
 'use client';
 
 import { IconEdit, IconPlusCircle, IconTags, IconTools } from '@/components/icons';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
 import { AddTab } from './tabs/add-tab';
 import { CategoriesTab } from './tabs/categories-tab';
@@ -49,7 +49,6 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
   const [activeTab, setActiveTab] = useState<TabType>('add');
   const [editVisited, setEditVisited] = useState(false);
   const [categoriesVisited, setCategoriesVisited] = useState(false);
-  const [applying, setApplying] = useState(false);
   const [refreshedCatalog, setRefreshedCatalog] = useState<AkyoData[] | null>(null);
   const [apiCategories, setApiCategories] = useState<string[]>([]);
   const refreshCategories = useCallback(async () => {
@@ -71,23 +70,41 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
     apiCategories,
   );
   const currentCreators = refreshedCatalog ? extractAuthors(refreshedCatalog) : creators;
-  // The edit tab and the categories tab each hold their own unsaved changes; the header
-  // guard and the tab lock see the union.
-  const pendingByTab = useRef({ edit: { pending: false, busy: false }, categories: { pending: false, busy: false } });
-  const publishPendingState = useCallback(() => {
-    const states = Object.values(pendingByTab.current);
-    const busy = states.some((state) => state.busy);
-    setApplying(busy);
-    onPendingEditsChange?.(states.some((state) => state.pending), busy);
-  }, [onPendingEditsChange]);
-  const handlePendingState = useCallback((pending: boolean, busy: boolean) => {
-    pendingByTab.current.edit = { pending, busy };
-    publishPendingState();
-  }, [publishPendingState]);
-  const handleCategoriesPendingState = useCallback((pending: boolean, busy: boolean) => {
-    pendingByTab.current.categories = { pending, busy };
-    publishPendingState();
-  }, [publishPendingState]);
+  // The edit tab and the categories tab each hold their own unsaved changes; the header guard
+  // and the tab lock see the union, and each tab is told which rows the other one holds.
+  // A row held in two places would stage two `original` snapshots of the same CSV row, so the
+  // second commit could only ever be rejected as a conflict.
+  const [pendingByTab, setPendingByTab] = useState({
+    edit: { pending: false, busy: false, ids: [] as string[] },
+    categories: { pending: false, busy: false, ids: [] as string[] },
+  });
+  const handlePendingState = useCallback((pending: boolean, busy: boolean, ids: string[] = []) => {
+    setPendingByTab((previous) => ({ ...previous, edit: { pending, busy, ids } }));
+  }, []);
+  const handleCategoriesPendingState = useCallback((pending: boolean, busy: boolean, ids: string[] = []) => {
+    setPendingByTab((previous) => ({ ...previous, categories: { pending, busy, ids } }));
+  }, []);
+  const anyPending = pendingByTab.edit.pending || pendingByTab.categories.pending;
+  const anyBusy = pendingByTab.edit.busy || pendingByTab.categories.busy;
+  const editHeldIds = useMemo(() => new Set(pendingByTab.edit.ids), [pendingByTab.edit.ids]);
+  const categoriesHeldIds = useMemo(() => new Set(pendingByTab.categories.ids), [pendingByTab.categories.ids]);
+  const applying = anyBusy;
+  useEffect(() => {
+    onPendingEditsChange?.(anyPending, anyBusy);
+  }, [anyPending, anyBusy, onPendingEditsChange]);
+
+  // One catalog for both tabs: rows either tab commits are merged in, so the other tab stops
+  // holding a pre-commit snapshot (the public JSON only catches up after the sync workflow).
+  const catalog = refreshedCatalog ?? akyoData;
+  const handleRowsCommitted = useCallback((rows: AkyoData[]) => {
+    setRefreshedCatalog((previous) => {
+      const base = previous ?? akyoData;
+      const saved = new Map(rows.map((row) => [row.id, row]));
+      const merged = base.map((row) => saved.get(row.id) ?? row);
+      for (const row of rows) if (!base.some((entry) => entry.id === row.id)) merged.push(row);
+      return merged;
+    });
+  }, [akyoData]);
 
   const handleTabChange = (nextTab: TabType) => {
     if (applying) return;
@@ -174,9 +191,11 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
           <div hidden={activeTab !== 'edit'}>
           <EditTab
             userRole={userRole}
-            akyoData={akyoData}
+            akyoData={catalog}
             attributes={currentAttributes}
+            blockedIds={categoriesHeldIds}
             onCatalogRefresh={setRefreshedCatalog}
+            onRowsCommitted={handleRowsCommitted}
             onDataChange={handleDataChange}
             onPendingStateChange={handlePendingState}
           />
@@ -187,8 +206,11 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
           <div hidden={activeTab !== 'categories'}>
             <CategoriesTab
               userRole={userRole}
-              akyoData={refreshedCatalog ?? akyoData}
+              akyoData={catalog}
+              active={activeTab === 'categories'}
+              blockedIds={editHeldIds}
               onCategoriesChanged={() => void refreshCategories()}
+              onRowsCommitted={handleRowsCommitted}
               onPendingStateChange={handleCategoriesPendingState}
             />
           </div>

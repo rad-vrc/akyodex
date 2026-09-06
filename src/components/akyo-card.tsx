@@ -36,13 +36,15 @@ interface AkyoCardProps {
   /** Prioritize image loading for above-the-fold cards */
   priority?: boolean;
   /**
-   * Admin selection mode: the card is a toggle instead of opening the detail dialog.
-   * Favourite and download actions are hidden; the VRChat link stays.
+   * Admin assignment mode (enabled by `onAssignToggle`): the card is a toggle instead of a
+   * link to the detail dialog, and the favourite and reference-sheet actions are hidden.
+   * The props are primitives plus one stable callback so the memoized card can bail out
+   * when a sibling changes — a per-card object prop would re-render the whole catalog.
    */
-  selection?: {
-    selected: boolean;
-    onToggle: () => void;
-  };
+  selectedForAssign?: boolean;
+  assignDisabled?: boolean;
+  assignPending?: boolean;
+  onAssignToggle?: (akyo: AkyoData) => void;
 }
 
 export function shouldBypassImageOptimization(
@@ -95,7 +97,10 @@ function AkyoCardComponent({
   onToggleFavorite,
   onShowDetail,
   priority = false,
-  selection,
+  selectedForAssign = false,
+  assignDisabled = false,
+  assignPending = false,
+  onAssignToggle,
 }: AkyoCardProps) {
   const cloudflareImagesEnabled =
     process.env.NEXT_PUBLIC_ENABLE_CLOUDFLARE_IMAGES === "true";
@@ -137,8 +142,8 @@ function AkyoCardComponent({
    * Handles clicks on the card body to open detail view
    */
   const handleCardClick = (triggerElement?: HTMLElement | null) => {
-    if (selection) {
-      selection.onToggle();
+    if (onAssignToggle) {
+      if (!assignDisabled) onAssignToggle(akyo);
       return;
     }
     onShowDetail?.(akyo, triggerElement);
@@ -177,9 +182,12 @@ function AkyoCardComponent({
 
   return (
     <article
-      className={`akyo-card relative flex h-full flex-col${selection?.selected ? " ring-4 ring-green-500 ring-offset-2" : ""}`}
+      className="akyo-card relative flex h-full flex-col"
       aria-labelledby={`card-title-${akyo.id}`}
-      data-selected={selection ? String(selection.selected) : undefined}
+      // The highlight is drawn from globals.css (an outline, not a ring): the card's own
+      // unlayered :hover box-shadow would otherwise erase a ring while the pointer is on it.
+      data-selected={onAssignToggle ? String(selectedForAssign) : undefined}
+      data-pending={onAssignToggle && assignPending ? "true" : undefined}
     >
       <button
         type="button"
@@ -229,7 +237,7 @@ function AkyoCardComponent({
         />
 
         {/* お気に入りボタン */}
-        {!selection && <button
+        {!onAssignToggle && <button
           type="button"
           onClick={handleFavoriteClick}
           className={`favorite-btn absolute top-2 right-2 z-20${akyo.isFavorite ? " is-active" : ""}`}
@@ -266,7 +274,7 @@ function AkyoCardComponent({
               />
             </button>
           )}
-          {entryType === "avatar" && !selection && (
+          {entryType === "avatar" && !onAssignToggle && (
             <button
               type="button"
               onClick={handleDownloadClick}
@@ -331,17 +339,19 @@ function AkyoCardComponent({
         {/* 属性バッジ（最上位カテゴリごとにまとめた表示） */}
         {category && <CategoryBadges categories={sortedCategories} className="mb-2" />}
 
-        {/* くわしく見るボタン（選択モードでは付け外しのトグル） */}
-        {selection ? (
+        {/* くわしく見るボタン（付け外しモードではトグル） */}
+        {onAssignToggle ? (
           <button
             ref={detailButtonRef}
             type="button"
-            onClick={() => selection.onToggle()}
-            className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
-            aria-pressed={selection.selected}
+            onClick={() => handleCardClick()}
+            disabled={assignDisabled}
+            className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-pressed={selectedForAssign}
+            aria-label={`${formatDisplayId(akyo)} ${displayName}${assignPending ? "（保留中。押すと取り消し）" : selectedForAssign ? "（選択中。押すと外す）" : "（押すと付ける）"}`}
           >
-            <span aria-hidden="true">{selection.selected ? "✅" : "⬜"}</span>
-            <span>{selection.selected ? "選択中（押すと外す）" : "選択する（押すと付ける）"}</span>
+            <span aria-hidden="true">{assignPending ? "↩" : selectedForAssign ? "✅" : "⬜"}</span>
+            <span>{assignPending ? "保留中（押すと取り消し）" : selectedForAssign ? "選択中（押すと外す）" : "選択する（押すと付ける）"}</span>
           </button>
         ) : (
           <button

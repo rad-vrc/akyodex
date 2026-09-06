@@ -21,8 +21,12 @@ interface EditTabProps {
   akyoData: AkyoData[];
   attributes: string[];
   onDataChange: () => void;
-  onPendingStateChange?: (pending: boolean, busy: boolean) => void;
+  onPendingStateChange?: (pending: boolean, busy: boolean, pendingIds?: string[]) => void;
   onCatalogRefresh?: (data: AkyoData[]) => void;
+  /** Rows the categories tab is holding; they must not be staged here as well. */
+  blockedIds?: ReadonlySet<string>;
+  /** Rows as the server saved them, handed up so the other tab leaves the pre-commit state. */
+  onRowsCommitted?: (rows: AkyoData[]) => void;
 }
 
 interface SavedAkyoUpdate {
@@ -34,7 +38,7 @@ interface SavedAkyoUpdate {
  * Edit Tab Component
  * 編集・削除タブ（完全再現）
  */
-export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, onCatalogRefresh }: EditTabProps) {
+export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, onCatalogRefresh, blockedIds, onRowsCommitted }: EditTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
@@ -56,7 +60,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   const submittingRef = useRef(false);
   const [message, setMessage] = useState('');
   const [commitUrl, setCommitUrl] = useState('');
-  const pendingCount = Object.keys(pending).length;
+  const pendingKey = Object.keys(pending).sort().join(',');
+  // Stable identity while the set is unchanged, so reporting it does not loop.
+  const pendingIds = useMemo(() => (pendingKey ? pendingKey.split(',') : []), [pendingKey]);
+  const pendingCount = pendingIds.length;
   const visibleData = useMemo(() => catalogData.map((akyo) => {
     const current = saved[akyo.id]?.data ?? akyo;
     const item = pending[akyo.id] ? applyAkyoEditFields(current, pending[akyo.id].changes) : current;
@@ -71,6 +78,19 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   const editAuthors = useMemo(() => [...new Set([...extractAuthors(catalogData), ...extractAuthors(visibleData)])].sort(), [catalogData, visibleData]);
 
   useEffect(() => () => refreshController.current?.abort(), []);
+
+  // The catalog is owned by AdminTabs: rows committed from the categories tab arrive as a new
+  // prop, and without this the edit tab would keep staging pre-commit snapshots (guaranteed
+  // 409). Rows held here are kept even when they are gone remotely, as on refresh.
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  useEffect(() => {
+    setCatalogData((previous) => {
+      const ids = new Set(akyoData.map((item) => item.id));
+      const retained = previous.filter((item) => pendingRef.current[item.id] && !ids.has(item.id));
+      return [...akyoData, ...retained];
+    });
+  }, [akyoData]);
 
   const handleRefresh = async () => {
     if (refreshController.current || submittingRef.current || showEditModal) return;
@@ -106,9 +126,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   };
 
   // Publish the navigation guard before the pending/busy UI becomes interactive.
+  // The ids travel with it so the categories tab can refuse to hold the same rows.
   useLayoutEffect(() => {
-    onPendingStateChange?.(pendingCount > 0, submitting || refreshing);
-  }, [pendingCount, submitting, refreshing, onPendingStateChange]);
+    onPendingStateChange?.(pendingCount > 0, submitting || refreshing, pendingIds);
+  }, [pendingCount, pendingIds, submitting, refreshing, onPendingStateChange]);
 
   useEffect(() => {
     if (!pendingCount) return;
@@ -158,6 +179,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       setPending({});
       setMessage(result.message);
       setCommitUrl(result.commitUrl || '');
+      onRowsCommitted?.(result.data as AkyoData[]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '更新に失敗しました。保留内容は維持されています。');
     } finally {
@@ -184,6 +206,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
 
   const handleEdit = (akyo: AkyoData) => {
     if (refreshController.current || submittingRef.current) return;
+    if (blockedIds?.has(akyo.id)) {
+      alert(`#${akyo.id} はカテゴリタブで保留中です。\n先にそちらを反映または取り消してください。`);
+      return;
+    }
     setSelectedAkyo(akyo);
     setShowEditModal(true);
   };

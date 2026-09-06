@@ -2,6 +2,7 @@
 
 import { IconPlusCircle, IconRedo, IconTags } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
+import { isProtectedCategoryPath } from '@/lib/category-operations';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CategoryAssignPanel } from '../category-assign-panel';
@@ -12,7 +13,13 @@ interface CategoriesTabProps {
   onCategoriesChanged?: () => void;
   /** Catalog for bulk assignment (cards). Without it the tab only manages the categories. */
   akyoData?: AkyoData[];
-  onPendingStateChange?: (pending: boolean, busy: boolean) => void;
+  onPendingStateChange?: (pending: boolean, busy: boolean, pendingIds?: string[]) => void;
+  /** Rows the edit tab is holding; they must not be staged here as well. */
+  blockedIds?: ReadonlySet<string>;
+  /** Rows as the server saved them, handed up so the whole admin screen leaves the old state. */
+  onRowsCommitted?: (rows: AkyoData[]) => void;
+  /** Whether the tab is on screen; the list reloads when it comes back. */
+  active?: boolean;
 }
 
 interface CategoryEntry {
@@ -50,6 +57,9 @@ type EditorTarget =
 type Editor = EditorTarget & { head: string };
 
 const OWNER_ONLY_TITLE = '改名・統合・削除はらど（上位管理者）のみ使用できます';
+const LOCKED_TITLE = '保留中のカテゴリ変更を反映または取り消してから操作してください';
+const PROTECTED_TITLE = 'アプリが自動で付けるカテゴリなので、ここでは付け外しできません';
+const EMPTY_IDS: ReadonlySet<string> = new Set();
 
 function depthOf(path: string): number {
   return path.split('/').length - 1;
@@ -64,6 +74,16 @@ function parentOf(path: string): string | null {
   return index < 0 ? null : path.slice(0, index);
 }
 
+/**
+ * Whether submitting this form would rewrite category tokens on Akyo rows. Creating a
+ * category and registering a translation do not, so they stay available while assignments
+ * are held; renaming to a new path, merging and deleting do.
+ */
+function changesCategoryTokens(editor: Editor, japaneseName: string): boolean {
+  if (editor.kind === 'merge') return true;
+  return editor.kind === 'rename' && japaneseName.trim() !== editor.path;
+}
+
 function isSelfOrDescendant(token: string, path: string): boolean {
   return token === path || token.startsWith(`${path}/`);
 }
@@ -74,24 +94,51 @@ function isSelfOrDescendant(token: string, path: string): boolean {
  *
  * 一覧は /api/categories から毎回取り直す（管理画面の初期データは JSON 経由で遅れるため、
  * GitHub の CSV と対訳 JSON を正とする）。各操作は 1 コミットで、EN/KO の CSV と JSON は
- * その後 Sync JSON Data が作り直す。Akyo への付け外しは編集タブで行う。
+ * その後 Sync JSON Data が作り直す。akyoData を渡すと、選んだカテゴリを Akyo にまとめて
+ * 付け外しするパネル（CategoryAssignPanel）も出る。
  */
-export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendingStateChange }: CategoriesTabProps) {
+export function CategoriesTab({
+  userRole,
+  onCategoriesChanged,
+  akyoData,
+  onPendingStateChange,
+  blockedIds = EMPTY_IDS,
+  onRowsCommitted,
+  active = true,
+}: CategoriesTabProps) {
   const isOwner = userRole === 'owner';
   // Bulk assignment: the AND set of categories, and whether the panel holds unsaved changes.
-  // While changes are held, renaming/merging/deleting is locked: the held rows still carry
-  // the old names and the batch API would reject them as conflicts.
+  // While changes are held, renaming and merging and deleting are locked: the held rows still
+  // carry the old names and the batch API would reject them as conflicts. Creating a category
+  // and registering a translation change no token, so they stay available.
   const [selected, setSelected] = useState<string[]>([]);
   const [assignState, setAssignState] = useState({ pending: false, busy: false });
   const handleAssignState = useCallback(
-    (pending: boolean, assignBusy: boolean) => {
+    (pending: boolean, assignBusy: boolean, ids?: string[]) => {
       setAssignState({ pending, busy: assignBusy });
-      onPendingStateChange?.(pending, assignBusy);
+      onPendingStateChange?.(pending, assignBusy, ids);
     },
     [onPendingStateChange],
   );
   const locked = assignState.pending || assignState.busy;
-  const LOCKED_TITLE = '保留中のカテゴリ変更を反映または取り消してから操作してください';
+  // A commit clears the hold, so keep the panel on screen while its result is worth reading
+  // (the selection may already be empty, which would otherwise hide the message at once).
+  const [assignMessageShown, setAssignMessageShown] = useState(false);
+  const handleClearSelection = useCallback(() => {
+    setSelected([]);
+    setAssignMessageShown(false);
+  }, []);
+  const handleAssignCommitted = useCallback(
+    (rows: AkyoData[]) => {
+      onRowsCommitted?.(rows);
+      setAssignMessageShown(true);
+      // main moved: the list counts and `head` are now older than the branch.
+      void load();
+    },
+    // `load` is defined below with an empty dependency list, so this stays stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [onRowsCommitted],
+  );
   const [entries, setEntries] = useState<CategoryEntry[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
   // Commit the list was read from. Sent with every change so the server refuses an edit
@@ -108,7 +155,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
   const [message, setMessage] = useState('');
   const [commitUrl, setCommitUrl] = useState('');
 
-  const load = useCallback(async (): Promise<CategoryEntry[] | null> => {
+  const load = useCallback(async (): Promise<void> => {
     setLoading(true);
     setLoadError('');
     try {
@@ -124,24 +171,21 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
       // The AND set follows the list: a renamed, merged or deleted category (by us or by
       // another admin) must not stay selectable, or a card click would write the old name back.
       setSelected((previous) => previous.filter((path) => categories.some((entry) => entry.path === path)));
-      return categories;
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'カテゴリ一覧を取得できませんでした');
-      return null;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  /** Fresh registry for the panel to check against right before it commits. */
-  const loadKnownPaths = useCallback(async () => {
-    const categories = await load();
-    return categories ? new Set(categories.map((entry) => entry.path)) : null;
-  }, [load]);
-
+  // The tab stays mounted so held changes survive a tab switch, so it no longer refetches by
+  // remounting: reload whenever it becomes visible again. `head` and the list would otherwise
+  // be older than main after any commit made from another tab, and every edit would 409.
+  const wasActive = useRef(false);
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (active && !wasActive.current) void load();
+    wasActive.current = active;
+  }, [active, load]);
 
   const entriesByPath = useMemo(() => new Map(entries.map((entry) => [entry.path, entry])), [entries]);
 
@@ -215,7 +259,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
   const handleSubmitEditor = async () => {
     if (!editor) return;
     // A form opened before the hold began must not slip past the lock on the list buttons.
-    if (locked && editor.kind !== 'create') {
+    if (locked && changesCategoryTokens(editor, form.ja)) {
       setFormError(LOCKED_TITLE);
       return;
     }
@@ -393,8 +437,8 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
           <button
             type="button"
             onClick={() => void handleSubmitEditor()}
-            disabled={busy || (locked && editor.kind !== 'create')}
-            title={locked && editor.kind !== 'create' ? LOCKED_TITLE : undefined}
+            disabled={busy || (locked && changesCategoryTokens(editor, form.ja))}
+            title={locked && changesCategoryTokens(editor, form.ja) ? LOCKED_TITLE : undefined}
             className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
           >
             {busy ? '反映中…' : editor.kind === 'create' ? '作成する' : editor.kind === 'rename' ? '決定' : '統合する'}
@@ -451,10 +495,11 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
         <CategoryAssignPanel
           akyoData={akyoData}
           selected={selected}
-          visible={selected.length > 0 || assignState.pending}
-          onClearSelection={() => setSelected([])}
+          visible={selected.length > 0 || assignState.pending || assignMessageShown}
+          blockedIds={blockedIds}
+          onClearSelection={handleClearSelection}
           onPendingStateChange={handleAssignState}
-          loadKnownPaths={loadKnownPaths}
+          onCommitted={handleAssignCommitted}
         />
       )}
 
@@ -533,19 +578,27 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      {akyoData && (
+                      {akyoData && isProtectedCategoryPath(entry.path) && (
+                        <span className="px-3 py-1.5 text-xs text-gray-500" title={PROTECTED_TITLE}>
+                          自動付与
+                        </span>
+                      )}
+                      {/* Booth and the world marker are written by the app itself: the server
+                          re-adds them, so offering them here would only look like a change. */}
+                      {akyoData && !isProtectedCategoryPath(entry.path) && (
                         <button
                           type="button"
                           aria-pressed={selected.includes(entry.path)}
                           aria-label={`${entry.path} を付け外しの対象に${selected.includes(entry.path) ? 'しない' : 'する'}`}
                           disabled={busy || assignState.busy}
-                          onClick={() =>
+                          onClick={() => {
+                            setAssignMessageShown(false);
                             setSelected((previous) =>
                               previous.includes(entry.path)
                                 ? previous.filter((path) => path !== entry.path)
                                 : [...previous, entry.path],
-                            )
-                          }
+                            );
+                          }}
                           className={`px-3 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
                             selected.includes(entry.path)
                               ? 'border-green-500 bg-green-100 text-green-900 font-semibold'
@@ -566,8 +619,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'rename', path: entry.path })}
-                        disabled={busy || locked}
-                        title={locked ? LOCKED_TITLE : undefined}
+                        disabled={busy}
                         className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                       >
                         {untranslated ? '対訳を登録' : isOwner ? '改名・対訳' : '対訳'}
