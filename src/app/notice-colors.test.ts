@@ -1,0 +1,143 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+/**
+ * 通知の枠が 3:1 以上を保ち続けることを守る。
+ *
+ * 通知の地とボタンの白地はほとんど同じ明るさなので、部品の形を示しているのは枠だけになる。
+ * 以前は Tailwind 既定の amber-400 / amber-300 / sky-300 を使っており、実描画で
+ * 1.39〜1.72:1 しか無かった（本番の再試行ボタンで実測）。
+ *
+ * WCAG 1.4.11 が枠に 3:1 を必ず求めるわけではない（文字と配置でも部品は識別できる）。
+ * ここで守っているのは、その基準値を見やすさの設計目標として採ったもの
+ */
+
+const CSS = readFileSync(
+  path.join(process.cwd(), "src", "app", "globals.css"),
+  "utf8",
+);
+
+/**
+ * 枠が乗る地。1 つでも 3:1 を割ると、その状態で部品の形が見えなくなる。
+ *
+ * ページ地はグラデーションなので両端とも見る（終端の方が暗い）。ボタンはホバーで地が
+ * amber-100 に変わり、ここが実際の最悪条件になる。ページ地だけを最悪条件と決めると、
+ * ホバー時に 3:1 を割る色を通してしまう。
+ *
+ * 通知の地は amber-50 / sky-50 を 95% でページ地に重ねたものだが、合成後の輝度は
+ * 必ず素の値とページ地の間に収まる。両端がここに入っているので、合成後も自動的に満たす
+ */
+const BACKDROPS: { name: string; hex: string }[] = [
+  { name: "通知の地 amber-50", hex: "#fffbeb" },
+  { name: "通知の地 sky-50", hex: "#f0f9ff" },
+  { name: "ボタンの地", hex: "#ffffff" },
+  { name: "ボタンのホバー地 amber-100", hex: "#fef3c7" },
+];
+
+function readToken(name: string): string {
+  const match = CSS.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`));
+  assert.ok(match, `globals.css に --${name} が無い`);
+  return match[1]!.toLowerCase();
+}
+
+function toRgb(hex: string): [number, number, number] {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)) as [
+    number,
+    number,
+    number,
+  ];
+}
+
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = toRgb(hex).map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(a: string, b: string): number {
+  const [x, y] = [relativeLuminance(a), relativeLuminance(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+function hue(hex: string): number {
+  const [r, g, b] = toRgb(hex).map((value) => value / 255) as [
+    number,
+    number,
+    number,
+  ];
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  if (delta === 0) return 0;
+  const raw =
+    max === r
+      ? ((g - b) / delta) % 6
+      : max === g
+        ? (b - r) / delta + 2
+        : (r - g) / delta + 4;
+  return (raw * 60 + 360) % 360;
+}
+
+function hueDistance(left: number, right: number): number {
+  const diff = Math.abs(left - right) % 360;
+  return diff > 180 ? 360 - diff : diff;
+}
+
+test("通知の枠は、乗りうるどの地に対しても 3:1 以上ある", () => {
+  const backdrops = [
+    // グラデーションの両端。トークンから読むので、地の色を変えたらここも追従する
+    { name: "ページ地の始点", hex: readToken("bg-gradient-start") },
+    { name: "ページ地の終点", hex: readToken("bg-gradient-end") },
+    ...BACKDROPS,
+  ];
+
+  for (const token of ["color-notice-warn", "color-notice-info"]) {
+    const color = readToken(token);
+    for (const backdrop of backdrops) {
+      const ratio = contrastRatio(color, backdrop.hex);
+      assert.ok(
+        ratio >= 3,
+        `--${token} (${color}) は${backdrop.name} (${backdrop.hex}) に対して ` +
+          `${ratio.toFixed(2)}:1 で 3:1 に届かない`,
+      );
+    }
+  }
+});
+
+test("通知の枠の色相はサイトのトークンから離れない", () => {
+  // amber(44〜49) へ戻すと、サイトのサンゴ色オレンジから外れて黄金色に振れる
+  const warn = readToken("color-notice-warn");
+  const info = readToken("color-notice-info");
+  const primaryOrange = readToken("primary-orange");
+  const primaryBlue = readToken("primary-blue");
+
+  assert.ok(
+    hueDistance(hue(warn), hue(primaryOrange)) <= 20,
+    `--color-notice-warn の色相 ${hue(warn).toFixed(0)} が ` +
+      `--primary-orange の ${hue(primaryOrange).toFixed(0)} から離れすぎている`,
+  );
+  assert.ok(
+    hueDistance(hue(info), hue(primaryBlue)) <= 20,
+    `--color-notice-info の色相 ${hue(info).toFixed(0)} が ` +
+      `--primary-blue の ${hue(primaryBlue).toFixed(0)} から離れすぎている`,
+  );
+});
+
+test("通知とボタンは Tailwind 既定の薄い枠色に戻っていない", () => {
+  const client = readFileSync(
+    path.join(process.cwd(), "src", "app", "zukan", "zukan-client.tsx"),
+    "utf8",
+  );
+  for (const faded of ["border-amber-300", "border-amber-400", "border-sky-300"]) {
+    assert.ok(
+      !client.includes(faded),
+      `${faded} は 1.4〜1.7:1 しか無いので通知には使わない`,
+    );
+  }
+});

@@ -972,8 +972,8 @@ export function ZukanClient({
           <div
             className={`flex flex-col items-stretch justify-between gap-3 rounded-xl px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center ${
               refetchError || droppedCatalogEntryCount > 0
-                ? "border border-amber-300 bg-amber-50/95 text-amber-900"
-                : "border border-sky-300 bg-sky-50/95 text-sky-900"
+                ? "border border-notice-warn bg-amber-50/95 text-amber-900"
+                : "border border-notice-info bg-sky-50/95 text-sky-900"
             }`}
           >
             <div>{languageStatusMessage}</div>
@@ -981,7 +981,10 @@ export function ZukanClient({
               <button
                 type="button"
                 onClick={() => setRetryNonce((current) => current + 1)}
-                className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1.5 font-bold text-amber-950 transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                // フォーカス表示は globals.css の button:focus-visible（3px #1d4ed8）が
+                // サイト全体で担当する。ここで focus:ring-* を足しても、レイヤー外の
+                // そのルールが勝つので描かれない
+                className="shrink-0 rounded-lg border border-notice-warn bg-white px-3 py-1.5 font-bold text-amber-950 transition-colors hover:bg-amber-100"
                 aria-label={t("loading.retry", lang)}
               >
                 {t("loading.retry", lang)}
