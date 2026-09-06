@@ -5,6 +5,7 @@ import path from "node:path";
 
 import type { AkyoData } from "@/types/akyo";
 import { createCatalogPayload } from "@/lib/catalog-payload";
+import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
 import {
   CATALOG_STALL_AFTER_MS,
   CatalogRequestCoordinator,
@@ -335,36 +336,72 @@ test("中断されたまま後続が始まらなければ取り直しの対象�
   assert.equal(coordinator.isStalled(), true);
 });
 
-test("ネットワークが終わっていれば、続く検索インデックス構築が長引いても取り直さない", () => {
-  // 隠れたタブではチャンクごとの譲り渡しが 1 秒まで引き伸ばされるので、この段階は
-  // 秒単位でかかる。取得の締切から導いた時間で測り続けると、届いたカタログ（約 320KB）を
-  // 捨てて取り直してしまう
+test("ネットワークが終わったら、続く準備がどれだけ長引いても取り直しの対象にしない", () => {
+  // 準備段階はネットワークを待たず、ページの実行が再開すれば必ず進むので、取り直しても
+  // 速くならない。経過時間で測ると、隠れたタブや凍結で長引いただけの準備を、
+  // ダウンロード済みのカタログ（約 320KB）ごと捨ててしまう
   let nowMs = 0;
   const coordinator = new CatalogRequestCoordinator(() => nowMs);
   const request = coordinator.begin();
 
   nowMs = 2_000;
-  coordinator.markProgress(request.generation);
-
-  nowMs = 2_000 + CATALOG_STALL_AFTER_MS - 1;
-  assert.equal(coordinator.isStalled(), false, "段階が進んだので測り直す");
+  coordinator.markFetched(request.generation);
 
   nowMs = 2_000 + CATALOG_STALL_AFTER_MS;
-  assert.equal(
-    coordinator.isStalled(),
-    true,
-    "その段階も動かなくなったら当てにしない",
+  assert.equal(coordinator.isStalled(), false, "準備中は取り直さない");
+
+  nowMs = 10 * CATALOG_STALL_AFTER_MS;
+  assert.equal(coordinator.isStalled(), false, "凍結から戻っても取り直さない");
+
+  coordinator.settle(request.generation);
+  assert.equal(coordinator.isStalled(), true, "決着したら取り直してよい");
+});
+
+test("完了できる準備を、表示復帰の判定が中断しない", async () => {
+  // 隠れたタブでは 1 チャンクごとの譲り渡しが 1 秒まで引き伸ばされる。実際の準備関数を
+  // その速度で回し、途中で表示に戻る判定が入っても最後まで進むことを確かめる
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const request = coordinator.begin();
+  nowMs = 2_000;
+  coordinator.markFetched(request.generation);
+
+  const stalledDuringPreparation: boolean[] = [];
+  const prepared = await prepareCatalogItemsInChunks(
+    Array.from({ length: 25 }, (_, index) =>
+      createAkyo(String(index + 1).padStart(4, "0")),
+    ),
+    {
+      signal: request.signal,
+      timeBudgetMs: 0,
+      now: () => nowMs,
+      yieldToMainThread: async () => {
+        nowMs += 1_000;
+        stalledDuringPreparation.push(coordinator.isStalled());
+      },
+    },
+  );
+
+  assert.equal(prepared.length, 25, "準備は最後まで進む");
+  assert.ok(
+    nowMs - 2_000 > CATALOG_STALL_AFTER_MS,
+    "準備は停止判定の時間を超えて続いた",
+  );
+  assert.deepEqual(
+    Array.from(new Set(stalledDuringPreparation)),
+    [false],
+    "途中のどの時点でも取り直しの対象にならない",
   );
 });
 
-test("追い越された取得の進捗は現行の時計を延ばさない", () => {
+test("追い越された取得の markFetched は現行の取得を対象外にしない", () => {
   let nowMs = 0;
   const coordinator = new CatalogRequestCoordinator(() => nowMs);
   const stale = coordinator.begin();
   coordinator.begin();
 
+  coordinator.markFetched(stale.generation);
   nowMs = CATALOG_STALL_AFTER_MS;
-  coordinator.markProgress(stale.generation);
 
   assert.equal(coordinator.isStalled(), true);
 });

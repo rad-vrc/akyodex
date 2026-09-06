@@ -314,9 +314,10 @@ export async function loadCompleteCatalogData(
 }
 
 /**
- * 1 つの段階が進まないまま「止まっている」と見なすまでの時間。締切
+ * ネットワーク段階が「止まっている」と見なすまでの時間。締切
  * （`DEFAULT_CATALOG_FETCH_TIMEOUT_MS`）より長めに取り、正常に遅いだけの取得を
- * 取り直しで潰さない。段階が進むたびに測り直す（`CatalogRequestCoordinator.markProgress`）
+ * 取り直しで潰さない。取得後の準備段階はこの時間で測らない
+ * （`CatalogRequestCoordinator.markFetched`）
  */
 export const CATALOG_STALL_AFTER_MS = DEFAULT_CATALOG_FETCH_TIMEOUT_MS + 5_000;
 
@@ -324,6 +325,7 @@ export class CatalogRequestCoordinator {
   private generation = 0;
   private controller: AbortController | null = null;
   private inFlight = false;
+  private fetched = false;
   private startedAtMs = 0;
 
   constructor(private readonly now: () => number = () => Date.now()) {}
@@ -333,6 +335,7 @@ export class CatalogRequestCoordinator {
     this.controller = new AbortController();
     this.generation += 1;
     this.inFlight = true;
+    this.fetched = false;
     this.startedAtMs = this.now();
     return {
       generation: this.generation,
@@ -345,17 +348,20 @@ export class CatalogRequestCoordinator {
   }
 
   /**
-   * 段階が 1 つ進んだことを記録し、停止判定の時計を測り直す。
+   * ネットワークが終わったことを記録し、ここから先を取り直しの対象から外す。
    *
-   * 取得はネットワークだけでなく、その後の検索インデックス構築（`prepareCatalogItemsInChunks`）
-   * も含む。後者は隠れたタブだと 1 チャンクごとの譲り渡しが 1 秒（5 分を超えると 1 分）まで
-   * 引き伸ばされるので、ネットワークの締切から導いた時間で測ると、ダウンロード済みの
-   * カタログを捨てて取り直してしまう。段階ごとに測れば、その段階が本当に動かなくなった
-   * ときだけ止まっていると見なせる
+   * 取得の後には検索インデックスの構築（`prepareCatalogItemsInChunks`）が続く。この段階は
+   * ネットワークを待たず、ページの実行が再開すれば必ず進むので、取り直しても速くならない。
+   * にもかかわらず経過時間で測ると、隠れたタブでチャンクごとの譲り渡しが引き伸ばされたり
+   * ページが凍結されたりしただけで「止まっている」と判定され、ダウンロード済みの
+   * カタログを捨てて取り直してしまう。
+   *
+   * 準備が失敗すれば `finally` が決着を記録するので、そこから先は従来どおり
+   * エラー表示と再試行に進む
    */
-  markProgress(generation: number): void {
+  markFetched(generation: number): void {
     if (generation === this.generation) {
-      this.startedAtMs = this.now();
+      this.fetched = true;
     }
   }
 
@@ -370,12 +376,13 @@ export class CatalogRequestCoordinator {
   }
 
   /**
-   * 取り直してよいか。進行中の取得が無い場合と、直近の段階が始まってから締切を過ぎても
-   * 次に進んでいない場合に真。中断されたまま後続が始まっていない状態も前者に入る
-   * （`cancel` が在庫を下ろすため）
+   * ネットワークを取り直してよいか。進行中の取得が無い場合と、締切を過ぎてもネットワークが
+   * 終わっていない場合に真。中断されたまま後続が始まっていない状態も前者に入る
+   * （`cancel` が在庫を下ろすため）。取得後の準備中は偽で、進行中の準備を潰さない
    */
   isStalled(stallAfterMs: number = CATALOG_STALL_AFTER_MS): boolean {
     if (!this.inFlight) return true;
+    if (this.fetched) return false;
     return this.now() - this.startedAtMs >= stallAfterMs;
   }
 
@@ -384,5 +391,6 @@ export class CatalogRequestCoordinator {
     this.controller = null;
     this.generation += 1;
     this.inFlight = false;
+    this.fetched = false;
   }
 }
