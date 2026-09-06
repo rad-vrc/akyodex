@@ -9,6 +9,11 @@ on:
     branches:
       - main
       - develop
+  # 管理画面が書いた CSV のコミットは、JSON がまだ再生成されていない中間状態で
+  # push される（JSON は Sync JSON Data ワークフローが次のコミットで作り直す）。
+  # その bot commit は GITHUB_TOKEN による push なので on:push を起動しない。
+  # 同期後の木を検証できるよう、Sync 側から明示的に起動できるようにする
+  workflow_dispatch:
 
 # Prevent multiple CI runs for the same commit
 concurrency:

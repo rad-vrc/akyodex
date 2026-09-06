@@ -348,3 +348,21 @@ jobs:
             -f "action=$action"
           echo "Dispatched production action: $action"
           echo "- Production action: $action" >> "$GITHUB_STEP_SUMMARY"
+
+      # 同上の理由で、bot commit では CI も起動しない。管理画面が書いた CSV の
+      # コミットに対する CI は、JSON がまだ古い中間状態を見て
+      # 「CSV と JSON のカテゴリが一致しない」で落ちる。同期後の木で回し直して、
+      # 最終状態が検証済みだと分かるようにする。
+      # CI の concurrency は ref 単位で cancel-in-progress なので、中間コミットの
+      # 実行がまだ動いていればこちらに置き換わる
+      - name: Trigger CI on the synced tree
+        if: steps.commit-json.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          gh workflow run ci.yml \
+            --repo "${{ github.repository }}" \
+            --ref main
+          echo "Dispatched CI on the synced tree"
+          echo "- CI: dispatched on the synced tree" >> "$GITHUB_STEP_SUMMARY"
