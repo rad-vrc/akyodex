@@ -1,5 +1,9 @@
 import type { SupportedLanguage } from "@/lib/i18n";
-import { captureExceptionSafely } from "@/lib/sentry-browser";
+import {
+  captureExceptionSafely,
+  captureMessageSafely,
+} from "@/lib/sentry-browser";
+import type { CatalogResumeTrigger } from "./catalog-resume";
 import { startInactiveSpan } from "@sentry/nextjs";
 
 export type CatalogLoadSource = "api" | "r2" | "snapshot" | "none";
@@ -185,6 +189,60 @@ export function captureCatalogFailure(
       durationMs: context.telemetry?.durationMs,
       cause: describeCatalogFailureCause(error),
     },
+  });
+}
+
+const CATALOG_RESUME_MESSAGE = "Catalog load resumed after a stall";
+
+/**
+ * 自動復帰の記録をまとめる fingerprint。文言は毎回変えるので、これが無いと 1 件ずつ
+ * 別の Issue になってしまう
+ */
+export const CATALOG_RESUME_FINGERPRINT = "catalog-resume";
+
+/**
+ * 記録の文言。回数と合図を混ぜて、毎回違う文字列にする。
+ *
+ * 既定で有効な Sentry の `Dedupe` は、直前のイベントと「文言・fingerprint・スタックが同じ」
+ * なら送信前に捨てる。タグの違いは見ないので、文言を固定すると 2 件目以降が消え、
+ * 件数も合図の内訳も数えられなくなる（この記録を入れた目的そのものが成り立たない）。
+ * 有効期限も無いため、アプリ側の 30 秒間隔では避けられない
+ */
+export function buildCatalogResumeMessage(
+  count: number,
+  trigger: CatalogResumeTrigger["type"],
+): string {
+  return `${CATALOG_RESUME_MESSAGE} (#${count}, ${trigger})`;
+}
+
+/** このページ表示で自動復帰した回数 */
+let catalogResumeCount = 0;
+
+/**
+ * 止まった取得を自動で取り直したことを記録する。
+ *
+ * この復帰は、実ブラウザで再現できなかった「フィルターがスピナーのまま戻らない」症状に
+ * 対する保険として入っている（`catalog-resume.ts`）。発火を残さないと、本番で一度でも
+ * 効いたのか、それとも余計に発火しているのかを後から確かめる手立てが無く、保険を
+ * 続ける判断も外す判断もできない。失敗ではないので level は info
+ */
+export function captureCatalogResume(
+  context: {
+    language: SupportedLanguage;
+    trigger: CatalogResumeTrigger["type"];
+  },
+  capture: typeof captureMessageSafely = captureMessageSafely,
+): void {
+  catalogResumeCount += 1;
+  capture(buildCatalogResumeMessage(catalogResumeCount, context.trigger), {
+    level: "info",
+    fingerprint: [CATALOG_RESUME_FINGERPRINT],
+    tags: {
+      area: "catalog",
+      language: context.language,
+      resume_trigger: context.trigger,
+    },
+    extra: { resumeCount: catalogResumeCount },
   });
 }
 

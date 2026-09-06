@@ -1,11 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { dedupeIntegration, type Event } from "@sentry/react";
+
 import {
+  CATALOG_RESUME_FINGERPRINT,
   CatalogLoadPerformance,
+  buildCatalogResumeMessage,
+  captureCatalogResume,
   describeCatalogFailureCause,
   getCatalogFailureReason,
 } from "./catalog-performance";
+
+/** `processEvent` の第 3 引数。@sentry/core を直接 import しないために型から取り出す */
+type SentryClient = Parameters<
+  NonNullable<ReturnType<typeof dedupeIntegration>["processEvent"]>
+>[2];
 
 class FakePerformanceClock {
   timeOrigin = 1_000;
@@ -159,4 +169,69 @@ test("describeCatalogFailureCause は Error 以外の cause を要約しない",
     undefined,
   );
   assert.equal(describeCatalogFailureCause("not an error"), undefined);
+});
+
+test("captureCatalogResume は合図と言語を残し、文言を毎回変える", () => {
+  // Dedupe は直前のイベントと文言・fingerprint・スタックが同じなら送信前に捨てる。
+  // タグは見ないので、文言を固定すると 2 件目以降が消え、件数も内訳も数えられない
+  const sent: Array<{ message: string; context: Record<string, unknown> }> = [];
+  const record = (message: string, context?: unknown) => {
+    sent.push({ message, context: context as Record<string, unknown> });
+  };
+
+  captureCatalogResume({ language: "ja", trigger: "pageshow" }, record);
+  captureCatalogResume({ language: "ja", trigger: "visibilitychange" }, record);
+  captureCatalogResume({ language: "en", trigger: "pageshow" }, record);
+
+  assert.equal(sent.length, 3);
+  assert.equal(
+    new Set(sent.map((entry) => entry.message)).size,
+    3,
+    "文言は毎回違う",
+  );
+  for (const entry of sent) {
+    assert.equal(entry.context.level, "info");
+    assert.deepEqual(
+      entry.context.fingerprint,
+      [CATALOG_RESUME_FINGERPRINT],
+      "まとまりは fingerprint 側で固定する",
+    );
+  }
+  const tags = sent.map((entry) => entry.context.tags as Record<string, string>);
+  assert.deepEqual(
+    tags.map((tag) => tag.resume_trigger),
+    ["pageshow", "visibilitychange", "pageshow"],
+  );
+  assert.deepEqual(
+    tags.map((tag) => tag.language),
+    ["ja", "ja", "en"],
+  );
+});
+
+test("連続する復帰の記録が Sentry の Dedupe に落ちない", () => {
+  // 実際の統合をそのまま通す。このサイトは既定の統合を残しているので Dedupe が効く
+  const survives = (messages: string[]): number => {
+    const dedupe = dedupeIntegration();
+    return messages.filter((message) => {
+      const event: Event = {
+        message,
+        fingerprint: [CATALOG_RESUME_FINGERPRINT],
+      };
+      return dedupe.processEvent?.(event, {}, {} as SentryClient) !== null;
+    }).length;
+  };
+
+  assert.equal(
+    survives([
+      buildCatalogResumeMessage(1, "pageshow"),
+      buildCatalogResumeMessage(2, "visibilitychange"),
+      buildCatalogResumeMessage(3, "pageshow"),
+    ]),
+    3,
+    "3 回の復帰は 3 件とも残る",
+  );
+
+  // 文言を固定していた頃の形。2 件目以降が送信前に捨てられていた
+  const fixed = "Catalog load resumed after a stall";
+  assert.equal(survives([fixed, fixed, fixed]), 1);
 });
