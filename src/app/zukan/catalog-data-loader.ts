@@ -314,8 +314,9 @@ export async function loadCompleteCatalogData(
 }
 
 /**
- * 取得が「止まっている」と見なすまでの時間。締切（`DEFAULT_CATALOG_FETCH_TIMEOUT_MS`）より
- * 長めに取り、正常に遅いだけの取得を取り直しで潰さない
+ * 1 つの段階が進まないまま「止まっている」と見なすまでの時間。締切
+ * （`DEFAULT_CATALOG_FETCH_TIMEOUT_MS`）より長めに取り、正常に遅いだけの取得を
+ * 取り直しで潰さない。段階が進むたびに測り直す（`CatalogRequestCoordinator.markProgress`）
  */
 export const CATALOG_STALL_AFTER_MS = DEFAULT_CATALOG_FETCH_TIMEOUT_MS + 5_000;
 
@@ -344,6 +345,21 @@ export class CatalogRequestCoordinator {
   }
 
   /**
+   * 段階が 1 つ進んだことを記録し、停止判定の時計を測り直す。
+   *
+   * 取得はネットワークだけでなく、その後の検索インデックス構築（`prepareCatalogItemsInChunks`）
+   * も含む。後者は隠れたタブだと 1 チャンクごとの譲り渡しが 1 秒（5 分を超えると 1 分）まで
+   * 引き伸ばされるので、ネットワークの締切から導いた時間で測ると、ダウンロード済みの
+   * カタログを捨てて取り直してしまう。段階ごとに測れば、その段階が本当に動かなくなった
+   * ときだけ止まっていると見なせる
+   */
+  markProgress(generation: number): void {
+    if (generation === this.generation) {
+      this.startedAtMs = this.now();
+    }
+  }
+
+  /**
    * 取得が決着したことを記録する。現行の取得のときだけ「進行中」を下ろすので、
    * 追い越された古い取得が後続の在庫を消すことはない
    */
@@ -354,8 +370,9 @@ export class CatalogRequestCoordinator {
   }
 
   /**
-   * 取り直してよいか。進行中の取得が無い場合と、締切を過ぎても決着していない場合に真。
-   * 中断されたまま後続が始まっていない状態も前者に入る（`cancel` が在庫を下ろすため）
+   * 取り直してよいか。進行中の取得が無い場合と、直近の段階が始まってから締切を過ぎても
+   * 次に進んでいない場合に真。中断されたまま後続が始まっていない状態も前者に入る
+   * （`cancel` が在庫を下ろすため）
    */
   isStalled(stallAfterMs: number = CATALOG_STALL_AFTER_MS): boolean {
     if (!this.inFlight) return true;

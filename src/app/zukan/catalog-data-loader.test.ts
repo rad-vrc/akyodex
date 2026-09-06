@@ -6,6 +6,7 @@ import path from "node:path";
 import type { AkyoData } from "@/types/akyo";
 import { createCatalogPayload } from "@/lib/catalog-payload";
 import {
+  CATALOG_STALL_AFTER_MS,
   CatalogRequestCoordinator,
   loadCompleteCatalogData,
 } from "./catalog-data-loader";
@@ -331,6 +332,40 @@ test("中断されたまま後続が始まらなければ取り直しの対象�
   assert.equal(coordinator.isStalled(), false);
 
   coordinator.cancel();
+  assert.equal(coordinator.isStalled(), true);
+});
+
+test("ネットワークが終わっていれば、続く検索インデックス構築が長引いても取り直さない", () => {
+  // 隠れたタブではチャンクごとの譲り渡しが 1 秒まで引き伸ばされるので、この段階は
+  // 秒単位でかかる。取得の締切から導いた時間で測り続けると、届いたカタログ（約 320KB）を
+  // 捨てて取り直してしまう
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const request = coordinator.begin();
+
+  nowMs = 2_000;
+  coordinator.markProgress(request.generation);
+
+  nowMs = 2_000 + CATALOG_STALL_AFTER_MS - 1;
+  assert.equal(coordinator.isStalled(), false, "段階が進んだので測り直す");
+
+  nowMs = 2_000 + CATALOG_STALL_AFTER_MS;
+  assert.equal(
+    coordinator.isStalled(),
+    true,
+    "その段階も動かなくなったら当てにしない",
+  );
+});
+
+test("追い越された取得の進捗は現行の時計を延ばさない", () => {
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const stale = coordinator.begin();
+  coordinator.begin();
+
+  nowMs = CATALOG_STALL_AFTER_MS;
+  coordinator.markProgress(stale.generation);
+
   assert.equal(coordinator.isStalled(), true);
 });
 

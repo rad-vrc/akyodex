@@ -422,6 +422,10 @@ export function ZukanClient({
         });
         if (!coordinator.isCurrent(request.generation)) return;
         catalogPerformance.markResponse(result.source);
+        // ここから先はネットワークではなく検索インデックスの構築で、隠れたタブでは
+        // チャンクごとの譲り渡しが引き伸ばされて長くかかる。取得の締切から導いた時間で
+        // 測り続けると、届いたカタログを捨てて取り直してしまう
+        coordinator.markProgress(request.generation);
 
         catalogPerformance.startPhase("search-index");
         let preparedItems: AkyoData[];
