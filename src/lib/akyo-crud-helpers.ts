@@ -12,9 +12,17 @@ import {
     resolveDisplaySerialForEntryUpdate,
     WORLD_CATEGORY_MARKERS,
 } from './akyo-entry';
+import {
+    CSV_CONFLICT_MESSAGE,
+    commitAkyoCsvSnapshot,
+    findUnregisteredCategories,
+    loadAkyoCsvSnapshot,
+    unregisteredCategoryMessage,
+    type AkyoCsvCommit,
+    type AkyoCsvSnapshot,
+} from './akyo-csv-snapshot';
 import { ensureBoothCategories } from './booth-url';
 import {
-    commitAkyoCsv,
     createAkyoRecord,
     filterOutRecordById,
     findRecordById,
@@ -22,9 +30,9 @@ import {
     getDisplaySerialForWorldRecord,
     getNextBoothDisplaySerialFromCsv,
     getNextDisplaySerial,
-    loadAkyoCsv,
     replaceRecordById,
 } from './csv-utils';
+import { GitHubConflictError } from './github-utils';
 import { persistNextIdHint } from './next-id-state';
 import type { R2UploadOptions, R2UploadResult } from './r2-utils';
 import { deleteImageFromR2, uploadImageToR2 } from './r2-utils';
@@ -156,10 +164,17 @@ export function prepareAkyoUpdate(
  * Process Akyo CRUD operation (Add/Update/Delete)
  * Handles CSV commit first, then image operation
  */
+export interface AkyoCrudDependencies {
+    loadSnapshot: () => Promise<AkyoCsvSnapshot>;
+    commit: (args: AkyoCsvCommit) => Promise<{ commit: { html_url: string } }>;
+}
+
 export async function processAkyoCRUD(
     operation: CrudOperation,
-    formData: AkyoFormData | DeleteData
+    formData: AkyoFormData | DeleteData,
+    dependencies: Partial<AkyoCrudDependencies> = {},
 ): Promise<Response> {
+    const { loadSnapshot = loadAkyoCsvSnapshot, commit: commitCsv = commitAkyoCsvSnapshot } = dependencies;
     const { id } = formData;
     
     // 分割代入で新旧フィールドを取得
@@ -198,8 +213,9 @@ export async function processAkyoCRUD(
         };
 
     try {
-        // Step 1: Load CSV
-        const { header, dataRecords, fileSha } = await loadAkyoCsv();
+        // Step 1: Load the CSV and the category registry from one commit
+        const snapshot = await loadSnapshot();
+        const { head, header, dataRecords } = snapshot;
 
         // Step 2: Validate and prepare data based on operation
         let updatedRecords: string[][];
@@ -220,6 +236,16 @@ export async function processAkyoCRUD(
             boothUrl,
             isBoothOnly ? undefined : normalizedEntryType || undefined,
         );
+
+        // A form opened before another admin renamed or deleted a category would otherwise
+        // write a token with no translation, which stops the EN/KO regeneration. Check what
+        // the client submitted, not the markers the server itself adds afterwards.
+        if (operation !== 'delete') {
+            const unknown = findUnregisteredCategories(snapshot, [category || attributes]);
+            if (unknown.length > 0) {
+                return jsonError(unregisteredCategoryMessage(unknown), 400);
+            }
+        }
 
         const recordData: Parameters<typeof createAkyoRecord>[0] = {
             id,
@@ -293,11 +319,13 @@ export async function processAkyoCRUD(
             id,
             avatarName || nickname || ''
         );
-        const commitData = await commitAkyoCsv({
+        // Applied to the commit the checks above read, without force: a category renamed or
+        // deleted in between (which may not touch the CSV at all) fails instead of winning.
+        const commitData = await commitCsv({
+            parentSha: head,
             header,
             dataRecords: updatedRecords,
-            fileSha,
-            commitMessage,
+            message: commitMessage,
         });
 
         if (operation === 'add') {
@@ -321,6 +349,9 @@ export async function processAkyoCRUD(
         return Response.json(result);
 
     } catch (error) {
+        if (error instanceof GitHubConflictError) {
+            return jsonError(CSV_CONFLICT_MESSAGE, 409);
+        }
         console.error(`[akyo-crud-${operation}] Error:`, error);
         return jsonError(
             error instanceof Error ? error.message : 'CSVの更新に失敗しました',
