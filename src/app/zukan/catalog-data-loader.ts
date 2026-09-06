@@ -313,14 +313,30 @@ export async function loadCompleteCatalogData(
   });
 }
 
+/**
+ * ネットワーク段階が「止まっている」と見なすまでの時間。締切
+ * （`DEFAULT_CATALOG_FETCH_TIMEOUT_MS`）より長めに取り、正常に遅いだけの取得を
+ * 取り直しで潰さない。取得後の準備段階はこの時間で測らない
+ * （`CatalogRequestCoordinator.markFetched`）
+ */
+export const CATALOG_STALL_AFTER_MS = DEFAULT_CATALOG_FETCH_TIMEOUT_MS + 5_000;
+
 export class CatalogRequestCoordinator {
   private generation = 0;
   private controller: AbortController | null = null;
+  private inFlight = false;
+  private fetched = false;
+  private startedAtMs = 0;
+
+  constructor(private readonly now: () => number = () => Date.now()) {}
 
   begin(): { generation: number; signal: AbortSignal } {
     this.controller?.abort();
     this.controller = new AbortController();
     this.generation += 1;
+    this.inFlight = true;
+    this.fetched = false;
+    this.startedAtMs = this.now();
     return {
       generation: this.generation,
       signal: this.controller.signal,
@@ -331,9 +347,50 @@ export class CatalogRequestCoordinator {
     return generation === this.generation && !this.controller?.signal.aborted;
   }
 
+  /**
+   * ネットワークが終わったことを記録し、ここから先を取り直しの対象から外す。
+   *
+   * 取得の後には検索インデックスの構築（`prepareCatalogItemsInChunks`）が続く。この段階は
+   * ネットワークを待たず、ページの実行が再開すれば必ず進むので、取り直しても速くならない。
+   * にもかかわらず経過時間で測ると、隠れたタブでチャンクごとの譲り渡しが引き伸ばされたり
+   * ページが凍結されたりしただけで「止まっている」と判定され、ダウンロード済みの
+   * カタログを捨てて取り直してしまう。
+   *
+   * 準備が失敗すれば `finally` が決着を記録するので、そこから先は従来どおり
+   * エラー表示と再試行に進む
+   */
+  markFetched(generation: number): void {
+    if (generation === this.generation) {
+      this.fetched = true;
+    }
+  }
+
+  /**
+   * 取得が決着したことを記録する。現行の取得のときだけ「進行中」を下ろすので、
+   * 追い越された古い取得が後続の在庫を消すことはない
+   */
+  settle(generation: number): void {
+    if (generation === this.generation) {
+      this.inFlight = false;
+    }
+  }
+
+  /**
+   * ネットワークを取り直してよいか。進行中の取得が無い場合と、締切を過ぎてもネットワークが
+   * 終わっていない場合に真。中断されたまま後続が始まっていない状態も前者に入る
+   * （`cancel` が在庫を下ろすため）。取得後の準備中は偽で、進行中の準備を潰さない
+   */
+  isStalled(stallAfterMs: number = CATALOG_STALL_AFTER_MS): boolean {
+    if (!this.inFlight) return true;
+    if (this.fetched) return false;
+    return this.now() - this.startedAtMs >= stallAfterMs;
+  }
+
   cancel(): void {
     this.controller?.abort();
     this.controller = null;
     this.generation += 1;
+    this.inFlight = false;
+    this.fetched = false;
   }
 }

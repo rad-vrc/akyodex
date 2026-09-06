@@ -1,4 +1,5 @@
 import type { SupportedLanguage } from "@/lib/i18n";
+import { captureExceptionSafely } from "@/lib/sentry-browser";
 import { startInactiveSpan } from "@sentry/nextjs";
 
 export type CatalogLoadSource = "api" | "r2" | "snapshot" | "none";
@@ -54,6 +55,30 @@ const PHASE_NAMES: Record<
 
 export function getCatalogFailureReason(error: unknown): string {
   return error instanceof Error && error.name ? error.name : "UnknownError";
+}
+
+/**
+ * 取得元を全部試し切った失敗は `AggregateError` を cause に持つ（`catalog-data-loader.ts`）。
+ * Sentry は cause の中身をそのままでは見せないので、どの取得元がどう失敗したかを 1 行に畳む。
+ * これが無いと「全部失敗した」しか残らず、次に起きたとき原因を絞れない
+ */
+export function describeCatalogFailureCause(error: unknown): string | undefined {
+  const cause = error instanceof Error ? error.cause : undefined;
+  if (!(cause instanceof AggregateError)) return undefined;
+
+  const described = cause.errors.map((entry) =>
+    entry instanceof Error
+      ? redactUrls(`${entry.name}: ${entry.message}`)
+      : entry === null || entry === undefined
+        ? String(entry)
+        : entry.constructor?.name ?? "UnknownError",
+  );
+  return described.length > 0 ? described.join(" | ") : undefined;
+}
+
+/** 取得元の URL は診断に要らないので落とす。既存の telemetry と同じ扱いに揃える */
+function redactUrls(text: string): string {
+  return text.replace(/https?:\/\/\S+/gi, "[url]");
 }
 
 export class CatalogLoadPerformance {
@@ -129,6 +154,38 @@ export class CatalogLoadPerformance {
       },
     };
   }
+}
+
+/**
+ * カタログ取得の失敗を Sentry の Issue として送る。
+ *
+ * `reportCatalogLoadToSentry` の span は `tracesSampleRate` に従うため、既定の 0.1 では
+ * 失敗の約 9 割が捨てられ、Issue にも一切現れない。障害の調査で「Sentry に出ていない」が
+ * 何の証拠にもならなくなるので、失敗だけはサンプリングを通さずに送る
+ */
+export function captureCatalogFailure(
+  error: unknown,
+  context: {
+    language: SupportedLanguage;
+    telemetry?: CatalogLoadTelemetryEvent | null;
+  },
+): void {
+  const normalizedError =
+    error instanceof Error ? error : new Error(String(error));
+
+  captureExceptionSafely(normalizedError, {
+    level: "error",
+    tags: {
+      area: "catalog",
+      language: context.language,
+      failure_reason: getCatalogFailureReason(error),
+    },
+    extra: {
+      source: context.telemetry?.source ?? "none",
+      durationMs: context.telemetry?.durationMs,
+      cause: describeCatalogFailureCause(error),
+    },
+  });
 }
 
 export async function reportCatalogLoadToSentry(

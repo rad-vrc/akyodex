@@ -5,7 +5,9 @@ import path from "node:path";
 
 import type { AkyoData } from "@/types/akyo";
 import { createCatalogPayload } from "@/lib/catalog-payload";
+import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
 import {
+  CATALOG_STALL_AFTER_MS,
   CatalogRequestCoordinator,
   loadCompleteCatalogData,
 } from "./catalog-data-loader";
@@ -284,6 +286,124 @@ test("CatalogRequestCoordinator aborts stale language requests and unmount work"
   coordinator.cancel();
   assert.equal(english.signal.aborted, true);
   assert.equal(coordinator.isCurrent(english.generation), false);
+});
+
+test("決着していない取得がある間は取り直しの対象にしない", () => {
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+
+  assert.equal(coordinator.isStalled(), true, "始まる前は取り直してよい");
+
+  const request = coordinator.begin();
+  assert.equal(coordinator.isStalled(), false, "進行中は待つ");
+
+  nowMs += 9_000;
+  assert.equal(coordinator.isStalled(), false, "締切内はまだ待つ");
+
+  nowMs += 11_000;
+  assert.equal(coordinator.isStalled(), true, "締切を過ぎたら当てにしない");
+
+  nowMs = 0;
+  const fresh = coordinator.begin();
+  coordinator.settle(fresh.generation);
+  assert.equal(coordinator.isStalled(), true, "決着したら取り直してよい");
+  void request;
+});
+
+test("追い越された取得の決着は後続の在庫を消さない", () => {
+  // 古い取得が中断されて catch を抜けても settle は現行世代のものだけを下ろす。
+  // ここを混ぜると、進行中の取得があるのに復帰のたび取り直してしまう
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const stale = coordinator.begin();
+  const current = coordinator.begin();
+
+  coordinator.settle(stale.generation);
+  assert.equal(coordinator.isStalled(), false, "現行の取得はまだ進行中");
+
+  coordinator.settle(current.generation);
+  assert.equal(coordinator.isStalled(), true);
+});
+
+test("中断されたまま後続が始まらなければ取り直しの対象になる", () => {
+  // 実害はここ。中断で抜けると画面はスピナーのまま、エラーも再試行ボタンも出ない
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  coordinator.begin();
+  assert.equal(coordinator.isStalled(), false);
+
+  coordinator.cancel();
+  assert.equal(coordinator.isStalled(), true);
+});
+
+test("ネットワークが終わったら、続く準備がどれだけ長引いても取り直しの対象にしない", () => {
+  // 準備段階はネットワークを待たず、ページの実行が再開すれば必ず進むので、取り直しても
+  // 速くならない。経過時間で測ると、隠れたタブや凍結で長引いただけの準備を、
+  // ダウンロード済みのカタログ（約 320KB）ごと捨ててしまう
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const request = coordinator.begin();
+
+  nowMs = 2_000;
+  coordinator.markFetched(request.generation);
+
+  nowMs = 2_000 + CATALOG_STALL_AFTER_MS;
+  assert.equal(coordinator.isStalled(), false, "準備中は取り直さない");
+
+  nowMs = 10 * CATALOG_STALL_AFTER_MS;
+  assert.equal(coordinator.isStalled(), false, "凍結から戻っても取り直さない");
+
+  coordinator.settle(request.generation);
+  assert.equal(coordinator.isStalled(), true, "決着したら取り直してよい");
+});
+
+test("完了できる準備を、表示復帰の判定が中断しない", async () => {
+  // 隠れたタブでは 1 チャンクごとの譲り渡しが 1 秒まで引き伸ばされる。実際の準備関数を
+  // その速度で回し、途中で表示に戻る判定が入っても最後まで進むことを確かめる
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const request = coordinator.begin();
+  nowMs = 2_000;
+  coordinator.markFetched(request.generation);
+
+  const stalledDuringPreparation: boolean[] = [];
+  const prepared = await prepareCatalogItemsInChunks(
+    Array.from({ length: 25 }, (_, index) =>
+      createAkyo(String(index + 1).padStart(4, "0")),
+    ),
+    {
+      signal: request.signal,
+      timeBudgetMs: 0,
+      now: () => nowMs,
+      yieldToMainThread: async () => {
+        nowMs += 1_000;
+        stalledDuringPreparation.push(coordinator.isStalled());
+      },
+    },
+  );
+
+  assert.equal(prepared.length, 25, "準備は最後まで進む");
+  assert.ok(
+    nowMs - 2_000 > CATALOG_STALL_AFTER_MS,
+    "準備は停止判定の時間を超えて続いた",
+  );
+  assert.deepEqual(
+    Array.from(new Set(stalledDuringPreparation)),
+    [false],
+    "途中のどの時点でも取り直しの対象にならない",
+  );
+});
+
+test("追い越された取得の markFetched は現行の取得を対象外にしない", () => {
+  let nowMs = 0;
+  const coordinator = new CatalogRequestCoordinator(() => nowMs);
+  const stale = coordinator.begin();
+  coordinator.begin();
+
+  coordinator.markFetched(stale.generation);
+  nowMs = CATALOG_STALL_AFTER_MS;
+
+  assert.equal(coordinator.isStalled(), true);
 });
 
 test("all checked-in language catalogs pass client validation without dropped rows", async () => {
