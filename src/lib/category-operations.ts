@@ -186,6 +186,27 @@ export function categoryExists(dataset: CategoryDataset, path: string): boolean 
   return dataset.records.some((record) => splitCategoryCell(record[column] ?? '').includes(path));
 }
 
+/**
+ * Rows whose Category cell an operation rewrote, as `{ id, category }`. The admin screen
+ * patches its catalog with these instead of waiting for the public JSON to be regenerated.
+ */
+export function listChangedCategoryRows(
+  before: CategoryDataset,
+  after: CategoryDataset,
+): { id: string; category: string }[] {
+  const idIndex = after.header.indexOf('ID');
+  const categoryIndex = categoryColumnIndex(after);
+  if (idIndex < 0) return [];
+  const previous = new Map(before.records.map((record) => [record[idIndex], record[categoryColumnIndex(before)] ?? '']));
+  const changed: { id: string; category: string }[] = [];
+  for (const record of after.records) {
+    const id = record[idIndex];
+    const category = record[categoryIndex] ?? '';
+    if (previous.get(id) !== category) changed.push({ id, category });
+  }
+  return changed;
+}
+
 export function summarizeCategories(dataset: CategoryDataset): CategorySummary[] {
   const column = categoryColumnIndex(dataset);
   const counts = new Map<string, number>();

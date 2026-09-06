@@ -8,6 +8,7 @@ import {
   CategoryOperationError,
   createCategory,
   deleteCategory,
+  listChangedCategoryRows,
   mergeCategory,
   renameCategory,
   summarizeCategories,
@@ -112,6 +113,8 @@ export async function processCategoryRequest(
       success: true,
       message: successMessage(action, body, change.changedRows),
       changedRows: change.changedRows,
+      // The rows this rewrote, so the admin screen can follow without refetching the catalog.
+      updatedRows: listChangedCategoryRows(snapshot.dataset, change.dataset),
       commitUrl: commit.commit.html_url,
       head: commit.sha,
       files: commit.files,

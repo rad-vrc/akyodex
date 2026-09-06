@@ -3,6 +3,14 @@
 import { IconEdit, IconPlusCircle, IconTags, IconTools } from '@/components/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
+import {
+  applyCatalogRefresh,
+  applyCategoryRowChanges,
+  recordCommittedRows,
+  type CategoryRowChange,
+  type CommittedRow,
+} from '@/lib/admin-catalog';
+import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
 import { AddTab } from './tabs/add-tab';
 import { CategoriesTab } from './tabs/categories-tab';
 import { EditTab } from './tabs/edit-tab';
@@ -49,7 +57,6 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
   const [activeTab, setActiveTab] = useState<TabType>('add');
   const [editVisited, setEditVisited] = useState(false);
   const [categoriesVisited, setCategoriesVisited] = useState(false);
-  const [refreshedCatalog, setRefreshedCatalog] = useState<AkyoData[] | null>(null);
   const [apiCategories, setApiCategories] = useState<string[]>([]);
   const refreshCategories = useCallback(async () => {
     const paths = await fetchCategoryPaths();
@@ -65,11 +72,24 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
       disposed = true;
     };
   }, []);
-  const currentAttributes = mergeCategoryLists(
-    refreshedCatalog ? extractCategories(refreshedCatalog) : attributes,
-    apiCategories,
+  // One catalog for both tabs, and one record of what this session committed. Every way the
+  // rows can move — a commit here, a commit there, a refresh from the lagging public JSON, a
+  // category rename rewriting cells — goes through src/lib/admin-catalog.ts.
+  const [catalogState, setCatalogState] = useState<{ catalog: AkyoData[]; committed: Map<string, CommittedRow> }>(
+    () => ({ catalog: akyoData, committed: new Map() }),
   );
-  const currentCreators = refreshedCatalog ? extractAuthors(refreshedCatalog) : creators;
+  const catalog = catalogState.catalog;
+  const handleRowsCommitted = useCallback((rows: AkyoData[], originals: AkyoEditFields[]) => {
+    setCatalogState((previous) => recordCommittedRows(previous.catalog, previous.committed, rows, originals));
+  }, []);
+  const handleCatalogRefresh = useCallback((rows: AkyoData[]) => {
+    setCatalogState((previous) => applyCatalogRefresh(rows, previous.committed));
+  }, []);
+  const handleCategoryRowsChanged = useCallback((changes: CategoryRowChange[]) => {
+    setCatalogState((previous) => applyCategoryRowChanges(previous.catalog, previous.committed, changes));
+  }, []);
+  const currentAttributes = mergeCategoryLists(extractCategories(catalog), apiCategories);
+  const currentCreators = extractAuthors(catalog);
   // The edit tab and the categories tab each hold their own unsaved changes; the header guard
   // and the tab lock see the union, and each tab is told which rows the other one holds.
   // A row held in two places would stage two `original` snapshots of the same CSV row, so the
@@ -93,18 +113,6 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
     onPendingEditsChange?.(anyPending, anyBusy);
   }, [anyPending, anyBusy, onPendingEditsChange]);
 
-  // One catalog for both tabs: rows either tab commits are merged in, so the other tab stops
-  // holding a pre-commit snapshot (the public JSON only catches up after the sync workflow).
-  const catalog = refreshedCatalog ?? akyoData;
-  const handleRowsCommitted = useCallback((rows: AkyoData[]) => {
-    setRefreshedCatalog((previous) => {
-      const base = previous ?? akyoData;
-      const saved = new Map(rows.map((row) => [row.id, row]));
-      const merged = base.map((row) => saved.get(row.id) ?? row);
-      for (const row of rows) if (!base.some((entry) => entry.id === row.id)) merged.push(row);
-      return merged;
-    });
-  }, [akyoData]);
 
   const handleTabChange = (nextTab: TabType) => {
     if (applying) return;
@@ -194,7 +202,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
             akyoData={catalog}
             attributes={currentAttributes}
             blockedIds={categoriesHeldIds}
-            onCatalogRefresh={setRefreshedCatalog}
+            onCatalogRefresh={handleCatalogRefresh}
             onRowsCommitted={handleRowsCommitted}
             onDataChange={handleDataChange}
             onPendingStateChange={handlePendingState}
@@ -210,6 +218,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
               active={activeTab === 'categories'}
               blockedIds={editHeldIds}
               onCategoriesChanged={() => void refreshCategories()}
+              onCategoryRowsChanged={handleCategoryRowsChanged}
               onRowsCommitted={handleRowsCommitted}
               onPendingStateChange={handleCategoriesPendingState}
             />

@@ -2,6 +2,8 @@
 
 import { IconPlusCircle, IconRedo, IconTags } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
+import type { CategoryRowChange } from '@/lib/admin-catalog';
+import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
 import { isProtectedCategoryPath } from '@/lib/category-operations';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -16,8 +18,10 @@ interface CategoriesTabProps {
   onPendingStateChange?: (pending: boolean, busy: boolean, pendingIds?: string[]) => void;
   /** Rows the edit tab is holding; they must not be staged here as well. */
   blockedIds?: ReadonlySet<string>;
-  /** Rows as the server saved them, handed up so the whole admin screen leaves the old state. */
-  onRowsCommitted?: (rows: AkyoData[]) => void;
+  /** Rows as the server saved them, with the snapshots they replaced, for the shared catalog. */
+  onRowsCommitted?: (rows: AkyoData[], originals: AkyoEditFields[]) => void;
+  /** Category cells a rename, merge or delete rewrote, so the catalog follows without a refetch. */
+  onCategoryRowsChanged?: (changes: CategoryRowChange[]) => void;
   /** Whether the tab is on screen; the list reloads when it comes back. */
   active?: boolean;
 }
@@ -43,6 +47,7 @@ interface CategoryMutationResponse {
   message?: string;
   commitUrl?: string;
   changedRows?: number;
+  updatedRows?: CategoryRowChange[];
 }
 
 /**
@@ -104,6 +109,7 @@ export function CategoriesTab({
   onPendingStateChange,
   blockedIds = EMPTY_IDS,
   onRowsCommitted,
+  onCategoryRowsChanged,
   active = true,
 }: CategoriesTabProps) {
   const isOwner = userRole === 'owner';
@@ -129,8 +135,8 @@ export function CategoriesTab({
     setAssignMessageShown(false);
   }, []);
   const handleAssignCommitted = useCallback(
-    (rows: AkyoData[]) => {
-      onRowsCommitted?.(rows);
+    (rows: AkyoData[], originals: AkyoEditFields[]) => {
+      onRowsCommitted?.(rows, originals);
       setAssignMessageShown(true);
       // main moved: the list counts and `head` are now older than the branch.
       void load();
@@ -241,6 +247,9 @@ export function CategoriesTab({
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'カテゴリの更新に失敗しました');
       }
+      // A rename, merge or delete rewrote Akyo rows: hand the new cells to the shared catalog
+      // so the cards and the next held change use the post-change categories.
+      if (data.updatedRows?.length) onCategoryRowsChanged?.(data.updatedRows);
       setMessage(data.message || '更新しました');
       setCommitUrl(data.commitUrl || '');
       setEditor(null);

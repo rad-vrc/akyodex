@@ -3,21 +3,65 @@ import { EDIT_FIELD_NAMES, MAX_BATCH_UPDATES, getAkyoEditFields, sameAkyoEditFie
 import { parseAkyoFormData, jsonError, type AkyoFormData } from './api-helpers';
 import { prepareAkyoUpdate } from './akyo-crud-helpers';
 import { splitCategoryCell } from './category-operations';
-import { commitAkyoCsv, loadAkyoCsv, parseCsvToAkyoData } from './csv-utils';
-import { fetchFileFromGitHub } from './github-utils';
+import { parseCsvToAkyoData, parseLoadedAkyoCsvContent, stringifyAkyoCsv } from './csv-utils';
+import { GitHubConflictError, commitFilesToGitHub, fetchFileFromGitHub, getBranchHead } from './github-utils';
+
+const CSV_PATH = 'data/akyo-data-ja.csv';
+const TRANSLATIONS_PATH = 'data/category-translations.json';
+
+export interface AkyoBatchSnapshot {
+  /** Commit every file below was read from, and the parent the write must apply to. */
+  head: string;
+  header: string[];
+  dataRecords: string[][];
+  /**
+   * Categories an update may reference beyond those already in the CSV: the registered ones
+   * no Akyo uses yet. Writing a token outside the union would resurrect a renamed or deleted
+   * category with no translation, which the EN/KO regeneration then drops.
+   */
+  registeredCategories: Set<string>;
+}
+
+export interface AkyoBatchDependencies {
+  loadSnapshot: () => Promise<AkyoBatchSnapshot>;
+  commit: (args: {
+    parentSha: string;
+    header: string[];
+    dataRecords: string[][];
+    message: string;
+  }) => Promise<{ commit: { html_url: string } }>;
+}
 
 /**
- * Categories an update may reference: every token some row already carries, plus the
- * registered ones that no Akyo uses yet. Writing a token outside this set would resurrect a
- * renamed or deleted category with no translation, which the EN/KO regeneration then drops.
+ * Read the CSV and the category registry from one commit. Deleting an unused category only
+ * rewrites the translations file, so a guard on the CSV alone would not notice it; the write
+ * below applies to this same commit and fails if the branch moved at all.
  */
-async function loadRegisteredCategories(): Promise<Set<string>> {
-  const file = await fetchFileFromGitHub('data/category-translations.json');
-  const parsed: unknown = JSON.parse(file.content);
+async function loadAkyoSnapshot(): Promise<AkyoBatchSnapshot> {
+  const head = await getBranchHead();
+  const [csv, translations] = await Promise.all([
+    fetchFileFromGitHub(CSV_PATH, undefined, undefined, head),
+    fetchFileFromGitHub(TRANSLATIONS_PATH, undefined, undefined, head),
+  ]);
+  const parsed: unknown = JSON.parse(translations.content);
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new Error('category-translations.json の形式が不正です');
   }
-  return new Set(Object.keys(parsed));
+  const { header, dataRecords } = parseLoadedAkyoCsvContent(csv.content);
+  return { head, header, dataRecords, registeredCategories: new Set(Object.keys(parsed)) };
+}
+
+async function commitAkyoSnapshot({
+  parentSha,
+  header,
+  dataRecords,
+  message,
+}: Parameters<AkyoBatchDependencies['commit']>[0]) {
+  return commitFilesToGitHub({
+    files: [{ path: CSV_PATH, content: stringifyAkyoCsv(header, dataRecords) }],
+    message,
+    parentSha,
+  });
 }
 
 function isFields(value: unknown): value is AkyoEditFields {
@@ -27,13 +71,9 @@ function isFields(value: unknown): value is AkyoEditFields {
 
 export async function processAkyoBatchUpdate(
   input: unknown,
-  dependencies: {
-    load?: typeof loadAkyoCsv;
-    commit?: typeof commitAkyoCsv;
-    loadRegistry?: () => Promise<Set<string>>;
-  } = {},
+  dependencies: Partial<AkyoBatchDependencies> = {},
 ): Promise<Response> {
-  const { load = loadAkyoCsv, commit = commitAkyoCsv, loadRegistry = loadRegisteredCategories } = dependencies;
+  const { loadSnapshot = loadAkyoSnapshot, commit = commitAkyoSnapshot } = dependencies;
   if (!Array.isArray(input) || input.length === 0 || input.length > MAX_BATCH_UPDATES) {
     return jsonError('更新は1件から100件までまとめて反映できます', 400);
   }
@@ -53,7 +93,7 @@ export async function processAkyoBatchUpdate(
   }
 
   try {
-    const [{ header, dataRecords, fileSha }, registered] = await Promise.all([load(), loadRegistry()]);
+    const { head, header, dataRecords, registeredCategories } = await loadSnapshot();
     const currentData = parseCsvToAkyoData(stringify([header, ...dataRecords]));
     // Compare the edited records, not the entire catalog: unrelated registrations can proceed.
     for (const { draft } of updates) {
@@ -65,7 +105,7 @@ export async function processAkyoBatchUpdate(
     // Every client (this panel, the edit modal, a script) writes categories through here, so
     // the "category must exist" rule belongs here rather than in one screen's pre-flight.
     const categoryIndex = header.indexOf('Category');
-    const known = new Set(registered);
+    const known = new Set(registeredCategories);
     for (const record of dataRecords) {
       for (const token of splitCategoryCell(categoryIndex >= 0 ? record[categoryIndex] ?? '' : '')) known.add(token);
     }
@@ -80,13 +120,18 @@ export async function processAkyoBatchUpdate(
     let records = dataRecords;
     for (const { form } of updates) records = prepareAkyoUpdate(form, records, header);
     const savedData = parseCsvToAkyoData(stringify([header, ...records])).filter((akyo) => ids.has(akyo.id));
-    // One SHA-guarded commit, only after every input and conflict check succeeds.
+    // One commit on the very revision the checks above were made against, applied without
+    // force: anything pushed in between (a CSV row, a category rename, a category deletion
+    // that only touches the translations file) makes the ref update fail instead of winning.
     const committed = await commit({
-      header, dataRecords: records, fileSha,
-      commitMessage: `Update ${updates.length} Akyo: ${[...ids].map((id) => `#${id}`).join(', ')}`,
+      parentSha: head, header, dataRecords: records,
+      message: `Update ${updates.length} Akyo: ${[...ids].map((id) => `#${id}`).join(', ')}`,
     });
     return Response.json({ success: true, message: `${updates.length}件の更新を反映しました`, commitUrl: committed.commit.html_url, data: savedData });
   } catch (error) {
+    if (error instanceof GitHubConflictError) {
+      return jsonError('他の更新が先に入りました。ページを再読み込みして最新のデータを取り込んでから、もう一度お試しください。保留内容は維持されています。', 409);
+    }
     console.error('[akyo-batch-update] Failed:', error);
     return jsonError('更新を反映できませんでした。保留内容は維持されています。通信エラーの場合はコミット状況を確認してから再試行してください。', 500);
   }

@@ -3,7 +3,7 @@
 import { AkyoCard } from '@/components/akyo-card';
 import { IconSave } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
-import { MAX_BATCH_UPDATES, applyAkyoEditFields, type PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
+import { MAX_BATCH_UPDATES, applyAkyoEditFields, type AkyoEditFields, type PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
 import { categoriesOf, hasAllCategories, stageCategoryUpdate, toggleCategories } from '@/lib/category-assignment';
 import type { AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -19,8 +19,8 @@ interface CategoryAssignPanelProps {
   blockedIds: ReadonlySet<string>;
   onClearSelection: () => void;
   onPendingStateChange?: (pending: boolean, busy: boolean, pendingIds?: string[]) => void;
-  /** Rows as the server saved them, so the whole admin screen leaves the pre-commit state. */
-  onCommitted: (rows: AkyoData[]) => void;
+  /** Rows as the server saved them, with the snapshots they replaced, for the shared catalog. */
+  onCommitted: (rows: AkyoData[], originals: AkyoEditFields[]) => void;
 }
 
 /** Cards mounted at once; the catalog is ~950 entries and the admin only looks at a screenful. */
@@ -151,18 +151,19 @@ export function CategoryAssignPanel({
     submittingRef.current = true;
     setSubmitting(true);
     setMessage('');
+    const applied = Object.values(pending);
     try {
       const response = await fetch('/api/update-akyo-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.values(pending)),
+        body: JSON.stringify(applied),
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || '更新に失敗しました');
       setPending({});
       setMessage(result.message);
       setCommitUrl(result.commitUrl || '');
-      onCommitted(result.data as AkyoData[]);
+      onCommitted(result.data as AkyoData[], applied.map((update) => update.original));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '更新に失敗しました。保留内容は維持されています。');
     } finally {

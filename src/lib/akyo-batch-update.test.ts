@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { stringify } from 'csv-stringify/sync';
-import { processAkyoBatchUpdate } from './akyo-batch-update';
+import { processAkyoBatchUpdate, type AkyoBatchDependencies } from './akyo-batch-update';
 import { getAkyoEditFields } from './akyo-edit-fields';
-import { createAkyoRecord, parseCsvToAkyoData, type commitAkyoCsv } from './csv-utils';
+import { createAkyoRecord, parseCsvToAkyoData } from './csv-utils';
+import { GitHubConflictError } from './github-utils';
 
 const header = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comment', 'Author', 'AvatarURL', 'SourceURL', 'EntryType', 'DisplaySerial', 'BoothURL'];
 const url = 'https://vrchat.com/home/avatar/avtr_12345678-1234-1234-1234-123456789abc';
 const worldUrl = 'https://vrchat.com/home/world/wrld_12345678-1234-1234-1234-123456789abc';
 
-function fixture() {
+function fixture(registeredCategories = new Set<string>()) {
   const records = ['0001', '0002', '0003'].map((id) => createAkyoRecord({
     id, nickname: `Akyo ${id}`, avatarName: 'Akyo', category: '動物', author: 'Author',
     comment: 'original', entryType: 'avatar', displaySerial: id, sourceUrl: url,
@@ -19,14 +20,16 @@ function fixture() {
     const original = getAkyoEditFields(akyo);
     return { original, changes: { ...original, nickname: `${original.nickname} edited`, comment: 'comma, newline\nquoted "value"' } };
   });
-  const commits: Parameters<typeof commitAkyoCsv>[0][] = [];
+  const commits: Parameters<AkyoBatchDependencies['commit']>[0][] = [];
   let loads = 0;
-  const dependencies = {
-    // Categories already carried by the CSV are always known; the registry adds the ones
-    // created but not yet assigned to any Akyo.
-    loadRegistry: async () => new Set<string>(),
-    load: async () => { loads++; return { header, dataRecords: records, fileSha: 'original-sha' }; },
-    commit: async (args: Parameters<typeof commitAkyoCsv>[0]) => {
+  const dependencies: AkyoBatchDependencies = {
+    // The CSV and the category registry come from one commit; categories already carried by
+    // a row are always known, and the registry adds those created but not yet assigned.
+    loadSnapshot: async () => {
+      loads++;
+      return { head: 'head-1', header, dataRecords: records, registeredCategories };
+    },
+    commit: async (args) => {
       commits.push(args);
       return { commit: { html_url: 'https://github.com/example/repo/commit/test' } };
     },
@@ -42,7 +45,7 @@ for (const count of [1, 2]) {
     assert.equal(response.status, 200);
     assert.equal(f.loads(), 1);
     assert.equal(f.commits.length, 1);
-    assert.equal(f.commits[0].fileSha, 'original-sha');
+    assert.equal(f.commits[0].parentSha, 'head-1', 'the write applies to the revision the checks used');
     assert.deepEqual(f.records, before, 'input CSV rows must not be mutated');
     assert.deepEqual(f.commits[0].dataRecords[2], before[2]);
     const body = await response.json();
@@ -141,8 +144,13 @@ test('category-only avatar/world/BOOTH edits preserve every other CSV column in 
     const original = getAkyoEditFields(akyo);
     return { original, changes: { ...original, category: `${original.category},技能・特性,技能・特性/演奏` } };
   });
-  const registry = new Set(['技能・特性', '技能・特性/演奏']);
-  const response = await processAkyoBatchUpdate(updates, { ...f.dependencies, loadRegistry: async () => registry });
+  const response = await processAkyoBatchUpdate(updates, {
+    ...f.dependencies,
+    loadSnapshot: async () => ({
+      head: 'head-1', header, dataRecords: f.records,
+      registeredCategories: new Set(['技能・特性', '技能・特性/演奏']),
+    }),
+  });
   assert.equal(response.status, 200);
   assert.equal(f.commits.length, 1);
   for (const [index, row] of f.commits[0].dataRecords.entries()) {
@@ -165,12 +173,25 @@ test('a category no row carries and the registry does not know is refused before
   assert.equal(f.commits.length, 0);
 
   // Registered but not yet used by any Akyo: assigning it for the first time must work.
-  const fresh = fixture();
+  const fresh = fixture(new Set(['新カテゴリ']));
   fresh.updates[0].changes.category = `${carried},新カテゴリ`;
-  const accepted = await processAkyoBatchUpdate([fresh.updates[0]], {
-    ...fresh.dependencies,
-    loadRegistry: async () => new Set(['新カテゴリ']),
-  });
+  const accepted = await processAkyoBatchUpdate([fresh.updates[0]], fresh.dependencies);
   assert.equal(accepted.status, 200);
   assert.equal(fresh.commits.length, 1);
+});
+
+test('a branch that moved between the snapshot and the write is reported as a conflict', async (t) => {
+  const f = fixture();
+  t.mock.method(console, 'error', () => {});
+  // A category deleted meanwhile only rewrites the translations file, so guarding the CSV
+  // alone would miss it; the non-force ref update on the read revision is what catches it.
+  const response = await processAkyoBatchUpdate(f.updates, {
+    ...f.dependencies,
+    commit: async () => {
+      throw new GitHubConflictError('Update is not a fast forward');
+    },
+  });
+  assert.equal(response.status, 409);
+  const { error } = await response.json();
+  assert.match(error, /再読み込み/);
 });

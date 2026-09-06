@@ -25,13 +25,31 @@ interface EditTabProps {
   onCatalogRefresh?: (data: AkyoData[]) => void;
   /** Rows the categories tab is holding; they must not be staged here as well. */
   blockedIds?: ReadonlySet<string>;
-  /** Rows as the server saved them, handed up so the other tab leaves the pre-commit state. */
-  onRowsCommitted?: (rows: AkyoData[]) => void;
+  /** Rows as the server saved them, with the snapshots they replaced, handed up to AdminTabs. */
+  onRowsCommitted?: (rows: AkyoData[], originals: AkyoEditFields[]) => void;
 }
 
 interface SavedAkyoUpdate {
   data: AkyoData;
   before: AkyoEditFields[];
+}
+
+/**
+ * Keep only the overlays whose row still reads as a known pre-save snapshot: the public JSON
+ * lags behind the CSV. Matching the saved result (synced) or anything else (someone else's
+ * edit, or a category assigned in the other tab) retires the overlay so the rows win.
+ */
+function retireSyncedOverlays(
+  saved: Record<string, SavedAkyoUpdate>,
+  rows: AkyoData[],
+): Record<string, SavedAkyoUpdate> {
+  return Object.fromEntries(Object.entries(saved).filter(([id, item]) => {
+    const remote = rows.find(candidate => candidate.id === id);
+    if (!remote) return false;
+    const fields = getAkyoEditFields(remote);
+    return !sameAkyoEditFields(getAkyoEditFields(item.data), fields)
+      && item.before.some(before => sameAkyoEditFields(before, fields));
+  }));
 }
 
 /**
@@ -90,6 +108,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       const retained = previous.filter((item) => pendingRef.current[item.id] && !ids.has(item.id));
       return [...akyoData, ...retained];
     });
+    // The shared catalog already resolves our own commits and the lagging public JSON, so a
+    // local overlay for a row it now carries would only hide newer data (a category assigned
+    // in the other tab) and make the next `original` stale.
+    setSaved((previous) => retireSyncedOverlays(previous, akyoData));
   }, [akyoData]);
 
   const handleRefresh = async () => {
@@ -106,15 +128,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       const ids = new Set(next.map(item => item.id));
       const retained = catalogData.filter(item => pending[item.id] && !ids.has(item.id));
       setCatalogData([...next, ...retained]);
-      setSaved(previous => Object.fromEntries(Object.entries(previous).filter(([id, item]) => {
-        const remote = next.find(candidate => candidate.id === id);
-        if (!remote) return false;
-        const fields = getAkyoEditFields(remote);
-        // Ignore only known pre-save snapshots while JSON sync catches up.
-        // Matching the saved result, or a different external edit, retires the overlay.
-        return !sameAkyoEditFields(getAkyoEditFields(item.data), fields)
-          && item.before.some(before => sameAkyoEditFields(before, fields));
-      })));
+      setSaved(previous => retireSyncedOverlays(previous, next));
       onCatalogRefresh?.(next);
       setRefreshMessage('データを再取得しました。');
     } catch {
@@ -163,11 +177,12 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
     submittingRef.current = true;
     setSubmitting(true);
     setMessage('');
+    const applied = Object.values(pending);
     try {
       const response = await fetch('/api/update-akyo-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.values(pending)),
+        body: JSON.stringify(applied),
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || '更新に失敗しました');
@@ -179,7 +194,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       setPending({});
       setMessage(result.message);
       setCommitUrl(result.commitUrl || '');
-      onRowsCommitted?.(result.data as AkyoData[]);
+      onRowsCommitted?.(result.data as AkyoData[], applied.map((update) => update.original));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '更新に失敗しました。保留内容は維持されています。');
     } finally {
