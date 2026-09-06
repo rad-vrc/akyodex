@@ -1,5 +1,9 @@
 import type { SupportedLanguage } from "@/lib/i18n";
-import { captureExceptionSafely } from "@/lib/sentry-browser";
+import {
+  captureExceptionSafely,
+  captureMessageSafely,
+} from "@/lib/sentry-browser";
+import type { CatalogResumeTrigger } from "./catalog-resume";
 import { startInactiveSpan } from "@sentry/nextjs";
 
 export type CatalogLoadSource = "api" | "r2" | "snapshot" | "none";
@@ -184,6 +188,34 @@ export function captureCatalogFailure(
       source: context.telemetry?.source ?? "none",
       durationMs: context.telemetry?.durationMs,
       cause: describeCatalogFailureCause(error),
+    },
+  });
+}
+
+/** 自動復帰の記録名。Sentry ではこの文字列で 1 つにまとまるので、件数をそのまま数えられる */
+export const CATALOG_RESUME_MESSAGE = "Catalog load resumed after a stall";
+
+/**
+ * 止まった取得を自動で取り直したことを記録する。
+ *
+ * この復帰は、実ブラウザで再現できなかった「フィルターがスピナーのまま戻らない」症状に
+ * 対する保険として入っている（`catalog-resume.ts`）。発火を残さないと、本番で一度でも
+ * 効いたのか、それとも余計に発火しているのかを後から確かめる手立てが無く、保険を
+ * 続ける判断も外す判断もできない。失敗ではないので level は info
+ */
+export function captureCatalogResume(
+  context: {
+    language: SupportedLanguage;
+    trigger: CatalogResumeTrigger["type"];
+  },
+  capture: typeof captureMessageSafely = captureMessageSafely,
+): void {
+  capture(CATALOG_RESUME_MESSAGE, {
+    level: "info",
+    tags: {
+      area: "catalog",
+      language: context.language,
+      resume_trigger: context.trigger,
     },
   });
 }

@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  CATALOG_RESUME_MESSAGE,
   CatalogLoadPerformance,
+  captureCatalogResume,
   describeCatalogFailureCause,
   getCatalogFailureReason,
 } from "./catalog-performance";
@@ -159,4 +161,31 @@ test("describeCatalogFailureCause は Error 以外の cause を要約しない",
     undefined,
   );
   assert.equal(describeCatalogFailureCause("not an error"), undefined);
+});
+
+test("captureCatalogResume は発火した合図と言語を残す", () => {
+  // 復帰は再現できていない症状への保険なので、発火を残さないと本番で効いたのか、
+  // 余計に発火しているのかを後から確かめられない
+  const sent: Array<{ message: string; context: unknown }> = [];
+
+  captureCatalogResume({ language: "ja", trigger: "pageshow" }, (
+    message,
+    context,
+  ) => {
+    sent.push({ message, context });
+  });
+
+  assert.deepEqual(sent, [
+    {
+      message: CATALOG_RESUME_MESSAGE,
+      context: {
+        level: "info",
+        tags: {
+          area: "catalog",
+          language: "ja",
+          resume_trigger: "pageshow",
+        },
+      },
+    },
+  ]);
 });

@@ -40,6 +40,7 @@ import {
 import {
   CatalogLoadPerformance,
   captureCatalogFailure,
+  captureCatalogResume,
   reportCatalogLoadToSentry,
 } from "./catalog-performance";
 import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
@@ -520,6 +521,8 @@ export function ZukanClient({
       });
       if (!shouldResume) return;
       lastAutoResumeAtRef.current = Date.now();
+      // 発火を残さないと、この保険が本番で効いたのかを後から確かめられない
+      captureCatalogResume({ language: lang, trigger: trigger.type });
       setRetryNonce((current) => current + 1);
     };
 
@@ -539,7 +542,7 @@ export function ZukanClient({
       window.removeEventListener("pageshow", handlePageShow);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isCurrentDatasetComplete]);
+  }, [isCurrentDatasetComplete, lang]);
 
   useEffect(() => {
     if (!isCurrentDatasetComplete) return;
