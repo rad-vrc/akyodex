@@ -17,11 +17,21 @@ const CSS = readFileSync(
 );
 
 /**
- * 枠が乗る地のうち最も暗いもの。通知の地（amber-50 / sky-50 を 95% で重ねたもの）は
- * これより明るいので、暗い枠色にとってはページ地が最悪条件になる。
- * ここを満たせば、より明るい通知の地でもボタンの白地でも自動的に満たす
+ * 枠が乗る地。1 つでも 3:1 を割ると、その状態で部品の形が見えなくなる。
+ *
+ * ページ地はグラデーションなので両端とも見る（終端の方が暗い）。ボタンはホバーで地が
+ * amber-100 に変わり、ここが実際の最悪条件になる。ページ地だけを最悪条件と決めると、
+ * ホバー時に 3:1 を割る色を通してしまう。
+ *
+ * 通知の地は amber-50 / sky-50 を 95% でページ地に重ねたものだが、合成後の輝度は
+ * 必ず素の値とページ地の間に収まる。両端がここに入っているので、合成後も自動的に満たす
  */
-const DARKEST_BACKDROP = "#fff5e6"; // --bg-gradient-start
+const BACKDROPS: { name: string; hex: string }[] = [
+  { name: "通知の地 amber-50", hex: "#fffbeb" },
+  { name: "通知の地 sky-50", hex: "#f0f9ff" },
+  { name: "ボタンの地", hex: "#ffffff" },
+  { name: "ボタンのホバー地 amber-100", hex: "#fef3c7" },
+];
 
 function readToken(name: string): string {
   const match = CSS.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`));
@@ -76,14 +86,24 @@ function hueDistance(left: number, right: number): number {
   return diff > 180 ? 360 - diff : diff;
 }
 
-test("通知の枠はページ地に対して 3:1 以上ある", () => {
+test("通知の枠は、乗りうるどの地に対しても 3:1 以上ある", () => {
+  const backdrops = [
+    // グラデーションの両端。トークンから読むので、地の色を変えたらここも追従する
+    { name: "ページ地の始点", hex: readToken("bg-gradient-start") },
+    { name: "ページ地の終点", hex: readToken("bg-gradient-end") },
+    ...BACKDROPS,
+  ];
+
   for (const token of ["color-notice-warn", "color-notice-info"]) {
     const color = readToken(token);
-    const ratio = contrastRatio(color, DARKEST_BACKDROP);
-    assert.ok(
-      ratio >= 3,
-      `--${token} (${color}) は ${ratio.toFixed(2)}:1 で 3:1 に届かない`,
-    );
+    for (const backdrop of backdrops) {
+      const ratio = contrastRatio(color, backdrop.hex);
+      assert.ok(
+        ratio >= 3,
+        `--${token} (${color}) は${backdrop.name} (${backdrop.hex}) に対して ` +
+          `${ratio.toFixed(2)}:1 で 3:1 に届かない`,
+      );
+    }
   }
 });
 
