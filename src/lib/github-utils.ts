@@ -96,79 +96,6 @@ export async function fetchFileFromGitHub(
 }
 
 /**
- * Commit file update to GitHub repository
- *
- * @param filePath - Path to file in repository
- * @param content - New file content
- * @param sha - Current file SHA (required for update)
- * @param message - Commit message
- * @param config - GitHub configuration (optional)
- * @param timeoutMs - Request timeout in milliseconds (default: 30000)
- * @returns Commit information
- * @throws Error if commit fails or times out
- */
-async function commitFileToGitHub(
-  filePath: string,
-  content: string,
-  sha: string,
-  message: string,
-  config?: GitHubConfig,
-  timeoutMs: number = 30000
-): Promise<GitHubCommitResponse> {
-  const githubConfig = config || getGitHubConfig();
-  const url = `https://api.github.com/repos/${githubConfig.owner}/${githubConfig.repo}/contents/${filePath}`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        Authorization: `token ${githubConfig.token}`,
-        Accept: 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'Akyodex-App',
-      },
-      body: JSON.stringify({
-        message,
-        content: Buffer.from(content).toString('base64'),
-        sha,
-        branch: githubConfig.branch,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '');
-      let message = `GitHub commit failed: ${response.status}`;
-      // Try to parse JSON error for clarity
-      try {
-        const json = JSON.parse(errorBody);
-        if (json.message) {
-          message += ` ${json.message}`;
-        }
-      } catch {
-        if (errorBody) {
-          message += ` ${errorBody}`;
-        }
-      }
-      throw new Error(message);
-    }
-
-    return (await response.json()) as GitHubCommitResponse;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error(`GitHub API commit timed out (${timeoutMs}ms)`);
-    }
-    throw error;
-  }
-}
-
-/**
  * Fetch CSV file from GitHub
  * Convenience wrapper for fetchFileFromGitHub with CSV-specific path
  *
@@ -182,28 +109,6 @@ export async function fetchCSVFromGitHub(
 ): Promise<GitHubFileResponse> {
   const filePath = `data/${csvFileName}`;
   return fetchFileFromGitHub(filePath, options?.config, options?.timeoutMs ?? 30000);
-}
-
-/**
- * Commit CSV update to GitHub
- * Convenience wrapper for commitFileToGitHub with CSV-specific path
- *
- * @param content - New CSV content
- * @param sha - Current file SHA
- * @param message - Commit message
- * @param csvFileName - CSV filename (default: 'akyo-data-ja.csv')
- * @param config - GitHub configuration (optional)
- * @returns Commit information
- */
-export async function commitCSVToGitHub(
-  content: string,
-  sha: string,
-  message: string,
-  csvFileName: string = 'akyo-data-ja.csv',
-  config?: GitHubConfig
-): Promise<GitHubCommitResponse> {
-  const filePath = `data/${csvFileName}`;
-  return commitFileToGitHub(filePath, content, sha, message, config);
 }
 
 // ---------------------------------------------------------------------------

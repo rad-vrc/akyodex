@@ -11,8 +11,6 @@ import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
 import { BOOTH_DISPLAY_SERIAL_PREFIX, hydrateAkyoDataset, WORLD_CATEGORY_MARKERS } from './akyo-entry';
 import { ensureBoothCategories, validateBoothUrl } from './booth-url';
-import type { GitHubCommitResponse, GitHubConfig } from './github-utils';
-import { commitCSVToGitHub, fetchCSVFromGitHub } from './github-utils';
 
 const BASE_AKYO_CSV_COLUMNS = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comment', 'Author', 'AvatarURL'];
 const SOURCE_URL_COLUMN = 'SourceURL';
@@ -122,21 +120,6 @@ function isWorldRecord(record: string[], header: string[]): boolean {
     .some((token) => WORLD_CATEGORY_MARKERS.has(token));
 }
 
-export async function loadAkyoCsv(options: {
-  csvFileName?: string;
-  githubConfig?: GitHubConfig;
-} = {}) {
-  const { csvFileName, githubConfig } = options;
-  const csvFile = await fetchCSVFromGitHub(csvFileName, { config: githubConfig });
-  const normalized = parseLoadedAkyoCsvContent(csvFile.content);
-
-  return {
-    header: normalized.header,
-    dataRecords: normalized.dataRecords,
-    fileSha: csvFile.sha,
-  };
-}
-
 export function parseLoadedAkyoCsvContent(csvText: string): {
   header: string[];
   dataRecords: string[][];
@@ -154,26 +137,6 @@ export function parseLoadedAkyoCsvContent(csvText: string): {
   }
 
   return normalizeAkyoCsvShape(header, dataRecords);
-}
-
-export async function commitAkyoCsv({
-  header,
-  dataRecords,
-  fileSha,
-  commitMessage,
-  csvFileName,
-  githubConfig,
-}: {
-  header: string[];
-  dataRecords: string[][];
-  fileSha: string;
-  commitMessage: string;
-  csvFileName?: string;
-  githubConfig?: GitHubConfig;
-}): Promise<GitHubCommitResponse> {
-  const records = [header, ...dataRecords];
-  const content = stringifyCSV(records);
-  return commitCSVToGitHub(content, fileSha, commitMessage, csvFileName, githubConfig);
 }
 
 /** CSV text in the same shape the admin API commits (every field quoted, LF). */
