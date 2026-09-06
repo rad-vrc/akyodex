@@ -102,8 +102,9 @@ export async function processAkyoBatchUpdate(
         return jsonError(`#${draft.original.id} は別の更新または削除が行われています。最新データを確認してください。保留内容は維持されています。`, 409);
       }
     }
-    // Every client (this panel, the edit modal, a script) writes categories through here, so
-    // the "category must exist" rule belongs here rather than in one screen's pre-flight.
+    // The rule belongs here rather than in one screen's pre-flight, so every client of this
+    // batch API is covered. Note that the single-entry CRUD path (upload/update/delete-akyo,
+    // see akyo-crud-helpers.ts) still writes categories without this check.
     const categoryIndex = header.indexOf('Category');
     const known = new Set(registeredCategories);
     for (const record of dataRecords) {

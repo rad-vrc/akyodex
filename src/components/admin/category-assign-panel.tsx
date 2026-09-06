@@ -112,38 +112,42 @@ export function CategoryAssignPanel({
   }, [pendingCount]);
 
   // The card list is long-lived, so the toggle handler must keep a stable identity or every
-  // card re-renders on every state change (AkyoCard is memoized on its props).
+  // card re-renders on every state change (AkyoCard is memoized on its props). The latest
+  // handler is published after the commit: writing a ref during render would leave the
+  // closure of a render React threw away.
   const toggleRef = useRef<(akyo: AkyoData) => void>(() => {});
-  toggleRef.current = (akyo: AkyoData) => {
-    if (submitting) return;
-    // A second click on a card undoes what the first one staged, whatever the selection is now.
-    if (pending[akyo.id]) {
-      setPending((previous) => {
-        const next = { ...previous };
-        delete next[akyo.id];
-        return next;
-      });
+  useLayoutEffect(() => {
+    toggleRef.current = (akyo: AkyoData) => {
+      if (submitting) return;
+      // A second click on a card undoes what the first one staged, whatever the selection is.
+      if (pending[akyo.id]) {
+        setPending((previous) => {
+          const next = { ...previous };
+          delete next[akyo.id];
+          return next;
+        });
+        setMessage('');
+        setCommitUrl('');
+        return;
+      }
+      if (selected.length === 0) return;
+      if (blockedIds.has(akyo.id)) {
+        setMessage(`#${akyo.id} は編集・削除タブで保留中です。先にそちらを反映または取り消してください。`);
+        return;
+      }
+      const base = akyoData.find((entry) => entry.id === akyo.id);
+      if (!base) return;
+      if (pendingCount >= MAX_BATCH_UPDATES) {
+        setMessage(`保留は${MAX_BATCH_UPDATES}件までです。先に更新を反映してください。`);
+        return;
+      }
+      const staged = stageCategoryUpdate(base, undefined, toggleCategories(categoriesOf(akyo), selected));
+      if (!staged) return;
+      setPending((previous) => ({ ...previous, [akyo.id]: staged }));
       setMessage('');
       setCommitUrl('');
-      return;
-    }
-    if (selected.length === 0) return;
-    if (blockedIds.has(akyo.id)) {
-      setMessage(`#${akyo.id} は編集・削除タブで保留中です。先にそちらを反映または取り消してください。`);
-      return;
-    }
-    const base = akyoData.find((entry) => entry.id === akyo.id);
-    if (!base) return;
-    if (pendingCount >= MAX_BATCH_UPDATES) {
-      setMessage(`保留は${MAX_BATCH_UPDATES}件までです。先に更新を反映してください。`);
-      return;
-    }
-    const staged = stageCategoryUpdate(base, undefined, toggleCategories(categoriesOf(akyo), selected));
-    if (!staged) return;
-    setPending((previous) => ({ ...previous, [akyo.id]: staged }));
-    setMessage('');
-    setCommitUrl('');
-  };
+    };
+  });
   const handleToggle = useCallback((akyo: AkyoData) => toggleRef.current(akyo), []);
 
   const handleApply = async () => {
