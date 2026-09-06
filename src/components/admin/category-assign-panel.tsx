@@ -12,8 +12,12 @@ interface CategoryAssignPanelProps {
   akyoData: AkyoData[];
   /** Categories chosen in the list (AND) */
   selected: string[];
+  /** The panel stays mounted (held changes, saved results); this only shows or hides it. */
+  visible: boolean;
   onClearSelection: () => void;
   onPendingStateChange?: (pending: boolean, busy: boolean) => void;
+  /** Fresh category registry, read right before a commit. null when it cannot be read. */
+  loadKnownPaths: () => Promise<Set<string> | null>;
 }
 
 /**
@@ -22,7 +26,7 @@ interface CategoryAssignPanelProps {
  * with descendants when removing); the changes are held and committed together through
  * the same batch API as the edit tab.
  */
-export function CategoryAssignPanel({ akyoData, selected, onClearSelection, onPendingStateChange }: CategoryAssignPanelProps) {
+export function CategoryAssignPanel({ akyoData, selected, visible, onClearSelection, onPendingStateChange, loadKnownPaths }: CategoryAssignPanelProps) {
   const [pending, setPending] = useState<Record<string, PendingAkyoUpdate>>({});
   const [saved, setSaved] = useState<Record<string, AkyoData>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -72,7 +76,7 @@ export function CategoryAssignPanel({ akyoData, selected, onClearSelection, onPe
   }, [pendingCount]);
 
   const handleToggle = (akyo: AkyoData) => {
-    if (submitting) return;
+    if (submitting || selected.length === 0) return;
     const base = saved[akyo.id] ?? akyoData.find((entry) => entry.id === akyo.id);
     if (!base) return;
     if (!pending[akyo.id] && pendingCount >= MAX_BATCH_UPDATES) {
@@ -97,6 +101,19 @@ export function CategoryAssignPanel({ akyoData, selected, onClearSelection, onPe
     setSubmitting(true);
     setMessage('');
     try {
+      // Every category about to be written must still exist: a rename or delete by another
+      // admin (or by us, in a form opened earlier) must not resurrect an old name that has
+      // no translation any more.
+      const known = await loadKnownPaths();
+      if (!known) throw new Error('カテゴリ一覧を確認できませんでした。通信状況を確認して再試行してください。保留内容は維持されています。');
+      const missing = [...new Set(
+        Object.values(pending)
+          .flatMap((update) => update.changes.category.split(',').map((token) => token.trim()).filter(Boolean))
+          .filter((token) => !known.has(token)),
+      )];
+      if (missing.length > 0) {
+        throw new Error(`存在しなくなったカテゴリがあります: ${missing.join(', ')}。保留を取り消して、選択し直してください。`);
+      }
       const response = await fetch('/api/update-akyo-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -120,9 +137,10 @@ export function CategoryAssignPanel({ akyoData, selected, onClearSelection, onPe
   };
 
   return (
-    <section aria-label="カテゴリの付け外し" className="mb-6 rounded-xl border border-green-200 bg-green-50/40 p-4">
+    <section aria-label="カテゴリの付け外し" hidden={!visible} className="mb-6 rounded-xl border border-green-200 bg-green-50/40 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-sm font-semibold text-green-900">選択中のカテゴリ（すべて持つ Akyo が選択状態）:</span>
+        {selected.length === 0 && <span className="text-sm text-gray-600">なし。一覧の「選択」でカテゴリを選ぶとカードを押せます</span>}
         {selected.map((path) => (
           <span key={path} className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-900">
             {path}
@@ -131,8 +149,7 @@ export function CategoryAssignPanel({ akyoData, selected, onClearSelection, onPe
         <button
           type="button"
           onClick={onClearSelection}
-          disabled={submitting || pendingCount > 0}
-          title={pendingCount > 0 ? '保留中の更新を反映または取り消してから解除してください' : undefined}
+          disabled={submitting || selected.length === 0}
           className="ml-auto px-3 py-1.5 text-sm text-gray-600 underline underline-offset-4 disabled:opacity-50"
         >
           選択を解除

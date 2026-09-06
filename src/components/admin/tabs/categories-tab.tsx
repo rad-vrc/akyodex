@@ -108,7 +108,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
   const [message, setMessage] = useState('');
   const [commitUrl, setCommitUrl] = useState('');
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<CategoryEntry[] | null> => {
     setLoading(true);
     setLoadError('');
     try {
@@ -117,15 +117,27 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
       if (!response.ok || !data.success || !data.categories) {
         throw new Error(data.error || 'カテゴリ一覧を取得できませんでした');
       }
-      setEntries(data.categories);
+      const categories = data.categories;
+      setEntries(categories);
       setColors(data.colors ?? {});
       setHead(data.head ?? '');
+      // The AND set follows the list: a renamed, merged or deleted category (by us or by
+      // another admin) must not stay selectable, or a card click would write the old name back.
+      setSelected((previous) => previous.filter((path) => categories.some((entry) => entry.path === path)));
+      return categories;
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : 'カテゴリ一覧を取得できませんでした');
+      return null;
     } finally {
       setLoading(false);
     }
   }, []);
+
+  /** Fresh registry for the panel to check against right before it commits. */
+  const loadKnownPaths = useCallback(async () => {
+    const categories = await load();
+    return categories ? new Set(categories.map((entry) => entry.path)) : null;
+  }, [load]);
 
   useEffect(() => {
     void load();
@@ -202,6 +214,11 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
 
   const handleSubmitEditor = async () => {
     if (!editor) return;
+    // A form opened before the hold began must not slip past the lock on the list buttons.
+    if (locked && editor.kind !== 'create') {
+      setFormError(LOCKED_TITLE);
+      return;
+    }
     if (editor.kind === 'create') {
       const leaf = form.ja.trim();
       const path = editor.parent ? `${editor.parent}/${leaf}` : leaf;
@@ -239,6 +256,10 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
 
   const handleDelete = async (entry: CategoryEntry) => {
     setFormError('');
+    if (locked) {
+      setFormError(LOCKED_TITLE);
+      return;
+    }
     const confirmed = confirm(
       `カテゴリ「${entry.path}」を削除します。\n\n` +
         `${entry.count} 件の Akyo から「${entry.path}」とその配下のカテゴリが外れます。\n` +
@@ -372,7 +393,8 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
           <button
             type="button"
             onClick={() => void handleSubmitEditor()}
-            disabled={busy}
+            disabled={busy || (locked && editor.kind !== 'create')}
+            title={locked && editor.kind !== 'create' ? LOCKED_TITLE : undefined}
             className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
           >
             {busy ? '反映中…' : editor.kind === 'create' ? '作成する' : editor.kind === 'rename' ? '決定' : '統合する'}
@@ -424,12 +446,15 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
         </p>
       )}
 
-      {akyoData && selected.length > 0 && (
+      {/* Always mounted: held changes and saved results must survive changing or clearing the selection. */}
+      {akyoData && (
         <CategoryAssignPanel
           akyoData={akyoData}
           selected={selected}
+          visible={selected.length > 0 || assignState.pending}
           onClearSelection={() => setSelected([])}
           onPendingStateChange={handleAssignState}
+          loadKnownPaths={loadKnownPaths}
         />
       )}
 
@@ -513,8 +538,7 @@ export function CategoriesTab({ userRole, onCategoriesChanged, akyoData, onPendi
                           type="button"
                           aria-pressed={selected.includes(entry.path)}
                           aria-label={`${entry.path} を付け外しの対象に${selected.includes(entry.path) ? 'しない' : 'する'}`}
-                          disabled={busy || locked}
-                          title={locked ? LOCKED_TITLE : undefined}
+                          disabled={busy || assignState.busy}
                           onClick={() =>
                             setSelected((previous) =>
                               previous.includes(entry.path)
