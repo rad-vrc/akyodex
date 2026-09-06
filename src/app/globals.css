@@ -156,6 +156,23 @@ a:focus-visible,
   transition: none !important;
 }
 
+/* 管理画面の付け外しモード。ホバーの box-shadow に消されないよう outline で描く。
+   カードは自前の stacking context を持たない幅があるので、ここで isolate してスティッキーな
+   反映バー（z-30）より前に出ないようにする。 */
+.akyo-card[data-selected] {
+  isolation: isolate;
+}
+
+.akyo-card[data-selected='true'] {
+  outline: 4px solid #15803d;
+  outline-offset: 2px;
+}
+
+.akyo-card[data-pending='true'] {
+  outline: 4px dashed #b45309;
+  outline-offset: 2px;
+}
+
 /* デスクトップ向け: スクロール外のカード要素のGPU/CPU計算を省略してTBTを劇的に改善 */
 @media (min-width: 769px) {
   .akyo-card {

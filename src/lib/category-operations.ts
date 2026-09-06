@@ -77,7 +77,7 @@ export function parentOf(path: string): string | null {
   return index < 0 ? null : path.slice(0, index);
 }
 
-function isSelfOrDescendant(token: string, path: string): boolean {
+export function isSelfOrDescendant(token: string, path: string): boolean {
   return token === path || token.startsWith(`${path}/`);
 }
 
@@ -85,8 +85,13 @@ function replacePathPrefix(token: string, from: string, to: string): string {
   return token === from ? to : `${to}${token.slice(from.length)}`;
 }
 
-function isProtected(path: string): boolean {
+/** Categories the app adds and reads by name; they must not be renamed or assigned by hand. */
+export function isProtectedCategoryPath(path: string): boolean {
   return PROTECTED_TOP_LEVEL.has(topLevelOf(path).toLowerCase());
+}
+
+function isProtected(path: string): boolean {
+  return isProtectedCategoryPath(path);
 }
 
 /** Insert missing ancestors in front of each token and drop duplicates, keeping order. */
@@ -179,6 +184,27 @@ export function categoryExists(dataset: CategoryDataset, path: string): boolean 
   if (Object.hasOwn(dataset.translations, path)) return true;
   const column = categoryColumnIndex(dataset);
   return dataset.records.some((record) => splitCategoryCell(record[column] ?? '').includes(path));
+}
+
+/**
+ * Rows whose Category cell an operation rewrote, as `{ id, category }`. The admin screen
+ * patches its catalog with these instead of waiting for the public JSON to be regenerated.
+ */
+export function listChangedCategoryRows(
+  before: CategoryDataset,
+  after: CategoryDataset,
+): { id: string; category: string }[] {
+  const idIndex = after.header.indexOf('ID');
+  const categoryIndex = categoryColumnIndex(after);
+  if (idIndex < 0) return [];
+  const previous = new Map(before.records.map((record) => [record[idIndex], record[categoryColumnIndex(before)] ?? '']));
+  const changed: { id: string; category: string }[] = [];
+  for (const record of after.records) {
+    const id = record[idIndex];
+    const category = record[categoryIndex] ?? '';
+    if (previous.get(id) !== category) changed.push({ id, category });
+  }
+  return changed;
 }
 
 export function summarizeCategories(dataset: CategoryDataset): CategorySummary[] {

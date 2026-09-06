@@ -1,8 +1,16 @@
 'use client';
 
 import { IconEdit, IconPlusCircle, IconTags, IconTools } from '@/components/icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
+import {
+  applyCatalogRefresh,
+  applyCategoryRowChanges,
+  recordCommittedRows,
+  type CategoryRowChange,
+  type CommittedRow,
+} from '@/lib/admin-catalog';
+import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
 import { AddTab } from './tabs/add-tab';
 import { CategoriesTab } from './tabs/categories-tab';
 import { EditTab } from './tabs/edit-tab';
@@ -48,8 +56,7 @@ async function fetchCategoryPaths(): Promise<string[] | null> {
 export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingEditsChange }: AdminTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>('add');
   const [editVisited, setEditVisited] = useState(false);
-  const [applying, setApplying] = useState(false);
-  const [refreshedCatalog, setRefreshedCatalog] = useState<AkyoData[] | null>(null);
+  const [categoriesVisited, setCategoriesVisited] = useState(false);
   const [apiCategories, setApiCategories] = useState<string[]>([]);
   const refreshCategories = useCallback(async () => {
     const paths = await fetchCategoryPaths();
@@ -65,19 +72,52 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
       disposed = true;
     };
   }, []);
-  const currentAttributes = mergeCategoryLists(
-    refreshedCatalog ? extractCategories(refreshedCatalog) : attributes,
-    apiCategories,
+  // One catalog for both tabs, and one record of what this session committed. Every way the
+  // rows can move — a commit here, a commit there, a refresh from the lagging public JSON, a
+  // category rename rewriting cells — goes through src/lib/admin-catalog.ts.
+  const [catalogState, setCatalogState] = useState<{ catalog: AkyoData[]; committed: Map<string, CommittedRow> }>(
+    () => ({ catalog: akyoData, committed: new Map() }),
   );
-  const currentCreators = refreshedCatalog ? extractAuthors(refreshedCatalog) : creators;
-  const handlePendingState = useCallback((pending: boolean, busy: boolean) => {
-    setApplying(busy);
-    onPendingEditsChange?.(pending, busy);
-  }, [onPendingEditsChange]);
+  const catalog = catalogState.catalog;
+  const handleRowsCommitted = useCallback((rows: AkyoData[], originals: AkyoEditFields[]) => {
+    setCatalogState((previous) => recordCommittedRows(previous.catalog, previous.committed, rows, originals));
+  }, []);
+  const handleCatalogRefresh = useCallback((rows: AkyoData[]) => {
+    setCatalogState((previous) => applyCatalogRefresh(rows, previous.committed));
+  }, []);
+  const handleCategoryRowsChanged = useCallback((changes: CategoryRowChange[]) => {
+    setCatalogState((previous) => applyCategoryRowChanges(previous.catalog, previous.committed, changes));
+  }, []);
+  const currentAttributes = mergeCategoryLists(extractCategories(catalog), apiCategories);
+  const currentCreators = extractAuthors(catalog);
+  // The edit tab and the categories tab each hold their own unsaved changes; the header guard
+  // and the tab lock see the union, and each tab is told which rows the other one holds.
+  // A row held in two places would stage two `original` snapshots of the same CSV row, so the
+  // second commit could only ever be rejected as a conflict.
+  const [pendingByTab, setPendingByTab] = useState({
+    edit: { pending: false, busy: false, ids: [] as string[] },
+    categories: { pending: false, busy: false, ids: [] as string[] },
+  });
+  const handlePendingState = useCallback((pending: boolean, busy: boolean, ids: string[] = []) => {
+    setPendingByTab((previous) => ({ ...previous, edit: { pending, busy, ids } }));
+  }, []);
+  const handleCategoriesPendingState = useCallback((pending: boolean, busy: boolean, ids: string[] = []) => {
+    setPendingByTab((previous) => ({ ...previous, categories: { pending, busy, ids } }));
+  }, []);
+  const anyPending = pendingByTab.edit.pending || pendingByTab.categories.pending;
+  const anyBusy = pendingByTab.edit.busy || pendingByTab.categories.busy;
+  const editHeldIds = useMemo(() => new Set(pendingByTab.edit.ids), [pendingByTab.edit.ids]);
+  const categoriesHeldIds = useMemo(() => new Set(pendingByTab.categories.ids), [pendingByTab.categories.ids]);
+  const applying = anyBusy;
+  useEffect(() => {
+    onPendingEditsChange?.(anyPending, anyBusy);
+  }, [anyPending, anyBusy, onPendingEditsChange]);
+
 
   const handleTabChange = (nextTab: TabType) => {
     if (applying) return;
     if (nextTab === 'edit') setEditVisited(true);
+    if (nextTab === 'categories') setCategoriesVisited(true);
     // Pick up categories created or renamed elsewhere (another admin, or the Categories tab).
     if (nextTab === 'add' || nextTab === 'edit') void refreshCategories();
     setActiveTab(nextTab);
@@ -159,16 +199,30 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
           <div hidden={activeTab !== 'edit'}>
           <EditTab
             userRole={userRole}
-            akyoData={akyoData}
+            akyoData={catalog}
             attributes={currentAttributes}
-            onCatalogRefresh={setRefreshedCatalog}
+            blockedIds={categoriesHeldIds}
+            onCatalogRefresh={handleCatalogRefresh}
+            onRowsCommitted={handleRowsCommitted}
             onDataChange={handleDataChange}
             onPendingStateChange={handlePendingState}
           />
           </div>
         )}
-        {activeTab === 'categories' && (
-          <CategoriesTab userRole={userRole} onCategoriesChanged={() => void refreshCategories()} />
+        {/* Kept mounted like the edit tab so held category changes survive a tab switch. */}
+        {categoriesVisited && (
+          <div hidden={activeTab !== 'categories'}>
+            <CategoriesTab
+              userRole={userRole}
+              akyoData={catalog}
+              active={activeTab === 'categories'}
+              blockedIds={editHeldIds}
+              onCategoriesChanged={() => void refreshCategories()}
+              onCategoryRowsChanged={handleCategoryRowsChanged}
+              onRowsCommitted={handleRowsCommitted}
+              onPendingStateChange={handleCategoriesPendingState}
+            />
+          </div>
         )}
         {activeTab === 'tools' && <ToolsTab />}
       </div>

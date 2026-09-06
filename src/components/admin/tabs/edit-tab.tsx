@@ -21,8 +21,12 @@ interface EditTabProps {
   akyoData: AkyoData[];
   attributes: string[];
   onDataChange: () => void;
-  onPendingStateChange?: (pending: boolean, busy: boolean) => void;
+  onPendingStateChange?: (pending: boolean, busy: boolean, pendingIds?: string[]) => void;
   onCatalogRefresh?: (data: AkyoData[]) => void;
+  /** Rows the categories tab is holding; they must not be staged here as well. */
+  blockedIds?: ReadonlySet<string>;
+  /** Rows as the server saved them, with the snapshots they replaced, handed up to AdminTabs. */
+  onRowsCommitted?: (rows: AkyoData[], originals: AkyoEditFields[]) => void;
 }
 
 interface SavedAkyoUpdate {
@@ -31,10 +35,28 @@ interface SavedAkyoUpdate {
 }
 
 /**
+ * Keep only the overlays whose row still reads as a known pre-save snapshot: the public JSON
+ * lags behind the CSV. Matching the saved result (synced) or anything else (someone else's
+ * edit, or a category assigned in the other tab) retires the overlay so the rows win.
+ */
+function retireSyncedOverlays(
+  saved: Record<string, SavedAkyoUpdate>,
+  rows: AkyoData[],
+): Record<string, SavedAkyoUpdate> {
+  return Object.fromEntries(Object.entries(saved).filter(([id, item]) => {
+    const remote = rows.find(candidate => candidate.id === id);
+    if (!remote) return false;
+    const fields = getAkyoEditFields(remote);
+    return !sameAkyoEditFields(getAkyoEditFields(item.data), fields)
+      && item.before.some(before => sameAkyoEditFields(before, fields));
+  }));
+}
+
+/**
  * Edit Tab Component
  * 編集・削除タブ（完全再現）
  */
-export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, onCatalogRefresh }: EditTabProps) {
+export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, onCatalogRefresh, blockedIds, onRowsCommitted }: EditTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
@@ -56,7 +78,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   const submittingRef = useRef(false);
   const [message, setMessage] = useState('');
   const [commitUrl, setCommitUrl] = useState('');
-  const pendingCount = Object.keys(pending).length;
+  const pendingKey = Object.keys(pending).sort().join(',');
+  // Stable identity while the set is unchanged, so reporting it does not loop.
+  const pendingIds = useMemo(() => (pendingKey ? pendingKey.split(',') : []), [pendingKey]);
+  const pendingCount = pendingIds.length;
   const visibleData = useMemo(() => catalogData.map((akyo) => {
     const current = saved[akyo.id]?.data ?? akyo;
     const item = pending[akyo.id] ? applyAkyoEditFields(current, pending[akyo.id].changes) : current;
@@ -72,6 +97,23 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
 
   useEffect(() => () => refreshController.current?.abort(), []);
 
+  // The catalog is owned by AdminTabs: rows committed from the categories tab arrive as a new
+  // prop, and without this the edit tab would keep staging pre-commit snapshots (guaranteed
+  // 409). Rows held here are kept even when they are gone remotely, as on refresh.
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  useEffect(() => {
+    setCatalogData((previous) => {
+      const ids = new Set(akyoData.map((item) => item.id));
+      const retained = previous.filter((item) => pendingRef.current[item.id] && !ids.has(item.id));
+      return [...akyoData, ...retained];
+    });
+    // The shared catalog already resolves our own commits and the lagging public JSON, so a
+    // local overlay for a row it now carries would only hide newer data (a category assigned
+    // in the other tab) and make the next `original` stale.
+    setSaved((previous) => retireSyncedOverlays(previous, akyoData));
+  }, [akyoData]);
+
   const handleRefresh = async () => {
     if (refreshController.current || submittingRef.current || showEditModal) return;
     const controller = new AbortController();
@@ -86,15 +128,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       const ids = new Set(next.map(item => item.id));
       const retained = catalogData.filter(item => pending[item.id] && !ids.has(item.id));
       setCatalogData([...next, ...retained]);
-      setSaved(previous => Object.fromEntries(Object.entries(previous).filter(([id, item]) => {
-        const remote = next.find(candidate => candidate.id === id);
-        if (!remote) return false;
-        const fields = getAkyoEditFields(remote);
-        // Ignore only known pre-save snapshots while JSON sync catches up.
-        // Matching the saved result, or a different external edit, retires the overlay.
-        return !sameAkyoEditFields(getAkyoEditFields(item.data), fields)
-          && item.before.some(before => sameAkyoEditFields(before, fields));
-      })));
+      setSaved(previous => retireSyncedOverlays(previous, next));
       onCatalogRefresh?.(next);
       setRefreshMessage('データを再取得しました。');
     } catch {
@@ -106,9 +140,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   };
 
   // Publish the navigation guard before the pending/busy UI becomes interactive.
+  // The ids travel with it so the categories tab can refuse to hold the same rows.
   useLayoutEffect(() => {
-    onPendingStateChange?.(pendingCount > 0, submitting || refreshing);
-  }, [pendingCount, submitting, refreshing, onPendingStateChange]);
+    onPendingStateChange?.(pendingCount > 0, submitting || refreshing, pendingIds);
+  }, [pendingCount, pendingIds, submitting, refreshing, onPendingStateChange]);
 
   useEffect(() => {
     if (!pendingCount) return;
@@ -142,11 +177,12 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
     submittingRef.current = true;
     setSubmitting(true);
     setMessage('');
+    const applied = Object.values(pending);
     try {
       const response = await fetch('/api/update-akyo-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.values(pending)),
+        body: JSON.stringify(applied),
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.error || '更新に失敗しました');
@@ -158,6 +194,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
       setPending({});
       setMessage(result.message);
       setCommitUrl(result.commitUrl || '');
+      onRowsCommitted?.(result.data as AkyoData[], applied.map((update) => update.original));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '更新に失敗しました。保留内容は維持されています。');
     } finally {
@@ -184,6 +221,10 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
 
   const handleEdit = (akyo: AkyoData) => {
     if (refreshController.current || submittingRef.current) return;
+    if (blockedIds?.has(akyo.id)) {
+      alert(`#${akyo.id} はカテゴリタブで保留中です。\n先にそちらを反映または取り消してください。`);
+      return;
+    }
     setSelectedAkyo(akyo);
     setShowEditModal(true);
   };
