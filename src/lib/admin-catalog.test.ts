@@ -62,3 +62,25 @@ test('applyCategoryRowChanges patches the catalog and the committed rows a renam
   assert.equal(renamed.catalog[1], catalog[1]);
   assert.equal(applyCategoryRowChanges(catalog, committed, []).catalog, catalog);
 });
+
+test('a rename is recorded like any other commit, so a lagging refresh cannot undo it', () => {
+  // A row this session never saved: the rename itself is the first committed version.
+  const untouched = [akyo('0001'), akyo('0002')];
+  const renamed = applyCategoryRowChanges(untouched, new Map(), [{ id: '0001', category: '生物' }]);
+  assert.equal(renamed.committed.get('0001')?.data.category, '生物');
+  assert.deepEqual(renamed.committed.get('0001')?.before.map((fields) => fields.category), ['動物']);
+  const stale = applyCatalogRefresh(untouched, renamed.committed);
+  assert.equal(stale.catalog[0].category, '生物', 'the pre-rename JSON must not win');
+
+  // A row saved first and renamed afterwards: both intermediate versions are known.
+  const saved = recordCommittedRows(untouched, new Map(), [akyo('0001', { category: '動物,乗り物', attribute: '動物,乗り物' })], [getAkyoEditFields(untouched[0])]);
+  const both = applyCategoryRowChanges(saved.catalog, saved.committed, [{ id: '0001', category: '生物,乗り物' }]);
+  assert.deepEqual(both.committed.get('0001')?.before.map((fields) => fields.category), ['動物', '動物,乗り物']);
+  for (const lagging of ['動物', '動物,乗り物']) {
+    const refreshed = applyCatalogRefresh([akyo('0001', { category: lagging, attribute: lagging }), akyo('0002')], both.committed);
+    assert.equal(refreshed.catalog[0].category, '生物,乗り物', `JSON still at ${lagging}`);
+  }
+  // A genuine external edit still wins over the rename.
+  const external = applyCatalogRefresh([akyo('0001', { nickname: 'edited elsewhere', category: '次元', attribute: '次元' }), akyo('0002')], both.committed);
+  assert.equal(external.catalog[0].category, '次元');
+});

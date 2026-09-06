@@ -12,6 +12,7 @@
  */
 
 import { getAkyoEditFields, sameAkyoEditFields, type AkyoEditFields } from './akyo-edit-fields';
+
 import type { AkyoData } from '@/types/akyo';
 
 export interface CommittedRow {
@@ -78,7 +79,9 @@ export function applyCatalogRefresh(
 
 /**
  * Apply the category rewrites a rename, merge or delete performed on the CSV. Only the
- * Category column changes, so the rows are patched in place instead of refetched.
+ * Category column changes, so the rows are patched instead of refetched — but the result is
+ * recorded exactly like any other commit, or the next refresh from the lagging JSON would
+ * read the pre-change category as somebody else's edit and undo the rename on screen.
  */
 export function applyCategoryRowChanges(
   catalog: AkyoData[],
@@ -87,13 +90,13 @@ export function applyCategoryRowChanges(
 ): { catalog: AkyoData[]; committed: Map<string, CommittedRow> } {
   if (changes.length === 0) return { catalog, committed: new Map(committed) };
   const byId = new Map(changes.map((change) => [change.id, change.category]));
-  const patch = (row: AkyoData): AkyoData => {
+  const rows: AkyoData[] = [];
+  const originals: AkyoEditFields[] = [];
+  for (const row of catalog) {
     const category = byId.get(row.id);
-    return category === undefined ? row : { ...row, category, attribute: category };
-  };
-  const nextCommitted = new Map<string, CommittedRow>();
-  for (const [id, entry] of committed) {
-    nextCommitted.set(id, byId.has(id) ? { ...entry, data: patch(entry.data) } : entry);
+    if (category === undefined) continue;
+    originals.push(getAkyoEditFields(row));
+    rows.push({ ...row, category, attribute: category });
   }
-  return { catalog: catalog.map(patch), committed: nextCommitted };
+  return recordCommittedRows(catalog, committed, rows, originals);
 }

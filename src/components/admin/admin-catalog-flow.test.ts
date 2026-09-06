@@ -147,6 +147,14 @@ test('a category commit reaches the edit tab, survives a stale refresh, and foll
     await h.click(h.listRowButton('生物', '選択'));
     assert.equal(h.cardToggle('0001').article.dataset.selected, 'true', 'the renamed category is on the cards');
     assert.equal(h.cardToggle('0002').article.dataset.selected, 'true');
+
+    // The rename is recorded like a commit, so the pre-rename JSON must not undo it either —
+    // for the row this session had already saved and for the one it had never touched.
+    await h.click(h.buttons('編集・削除')[0]);
+    await h.click(h.win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!);
+    await h.click(h.buttons('カテゴリ')[0]);
+    assert.equal(h.cardToggle('0001').article.dataset.selected, 'true', 'a lagging refresh must not undo the rename');
+    assert.equal(h.cardToggle('0002').article.dataset.selected, 'true');
   } finally {
     await h.cleanup();
   }
