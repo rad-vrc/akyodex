@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { IconClose, IconSearch } from '@/components/icons';
+
 interface SearchBarProps {
   id?: string;
   onSearch: (query: string) => void;
@@ -100,10 +102,11 @@ export function SearchBar({
       className={`relative w-full ${disabled ? 'opacity-60' : ''}`}
       aria-busy={disabled}
     >
-      {/* 検索アイコン */}
-      <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-2xl" aria-hidden="true">
-        🔍
-      </span>
+      {/* 検索アイコン。絵文字は OS のカラーフォントで描かれ color が効かないため SVG を使う。 */}
+      <IconSearch
+        size="w-[22px] h-[22px]"
+        className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"
+      />
 
       {/* 検索入力 */}
       <input
@@ -113,23 +116,25 @@ export function SearchBar({
         value={query}
         onChange={handleChange}
         placeholder={placeholder}
-        className="search-input w-full rounded-[25px] border-[3px] border-[var(--primary-blue)] bg-white px-5 py-3 pl-[60px] text-[18px] focus:border-[#2b7fff] focus:ring-2 focus:ring-blue-300/50 focus:outline-none focus-visible:border-[#2b7fff] focus-visible:ring-2 focus-visible:ring-blue-300/50 focus-visible:outline-none"
+        className="search-input w-full rounded-[25px] border-[3px] border-[var(--primary-blue)] bg-white px-5 py-3 pl-[60px] pr-[58px] text-[18px] focus:border-[#2b7fff] focus:ring-2 focus:ring-blue-300/50 focus:outline-none focus-visible:border-[#2b7fff] focus-visible:ring-2 focus-visible:ring-blue-300/50 focus-visible:outline-none"
         aria-label={ariaLabel}
         autoComplete="off"
         spellCheck="false"
         disabled={disabled}
       />
 
-      {/* クリアボタン */}
+      {/* クリアボタン。当たり判定は 44px 角を確保し、見た目は 28px の丸チップに収める。 */}
       {query && (
         <button
           type="button"
           onClick={handleClear}
           disabled={disabled}
-          className="absolute right-5 top-1/2 -translate-y-1/2 text-2xl hover:scale-110 transition-transform"
+          className="absolute right-[7px] top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full"
           aria-label={clearAriaLabel}
         >
-          <span aria-hidden="true">❌</span>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300">
+            <IconClose size="w-[13px] h-[13px]" />
+          </span>
         </button>
       )}
     </div>

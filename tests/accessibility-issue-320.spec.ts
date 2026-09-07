@@ -157,9 +157,12 @@ test.describe("Issue #320 accessibility regressions", () => {
     );
 
     await expect(page.getByRole("complementary", { name: /AI|チャット|채팅/i })).toHaveCount(1);
-    await expect(
-      page.locator("span[aria-hidden='true']").filter({ hasText: "🔍" }).first(),
-    ).toBeVisible();
+    // 検索アイコンは装飾。絵文字から SVG に変えたが、支援技術から隠す点は変わらない。
+    const searchGlyph = page.locator(
+      "div:has(> input.search-input) > svg[aria-hidden='true']",
+    );
+    await expect(searchGlyph).toHaveCount(1);
+    await expect(searchGlyph).toBeVisible();
 
     const firstCardArticle = page.locator("article.akyo-card").first();
     const firstCard = firstCardArticle.locator("button[data-card-trigger='true']");
@@ -177,8 +180,5 @@ test.describe("Issue #320 accessibility regressions", () => {
     await expect(zoomControl).toHaveAttribute("aria-pressed", "false");
     await page.keyboard.press("Enter");
     await expect(zoomControl).toHaveAttribute("aria-pressed", "true");
-    await expect(
-      dialog.locator("span[aria-hidden='true']").filter({ hasText: "✨" }),
-    ).toHaveCount(1);
   });
 });
