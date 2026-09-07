@@ -279,9 +279,9 @@ export const UI_TEXTS = {
     ko: "즐겨찾기 수를 불러오는 중",
   },
   "search.placeholder": {
-    ja: "名前・通称・作者で検索...",
-    en: "Search by name, nickname, author...",
-    ko: "이름・별명・작자로 검색...",
+    ja: "ニックネーム・ワールド名・作者名で検索...",
+    en: "Search by nickname, world name, author...",
+    ko: "별명・월드 이름・작자명으로 검색...",
   },
   "search.ariaLabel": {
     ja: "Akyo検索",
