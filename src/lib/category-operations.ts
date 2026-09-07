@@ -148,16 +148,25 @@ export function validateCategoryPath(value: unknown, label: string = 'カテゴ�
   return value;
 }
 
-export function validateTranslationLeaf(value: unknown, language: CategoryLanguage): string {
+/**
+ * `of` は、その名前がどの階層のものかを言うために付ける。階層をまとめて作るときは
+ * 英語名の欄が複数並ぶので、どれが空なのかを名指ししないと利用者が直せない
+ */
+export function validateTranslationLeaf(
+  value: unknown,
+  language: CategoryLanguage,
+  of?: string,
+): string {
   const labels: Record<CategoryLanguage, string> = { en: '英語名', ko: '韓国語名' };
+  const label = of ? `「${of}」の${labels[language]}` : labels[language];
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new CategoryOperationError(`${labels[language]}を入力してください`);
+    throw new CategoryOperationError(`${label}を入力してください`);
   }
   if (value !== value.trim()) {
-    throw new CategoryOperationError(`${labels[language]}の前後に空白は使えません`);
+    throw new CategoryOperationError(`${label}の前後に空白は使えません`);
   }
   if (/[,、/]/.test(value)) {
-    throw new CategoryOperationError(`${labels[language]}に「,」「、」「/」は使えません（親の名前は自動で付きます）`);
+    throw new CategoryOperationError(`${label}に「,」「、」「/」は使えません（親の名前は自動で付きます）`);
   }
   return value;
 }
@@ -401,7 +410,10 @@ export function createCategory(
   request: { path: unknown; en: unknown; ko: unknown; ancestors?: unknown },
 ): CategoryChange {
   const path = validateCategoryPath(request.path);
-  const leaf = { en: validateTranslationLeaf(request.en, 'en'), ko: validateTranslationLeaf(request.ko, 'ko') };
+  const leaf = {
+    en: validateTranslationLeaf(request.en, 'en', path),
+    ko: validateTranslationLeaf(request.ko, 'ko', path),
+  };
   if (categoryExists(input, path)) {
     throw new CategoryOperationError(`カテゴリ「${path}」は既に存在します`, 409);
   }
@@ -466,8 +478,8 @@ function parseAncestorTranslations(
       throw new CategoryOperationError(`親カテゴリ「${ancestorPath}」が重複しています`);
     }
     entries.set(ancestorPath, {
-      en: validateTranslationLeaf(entry.en, 'en'),
-      ko: validateTranslationLeaf(entry.ko, 'ko'),
+      en: validateTranslationLeaf(entry.en, 'en', ancestorPath),
+      ko: validateTranslationLeaf(entry.ko, 'ko', ancestorPath),
     });
   }
   const unsupplied = missing.filter((ancestor) => !entries.has(ancestor));

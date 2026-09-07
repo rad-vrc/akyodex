@@ -67,7 +67,51 @@ test('POST create is open to admins and commits only the translation table', asy
   assert.equal(body.head, 'new-sha');
   assert.deepEqual(body.files, [CATEGORY_FILE_PATHS.translations]);
   assert.match(String(body.message), /「動物\/ねこ」を作成/);
+  assert.deepEqual(body.createdPaths, ['動物/ねこ']);
   assert.equal(commits.length, 1);
+});
+
+test('POST create reports every path it registered, parents included', async () => {
+  // 画面はこの一覧で自分の候補を追従させる。返さないと、作ったばかりの親の下に
+  // もう 1 つ作るときに「まだ存在しない親」を送ってしまう
+  const { deps: d } = deps();
+  const { status, body } = await json(
+    await processCategoryRequest(
+      {
+        action: 'create',
+        path: '植物/木',
+        en: 'Tree',
+        ko: '나무',
+        ancestors: [{ path: '植物', en: 'Plant', ko: '식물' }],
+      },
+      'admin',
+      d,
+    ),
+  );
+
+  assert.equal(status, 200);
+  assert.deepEqual(body.createdPaths, ['植物', '植物/木']);
+  assert.match(String(body.message), /「植物\/木」を作成しました（親階層「植物」も作成）/);
+});
+
+test('POST create names the level whose translation is missing', async () => {
+  const { deps: d } = deps();
+  const { status, body } = await json(
+    await processCategoryRequest(
+      {
+        action: 'create',
+        path: '植物/木',
+        en: 'Tree',
+        ko: '나무',
+        ancestors: [{ path: '植物', en: '', ko: '식물' }],
+      },
+      'admin',
+      d,
+    ),
+  );
+
+  assert.equal(status, 400);
+  assert.match(String(body.error), /「植物」の英語名を入力してください/);
 });
 
 test('POST checks the head the list was read from before applying a change', async () => {

@@ -15,10 +15,15 @@ export interface CategoryCreateLevel {
   /** 既に存在するか。存在するなら対訳は既にあるので入力欄を出さない */
   exists: boolean;
   /**
-   * 大文字小文字や Unicode 正規化だけが違う既存カテゴリ。別物として作れてしまうので、
-   * 画面はこれを出して「本当に新しい階層か」を確かめられるようにする
+   * 大文字小文字や Unicode 正規化だけが違う既存カテゴリ。完全一致しないので作れて
+   * しまうが、並ぶと見分けが付かないので画面はこれを見て作成を止める
    */
-  similarTo?: string;
+  similarTo: string[];
+}
+
+/** 表記ゆれの検出用。作成の可否には使わない（サーバーは完全一致で判定する） */
+function fold(value: string): string {
+  return value.normalize('NFC').toLowerCase();
 }
 
 /**
@@ -27,13 +32,9 @@ export interface CategoryCreateLevel {
  *
  * 既存かどうかはサーバーの `categoryExists` と同じ完全一致で判定する。表記ゆれを
  * 吸収して「既存」と見なすと、サーバーが対訳を要求する階層の入力欄を画面が出さず、
- * 画面上に満たす手段が無いエラーになる。
+ * 画面上に満たす手段が無いエラーになる。表記ゆれは `similarTo` として別に返し、
+ * 作成を止めるかどうかは画面が決める。
  */
-/** 表記ゆれの検出用。作成の可否には使わない（サーバーは完全一致で判定する） */
-function fold(value: string): string {
-  return value.normalize('NFC').toLowerCase();
-}
-
 export function planCategoryCreateLevels(
   path: string,
   existing: Iterable<string>,
@@ -45,11 +46,27 @@ export function planCategoryCreateLevels(
 
   const known = [...existing];
   const exact = new Set(known);
-  const loose = new Map(known.map((entry) => [fold(entry), entry]));
   return segments.map((segment, index) => {
     const levelPath = segments.slice(0, index + 1).join('/');
-    if (exact.has(levelPath)) return { path: levelPath, segment, exists: true };
-    const similarTo = loose.get(fold(levelPath));
-    return { path: levelPath, segment, exists: false, ...(similarTo ? { similarTo } : {}) };
+    if (exact.has(levelPath)) return { path: levelPath, segment, exists: true, similarTo: [] };
+    const folded = fold(levelPath);
+    // 一致するものは全部返す。1 つだけ選ぶと、どれが選ばれたかが並び順任せになる
+    const similarTo = known.filter((entry) => fold(entry) === folded);
+    return { path: levelPath, segment, exists: false, similarTo };
   });
+}
+
+/**
+ * 作成を止めるべき階層。見分けの付かないカテゴリが増えるのを防ぐ。
+ * 完全一致の既存は `exists` で入力欄が出ないので、ここには出てこない。
+ */
+export function findLookAlikeLevel(
+  levels: CategoryCreateLevel[],
+): CategoryCreateLevel | undefined {
+  return levels.find((level) => !level.exists && level.similarTo.length > 0);
+}
+
+/** 画面に出す文言。どの階層が、どの既存と紛らわしいのかを名指しする */
+export function lookAlikeMessage(level: CategoryCreateLevel): string {
+  return `「${level.path}」は既存の「${level.similarTo.join('」「')}」と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください`;
 }

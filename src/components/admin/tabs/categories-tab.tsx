@@ -4,7 +4,11 @@ import { IconPlusCircle, IconRedo, IconTags } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
 import type { CategoryRowChange } from '@/lib/admin-catalog';
 import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
-import { planCategoryCreateLevels } from '@/lib/category-create-levels';
+import {
+  findLookAlikeLevel,
+  lookAlikeMessage,
+  planCategoryCreateLevels,
+} from '@/lib/category-create-levels';
 import { isProtectedCategoryPath } from '@/lib/category-operations';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -173,6 +177,12 @@ export function CategoriesTab({
       },
     }));
   };
+  const [formError, setFormError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const [message, setMessage] = useState('');
+  const [commitUrl, setCommitUrl] = useState('');
+
   /**
    * 作成フォームが対象にしているパスと、その階層の内訳。描画と送信の両方がここを見るので、
    * 出した入力欄と送る内容がずれない
@@ -186,11 +196,6 @@ export function CategoriesTab({
   const newAncestors = createPlan.levels.filter(
     (level) => !level.exists && level.path !== createPlan.path,
   );
-  const [formError, setFormError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const busyRef = useRef(false);
-  const [message, setMessage] = useState('');
-  const [commitUrl, setCommitUrl] = useState('');
 
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -305,6 +310,13 @@ export function CategoriesTab({
       return;
     }
     if (editor.kind === 'create') {
+      // 大文字小文字や正規化だけが違う名前は、並ぶと見分けが付かない。完全一致では
+      // ないのでサーバーは作れてしまうため、ここで止める
+      const lookAlike = findLookAlikeLevel(createPlan.levels);
+      if (lookAlike) {
+        setFormError(lookAlikeMessage(lookAlike));
+        return;
+      }
       const ancestors = newAncestors.map((level) => ({
         path: level.path,
         en: levelNameOf(level.path).en.trim(),
@@ -460,11 +472,6 @@ export function CategoriesTab({
                 新しく作る階層（{level.path}）
               </span>
             </p>
-            {level.similarTo && (
-              <p className="mb-2 text-xs text-amber-800">
-                既存の「{level.similarTo}」と大文字小文字や表記だけが違います。別のカテゴリとして作られます。
-              </p>
-            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label htmlFor={`${idBase}-en-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">

@@ -2,7 +2,11 @@
 
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
 import { isComposingKeyboardEvent, useModalDialog } from '@/hooks/use-modal-dialog';
-import { planCategoryCreateLevels } from '@/lib/category-create-levels';
+import {
+  findLookAlikeLevel,
+  lookAlikeMessage,
+  planCategoryCreateLevels,
+} from '@/lib/category-create-levels';
 import { useState, useEffect, useRef } from 'react';
 
 interface AttributeModalProps {
@@ -130,6 +134,14 @@ export function AttributeModal({
 
     if (isDuplicate) {
       setCreateError('このカテゴリは既に存在します');
+      return;
+    }
+
+    // 大文字小文字や正規化だけが違う名前は、並ぶと見分けが付かない。完全一致では
+    // ないのでサーバーは作れてしまうため、ここで止める
+    const lookAlike = findLookAlikeLevel(createLevels);
+    if (lookAlike) {
+      setCreateError(lookAlikeMessage(lookAlike));
       return;
     }
 
@@ -305,11 +317,6 @@ export function AttributeModal({
                       「{level.segment}」の名前
                       <span className="ml-2 text-xs font-normal text-green-800">新しく作る階層（{level.path}）</span>
                     </p>
-                    {level.similarTo && (
-                      <p className="mb-2 text-xs text-amber-800">
-                        既存の「{level.similarTo}」と大文字小文字や表記だけが違います。別のカテゴリとして作られます。
-                      </p>
-                    )}
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
                         <label

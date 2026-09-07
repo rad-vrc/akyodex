@@ -43,7 +43,7 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
     await act(async () =>
       root.render(createElement(AttributeModal, {
         isOpen: true, onClose: () => {}, currentAttributes: [], onApply: () => {},
-        allAttributes: ['動物'], onCreateAttribute: (name: string) => created.push(name),
+        allAttributes: ['動物', 'Cat'], onCreateAttribute: (name: string) => created.push(name),
       })),
     );
     const button = (text: string) => [...win.document.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!;
@@ -123,6 +123,20 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
       ko: '풀',
       ancestors: [],
     });
+
+    // 大文字小文字だけが違う階層は、並ぶと見分けが付かないので送らせない。
+    // 末尾は isDuplicate が拾うが、途中の階層はここでしか止まらない
+    await act(async () => button('新しいカテゴリを作成').click());
+    await type('attributeNewInput', 'cat/kitten');
+    await type('attributeNewEnInput-cat', 'Cat');
+    await type('attributeNewKoInput-cat', '고양이');
+    await type('attributeNewEnInput-cat/kitten', 'Kitten');
+    await type('attributeNewKoInput-cat/kitten', '새끼');
+    await act(async () => button('追加する').click());
+    await flush();
+    assert.equal(posts.length, 3, '紛らわしい名前は送らない');
+    assert.match(win.document.body.textContent!, /「cat」は既存の「Cat」と/);
+    assert.match(win.document.body.textContent!, /別の名前にしてください/);
   } finally {
     await flush();
     await act(async () => root.unmount());
