@@ -342,7 +342,7 @@ test('create: builds three levels at once and keeps the ancestors editable on th
   });
 });
 
-test('create: refuses to guess a missing level and refuses levels that already exist', () => {
+test('create: refuses to guess a missing level, ignores levels that already exist', () => {
   const base = dataset();
 
   assert.throws(
