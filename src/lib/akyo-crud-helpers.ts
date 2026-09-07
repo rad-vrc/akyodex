@@ -22,6 +22,7 @@ import {
     type AkyoCsvSnapshot,
 } from './akyo-csv-snapshot';
 import { ensureBoothCategories } from './booth-url';
+import { ensureCategoryAncestors } from './category-operations';
 import {
     createAkyoRecord,
     filterOutRecordById,
@@ -107,9 +108,9 @@ export function prepareAkyoUpdate(
     if (!existingRecord) throw new Error(`ID: ${form.id} が見つかりませんでした`);
     const isBoothOnly = !form.sourceUrl && !!form.boothUrl;
     const entryType = isBoothOnly ? undefined : form.entryType === 'world' ? 'world' : 'avatar';
-    const category = entryType
-        ? normalizeCategoryFieldForEntryType(form.category, entryType)
-        : form.category;
+    const category = ensureCategoryAncestors(
+        entryType ? normalizeCategoryFieldForEntryType(form.category, entryType) : form.category,
+    );
     const recordData: RecordData = {
         ...form,
         entryType,
@@ -224,12 +225,15 @@ export async function processAkyoCRUD(
         // BOOTH専用検出: sourceUrlなし && boothUrlあり
         const isBoothOnly = !sourceUrl && !!boothUrl;
         const normalizedEntryType: 'avatar' | 'world' | '' = isBoothOnly ? '' : (entryType === 'world' ? 'world' : 'avatar');
+        // 子だけを持つ行はカードでは正しく見えるのに「色」の絞り込みから消える。画面が
+        // 親を足し忘れても行の形が崩れないよう、検査と書き込みの両方でここを通す
+        const submittedCategory = ensureCategoryAncestors(category || attributes);
         const normalizedCategory = normalizedEntryType
             ? normalizeCategoryFieldForEntryType(
-                category || attributes,
+                submittedCategory,
                 normalizedEntryType,
             )
-            : (category || attributes);
+            : submittedCategory;
 
         const categoryWithBooth = ensureBoothCategories(
             normalizedCategory,
@@ -241,7 +245,7 @@ export async function processAkyoCRUD(
         // write a token with no translation, which stops the EN/KO regeneration. Check what
         // the client submitted, not the markers the server itself adds afterwards.
         if (operation !== 'delete') {
-            const unknown = findUnregisteredCategories(snapshot, [category || attributes]);
+            const unknown = findUnregisteredCategories(snapshot, [submittedCategory]);
             if (unknown.length > 0) {
                 return jsonError(unregisteredCategoryMessage(unknown), 400);
             }

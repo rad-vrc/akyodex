@@ -65,6 +65,18 @@ test('a category registered but not yet used by any Akyo can be assigned on regi
   assert.match(saved.category, /新カテゴリ/);
 });
 
+// 行は持つトークンの祖先を全部並べる形をしている。子だけの行はカードでは正しく見えるのに
+// （親はトークンから切り出される）絞り込みが完全一致なので「動物」から消える。画面が親を
+// 足し忘れても、書く側でこの形に揃える
+test('a child submitted without its parent is written with the ancestors filled in', async () => {
+  const f = fixture(new Set(['動物/うま']));
+  const response = await processAkyoCRUD('add', form({ category: '動物/うま' }), f.dependencies);
+  assert.equal(response.status, 200);
+  const saved = parseCsvToAkyoData(stringify([header, ...f.commits[0].dataRecords])).find((akyo) => akyo.id === '0003');
+  assert.ok(saved);
+  assert.equal(saved.category, '動物,動物/うま');
+});
+
 test('markers the server adds itself are never rejected, and deleting checks no category', async () => {
   const booth = fixture();
   // 'Booth' and 'Booth/アバター' are appended by the server, not submitted by the client.

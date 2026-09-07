@@ -6,6 +6,7 @@ import {
   assertTranslationHierarchy,
   createCategory,
   deleteCategory,
+  ensureCategoryAncestors,
   mergeCategory,
   renameCategory,
   selectCategoryPath,
@@ -56,6 +57,14 @@ function categoriesOf(records: string[][], id: string): string {
 
 test('withAncestors: inserts missing ancestors before the token and drops duplicates', () => {
   assert.deepEqual(withAncestors(['乗り物/うま/ポニー', '乗り物', '動物']), ['乗り物', '乗り物/うま', '乗り物/うま/ポニー', '動物']);
+});
+
+test('ensureCategoryAncestors: completes a cell, leaves a complete one byte-for-byte', () => {
+  assert.equal(ensureCategoryAncestors('色/紫色系'), '色,色/紫色系');
+  assert.equal(ensureCategoryAncestors('動物,色/紫色系/薄紫'), '動物,色,色/紫色系,色/紫色系/薄紫');
+  // 足りていないものが無ければ、区切りも並びもそのまま返す
+  assert.equal(ensureCategoryAncestors('色/紫色系、色'), '色/紫色系、色');
+  assert.equal(ensureCategoryAncestors(''), '');
 });
 
 test('selectCategoryPath: fills in the ancestors of the picked path only', () => {

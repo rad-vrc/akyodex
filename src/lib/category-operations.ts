@@ -122,6 +122,22 @@ export function withAncestors(tokens: string[]): string[] {
 }
 
 /**
+ * Complete the ancestors of every token in a CSV `Category` cell.
+ *
+ * Rows carry every ancestor of a token (see the module header), but nothing on the write
+ * path enforced it, so the rule held only as long as every screen remembered to tick the
+ * parent by hand. A row that carries `色/紫色系` without `色` still reads as 「色 > 紫色系」
+ * on a card — `groupCategoriesByParent` cuts the parent out of the token itself — while the
+ * catalogue filter compares tokens exactly, so that Akyo quietly drops out of 「色」.
+ * Returns the cell untouched when nothing is missing.
+ */
+export function ensureCategoryAncestors(value: string): string {
+  const tokens = splitCategoryCell(value);
+  const complete = withAncestors(tokens);
+  return complete.length === tokens.length ? value : complete.join(',');
+}
+
+/**
  * Add `path` to a selection together with the ancestors it still lacks.
  *
  * Rows carry every ancestor of a token (see the module header), so picking `色/紫色系`
