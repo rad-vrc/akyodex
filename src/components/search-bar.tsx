@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { IconClose, IconSearch } from '@/components/icons';
+import { IconClose } from '@/components/icons';
 
 interface SearchBarProps {
   id?: string;
@@ -102,11 +102,10 @@ export function SearchBar({
       className={`relative w-full ${disabled ? 'opacity-60' : ''}`}
       aria-busy={disabled}
     >
-      {/* 検索アイコン。絵文字は OS のカラーフォントで描かれ color が効かないため SVG を使う。 */}
-      <IconSearch
-        size="w-[22px] h-[22px]"
-        className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-gray-500"
-      />
+      {/* 検索アイコン */}
+      <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-2xl" aria-hidden="true">
+        🔍
+      </span>
 
       {/* 検索入力 */}
       <input
@@ -132,7 +131,10 @@ export function SearchBar({
           className="absolute right-[7px] top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full"
           aria-label={clearAriaLabel}
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300">
+          {/* 地の色は --primary-blue(#66b2ff) ではなく入力欄のフォーカス色 #2b7fff。
+              #66b2ff は白に対して 2.24:1 しかなく、白の × を載せると
+              WCAG SC 1.4.11 の 3:1 に届かないため。 */}
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2b7fff] text-white transition-colors hover:bg-[#1d4ed8]">
             <IconClose size="w-[13px] h-[13px]" />
           </span>
         </button>

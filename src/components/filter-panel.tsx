@@ -1,6 +1,6 @@
 'use client';
 
-import { IconSparkles, IconTag, IconUser } from '@/components/icons';
+import { IconTag, IconTags, IconUser } from '@/components/icons';
 import { t, type SupportedLanguage } from '@/lib/i18n';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -261,8 +261,10 @@ export function FilterPanel({
           {/* min-h-[2.125rem](=34px、OR/ANDトグルのp-1+py-1+text-xs+border2pxの実高): 両ヘッダー行の
               高さを揃える。無指定だと作者側の行が低くなりラベル・検索ボックスの縦位置がずれる */}
           <div className="flex flex-wrap items-center justify-between gap-2 min-h-[2.125rem]">
+            {/* 管理画面のカテゴリタブ（categories-tab.tsx）と同じ IconTags を使う。
+                以前の IconSparkles は魔法の杖の意匠で、小さく描くとペンに見えていた。 */}
             <div className="font-bold text-orange-600 flex items-center gap-2">
-              <IconSparkles size="w-4 h-4" />
+              <IconTags size="w-4 h-4" />
               {t('filter.category', lang)}
             </div>
             <div className="flex flex-wrap items-center gap-2">
