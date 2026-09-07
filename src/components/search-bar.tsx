@@ -128,14 +128,16 @@ export function SearchBar({
           入力欄の右余白 pr-[58px] は right-[7px] + w-11(44px) + 右端の余白 7px
           から来ている。片方だけ変えるとテキストがボタンの下に潜るので、
           tests/filter-panel.spec.ts の「クリアボタンの寸法と余白」で固定している。
-          ホバーは disabled のとき付けない。button が disabled でも子要素の
-          :hover は成立するため、span に固定で置くと無効時も反応してしまう。 */}
+          ホバーは button 側の group で拾う。span の :hover に直接置くと、
+          当たり判定 44px のうち外周 8px はクリックできるのに色が変わらない。
+          disabled のときはクラス自体を付けない。button が disabled でも
+          子要素の :hover は成立するため、固定で置くと無効時も反応する。 */}
       {query && (
         <button
           type="button"
           onClick={handleClear}
           disabled={disabled}
-          className="absolute right-[7px] top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full"
+          className="group absolute right-[7px] top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full"
           aria-label={clearAriaLabel}
         >
           {/* 地の色は --primary-blue(#66b2ff) ではなく --accent-blue。
@@ -143,7 +145,7 @@ export function SearchBar({
               WCAG SC 1.4.11 の 3:1 に届かないため。 */}
           <span
             className={`flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-blue)] text-white transition-colors ${
-              disabled ? '' : 'hover:bg-[var(--focus-ring)]'
+              disabled ? '' : 'group-hover:bg-[var(--focus-ring)]'
             }`}
           >
             <IconClose size="w-3.5 h-3.5" />

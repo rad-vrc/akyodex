@@ -106,7 +106,7 @@ test.describe("検索クリアボタンの寸法と余白", () => {
     expect((await paddingOf(input)).right).toBeLessThan(30);
   });
 
-  test("入力中はボタンが 24px 角以上で、テキストと重ならない", async ({ page }) => {
+  test("入力中はボタンが 44px 角以上で、テキストと重ならない", async ({ page }) => {
     await page.goto("/zukan");
     const input = page.locator("input.search-input");
     await input.fill("ミント");
@@ -115,9 +115,10 @@ test.describe("検索クリアボタンの寸法と余白", () => {
     await expect(button).toBeVisible();
 
     const box = await button.boundingBox();
-    // WCAG 2.2 SC 2.5.8 Target Size (Minimum)
-    expect(box!.width).toBeGreaterThanOrEqual(24);
-    expect(box!.height).toBeGreaterThanOrEqual(24);
+    // WCAG 2.2 の下限は SC 2.5.8 の 24px だが、この PR は SC 2.5.5(AAA) の
+    // 44px を狙って広げている。24 で固定すると 25〜43px への縮小を見逃す。
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
 
     // 右余白がボタンの占有幅に足りていること（足りないとテキストが下に潜る）
     const clearance = await input.evaluate((el) => {
@@ -134,7 +135,7 @@ test.describe("検索クリアボタンの寸法と余白", () => {
     expect(clearance).toBeGreaterThanOrEqual(0);
   });
 
-  test("有効時のホバーでチップの色が変わる", async ({ page }) => {
+  test("当たり判定の外周をホバーしてもチップの色が変わる", async ({ page }) => {
     await page.goto("/zukan");
     const input = page.locator("input.search-input");
     await input.fill("ミント");
@@ -142,10 +143,12 @@ test.describe("検索クリアボタンの寸法と余白", () => {
     const chip = clearButton(page).locator("span").first();
     const base = await chip.evaluate((el) => window.getComputedStyle(el).backgroundColor);
 
-    await clearButton(page).hover();
+    // 当たり判定 44px の外周（チップの外側）でも色が変わること。
+    // span の :hover に直接置くと、押せるのに反応しない帯ができる。
+    const box = (await clearButton(page).boundingBox())!;
+    await page.mouse.move(box.x + 3, box.y + box.height / 2);
 
-    // transition-colors があるので、色が変わりきるまで待つ。
-    // disabled のときはこのクラス自体を付けないので、ここでは有効時だけを見る。
+    // transition-colors があるので、色が変わりきるまで待つ
     await expect
       .poll(() => chip.evaluate((el) => window.getComputedStyle(el).backgroundColor))
       .not.toBe(base);
