@@ -115,8 +115,10 @@ test('rename: refuses existing targets, own descendants, protected and unknown c
   );
   assert.throws(() => renameCategory(base, { from: '動物', to: '生き物/動物', en: 'x', ko: 'x' }), /親カテゴリ「生き物」が存在しません/);
   assert.throws(() => renameCategory(base, { from: '動物', to: '生き物', en: 'Ani/mal', ko: 'x' }), /「\/」は使えません/);
-  // 対訳は任意。日本語だけの改名も通す（訳が無い分は日本語のまま表示される）
-  assert.equal(renameCategory(base, { from: '動物', to: '生き物', en: '', ko: 'x' }).dataset.translations['生き物'].en, null);
+  // 空欄は「消す」ではなく「変更なし」。入力し忘れで既にある訳が消えないように
+  const kept = renameCategory(base, { from: '動物', to: '生き物', en: '', ko: 'x' });
+  assert.equal(kept.dataset.translations['生き物'].en, 'Animal', '空欄では既存の英語名を残す');
+  assert.equal(kept.dataset.translations['生き物'].ko, 'x');
 });
 
 test('rename with the same path only updates the translations (children follow the prefix)', () => {
@@ -185,7 +187,7 @@ test('merge: refuses parent/child pairs, identical paths, protected and untransl
   assert.throws(() => mergeCategory(base, { from: '動物', into: '動物/うま' }), /親子関係/);
   assert.throws(() => mergeCategory(base, { from: '動物', into: '動物' }), /同じ/);
   assert.throws(() => mergeCategory(base, { from: '動物', into: 'ワールド' }), /自動で扱う/);
-  assert.throws(() => mergeCategory(base, { from: '動物', into: '未翻訳' }), /対訳がありません/);
+  assert.throws(() => mergeCategory(base, { from: '動物', into: '未翻訳' }), /対訳表にありません/);
 });
 
 test('delete: removes the node and descendants from rows, translations and colours', () => {

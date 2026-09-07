@@ -171,7 +171,7 @@ export function validateTranslationLeaf(
   if (typeof value !== 'string') {
     throw new CategoryOperationError(`${label}の形式が不正です`);
   }
-  if (value.trim() === '') return null;
+  // 空白だけは打ち間違い。未対訳に化けさせず、前後空白と同じく弾く
   if (value !== value.trim()) {
     throw new CategoryOperationError(`${label}の前後に空白は使えません`);
   }
@@ -281,10 +281,32 @@ function composeTranslation(
   const parent = parentOf(path);
   const compose = (language: CategoryLanguage): string | null => {
     const name = leaf[language];
-    if (name === null) return null;
+    // キーごと無い（undefined）場合も未対訳として扱う
+    if (name == null) return null;
     return parent === null ? name : `${resolveTranslation(dataset, parent, language)}/${name}`;
   };
   return { en: compose('en'), ko: compose('ko') };
+}
+
+/**
+ * 空欄を「消す」ではなく「変更なし」と読む。既にある訳が入力し忘れで消えないように。
+ *
+ * 訳は任意なので、改名で英語だけ直して韓国語欄を空のまま送る、というのが普通の使い方に
+ * なる。そこで null をそのまま書くと、既にあった韓国語名が黙って消える。新規作成には
+ * 保つべき既存が無いので、そちらは空欄がそのまま未対訳になる。
+ */
+function keepExistingLeaf(
+  dataset: CategoryDataset,
+  path: string,
+  leaf: CategoryTranslation,
+): CategoryTranslation {
+  const existing = translationOf(dataset, path);
+  const keep = (language: CategoryLanguage): string | null => {
+    if (leaf[language] != null) return leaf[language];
+    const stored = existing?.[language];
+    return stored ? translationLeaf(stored) : null;
+  };
+  return { en: keep('en'), ko: keep('ko') };
 }
 
 function resolveColor(dataset: CategoryDataset, topLevel: string): string {
@@ -448,7 +470,7 @@ function moveTranslations(
     const rebuild = (language: CategoryLanguage): string | null => {
       const own = entry[language];
       // 未対訳のまま動かす。親が訳されていてもここは訳さない
-      if (own === null) return null;
+      if (own == null) return null;
       return `${resolveTranslation(dataset, parentPath, language)}/${translationLeaf(own)}`;
     };
     dataset.translations[nextKey] = { en: rebuild('en'), ko: rebuild('ko') };
@@ -472,7 +494,7 @@ export function assertTranslationHierarchy(translations: CategoryTranslations): 
     }
     for (const language of CATEGORY_LANGUAGES) {
       const value = entry[language];
-      if (value === null) continue;
+      if (value == null) continue;
       const prefix = `${resolveTranslation(dataset, parent, language)}/`;
       if (!value.startsWith(prefix)) {
         throw new CategoryOperationError(
@@ -600,7 +622,7 @@ export function translateCategory(
   };
   requireExisting(input, path, 'カテゴリ');
   const dataset = cloneDataset(input);
-  const target = composeTranslation(dataset, path, leaf);
+  const target = composeTranslation(dataset, path, keepExistingLeaf(dataset, path, leaf));
   // Children carry the parent's EN/KO as a prefix, so they follow the new names.
   moveTranslations(dataset, path, path, target, { keepExistingTarget: false });
   return { dataset, changedRows: 0, message: `Translate category ${path}` };
@@ -639,7 +661,7 @@ export function renameCategory(
   requireNoLookAlike(input, introduced, (existing) => isSelfOrDescendant(existing, from));
   requireParent(input, to);
   const dataset = cloneDataset(input);
-  const target = composeTranslation(dataset, to, leaf);
+  const target = composeTranslation(dataset, to, keepExistingLeaf(dataset, from, leaf));
   const changedRows = rewriteRecords(dataset, from, to);
   moveTranslations(dataset, from, to, target, { keepExistingTarget: false });
   const fromTop = parentOf(from) === null;
@@ -670,9 +692,11 @@ export function mergeCategory(
     throw new CategoryOperationError('親子関係にあるカテゴリ同士は統合できません');
   }
   const dataset = cloneDataset(input);
-  const target = translationOf(dataset, into);
+  // 対訳は任意なので、値が null の統合先はそのまま通す。弾くのは対訳表にキーごと
+  // 無い場合だけ（CSV のトークンにしか無いカテゴリ）
+  const target = translationOf(dataset, into) ?? null;
   if (!target) {
-    throw new CategoryOperationError(`統合先「${into}」に対訳がありません。先に対訳を登録してください`);
+    throw new CategoryOperationError(`統合先「${into}」が対訳表にありません。先に対訳を登録してください`);
   }
   const changedRows = rewriteRecords(dataset, from, into);
   moveTranslations(dataset, from, into, target, { keepExistingTarget: true });

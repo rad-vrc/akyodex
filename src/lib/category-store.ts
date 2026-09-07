@@ -15,6 +15,7 @@ import {
   type CategoryChange,
   type CategoryColors,
   type CategoryDataset,
+  type CategoryTranslation,
   type CategoryTranslations,
 } from './category-operations';
 import {
@@ -82,12 +83,15 @@ export function parseCategoryTranslations(text: string): CategoryTranslations {
     if (japanese.trim() === '' || japanese !== japanese.trim() || !isRecord(entry)) {
       throw new CategoryOperationError(`category-translations.json のキー ${JSON.stringify(japanese)} が不正です`, 500);
     }
-    const translation = { en: '', ko: '' };
+    // 対訳は任意。未対訳は null（キーごと無い場合も null に揃える）。ここで拒否すると、
+    // 日本語だけで作ったカテゴリの直後から一覧も操作も 500 で落ちる
+    const translation: CategoryTranslation = { en: null, ko: null };
     for (const language of CATEGORY_LANGUAGES) {
       const value = entry[language];
+      if (value === null || value === undefined) continue;
       if (typeof value !== 'string' || value.trim() === '' || value !== value.trim()) {
         throw new CategoryOperationError(
-          `category-translations.json の ${JSON.stringify(japanese)} に ${language} がありません`,
+          `category-translations.json の ${JSON.stringify(japanese)} の ${language} が不正です`,
           500,
         );
       }

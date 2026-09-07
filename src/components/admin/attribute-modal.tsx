@@ -114,8 +114,8 @@ export function AttributeModal({
     }));
   };
 
-  // カテゴリは対訳（EN/KO）とセットで登録し、その場で GitHub にコミットする。
-  // 名前だけで作ると EN/KO のデータに反映されず、CI が警告して EN/KO を置き去りにする。
+  // カテゴリはその場で GitHub にコミットする。対訳（EN/KO）は任意で、空のままなら
+  // その階層は EN/KO のデータでも日本語のまま出る（生成側が段ごとに落とす）。
   const handleCreateAttribute = async () => {
     if (creating) return;
     const trimmed = newAttributeName.trim();

@@ -658,7 +658,8 @@ export function CategoriesTab({
               const depth = depthOf(entry.path);
               const topLevel = entry.path.split('/', 1)[0];
               const color = colors[topLevel];
-              const untranslated = entry.en === null || entry.ko === null;
+              // 片方だけ未対訳なら、入っている側は隠さない。未対訳の側は日本語で表示される
+              const untranslated = entry.en === null && entry.ko === null;
               return (
                 <li key={entry.path} className="px-4 py-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2" style={{ paddingLeft: `${depth * 1.5}rem` }}>
@@ -677,10 +678,16 @@ export function CategoriesTab({
                       </div>
                       <div className="text-xs text-gray-500 break-words">
                         {untranslated ? (
-                          <span className="text-amber-700">対訳なし（英語・韓国語のデータに反映されません）</span>
+                          <span className="text-amber-700">対訳なし（英語・韓国語とも日本語のまま表示されます）</span>
                         ) : (
                           <>
-                            {entry.en} <span className="text-gray-300">|</span> {entry.ko}
+                            {entry.en ?? (
+                              <span className="text-amber-700">{leafOf(entry.path)}（英語は日本語のまま）</span>
+                            )}{' '}
+                            <span className="text-gray-300">|</span>{' '}
+                            {entry.ko ?? (
+                              <span className="text-amber-700">{leafOf(entry.path)}（韓国語は日本語のまま）</span>
+                            )}
                           </>
                         )}
                       </div>

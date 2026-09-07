@@ -125,6 +125,15 @@ test('reports translation entries the Japanese CSV no longer uses', (t) => {
   );
 });
 
+/** 表示名。訳の無い階層は日本語のまま（scripts/category-translations.js と同じ規則） */
+function resolveDisplayName(token, language, translations) {
+  const stored = Object.hasOwn(translations, token) ? translations[token][language] : null;
+  if (typeof stored === 'string' && stored) return stored;
+  const separator = token.lastIndexOf('/');
+  const leaf = token.slice(separator + 1);
+  return separator < 0 ? leaf : `${resolveDisplayName(token.slice(0, separator), language, translations)}/${leaf}`;
+}
+
 test('translates a child category under the translation of its parent', () => {
   for (const token of Object.keys(translations)) {
     const separator = token.lastIndexOf('/');
@@ -132,10 +141,13 @@ test('translates a child category under the translation of its parent', () => {
     const parent = token.slice(0, separator);
     assert.ok(Object.hasOwn(translations, parent), `${token} needs its parent ${parent} in data/category-translations.json`);
     for (const language of LANGUAGES) {
-      const prefix = `${translations[parent][language]}/`;
+      // 未対訳の階層は日本語のまま表示されるので、その表示名を接頭辞として照合する
+      const value = translations[token][language];
+      if (value === null || value === undefined) continue;
+      const prefix = `${resolveDisplayName(parent, language, translations)}/`;
       assert.ok(
-        translations[token][language].startsWith(prefix),
-        `${language} translation of ${token} (${translations[token][language]}) should start with ${prefix}`,
+        value.startsWith(prefix),
+        `${language} translation of ${token} (${value}) should start with ${prefix}`,
       );
     }
   }
