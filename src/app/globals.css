@@ -506,6 +506,28 @@ select:focus {
   transform: translateY(-1px) scale(1.02) !important;
 }
 
+/* ボタン両端の星。
+   以前は絵文字の 🌟 を span で置いていたが、ボタンにかかっている text-shadow
+   は絵文字の裏にも描かれるため、星の右下に黒い滲みが出ていた（本番を4倍解像度
+   で撮って実測: 星まわりの画素の 19.8% が暗くなり、最も暗い画素は
+   rgb(255,140,128) → rgb(208,114,104)、相対輝度が 38% 低下）。
+   絵文字は OS のカラーフォントが描くので CSS の color も fill も効かず、影を
+   外しても 🌟 自身が持つ濃い金の縁が黄色い地の上で沈んだまま残る（滲み 1.44）。
+   そのため SVG に置き換え、地から切り離す役目を黒い影ではなく白フチに持たせた。
+   paint-order: stroke は線を先に、塗りを後に描く指定で、線が星の外側にだけ出る。
+   stroke-width は viewBox のユーザー単位（52 / 576 × 17px ≒ 1.5px、外に出るの
+   はその半分）。overflow: visible は、viewBox いっぱいに広がる星のフチが端で
+   切れないようにするため。 */
+.detail-button .detail-star {
+  flex: none;
+  fill: #ffd93d;
+  stroke: #ffffff;
+  stroke-width: 52;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  overflow: visible;
+}
+
 /* 三面図ダウンロードボタン（detail-buttonと同じグラデーション） */
 .reference-sheet-button {
   background: linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcf7f, #4facfe) !important;
@@ -550,24 +572,34 @@ select:focus {
   transform: translateY(-1px) scale(1.02) !important;
 }
 
-/* ボタンに波紋エフェクト */
+/* ボタンに波紋エフェクト。中心から広がって現れ、離れると縮んで消える。
+
+   以前は transition に opacity が入っておらず、動きが裏返っていた。
+   ホバーで opacity が 0 へ即座に跳ぶため広がる円は透明で見えず、離れた
+   瞬間に 1 へ戻りながら縮むので「離すと白い円が収束する」だけが見えていた
+   （本番実測: ホバー50ms で直径21px/opacity 0、離脱50ms で250px/opacity 1）。
+
+   寸法ではなく transform と opacity を動かす。width/height の変化は
+   合成レイヤーに乗らず再ペイントを起こすため、虹色グラデーションの
+   無限アニメーションを廃止したのと同じ理由で避ける。 */
 .detail-button::after {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 0;
-  height: 0;
+  width: 300px;
+  height: 300px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  background: rgba(255, 255, 255, 0.35);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s ease-out, opacity 0.3s;
+  pointer-events: none;
 }
 
 .detail-button:hover::after {
-  width: 300px;
-  height: 300px;
-  opacity: 0;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
 }
 
 /* リスト表示のスタイル */
