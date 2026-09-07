@@ -97,19 +97,36 @@ test.describe("detail button label wrapping (ja)", () => {
   }
 });
 
-test.describe("detail button label wrapping (en)", () => {
-  test.use({ locale: "en-US" });
+/**
+ * 語間に空白がある言語。keep-all は空白での改行には影響しないので、折返しは
+ * 語の切れ目のままのはず。行を空白でつなぎ直して元の文言に戻れば、どこも語の
+ * 途中で切れていないと言える（1 行のときも成り立つ）。
+ * 韓国語は keep-all の影響が最も大きい（語中で切れなくなる）ので、カードが
+ * 最も狭くなる 1024px も必ず見る。
+ */
+for (const [name, locale, expected] of [
+  ["en", "en-US", "View Details"],
+  ["ko", "ko-KR", "자세히 보기"],
+] as const) {
+  test.describe(`detail button label wrapping (${name})`, () => {
+    test.use({ locale });
 
-  // keep-all は空白での改行には影響しない。英語が語中で切れないことを押さえる。
-  test("keeps English wrapping at the space", async ({ page }) => {
-    const button = await openCatalog(page, 1280);
-    await expect(button.locator(".detail-label")).toHaveText("View Details");
+    for (const width of [1280, 1024]) {
+      test(`keeps ${name} wrapping at word boundaries at ${width}px`, async ({ page }) => {
+        const label = (await openCatalog(page, width)).locator(".detail-label");
+        await expect(label).toHaveText(expected);
+        await expect(label).toHaveCSS("word-break", "keep-all");
 
-    const lines = await labelLines(page);
-    expect(lines.map((line) => line.trim())).toEqual(["View", "Details"]);
+        const rendered = (await labelLines(page))
+          .map((line) => line.trim())
+          .filter(Boolean);
+        expect(rendered.length).toBeGreaterThan(0);
+        expect(rendered.join(" ")).toBe(expected);
 
-    const clipped = await clippedBy(page);
-    expect(clipped.left).toBeLessThan(0.5);
-    expect(clipped.right).toBeLessThan(0.5);
+        const clipped = await clippedBy(page);
+        expect(clipped.left).toBeLessThan(0.5);
+        expect(clipped.right).toBeLessThan(0.5);
+      });
+    }
   });
-});
+}

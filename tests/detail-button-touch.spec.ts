@@ -92,6 +92,35 @@ test.describe("detail button on touch devices", () => {
     expect(after.rippleContent).toBe("none");
     expect(after.borderColor).toBe(before.borderColor);
   });
+
+  // ボタン以外にも、手書きの :hover 規則は同じ理由で貼りつく。
+  // いちばん目につくカード本体と画像で押さえる。
+  test("tapping a card never leaves it lifted or its image zoomed", async ({ page }) => {
+    await openCatalog(page);
+    const card = page.locator("article.akyo-card").first();
+    const cardState = () =>
+      card.evaluate((el) => ({
+        card: getComputedStyle(el).transform,
+        image: getComputedStyle(el.querySelector("img") as Element).transform,
+        hovered: el.matches(":hover"),
+      }));
+
+    const before = await cardState();
+    expect(before.card).toBe("none");
+    expect(before.image).toBe("none");
+
+    const box = await settledBox(card.locator(".detail-button"));
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+
+    await expect.poll(async () => (await cardState()).card).toBe("none");
+    const after = await cardState();
+    expect(after.hovered).toBe(true);
+    expect(after.image).toBe("none");
+  });
 });
 
 test.describe("detail button on pointing devices", () => {
