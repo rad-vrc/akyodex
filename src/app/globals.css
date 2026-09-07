@@ -53,6 +53,12 @@
   --search-clear-inset: 7px;
   --search-clear-size: 44px;
   --search-clear-slot: calc(var(--search-clear-inset) * 2 + var(--search-clear-size));
+
+  /* 絞り込み側の入力は高さ 40px なので、44px の当たり判定は収まらない。
+     枠の内側に収まる 36px にする（SC 2.5.8 の 24px は満たす） */
+  --filter-clear-inset: 2px;
+  --filter-clear-size: 36px;
+  --filter-clear-slot: calc(var(--filter-clear-inset) * 2 + var(--filter-clear-size));
   --primary-green: #66d9a5;
   /* ミントグリーン */
   --primary-orange: #ffa06d;
