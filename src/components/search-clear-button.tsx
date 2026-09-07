@@ -60,8 +60,10 @@ interface SearchClearButtonProps {
    * クリア後にフォーカスを戻す入力欄。押すと入力が空になり、このボタン自身が
    * アンマウントされるため、渡さないとフォーカスが body に落ちて
    * キーボード利用者は先頭から Tab し直しになる。
+   *
+   * 実際に渡し忘れて body に落ちたことがあるので、任意ではなく必須にする。
    */
-  inputRef?: RefObject<HTMLInputElement | null>;
+  inputRef: RefObject<HTMLInputElement | null>;
   disabled?: boolean;
   size?: Size;
   tone?: Tone;
@@ -81,7 +83,7 @@ export function SearchClearButton({
   const handleClick = () => {
     onClick();
     // アンマウントされてからでは focus() が効かないので次のフレームで戻す
-    requestAnimationFrame(() => inputRef?.current?.focus());
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   return (

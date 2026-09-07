@@ -179,6 +179,7 @@ test.describe("絞り込み入力のクリアボタン", () => {
       // orange-600 の実レンダリング値（Tailwind v4 は oklch 定義なので #ea580c とは一致しない）。
       // orange-500 は白に対して 2.80:1 で SC 1.4.11 に届かない
       chip: "rgb(245, 74, 0)",
+      chipHover: "rgb(202, 53, 0)",
     },
     {
       name: "作者",
@@ -187,10 +188,11 @@ test.describe("絞り込み入力のクリアボタン", () => {
       text: "ug",
       // --accent-blue
       chip: "rgb(43, 127, 255)",
+      chipHover: "rgb(29, 78, 216)",
     },
   ];
 
-  for (const { name, placeholder, clear, text, chip } of cases) {
+  for (const { name, placeholder, clear, text, chip, chipHover } of cases) {
     test(`${name}: 空欄ではボタンも右余白も出さない`, async ({ page }) => {
       await page.goto("/zukan");
       const input = page.getByPlaceholder(placeholder);
@@ -256,6 +258,30 @@ test.describe("絞り込み入力のクリアボタン", () => {
       await page.getByRole("button", { name: clear }).click();
       await expect(input).toHaveValue("");
       await expect(page.getByRole("button", { name: clear })).toHaveCount(0);
+      // ボタンが消えるので、戻さないとフォーカスが body に落ちる
+      await expect(input).toBeFocused();
+    });
+
+    test(`${name}: 当たり判定の外周をホバーしてもチップの色が変わる`, async ({ page }) => {
+      await page.goto("/zukan");
+      await page.getByPlaceholder(placeholder).fill(text);
+
+      const button = page.getByRole("button", { name: clear });
+      const chipEl = button.locator("span").first();
+      const readColor = () =>
+        chipEl.evaluate((el) => {
+          const canvas = document.createElement("canvas").getContext("2d");
+          if (!canvas) return "";
+          canvas.fillStyle = window.getComputedStyle(el).backgroundColor;
+          canvas.fillRect(0, 0, 1, 1);
+          const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
+          return `rgb(${r}, ${g}, ${b})`;
+        });
+
+      // チップの外側（押せるのに反応しない帯ができていないか）
+      const box = (await button.boundingBox())!;
+      await page.mouse.move(box.x + 3, box.y + box.height / 2);
+      await expect.poll(readColor).toBe(chipHover);
     });
   }
 });
