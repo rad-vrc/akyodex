@@ -285,3 +285,77 @@ test.describe("絞り込み入力のクリアボタン", () => {
     });
   }
 });
+
+test.describe("検索プレースホルダの幅による出し分け", () => {
+  // placeholder は属性なので CSS では切り替えられない。幅で出し分けている。
+  // 収まるかは言語で変わる（英語版は一度これで入りきらなかった）ので3言語見る。
+  const LOCALES = ["ja", "en", "ko"] as const;
+  const FULL = /アバター・ワールド・作者・カテゴリ名で検索|Search by avatar, world, author|아바타・월드・작자/;
+  const COMPACT = /アバター・作者名で検索|Search avatars, authors|아바타・작자명으로/;
+
+  /** プレースホルダの必要幅と入力欄の表示幅。失敗時に数値が読めるよう両方返す */
+  const placeholderWidths = (input: ReturnType<import("@playwright/test").Page["locator"]>) =>
+    input.evaluate(async (el: HTMLInputElement) => {
+      // webfont が当たる前に測ると代替フォントの幅になり、判定がぶれる
+      await document.fonts.ready;
+      const styles = window.getComputedStyle(el);
+      const canvas = document.createElement("canvas").getContext("2d");
+      if (!canvas) return { text: el.placeholder, needed: 0, available: Infinity };
+      canvas.font = `${styles.fontSize} ${styles.fontFamily}`;
+      const available =
+        el.getBoundingClientRect().width -
+        parseFloat(styles.paddingLeft) -
+        parseFloat(styles.paddingRight) -
+        parseFloat(styles.borderLeftWidth) -
+        parseFloat(styles.borderRightWidth);
+      return {
+        text: el.placeholder,
+        needed: canvas.measureText(el.placeholder).width,
+        available,
+      };
+    });
+
+  /** 並列実行だとレイアウト確定前に測ることがあるので、幅が出るまで待つ */
+  const settledInput = async (page: import("@playwright/test").Page) => {
+    const input = page.locator("input.search-input");
+    await expect
+      .poll(async () => (await input.boundingBox())?.width ?? 0)
+      .toBeGreaterThan(100);
+    return input;
+  };
+
+  for (const lang of LOCALES) {
+    test(`${lang}: 狭い画面では短い方を出し、入力欄に収まる`, async ({ page, context }) => {
+      await context.addCookies([
+        { name: "AKYO_LANG", value: lang, url: "http://localhost:3000" },
+      ]);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/zukan");
+
+      // サーバーは広い方を返すので、狭い方への切り替わりはハイドレーション後
+      const input = await settledInput(page);
+      await expect(input).toHaveAttribute("placeholder", COMPACT);
+
+      // 短い方を用意した理由が収まることなので、そこも固定する
+      const widths = await placeholderWidths(input);
+      expect(widths.needed, `${lang}: "${widths.text}" が ${widths.available}px に収まらない`)
+        .toBeLessThanOrEqual(widths.available);
+    });
+
+    test(`${lang}: sm 以上では長い方を出し、入力欄に収まる`, async ({ page, context }) => {
+      await context.addCookies([
+        { name: "AKYO_LANG", value: lang, url: "http://localhost:3000" },
+      ]);
+      await page.setViewportSize({ width: 640, height: 900 });
+      await page.goto("/zukan");
+
+      const input = await settledInput(page);
+      await expect(input).toHaveAttribute("placeholder", FULL);
+
+      // 640px で切れ始めると、この出し分け自体が意味を失う
+      const widths = await placeholderWidths(input);
+      expect(widths.needed, `${lang}: "${widths.text}" が ${widths.available}px に収まらない`)
+        .toBeLessThanOrEqual(widths.available);
+    });
+  }
+});

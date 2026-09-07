@@ -52,6 +52,17 @@ export function parseCatalogMultiValueField(value: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * 検索対象は ID・ニックネーム・アバター名・カテゴリ・作者。
+ *
+ * ワールド名は nickname に入る。avatarName は VRChat 上のアバター名で、
+ * ワールドではほぼ空（本番データ 108 件中 106 件が空）。プレースホルダが
+ * 「ワールド」で検索できると案内できるのは nickname を見ているため。
+ *
+ * comment / notes は意図的に含めない。説明文は語数が多く、関係の薄い項目まで
+ * 引っかかって検索結果が濁るため。検索ボックスのプレースホルダも、ここに
+ * 挙げた項目だけを案内している。
+ */
 export function buildCatalogSearchIndex(akyo: AkyoData): string[] {
   const searchTargets = [
     akyo.id || "",
@@ -60,7 +71,6 @@ export function buildCatalogSearchIndex(akyo: AkyoData): string[] {
     akyo.avatarName || "",
     akyo.category || akyo.attribute || "",
     akyo.author || akyo.creator || "",
-    akyo.comment || akyo.notes || "",
   ];
 
   return searchTargets.flatMap((value) => normalizeCatalogSearchValue(value));

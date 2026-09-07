@@ -50,7 +50,8 @@ test("prepareCatalogItemsInChunks builds exact filter indexes while yielding bet
   assert.deepEqual(prepared[0]?.parsedCategory, ["自然", "自然/植物"]);
   assert.deepEqual(prepared[0]?.parsedAuthor, ["作者"]);
   assert.ok(prepared[0]?._searchIndex?.includes("akyo 0001"));
-  assert.ok(prepared[0]?._searchIndex?.includes("かたろぐ検索用こめんと"));
+  // 説明文は検索対象から外している（語数が多く検索結果が濁るため）
+  assert.ok(!prepared[0]?._searchIndex?.includes("かたろぐ検索用こめんと"));
 });
 
 test("prepareCatalogItemsInChunks stops after an abort between slices", async () => {
