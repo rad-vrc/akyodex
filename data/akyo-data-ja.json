@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-07T10:52:23.758Z",
-  "count": 948,
+  "updatedAt": "2026-09-07T10:53:31.322Z",
+  "count": 949,
   "data": [
     {
       "id": "0001",
@@ -10829,6 +10829,18 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_887d6afd-c907-431b-b5f5-ef42437e6b8a"
+    },
+    {
+      "id": "0949",
+      "entryType": "avatar",
+      "displaySerial": "0841",
+      "nickname": "不浄のAkyo",
+      "avatarName": "Akyo Corrupt",
+      "category": "チョコミント類,色,色/紫色系,謎多き存在",
+      "comment": "あのAkyoに何があったのか？\n真相を知るため我々はアキョゾンの奥地へと向かった・・・",
+      "author": "uqai",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_19d04ca9-680e-4a77-9d93-0630823f8ba1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_19d04ca9-680e-4a77-9d93-0630823f8ba1"
     }
   ]
 }
