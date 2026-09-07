@@ -44,6 +44,16 @@ test('shared search covers the fields the placeholder advertises, but not the de
   assert.equal(filterCatalog(withDescription, { searchQuery: '説明文だけに出てくる語' }).length, 0);
 });
 
+test('world names live in nickname, not avatarName, and stay searchable', () => {
+  // 本番データではワールド 108 件中 106 件が avatarName 空で、名前は nickname 側にある
+  const world = item('0005', 'ワールド', '作者E', 'world');
+  world.nickname = 'Akyo集会所会場';
+  world.avatarName = '';
+  const withWorld = [...data, world];
+
+  assert.deepEqual(ids(filterCatalog(withWorld, { searchQuery: 'Akyo集会所会場' })), ['0005']);
+});
+
 test('entry type and Booth category combine without mutating source', () => {
   const before = structuredClone(data);
   assert.deepEqual(ids(filterCatalog(data, { entryTypeFilter: 'world' })), ['0003']);
