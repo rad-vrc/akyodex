@@ -1,6 +1,7 @@
 'use client';
 
 import { IconTag, IconTags, IconUser } from '@/components/icons';
+import { SearchClearButton } from '@/components/search-clear-button';
 import { t, type SupportedLanguage } from '@/lib/i18n';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
@@ -327,15 +328,26 @@ export function FilterPanel({
             </div>
           </div>
 
-          <input
-            type="text"
-            value={categoryQuery}
-            onChange={(e) => setCategoryQuery(e.target.value)}
-            onKeyDown={handleCategorySearchKeyDown}
-            className="w-full rounded-xl border-2 border-orange-300 bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus-visible:outline-none focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-300/50"
-            placeholder={t('filter.categorySearch', lang)}
-            aria-label={t('filter.categorySearch', lang)}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={categoryQuery}
+              onChange={(e) => setCategoryQuery(e.target.value)}
+              onKeyDown={handleCategorySearchKeyDown}
+              // 右余白はボタンが出ているときだけ。常時空けるとプレースホルダが縮む。
+              className={`w-full rounded-xl border-2 border-orange-300 bg-white px-3 py-2 ${categoryQuery ? 'pr-[var(--filter-clear-slot)]' : ''} text-sm font-semibold focus:outline-none focus-visible:outline-none focus-visible:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-300/50`}
+              placeholder={t('filter.categorySearch', lang)}
+              aria-label={t('filter.categorySearch', lang)}
+            />
+            {categoryQuery && (
+              <SearchClearButton
+                onClick={() => setCategoryQuery('')}
+                label={t('filter.clearCategorySearch', lang)}
+                size="sm"
+                tone="orange"
+              />
+            )}
+          </div>
 
           <div className="flex flex-wrap gap-2 min-h-8">
             {activeCategories.length === 0 ? (
@@ -428,15 +440,25 @@ export function FilterPanel({
             )}
           </div>
 
-          <input
-            type="text"
-            value={authorQuery}
-            onChange={(e) => setAuthorQuery(e.target.value)}
-            onKeyDown={handleAuthorSearchKeyDown}
-            className="w-full rounded-xl border-2 border-blue-300 bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-300/50"
-            placeholder={t('filter.authorSearch', lang)}
-            aria-label={t('filter.authorSearch', lang)}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={authorQuery}
+              onChange={(e) => setAuthorQuery(e.target.value)}
+              onKeyDown={handleAuthorSearchKeyDown}
+              // 右余白はボタンが出ているときだけ。常時空けるとプレースホルダが縮む。
+              className={`w-full rounded-xl border-2 border-blue-300 bg-white px-3 py-2 ${authorQuery ? 'pr-[var(--filter-clear-slot)]' : ''} text-sm font-semibold focus:outline-none focus-visible:outline-none focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-300/50`}
+              placeholder={t('filter.authorSearch', lang)}
+              aria-label={t('filter.authorSearch', lang)}
+            />
+            {authorQuery && (
+              <SearchClearButton
+                onClick={() => setAuthorQuery('')}
+                label={t('filter.clearAuthorSearch', lang)}
+                size="sm"
+              />
+            )}
+          </div>
 
           <div className="flex flex-wrap gap-2 min-h-8">
             {activeAuthors.length === 0 ? (

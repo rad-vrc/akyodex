@@ -350,6 +350,16 @@ export const UI_TEXTS = {
     en: "Search categories...",
     ko: "카테고리 검색...",
   },
+  "filter.clearCategorySearch": {
+    ja: "カテゴリ名の検索をクリア",
+    en: "Clear category search",
+    ko: "카테고리 검색 지우기",
+  },
+  "filter.clearAuthorSearch": {
+    ja: "作者名の検索をクリア",
+    en: "Clear author search",
+    ko: "작가 검색 지우기",
+  },
   "filter.noneSelected": {
     ja: "カテゴリ未選択（全カテゴリ対象）",
     en: "No category selected (all categories)",

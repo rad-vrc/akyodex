@@ -165,3 +165,75 @@ test.describe("検索クリアボタンのホバー", () => {
       .not.toBe(base);
   });
 });
+
+test.describe("絞り込み入力のクリアボタン", () => {
+  // カテゴリ側とパネル全体はデスクトップで開いた状態を見る
+  test.use({ viewport: { width: 1280, height: 1000 }, isMobile: false, hasTouch: false });
+
+  const cases = [
+    {
+      name: "カテゴリ",
+      placeholder: /カテゴリ名を検索|Search categories|카테고리 검색/i,
+      clear: /カテゴリ名の検索をクリア|Clear category search|카테고리 검색 지우기/i,
+      text: "エネ",
+    },
+    {
+      name: "作者",
+      placeholder: /作者名を検索|Search authors|작자 검색/i,
+      clear: /作者名の検索をクリア|Clear author search|작가 검색 지우기/i,
+      text: "ug",
+    },
+  ];
+
+  for (const { name, placeholder, clear, text } of cases) {
+    test(`${name}: 空欄ではボタンも右余白も出さない`, async ({ page }) => {
+      await page.goto("/zukan");
+      const input = page.getByPlaceholder(placeholder);
+      await expect(input).toBeVisible();
+
+      await expect(page.getByRole("button", { name: clear })).toHaveCount(0);
+      const padding = await input.evaluate(
+        (el) => parseFloat(window.getComputedStyle(el).paddingRight),
+      );
+      expect(padding).toBeLessThan(20);
+    });
+
+    test(`${name}: 入力中はボタンが 24px 角以上で、テキストと重ならない`, async ({ page }) => {
+      await page.goto("/zukan");
+      const input = page.getByPlaceholder(placeholder);
+      await input.fill(text);
+
+      const button = page.getByRole("button", { name: clear });
+      await expect(button).toBeVisible();
+
+      const box = await button.boundingBox();
+      expect(box, "クリアボタンの寸法を取得できなかった").not.toBeNull();
+      // 入力欄の高さが 40px なので 44px は入らない。SC 2.5.8 の 24px を下限にする
+      expect(box!.width).toBeGreaterThanOrEqual(24);
+      expect(box!.height).toBeGreaterThanOrEqual(24);
+      // 枠の内側に収まっていること
+      const inputBox = (await input.boundingBox())!;
+      expect(box!.height).toBeLessThanOrEqual(inputBox.height);
+
+      const clearance = await input.evaluate((el) => {
+        const styles = window.getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        const chip = el.parentElement!.querySelector("button span")!.getBoundingClientRect();
+        const textRight =
+          rect.right - parseFloat(styles.paddingRight) - parseFloat(styles.borderRightWidth);
+        return chip.left - textRight;
+      });
+      expect(clearance).toBeGreaterThanOrEqual(0);
+    });
+
+    test(`${name}: 押すと入力が空になる`, async ({ page }) => {
+      await page.goto("/zukan");
+      const input = page.getByPlaceholder(placeholder);
+      await input.fill(text);
+
+      await page.getByRole("button", { name: clear }).click();
+      await expect(input).toHaveValue("");
+      await expect(page.getByRole("button", { name: clear })).toHaveCount(0);
+    });
+  }
+});

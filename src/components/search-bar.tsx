@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { IconClose } from '@/components/icons';
+import { SearchClearButton } from '@/components/search-clear-button';
 
 interface SearchBarProps {
   id?: string;
@@ -125,32 +125,14 @@ export function SearchBar({
         disabled={disabled}
       />
 
-      {/* クリアボタン。当たり判定は --search-clear-size、見た目は 28px の丸チップ。
-          位置と寸法、入力欄の右余白はすべて --search-clear-* から導出しているので、
-          片方だけ変えてテキストがボタンの下に潜ることはない。
-          ホバーは button 側の group で拾う。span の :hover に直接置くと、
-          当たり判定のうち外周 8px はクリックできるのに色が変わらない。
-          disabled のときはクラス自体を付けない。button が disabled でも
-          子要素の :hover は成立するため、固定で置くと無効時も反応する。 */}
+      {/* クリアボタン。位置と寸法、入力欄の右余白はすべて --search-clear-* から
+          導出しているので、片方だけ変えてテキストがボタンの下に潜ることはない。 */}
       {query && (
-        <button
-          type="button"
+        <SearchClearButton
           onClick={handleClear}
+          label={clearAriaLabel}
           disabled={disabled}
-          className="group absolute right-[var(--search-clear-inset)] top-1/2 flex h-[var(--search-clear-size)] w-[var(--search-clear-size)] -translate-y-1/2 items-center justify-center rounded-full"
-          aria-label={clearAriaLabel}
-        >
-          {/* 地の色は --primary-blue(#66b2ff) ではなく --accent-blue。
-              #66b2ff は白に対して 2.24:1 しかなく、白の × を載せると
-              WCAG SC 1.4.11 の 3:1 に届かないため。 */}
-          <span
-            className={`flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-blue)] text-white transition-colors ${
-              disabled ? '' : 'group-hover:bg-[var(--accent-blue-hover)]'
-            }`}
-          >
-            <IconClose size="w-3.5 h-3.5" />
-          </span>
-        </button>
+        />
       )}
     </div>
   );
