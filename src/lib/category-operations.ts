@@ -283,6 +283,50 @@ function requireEditable(path: string): void {
   }
 }
 
+/**
+ * 名前が同じかどうかを見るときの畳み込み。表記ゆれを吸収する。
+ * 存在判定には使わない（そちらは完全一致）。「並べたときに見分けが付くか」の判定用
+ */
+export function foldCategoryName(value: string): string {
+  return value.trim().normalize('NFC').toLowerCase();
+}
+
+/**
+ * `path` と大文字小文字・正規化だけが違う既存カテゴリ。`ignore` は自分自身のように
+ * 判定から外すもの（改名で表記だけを直す場合、自分と衝突してはいけない）。
+ */
+function lookAlikeCategories(
+  dataset: CategoryDataset,
+  path: string,
+  ignore: (existing: string) => boolean = () => false,
+): string[] {
+  const folded = foldCategoryName(path);
+  return listCategoryPaths(dataset).filter(
+    (existing) => existing !== path && !ignore(existing) && foldCategoryName(existing) === folded,
+  );
+}
+
+/**
+ * 表記ゆれだけが違うカテゴリを増やさせない。
+ *
+ * 完全一致では無いのでこれまでの検査は通ってしまうが、一覧に並ぶと見分けが付かず、
+ * どちらに付けたのか誰も分からなくなる。画面側にも同じ判定はあるが、規則そのものは
+ * 他のカテゴリ規則と同じくここで守る（API を直接叩いても通らないように）。
+ */
+function requireNoLookAlike(
+  dataset: CategoryDataset,
+  path: string,
+  ignore?: (existing: string) => boolean,
+): void {
+  const similar = lookAlikeCategories(dataset, path, ignore);
+  if (similar.length > 0) {
+    throw new CategoryOperationError(
+      `「${path}」は既存の「${similar.join('」「')}」と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください`,
+      409,
+    );
+  }
+}
+
 function requireParent(dataset: CategoryDataset, path: string): void {
   const parent = parentOf(path);
   if (parent !== null && !categoryExists(dataset, parent)) {
@@ -418,11 +462,13 @@ export function createCategory(
     throw new CategoryOperationError(`カテゴリ「${path}」は既に存在します`, 409);
   }
   requireEditable(path);
+  requireNoLookAlike(input, path);
   const missing = missingAncestors(input, path);
   const supplied = parseAncestorTranslations(request.ancestors, missing, ancestorsOf(path));
   const dataset = cloneDataset(input);
   for (const ancestor of missing) {
     requireEditable(ancestor);
+    requireNoLookAlike(input, ancestor);
     dataset.translations[ancestor] = composeTranslation(dataset, ancestor, supplied.get(ancestor)!);
     if (parentOf(ancestor) === null) dataset.colors[ancestor] = resolveColor(dataset, ancestor);
   }
@@ -497,7 +543,10 @@ export function translateCategory(
   request: { path: unknown; en: unknown; ko: unknown },
 ): CategoryChange {
   const path = validateCategoryPath(request.path);
-  const leaf = { en: validateTranslationLeaf(request.en, 'en'), ko: validateTranslationLeaf(request.ko, 'ko') };
+  const leaf = {
+    en: validateTranslationLeaf(request.en, 'en', path),
+    ko: validateTranslationLeaf(request.ko, 'ko', path),
+  };
   requireExisting(input, path, 'カテゴリ');
   const dataset = cloneDataset(input);
   const target = composeTranslation(dataset, path, leaf);
@@ -517,7 +566,10 @@ export function renameCategory(
   const from = validateCategoryPath(request.from, '現在のカテゴリ名');
   const to = validateCategoryPath(request.to, '新しいカテゴリ名');
   if (from === to) return translateCategory(input, { path: to, en: request.en, ko: request.ko });
-  const leaf = { en: validateTranslationLeaf(request.en, 'en'), ko: validateTranslationLeaf(request.ko, 'ko') };
+  const leaf = {
+    en: validateTranslationLeaf(request.en, 'en', to),
+    ko: validateTranslationLeaf(request.ko, 'ko', to),
+  };
   requireEditable(from);
   requireEditable(to);
   requireExisting(input, from, 'カテゴリ');
@@ -527,6 +579,8 @@ export function renameCategory(
   if (categoryExists(input, to)) {
     throw new CategoryOperationError(`カテゴリ「${to}」は既に存在します。まとめる場合は「統合」を使ってください`, 409);
   }
+  // 表記だけを直す改名（Cat → cat）では自分自身と衝突するので、自分と配下は外す
+  requireNoLookAlike(input, to, (existing) => isSelfOrDescendant(existing, from));
   requireParent(input, to);
   const dataset = cloneDataset(input);
   const target = composeTranslation(dataset, to, leaf);

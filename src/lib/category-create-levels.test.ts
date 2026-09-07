@@ -1,11 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  findLookAlikeLevel,
-  lookAlikeMessage,
-  planCategoryCreateLevels,
-} from './category-create-levels';
+import { findCreateBlocker, planCategoryCreateLevels } from './category-create-levels';
 
 const EXISTING = ['動物', '動物/うま', '色'];
 
@@ -55,19 +51,28 @@ test('既存判定はサーバーと同じ完全一致で行い、表記ゆれ�
   assert.deepEqual(planCategoryCreateLevels('植物', ['動物'])[0]?.similarTo, []);
 });
 
-test('紛らわしい既存は全部返し、止めるべき階層を名指しする', () => {
+test('紛らわしい既存は全部返し、止める理由をまとめて出す', () => {
   // 1 つだけ選ぶと、どれが選ばれたかが一覧の並び順任せになる
   const levels = planCategoryCreateLevels('動物/Cat', ['動物', 'cat', '動物/CAT', '動物/cat']);
   assert.deepEqual(levels[1]?.similarTo, ['動物/CAT', '動物/cat']);
+  assert.match(
+    String(findCreateBlocker(levels)),
+    /「動物\/Cat」は既存の「動物\/CAT」「動物\/cat」と/,
+  );
 
-  const blocked = findLookAlikeLevel(levels);
-  assert.equal(blocked?.path, '動物/Cat');
-  assert.match(lookAlikeMessage(blocked!), /「動物\/Cat」は既存の「動物\/CAT」「動物\/cat」と/);
+  // 複数の階層が紛らわしいなら 1 回で全部言う。直して送り直しを繰り返させない
+  const two = findCreateBlocker(planCategoryCreateLevels('cat/dog', ['Cat', 'cat/Dog']));
+  assert.match(String(two), /「cat」は既存の「Cat」、「cat\/dog」は既存の「cat\/Dog」/);
 
   assert.equal(
-    findLookAlikeLevel(planCategoryCreateLevels('動物/ねこ', ['動物'])),
+    findCreateBlocker(planCategoryCreateLevels('動物/ねこ', ['動物'])),
     undefined,
     '紛らわしくなければ止めない',
+  );
+  assert.equal(
+    findCreateBlocker(planCategoryCreateLevels('動物/うま', ['動物', '動物/うま'])),
+    'このカテゴリは既に存在します',
+    '完全一致は「既にある」と言う',
   );
 });
 

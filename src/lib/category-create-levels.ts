@@ -7,6 +7,8 @@
  * 利用者に推測させずに済む。
  */
 
+import { foldCategoryName } from './category-operations';
+
 export interface CategoryCreateLevel {
   /** 完全なパス（例: `色/赤色系`） */
   path: string;
@@ -16,14 +18,10 @@ export interface CategoryCreateLevel {
   exists: boolean;
   /**
    * 大文字小文字や Unicode 正規化だけが違う既存カテゴリ。完全一致しないので作れて
-   * しまうが、並ぶと見分けが付かないので画面はこれを見て作成を止める
+   * しまうが、並ぶと見分けが付かないのでサーバーが拒否する（`requireNoLookAlike`）。
+   * 画面は送る前にこれを見て、同じ理由で止める
    */
   similarTo: string[];
-}
-
-/** 表記ゆれの検出用。作成の可否には使わない（サーバーは完全一致で判定する） */
-function fold(value: string): string {
-  return value.normalize('NFC').toLowerCase();
 }
 
 /**
@@ -32,8 +30,7 @@ function fold(value: string): string {
  *
  * 既存かどうかはサーバーの `categoryExists` と同じ完全一致で判定する。表記ゆれを
  * 吸収して「既存」と見なすと、サーバーが対訳を要求する階層の入力欄を画面が出さず、
- * 画面上に満たす手段が無いエラーになる。表記ゆれは `similarTo` として別に返し、
- * 作成を止めるかどうかは画面が決める。
+ * 画面上に満たす手段が無いエラーになる。表記ゆれは `similarTo` として別に返す。
  */
 export function planCategoryCreateLevels(
   path: string,
@@ -44,29 +41,46 @@ export function planCategoryCreateLevels(
   const segments = trimmed.split('/').map((segment) => segment.trim());
   if (segments.some((segment) => segment === '')) return [];
 
-  const known = [...existing];
-  const exact = new Set(known);
+  const exact = new Set<string>();
+  // 畳み込みは既存 1 件につき 1 回。階層ごとに全件を畳み直すと打鍵のたびに効いてくる
+  const folded = new Map<string, string[]>();
+  for (const entry of existing) {
+    exact.add(entry);
+    const key = foldCategoryName(entry);
+    const bucket = folded.get(key);
+    if (bucket) bucket.push(entry);
+    else folded.set(key, [entry]);
+  }
+
   return segments.map((segment, index) => {
     const levelPath = segments.slice(0, index + 1).join('/');
     if (exact.has(levelPath)) return { path: levelPath, segment, exists: true, similarTo: [] };
-    const folded = fold(levelPath);
     // 一致するものは全部返す。1 つだけ選ぶと、どれが選ばれたかが並び順任せになる
-    const similarTo = known.filter((entry) => fold(entry) === folded);
-    return { path: levelPath, segment, exists: false, similarTo };
+    return {
+      path: levelPath,
+      segment,
+      exists: false,
+      similarTo: folded.get(foldCategoryName(levelPath)) ?? [],
+    };
   });
 }
 
 /**
- * 作成を止めるべき階層。見分けの付かないカテゴリが増えるのを防ぐ。
- * 完全一致の既存は `exists` で入力欄が出ないので、ここには出てこない。
+ * 作成を止める理由。無ければ `undefined`。
+ *
+ * 完全一致の既存（末尾）と表記ゆれは、利用者にとっては「その名前は使えない」という
+ * 1 つの話なので、判定も文言もここにまとめる。サーバーも同じ規則で拒否するので、
+ * ここは送る前に気付かせるためのもの
  */
-export function findLookAlikeLevel(
-  levels: CategoryCreateLevel[],
-): CategoryCreateLevel | undefined {
-  return levels.find((level) => !level.exists && level.similarTo.length > 0);
-}
+export function findCreateBlocker(levels: CategoryCreateLevel[]): string | undefined {
+  const leaf = levels.at(-1);
+  if (leaf?.exists) return 'このカテゴリは既に存在します';
 
-/** 画面に出す文言。どの階層が、どの既存と紛らわしいのかを名指しする */
-export function lookAlikeMessage(level: CategoryCreateLevel): string {
-  return `「${level.path}」は既存の「${level.similarTo.join('」「')}」と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください`;
+  const lookAlikes = levels.filter((level) => !level.exists && level.similarTo.length > 0);
+  if (lookAlikes.length === 0) return undefined;
+  // 1 件ずつ返すと、直しては送り直しを繰り返させることになる
+  const described = lookAlikes
+    .map((level) => `「${level.path}」は既存の「${level.similarTo.join('」「')}」`)
+    .join('、');
+  return `${described}と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください`;
 }

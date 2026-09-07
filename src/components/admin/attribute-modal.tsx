@@ -2,11 +2,7 @@
 
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
 import { isComposingKeyboardEvent, useModalDialog } from '@/hooks/use-modal-dialog';
-import {
-  findLookAlikeLevel,
-  lookAlikeMessage,
-  planCategoryCreateLevels,
-} from '@/lib/category-create-levels';
+import { findCreateBlocker, planCategoryCreateLevels } from '@/lib/category-create-levels';
 import { useState, useEffect, useRef } from 'react';
 
 interface AttributeModalProps {
@@ -126,22 +122,11 @@ export function AttributeModal({
       return;
     }
 
-    // Check for duplicates with Unicode normalization (NFC)
-    const normalizedInput = trimmed.normalize('NFC');
-    const isDuplicate = availableAttributes.some(
-      attr => attr.normalize('NFC').toLowerCase() === normalizedInput.toLowerCase()
-    );
-
-    if (isDuplicate) {
-      setCreateError('このカテゴリは既に存在します');
-      return;
-    }
-
-    // 大文字小文字や正規化だけが違う名前は、並ぶと見分けが付かない。完全一致では
-    // ないのでサーバーは作れてしまうため、ここで止める
-    const lookAlike = findLookAlikeLevel(createLevels);
-    if (lookAlike) {
-      setCreateError(lookAlikeMessage(lookAlike));
+    // 既にある名前と、表記だけが違って見分けの付かない名前を止める。サーバーも
+    // 同じ規則で拒否するので、ここは送る前に気付かせるためのもの
+    const blocker = findCreateBlocker(createLevels);
+    if (blocker) {
+      setCreateError(blocker);
       return;
     }
 

@@ -4,11 +4,7 @@ import { IconPlusCircle, IconRedo, IconTags } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
 import type { CategoryRowChange } from '@/lib/admin-catalog';
 import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
-import {
-  findLookAlikeLevel,
-  lookAlikeMessage,
-  planCategoryCreateLevels,
-} from '@/lib/category-create-levels';
+import { findCreateBlocker, planCategoryCreateLevels } from '@/lib/category-create-levels';
 import { isProtectedCategoryPath } from '@/lib/category-operations';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -310,11 +306,11 @@ export function CategoriesTab({
       return;
     }
     if (editor.kind === 'create') {
-      // 大文字小文字や正規化だけが違う名前は、並ぶと見分けが付かない。完全一致では
-      // ないのでサーバーは作れてしまうため、ここで止める
-      const lookAlike = findLookAlikeLevel(createPlan.levels);
-      if (lookAlike) {
-        setFormError(lookAlikeMessage(lookAlike));
+      // 既にある名前と、表記だけが違って見分けの付かない名前を止める。サーバーも
+      // 同じ規則で拒否するので、ここは送る前に気付かせるためのもの
+      const blocker = findCreateBlocker(createPlan.levels);
+      if (blocker) {
+        setFormError(blocker);
         return;
       }
       const ancestors = newAncestors.map((level) => ({

@@ -230,6 +230,40 @@ test('create: composes EN/KO from the parent, freezes a colour for a new top-lev
   assert.throws(() => createCategory(base, { path: '動物/__proto__', en: 'x', ko: 'x' }), /__proto__/);
 });
 
+test('表記だけが違うカテゴリは、作成でも改名でも増やせない', () => {
+  // 一覧に並ぶと見分けが付かず、どちらに付けたのか誰にも分からなくなる。
+  // 完全一致ではないので、これまでの「既に存在します」では止まらない
+  const base: CategoryDataset = {
+    ...dataset(),
+    translations: { ...dataset().translations, 'Gear': { en: 'Gear', ko: '기어' } },
+  };
+
+  assert.throws(
+    () => createCategory(base, { path: 'gear', en: 'Gear', ko: '기어' }),
+    /「gear」は既存の「Gear」と大文字小文字や表記だけが違います/,
+  );
+  assert.throws(
+    () => createCategory(base, {
+      path: 'GEAR/x',
+      en: 'X',
+      ko: 'X',
+      ancestors: [{ path: 'GEAR', en: 'Gear', ko: '기어' }],
+    }),
+    /「GEAR」は既存の「Gear」と/,
+    '作る親階層も同じ規則で見る',
+  );
+  assert.throws(
+    () => renameCategory(base, { from: '乗り物', to: 'GEAR', en: 'Gear', ko: '기어' }),
+    /「GEAR」は既存の「Gear」と/,
+    '改名でも同じ状態には持っていけない',
+  );
+
+  // 表記そのものを直す改名は、自分自身と衝突させない
+  const fixCase = renameCategory(base, { from: 'Gear', to: 'gear', en: 'Gear', ko: '기어' });
+  assert.deepEqual(fixCase.dataset.translations['gear'], { en: 'Gear', ko: '기어' });
+  assert.equal(Object.hasOwn(fixCase.dataset.translations, 'Gear'), false);
+});
+
 test('create: builds a whole new branch when no level exists yet', () => {
   // Akyo 側の画面は未登録カテゴリを書けないので、ここで枝ごと作れないと
   // 「新しい親/新しい子」を足す手段がどこにも無くなる

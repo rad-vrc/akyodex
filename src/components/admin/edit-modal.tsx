@@ -21,6 +21,7 @@ import {
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
 import { EDIT_FIELD_NAMES, type AkyoEditFields } from '@/lib/akyo-edit-fields';
+import { foldCategoryName } from '@/lib/category-operations';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useCallback, useMemo, useRef, useState } from 'react';
@@ -216,13 +217,11 @@ export function EditModal({
   );
 
   const handleCreateCategory = (categoryName: string) => {
-    const normalizedInput = categoryName.trim().normalize('NFC').toLowerCase();
+    const normalizedInput = foldCategoryName(categoryName);
     if (!normalizedInput) return;
 
     setCustomCategories((prev) => {
-      const exists = prev.some(
-        (existing) => existing.normalize('NFC').toLowerCase() === normalizedInput
-      );
+      const exists = prev.some((existing) => foldCategoryName(existing) === normalizedInput);
       if (exists) return prev;
       return [...prev, categoryName.trim()];
     });
