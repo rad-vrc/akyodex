@@ -161,6 +161,17 @@ test('category-only avatar/world/BOOTH edits preserve every other CSV column in 
   }
 });
 
+// 一括側も同じ形に揃える。画面が親を足し忘れた行を通すと、カードでは正しく見えるのに
+// 絞り込み（完全一致）から消えるという、気付けない壊れ方をする
+test('a child submitted without its parent is written with the ancestors filled in', async () => {
+  const f = fixture(new Set(['動物/うま']));
+  f.updates[0].changes.category = '動物/うま';
+  const response = await processAkyoBatchUpdate([f.updates[0]], f.dependencies);
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  assert.equal(data[0].category, '動物,動物/うま');
+});
+
 test('a category no row carries and the registry does not know is refused before committing', async () => {
   const f = fixture();
   const carried = f.updates[0].original.category;

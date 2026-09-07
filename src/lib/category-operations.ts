@@ -121,6 +121,54 @@ export function withAncestors(tokens: string[]): string[] {
   return result;
 }
 
+/**
+ * Complete the ancestors of every token in a CSV `Category` cell.
+ *
+ * Rows carry every ancestor of a token (see the module header), but nothing on the write
+ * path enforced it, so the rule held only as long as every screen remembered to tick the
+ * parent by hand. A row that carries `色/紫色系` without `色` still reads as 「色 > 紫色系」
+ * on a card — `groupCategoriesByParent` cuts the parent out of the token itself — while the
+ * catalogue filter compares tokens exactly, so that Akyo quietly drops out of 「色」.
+ * Returns the cell untouched when nothing is missing.
+ */
+export function ensureCategoryAncestors(value: string): string {
+  const tokens = splitCategoryCell(value);
+  const complete = withAncestors(tokens);
+  // 「足りていない」の判定に長さを使うと、同じトークンが 2 回書かれたセルで、落とした
+  // 重複と補った祖先の数が打ち消し合い、祖先を足さないまま素通りする
+  const carried = new Set(tokens);
+  return complete.every((token) => carried.has(token)) ? value : complete.join(',');
+}
+
+/**
+ * Add `path` to a selection together with the ancestors it still lacks.
+ *
+ * Rows carry every ancestor of a token (see the module header), so picking `色/紫色系`
+ * alone would stage a row that breaks that shape. Only the ancestors of `path` are
+ * filled in: tokens the user did not touch keep their place and their order.
+ */
+export function selectCategoryPath(selected: string[], path: string): string[] {
+  const parts = path.split('/');
+  const next = [...selected];
+  for (let depth = 1; depth <= parts.length; depth += 1) {
+    const ancestor = parts.slice(0, depth).join('/');
+    if (!next.includes(ancestor)) next.push(ancestor);
+  }
+  return next;
+}
+
+/**
+ * Toggle one path in a selection, keeping the hierarchy consistent both ways:
+ * selecting a child pulls in its ancestors, clearing a parent clears its descendants.
+ * Mirrors what `toggleCategories` does for the bulk assignment panel.
+ */
+export function toggleCategoryPath(selected: string[], path: string): string[] {
+  if (selected.includes(path)) {
+    return selected.filter((token) => !isSelfOrDescendant(token, path));
+  }
+  return selectCategoryPath(selected, path);
+}
+
 function sameTokens(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((token, index) => token === b[index]);
 }

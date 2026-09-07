@@ -3,6 +3,7 @@
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
 import { isComposingKeyboardEvent, useModalDialog } from '@/hooks/use-modal-dialog';
 import { findCreateBlocker, planCategoryCreateLevels } from '@/lib/category-create-levels';
+import { selectCategoryPath, toggleCategoryPath } from '@/lib/category-operations';
 import { useState, useEffect, useRef } from 'react';
 
 interface AttributeModalProps {
@@ -76,14 +77,10 @@ export function AttributeModal({
     attr.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // 子を選べば親も付き、親を外せば配下も外れる。1 段ずつ押させると親を付け忘れた行が
+  // 作れてしまい、Akyo の行が「持つトークンの祖先を全部並べる」形から外れる
   const handleToggleAttribute = (attr: string) => {
-    setSelectedAttributes((prev) => {
-      if (prev.includes(attr)) {
-        return prev.filter((a) => a !== attr);
-      } else {
-        return [...prev, attr];
-      }
-    });
+    setSelectedAttributes((prev) => toggleCategoryPath(prev, attr));
   };
 
   const resetCreateForm = () => {
@@ -177,8 +174,9 @@ export function AttributeModal({
     }
 
     setAvailableAttributes((prev) => [...new Set([...prev, ...created])].sort());
-    // 選択に足すのは作った末尾の階層だけ。親は一覧に出るだけでよい
-    setSelectedAttributes((prev) => [...prev, submittedPath]);
+    // 作った末尾と、その親の階層まで選ぶ。親が既にあって作られなかった場合も同じで、
+    // ここで足さないと作った直後だけ親の抜けた選択になる
+    setSelectedAttributes((prev) => selectCategoryPath(prev, submittedPath));
     for (const path of created) onCreateAttribute?.(path);
     onCategoriesChanged?.();
     resetCreateForm();
@@ -397,6 +395,9 @@ export function AttributeModal({
             )}
 
             {/* Attribute List */}
+            <p className="text-xs text-gray-500">
+              子の階層を選ぶと、上の階層も一緒に選ばれます。上の階層を外すと、その下も外れます。
+            </p>
             <div className="border border-gray-200 rounded-2xl">
               <div className="max-h-[28.5rem] overflow-y-auto pr-1">
                 <div className={gridColumnClass}>

@@ -11,6 +11,7 @@ import {
   type AkyoCsvCommit,
   type AkyoCsvSnapshot,
 } from './akyo-csv-snapshot';
+import { ensureCategoryAncestors } from './category-operations';
 import { parseCsvToAkyoData } from './csv-utils';
 import { GitHubConflictError } from './github-utils';
 
@@ -60,7 +61,11 @@ export async function processAkyoBatchUpdate(
     }
     // The rule lives in the shared snapshot module, so the single-entry CRUD path applies it
     // too rather than each screen running its own pre-flight.
-    const unknown = findUnregisteredCategories(snapshot, updates.map(({ form }) => form.category));
+    // prepareAkyoUpdate が書くのは祖先を補ったカテゴリなので、検査も同じものを見る
+    const unknown = findUnregisteredCategories(
+      snapshot,
+      updates.map(({ form }) => ensureCategoryAncestors(form.category)),
+    );
     if (unknown.length > 0) {
       return jsonError(`${unregisteredCategoryMessage(unknown)}保留内容は維持されています。`, 400);
     }
