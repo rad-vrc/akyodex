@@ -285,3 +285,42 @@ test.describe("絞り込み入力のクリアボタン", () => {
     });
   }
 });
+
+test.describe("検索プレースホルダの幅による出し分け", () => {
+  // placeholder は属性なので CSS では切り替えられない。幅で出し分けている。
+  const FULL = /アバター・ワールド・作者・カテゴリ名で検索|Search by avatar, world, author|아바타・월드・작자/;
+  const COMPACT = /アバター・ワールド名で検索|Search avatars and worlds|아바타・월드 이름으로/;
+
+  test("狭い画面では短い方を出す", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/zukan");
+
+    // サーバーは広い方を返すので、狭い方への切り替わりはハイドレーション後
+    const input = page.locator("input.search-input");
+    await expect(input).toHaveAttribute("placeholder", COMPACT);
+  });
+
+  test("sm 以上では長い方を出し、入力欄に収まる", async ({ page }) => {
+    await page.setViewportSize({ width: 640, height: 900 });
+    await page.goto("/zukan");
+
+    const input = page.locator("input.search-input");
+    await expect(input).toHaveAttribute("placeholder", FULL);
+
+    // 640px で切れ始めると、この出し分け自体が意味を失う
+    const fits = await input.evaluate((el: HTMLInputElement) => {
+      const styles = window.getComputedStyle(el);
+      const canvas = document.createElement("canvas").getContext("2d");
+      if (!canvas) return true;
+      canvas.font = `${styles.fontSize} ${styles.fontFamily}`;
+      const available =
+        el.getBoundingClientRect().width -
+        parseFloat(styles.paddingLeft) -
+        parseFloat(styles.paddingRight) -
+        parseFloat(styles.borderLeftWidth) -
+        parseFloat(styles.borderRightWidth);
+      return canvas.measureText(el.placeholder).width <= available;
+    });
+    expect(fits).toBe(true);
+  });
+});

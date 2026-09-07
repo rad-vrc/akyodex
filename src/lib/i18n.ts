@@ -279,9 +279,16 @@ export const UI_TEXTS = {
     ko: "즐겨찾기 수를 불러오는 중",
   },
   "search.placeholder": {
-    ja: "ニックネーム・ワールド名・作者名で検索...",
-    en: "Search by nickname, world name, author...",
-    ko: "별명・월드 이름・작자명으로 검색...",
+    ja: "アバター・ワールド・作者・カテゴリ名で検索...",
+    en: "Search by avatar, world, author, category...",
+    ko: "아바타・월드・작자・카테고리명으로 검색...",
+  },
+  // 狭い画面用。上の文言は 390px 幅の入力欄（表示可能 234px）に対して
+  // 395px 必要で入りきらないため、項目を削った短い版に切り替える。
+  "search.placeholderCompact": {
+    ja: "アバター・ワールド名で検索...",
+    en: "Search avatars and worlds...",
+    ko: "아바타・월드 이름으로 검색...",
   },
   "search.ariaLabel": {
     ja: "Akyo検索",

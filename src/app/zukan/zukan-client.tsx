@@ -59,6 +59,7 @@ import {
   resolveFilterPanelOpenState,
 } from "./filter-panel-state";
 import { useAkyoData } from "@/hooks/use-akyo-data";
+import { useCompactViewport } from "@/hooks/use-compact-viewport";
 import { useLanguage } from "@/hooks/use-language";
 import { t, type SupportedLanguage } from "@/lib/i18n";
 import type { AkyoData, AkyoEntryType, ViewMode } from "@/types/akyo";
@@ -280,6 +281,8 @@ export function ZukanClient({
   const [isCurrentDatasetComplete, setIsCurrentDatasetComplete] = useState(
     initialDataComplete,
   );
+  // 検索プレースホルダは属性なので CSS では出し分けられない。幅で切り替える。
+  const isCompactViewport = useCompactViewport();
   const [droppedCatalogEntryCount, setDroppedCatalogEntryCount] = useState(0);
   const [retryNonce, setRetryNonce] = useState(0);
 
@@ -1008,7 +1011,10 @@ export function ZukanClient({
           <SearchBar
             onSearch={setSearchQuery}
             value={searchQuery}
-            placeholder={t("search.placeholder", lang)}
+            placeholder={t(
+              isCompactViewport ? "search.placeholderCompact" : "search.placeholder",
+              lang,
+            )}
             ariaLabel={t("search.ariaLabel", lang)}
             clearAriaLabel={t("search.clearAriaLabel", lang)}
             disabled={catalogControlsDisabled}
