@@ -8,9 +8,11 @@ import {
   deleteCategory,
   mergeCategory,
   renameCategory,
+  selectCategoryPath,
   serializeCategoryColors,
   serializeCategoryTranslations,
   summarizeCategories,
+  toggleCategoryPath,
   translateCategory,
   validateCategoryPath,
   withAncestors,
@@ -54,6 +56,22 @@ function categoriesOf(records: string[][], id: string): string {
 
 test('withAncestors: inserts missing ancestors before the token and drops duplicates', () => {
   assert.deepEqual(withAncestors(['乗り物/うま/ポニー', '乗り物', '動物']), ['乗り物', '乗り物/うま', '乗り物/うま/ポニー', '動物']);
+});
+
+test('selectCategoryPath: fills in the ancestors of the picked path only', () => {
+  assert.deepEqual(selectCategoryPath([], '色/紫色系/薄紫'), ['色', '色/紫色系', '色/紫色系/薄紫']);
+  // 既に選んである祖先は動かさず、足りない分だけ後ろに足す
+  assert.deepEqual(selectCategoryPath(['動物', '色'], '色/紫色系'), ['動物', '色', '色/紫色系']);
+  // 押していないトークンの欠けた祖先までは補わない（並びが勝手に変わる）
+  assert.deepEqual(selectCategoryPath(['動物/うま'], '色'), ['動物/うま', '色']);
+});
+
+test('toggleCategoryPath: clearing a path clears its descendants, clearing a child does not', () => {
+  const selected = ['動物', '色', '色/紫色系', '色/紫色系/薄紫'];
+  assert.deepEqual(toggleCategoryPath(selected, '色'), ['動物']);
+  assert.deepEqual(toggleCategoryPath(selected, '色/紫色系'), ['動物', '色']);
+  // 名前の前半が同じだけの別カテゴリは巻き込まない
+  assert.deepEqual(toggleCategoryPath(['色', '色系'], '色'), ['色系']);
 });
 
 test('validateCategoryPath: rejects separators, blank levels and formula prefixes', () => {

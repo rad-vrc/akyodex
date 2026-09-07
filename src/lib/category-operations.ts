@@ -121,6 +121,35 @@ export function withAncestors(tokens: string[]): string[] {
   return result;
 }
 
+/**
+ * Add `path` to a selection together with the ancestors it still lacks.
+ *
+ * Rows carry every ancestor of a token (see the module header), so picking `色/紫色系`
+ * alone would stage a row that breaks that shape. Only the ancestors of `path` are
+ * filled in: tokens the user did not touch keep their place and their order.
+ */
+export function selectCategoryPath(selected: string[], path: string): string[] {
+  const parts = path.split('/');
+  const next = [...selected];
+  for (let depth = 1; depth <= parts.length; depth += 1) {
+    const ancestor = parts.slice(0, depth).join('/');
+    if (!next.includes(ancestor)) next.push(ancestor);
+  }
+  return next;
+}
+
+/**
+ * Toggle one path in a selection, keeping the hierarchy consistent both ways:
+ * selecting a child pulls in its ancestors, clearing a parent clears its descendants.
+ * Mirrors what `toggleCategories` does for the bulk assignment panel.
+ */
+export function toggleCategoryPath(selected: string[], path: string): string[] {
+  if (selected.includes(path)) {
+    return selected.filter((token) => !isSelfOrDescendant(token, path));
+  }
+  return selectCategoryPath(selected, path);
+}
+
 function sameTokens(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((token, index) => token === b[index]);
 }
