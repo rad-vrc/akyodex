@@ -291,19 +291,26 @@ export function foldCategoryName(value: string): string {
   return value.trim().normalize('NFC').toLowerCase();
 }
 
-/**
- * `path` と大文字小文字・正規化だけが違う既存カテゴリ。`ignore` は自分自身のように
- * 判定から外すもの（改名で表記だけを直す場合、自分と衝突してはいけない）。
- */
-function lookAlikeCategories(
-  dataset: CategoryDataset,
-  path: string,
-  ignore: (existing: string) => boolean = () => false,
-): string[] {
-  const folded = foldCategoryName(path);
-  return listCategoryPaths(dataset).filter(
-    (existing) => existing !== path && !ignore(existing) && foldCategoryName(existing) === folded,
-  );
+/** 畳み込んだ名前 → その形を持つ既存カテゴリ。1 操作につき 1 回だけ作る */
+function foldedCategoryIndex(dataset: CategoryDataset): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  for (const existing of listCategoryPaths(dataset)) {
+    const key = foldCategoryName(existing);
+    const bucket = index.get(key);
+    if (bucket) bucket.push(existing);
+    else index.set(key, [existing]);
+  }
+  return index;
+}
+
+/** 「その名前は使えない」と伝える文言。画面とサーバーで同じ言い方にするため 1 か所に置く */
+export function lookAlikeCategoryMessage(
+  conflicts: { path: string; similarTo: readonly string[] }[],
+): string {
+  const described = conflicts
+    .map((conflict) => `「${conflict.path}」は既存の「${conflict.similarTo.join('」「')}」`)
+    .join('、');
+  return `${described}と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください。まとめる場合は「統合」を使ってください`;
 }
 
 /**
@@ -312,18 +319,26 @@ function lookAlikeCategories(
  * 完全一致では無いのでこれまでの検査は通ってしまうが、一覧に並ぶと見分けが付かず、
  * どちらに付けたのか誰も分からなくなる。画面側にも同じ判定はあるが、規則そのものは
  * 他のカテゴリ規則と同じくここで守る（API を直接叩いても通らないように）。
+ *
+ * `paths` はその操作が新しく登場させるパス全部。改名は宛先だけでなく、書き換わる
+ * 子孫の新しいパスも見ないと、子の側で並んでしまう。`ignore` は判定から外す既存
+ * （改名で表記だけを直す場合、自分自身と衝突してはいけない）。
  */
 function requireNoLookAlike(
   dataset: CategoryDataset,
-  path: string,
-  ignore?: (existing: string) => boolean,
+  paths: string[],
+  ignore: (existing: string) => boolean = () => false,
 ): void {
-  const similar = lookAlikeCategories(dataset, path, ignore);
-  if (similar.length > 0) {
-    throw new CategoryOperationError(
-      `「${path}」は既存の「${similar.join('」「')}」と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください`,
-      409,
+  const index = foldedCategoryIndex(dataset);
+  const conflicts: { path: string; similarTo: string[] }[] = [];
+  for (const path of paths) {
+    const similarTo = (index.get(foldCategoryName(path)) ?? []).filter(
+      (existing) => existing !== path && !ignore(existing),
     );
+    if (similarTo.length > 0) conflicts.push({ path, similarTo });
+  }
+  if (conflicts.length > 0) {
+    throw new CategoryOperationError(lookAlikeCategoryMessage(conflicts), 409);
   }
 }
 
@@ -462,13 +477,13 @@ export function createCategory(
     throw new CategoryOperationError(`カテゴリ「${path}」は既に存在します`, 409);
   }
   requireEditable(path);
-  requireNoLookAlike(input, path);
   const missing = missingAncestors(input, path);
   const supplied = parseAncestorTranslations(request.ancestors, missing, ancestorsOf(path));
+  // 作るパスをまとめて 1 回で見る。階層ごとに全件を舐め直さない
+  requireNoLookAlike(input, [...missing, path]);
   const dataset = cloneDataset(input);
   for (const ancestor of missing) {
     requireEditable(ancestor);
-    requireNoLookAlike(input, ancestor);
     dataset.translations[ancestor] = composeTranslation(dataset, ancestor, supplied.get(ancestor)!);
     if (parentOf(ancestor) === null) dataset.colors[ancestor] = resolveColor(dataset, ancestor);
   }
@@ -579,8 +594,12 @@ export function renameCategory(
   if (categoryExists(input, to)) {
     throw new CategoryOperationError(`カテゴリ「${to}」は既に存在します。まとめる場合は「統合」を使ってください`, 409);
   }
+  // 宛先だけでなく、書き換わる子孫の新しいパスも見る。子の側で並ばれても同じこと。
   // 表記だけを直す改名（Cat → cat）では自分自身と衝突するので、自分と配下は外す
-  requireNoLookAlike(input, to, (existing) => isSelfOrDescendant(existing, from));
+  const introduced = listCategoryPaths(input)
+    .filter((existing) => isSelfOrDescendant(existing, from))
+    .map((existing) => replacePathPrefix(existing, from, to));
+  requireNoLookAlike(input, [to, ...introduced], (existing) => isSelfOrDescendant(existing, from));
   requireParent(input, to);
   const dataset = cloneDataset(input);
   const target = composeTranslation(dataset, to, leaf);

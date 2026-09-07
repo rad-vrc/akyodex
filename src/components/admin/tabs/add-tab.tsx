@@ -10,7 +10,7 @@ import {
   extractVRChatWorldIdFromUrl,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
-import { foldCategoryName } from '@/lib/category-operations';
+import { addCategoryOption } from '@/lib/category-create-levels';
 import { assertWorldRegistrationAssets } from '@/lib/world-registration';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { AttributeModal } from '../attribute-modal';
@@ -629,14 +629,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators, on
   };
 
   const handleCreateCategory = (categoryName: string) => {
-    const normalizedInput = foldCategoryName(categoryName);
-    if (!normalizedInput) return;
-
-    setCustomCategories((prev) => {
-      const exists = prev.some((existing) => foldCategoryName(existing) === normalizedInput);
-      if (exists) return prev;
-      return [...prev, categoryName.trim()];
-    });
+    setCustomCategories((prev) => addCategoryOption(prev, categoryName));
   };
 
   // Nickname duplicate check function

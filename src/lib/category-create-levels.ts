@@ -7,7 +7,7 @@
  * 利用者に推測させずに済む。
  */
 
-import { foldCategoryName } from './category-operations';
+import { foldCategoryName, lookAlikeCategoryMessage } from './category-operations';
 
 export interface CategoryCreateLevel {
   /** 完全なパス（例: `色/赤色系`） */
@@ -60,7 +60,8 @@ export function planCategoryCreateLevels(
       path: levelPath,
       segment,
       exists: false,
-      similarTo: folded.get(foldCategoryName(levelPath)) ?? [],
+      // 索引の配列をそのまま渡すと、呼び出し側の並べ替えで索引が壊れる
+      similarTo: [...(folded.get(foldCategoryName(levelPath)) ?? [])],
     };
   });
 }
@@ -76,11 +77,20 @@ export function findCreateBlocker(levels: CategoryCreateLevel[]): string | undef
   const leaf = levels.at(-1);
   if (leaf?.exists) return 'このカテゴリは既に存在します';
 
+  // 1 件ずつ返すと、直しては送り直しを繰り返させることになる
   const lookAlikes = levels.filter((level) => !level.exists && level.similarTo.length > 0);
   if (lookAlikes.length === 0) return undefined;
-  // 1 件ずつ返すと、直しては送り直しを繰り返させることになる
-  const described = lookAlikes
-    .map((level) => `「${level.path}」は既存の「${level.similarTo.join('」「')}」`)
-    .join('、');
-  return `${described}と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください`;
+  // 文言はサーバーと同じものを使う。片方だけ直して食い違わないように
+  return lookAlikeCategoryMessage(lookAlikes);
+}
+
+/**
+ * 画面がその場で作ったカテゴリを候補一覧に足す。表記ゆれで二重に並べない。
+ * 編集モーダルと新規登録タブが同じ扱いをするので、規則はここに 1 つだけ置く
+ */
+export function addCategoryOption(options: string[], name: string): string[] {
+  const folded = foldCategoryName(name);
+  if (!folded) return options;
+  if (options.some((existing) => foldCategoryName(existing) === folded)) return options;
+  return [...options, name.trim()];
 }

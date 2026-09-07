@@ -21,7 +21,7 @@ import {
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
 import { EDIT_FIELD_NAMES, type AkyoEditFields } from '@/lib/akyo-edit-fields';
-import { foldCategoryName } from '@/lib/category-operations';
+import { addCategoryOption } from '@/lib/category-create-levels';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useCallback, useMemo, useRef, useState } from 'react';
@@ -217,14 +217,7 @@ export function EditModal({
   );
 
   const handleCreateCategory = (categoryName: string) => {
-    const normalizedInput = foldCategoryName(categoryName);
-    if (!normalizedInput) return;
-
-    setCustomCategories((prev) => {
-      const exists = prev.some((existing) => foldCategoryName(existing) === normalizedInput);
-      if (exists) return prev;
-      return [...prev, categoryName.trim()];
-    });
+    setCustomCategories((prev) => addCategoryOption(prev, categoryName));
   };
 
   // 未保存の変更があるときは閉じる前に確認する（Escape / 背景クリック / ×ボタン / キャンセル共通）

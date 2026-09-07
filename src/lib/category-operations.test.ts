@@ -264,6 +264,36 @@ test('表記だけが違うカテゴリは、作成でも改名でも増やせ�
   assert.equal(Object.hasOwn(fixCase.dataset.translations, 'Gear'), false);
 });
 
+test('改名は宛先だけでなく、書き換わる子孫の新しいパスも見る', () => {
+  // 宛先が空いていても、子の側で並んでしまえば同じこと
+  const base: CategoryDataset = {
+    ...dataset(),
+    translations: {
+      ...dataset().translations,
+      'Gear': { en: 'Gear', ko: '기어' },
+      'Gear/bolt': { en: 'Gear/Bolt', ko: '기어/볼트' },
+      'Zed/BOLT': { en: 'Zed/Bolt', ko: '제드/볼트' },
+    },
+  };
+
+  assert.throws(
+    () => renameCategory(base, { from: 'Gear', to: 'Zed', en: 'Zed', ko: '제드' }),
+    /「Zed\/bolt」は既存の「Zed\/BOLT」と/,
+  );
+});
+
+test('表記ゆれを止めるときは、まとめる手段も伝える', () => {
+  // 「別の名前に」だけでは、既にあるペアを片付けたい人の行き場が無い
+  const base: CategoryDataset = {
+    ...dataset(),
+    translations: { ...dataset().translations, 'Gear': { en: 'Gear', ko: '기어' } },
+  };
+  assert.throws(
+    () => createCategory(base, { path: 'gear', en: 'Gear', ko: '기어' }),
+    /「統合」を使ってください/,
+  );
+});
+
 test('create: builds a whole new branch when no level exists yet', () => {
   // Akyo 側の画面は未登録カテゴリを書けないので、ここで枝ごと作れないと
   // 「新しい親/新しい子」を足す手段がどこにも無くなる
