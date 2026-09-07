@@ -46,14 +46,14 @@ function applyCategoryAction(action: CategoryAction, dataset: CategoryDataset, b
   }
 }
 
-function successMessage(action: CategoryAction, body: Record<string, unknown>, changedRows: number): string {
-  const rows = changedRows > 0 ? `（${changedRows} 件の Akyo を更新）` : '';
+function successMessage(action: CategoryAction, body: Record<string, unknown>, change: CategoryChange): string {
+  const rows = change.changedRows > 0 ? `（${change.changedRows} 件の Akyo を更新）` : '';
   switch (action) {
     case 'create': {
-      // 親階層もまとめて作った場合は、何が増えたのかを画面に出す
-      const created = Array.isArray(body.ancestors) ? body.ancestors.length : 0;
-      const parents = created > 0 ? `（親階層 ${created} 件も作成）` : '';
-      return `カテゴリ「${String(body.path)}」を作成しました${parents}`;
+      // 何が増えたのかは、要求ではなく実際に登録されたパスから出す
+      const parents = (change.createdPaths ?? []).filter((created) => created !== body.path);
+      const suffix = parents.length > 0 ? `（親階層「${parents.join('」「')}」も作成）` : '';
+      return `カテゴリ「${String(body.path)}」を作成しました${suffix}`;
     }
     case 'translate':
       return `カテゴリ「${String(body.path)}」の対訳を更新しました`;
@@ -115,7 +115,9 @@ export async function processCategoryRequest(
     const commit = await commitCategoryChange(snapshot, change, deps);
     return Response.json({
       success: true,
-      message: successMessage(action, body, change.changedRows),
+      message: successMessage(action, body, change),
+      // 作成で増えたパス（親階層を含む）。画面が自分の一覧をその場で追従させる
+      createdPaths: change.createdPaths,
       changedRows: change.changedRows,
       // The rows this rewrote, so the admin screen can follow without refetching the catalog.
       updatedRows: listChangedCategoryRows(snapshot.dataset, change.dataset),

@@ -16,14 +16,13 @@ export interface CategoryCreateLevel {
   exists: boolean;
 }
 
-/** 重複判定は画面の既存カテゴリ一覧と同じ規則（NFC + 大文字小文字を無視）に揃える */
-function normalize(value: string): string {
-  return value.normalize('NFC').toLowerCase();
-}
-
 /**
  * `path` を上の階層から順に分解し、それぞれが既存かどうかを付ける。
  * 空の入力や空の階層があれば空配列を返す（入力途中なので何も訊かない）。
+ *
+ * 既存かどうかはサーバーの `categoryExists` と同じ完全一致で判定する。表記ゆれを
+ * 吸収して「既存」と見なすと、サーバーが対訳を要求する階層の入力欄を画面が出さず、
+ * 画面上に満たす手段が無いエラーになる。
  */
 export function planCategoryCreateLevels(
   path: string,
@@ -34,9 +33,9 @@ export function planCategoryCreateLevels(
   const segments = trimmed.split('/').map((segment) => segment.trim());
   if (segments.some((segment) => segment === '')) return [];
 
-  const known = new Set([...existing].map(normalize));
+  const known = new Set(existing);
   return segments.map((segment, index) => {
     const levelPath = segments.slice(0, index + 1).join('/');
-    return { path: levelPath, segment, exists: known.has(normalize(levelPath)) };
+    return { path: levelPath, segment, exists: known.has(levelPath) };
   });
 }

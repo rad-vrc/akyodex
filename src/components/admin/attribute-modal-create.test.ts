@@ -24,8 +24,14 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
     alert: () => {}, IS_REACT_ACT_ENVIRONMENT: true,
     fetch: async (url: string, init?: RequestInit) => {
       assert.equal(url, '/api/categories');
-      posts.push(JSON.parse(String(init?.body)));
-      return new Response(JSON.stringify({ success: true }), { status: 200 });
+      const body = JSON.parse(String(init?.body));
+      posts.push(body);
+      // The server answers with every path it registered, ancestors included.
+      const createdPaths = [
+        ...(body.ancestors ?? []).map((entry: { path: string }) => entry.path),
+        body.path,
+      ];
+      return new Response(JSON.stringify({ success: true, createdPaths }), { status: 200 });
     },
   })) expose(key, value);
   const { createRoot } = await import('react-dom/client');
@@ -95,6 +101,27 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
       en: 'Tree',
       ko: '나무',
       ancestors: [{ path: '植物', en: 'Plant', ko: '식물' }],
+    });
+
+    // 一緒に作られた「植物」を一覧に入れ忘れると、同じ親の下にもう 1 つ作るときに
+    // 存在しない親の対訳を送ってしまい、サーバーに拒否される
+    await act(async () => button('新しいカテゴリを作成').click());
+    await type('attributeNewInput', '植物/草');
+    assert.equal(
+      win.document.getElementById('attributeNewEnInput-植物'),
+      null,
+      'さっき作った親はもう既存として扱う',
+    );
+    await type('attributeNewEnInput-植物/草', 'Grass');
+    await type('attributeNewKoInput-植物/草', '풀');
+    await act(async () => button('追加する').click());
+    await flush();
+    assert.deepEqual(posts[2], {
+      action: 'create',
+      path: '植物/草',
+      en: 'Grass',
+      ko: '풀',
+      ancestors: [],
     });
   } finally {
     await flush();

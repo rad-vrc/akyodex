@@ -92,9 +92,21 @@ export function AttributeModal({
   // 入力されたパスを階層に分け、まだ無い階層だけ対訳を訊く
   const createLevels = planCategoryCreateLevels(newAttributeName, availableAttributes);
   const missingLevels = createLevels.filter((level) => !level.exists);
-  const nameOf = (path: string) => levelNames[path] ?? { en: '', ko: '' };
+  // 末尾の階層は planCategoryCreateLevels が返したパスで持つ。入力文字列から別に
+  // 組み立てると、階層の前後に空白がある入力で入力欄とキーがずれる
+  const leafPath = createLevels.at(-1)?.path ?? '';
+  // カテゴリ名は利用者が決めるので `constructor` のようなプロトタイプの名前もあり得る。
+  // 素引きすると Object.prototype 側の値を拾ってしまう
+  const nameOf = (path: string) =>
+    Object.hasOwn(levelNames, path) ? levelNames[path] : { en: '', ko: '' };
   const setNameOf = (path: string, patch: Partial<{ en: string; ko: string }>) => {
-    setLevelNames((previous) => ({ ...previous, [path]: { ...nameOf(path), ...patch } }));
+    setLevelNames((previous) => ({
+      ...previous,
+      [path]: {
+        ...(Object.hasOwn(previous, path) ? previous[path] : { en: '', ko: '' }),
+        ...patch,
+      },
+    }));
   };
 
   // カテゴリは対訳（EN/KO）とセットで登録し、その場で GitHub にコミットする。
@@ -120,6 +132,7 @@ export function AttributeModal({
 
     setCreating(true);
     setCreateError('');
+    let created: string[] = [trimmed];
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
@@ -127,11 +140,11 @@ export function AttributeModal({
         body: JSON.stringify({
           action: 'create',
           path: trimmed,
-          en: nameOf(trimmed).en.trim(),
-          ko: nameOf(trimmed).ko.trim(),
+          en: nameOf(leafPath).en.trim(),
+          ko: nameOf(leafPath).ko.trim(),
           // 末尾以外で足りない階層は、まとめて作ってもらう
           ancestors: missingLevels
-            .filter((level) => level.path !== trimmed)
+            .filter((level) => level.path !== leafPath)
             .map((level) => ({
               path: level.path,
               en: nameOf(level.path).en.trim(),
@@ -139,19 +152,27 @@ export function AttributeModal({
             })),
         }),
       });
-      const result = (await response.json()) as { success?: boolean; error?: string };
+      const result = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        createdPaths?: string[];
+      };
       if (!response.ok || !result.success) {
         throw new Error(result.error || 'カテゴリを作成できませんでした');
       }
+      // 一緒に作られた親階層も一覧に入れる。入れ忘れると、同じ親の下に続けて
+      // もう 1 つ作るときに「作成対象の親階層ではありません」で拒否される
+      created = result.createdPaths?.length ? result.createdPaths : [trimmed];
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : 'カテゴリを作成できませんでした');
       setCreating(false);
       return;
     }
 
-    setAvailableAttributes((prev) => [...prev, trimmed].sort());
+    setAvailableAttributes((prev) => [...new Set([...prev, ...created])].sort());
+    // 選択に足すのは作った末尾の階層だけ。親は一覧に出るだけでよい
     setSelectedAttributes((prev) => [...prev, trimmed]);
-    onCreateAttribute?.(trimmed);
+    for (const path of created) onCreateAttribute?.(path);
     resetCreateForm();
     setCreating(false);
     setShowCreateForm(false);
@@ -326,6 +347,13 @@ export function AttributeModal({
                     </div>
                   </div>
                 ))}
+                {newAttributeName.trim() !== '' && missingLevels.length === 0 && (
+                  <p className="text-xs text-amber-800">
+                    {createLevels.length === 0
+                      ? '「/」の前後には階層の名前が必要です。例: 動物/ねこ'
+                      : 'このカテゴリは既にあります。'}
+                  </p>
+                )}
                 <p className="text-xs text-green-800">
                   上の階層の英語名・韓国語名は自動で前に付きます。既にあるカテゴリの分は入力欄が出ません。作成するとすぐに GitHub にコミットされ、英語・韓国語のデータは自動で追従します。
                 </p>

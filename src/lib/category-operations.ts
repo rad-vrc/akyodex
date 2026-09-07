@@ -34,6 +34,8 @@ export interface CategoryChange {
   changedRows: number;
   /** Commit message */
   message: string;
+  /** Paths this operation registered, outermost first. Only `create` sets it. */
+  createdPaths?: string[];
 }
 
 export interface CategorySummary {
@@ -280,7 +282,7 @@ function requireParent(dataset: CategoryDataset, path: string): void {
 }
 
 /** Ancestors of `path` that do not exist yet, outermost first. */
-export function missingAncestors(dataset: CategoryDataset, path: string): string[] {
+function missingAncestors(dataset: CategoryDataset, path: string): string[] {
   const segments = path.split('/');
   const missing: string[] = [];
   for (let depth = 1; depth < segments.length; depth += 1) {
@@ -414,11 +416,15 @@ export function createCategory(
   }
   dataset.translations[path] = composeTranslation(dataset, path, leaf);
   if (parentOf(path) === null) dataset.colors[path] = resolveColor(dataset, path);
-  const created = [...missing, path];
+  const createdPaths = [...missing, path];
   return {
     dataset,
     changedRows: 0,
-    message: created.length === 1 ? `Create category ${path}` : `Create categories ${created.join(', ')}`,
+    message:
+      createdPaths.length === 1
+        ? `Create category ${path}`
+        : `Create categories ${createdPaths.join(', ')}`,
+    createdPaths,
   };
 }
 

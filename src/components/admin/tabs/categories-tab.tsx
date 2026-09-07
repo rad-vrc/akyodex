@@ -158,10 +158,17 @@ export function CategoriesTab({
   const [form, setForm] = useState({ ja: '', en: '', ko: '', into: '' });
   // 一緒に作る上の階層の対訳。キーは完全なパスなので、名前を打ち直しても入力は残る
   const [levelNames, setLevelNames] = useState<Record<string, { en: string; ko: string }>>({});
+  // カテゴリ名は利用者が決めるので `constructor` のようなプロトタイプの名前もあり得る。
+  // 素引きすると Object.prototype 側の値を拾ってしまう
+  const levelNameOf = (path: string) =>
+    Object.hasOwn(levelNames, path) ? levelNames[path] : { en: '', ko: '' };
   const setLevelName = (path: string, patch: Partial<{ en: string; ko: string }>) => {
     setLevelNames((previous) => ({
       ...previous,
-      [path]: { ...(previous[path] ?? { en: '', ko: '' }), ...patch },
+      [path]: {
+        ...(Object.hasOwn(previous, path) ? previous[path] : { en: '', ko: '' }),
+        ...patch,
+      },
     }));
   };
   const [formError, setFormError] = useState('');
@@ -289,8 +296,8 @@ export function CategoriesTab({
         .filter((level) => !level.exists && level.path !== path)
         .map((level) => ({
           path: level.path,
-          en: (levelNames[level.path]?.en ?? '').trim(),
-          ko: (levelNames[level.path]?.ko ?? '').trim(),
+          en: (levelNameOf(level.path).en).trim(),
+          ko: (levelNameOf(level.path).ko).trim(),
         }));
       await submit(
         { action: 'create', path, en: form.en.trim(), ko: form.ko.trim(), ancestors },
@@ -454,7 +461,7 @@ export function CategoriesTab({
                 <input
                   id={`${idBase}-en-${level.path}`}
                   type="text"
-                  value={levelNames[level.path]?.en ?? ''}
+                  value={levelNameOf(level.path).en}
                   disabled={busy}
                   onChange={(event) => setLevelName(level.path, { en: event.target.value })}
                   className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
@@ -468,7 +475,7 @@ export function CategoriesTab({
                 <input
                   id={`${idBase}-ko-${level.path}`}
                   type="text"
-                  value={levelNames[level.path]?.ko ?? ''}
+                  value={levelNameOf(level.path).ko}
                   disabled={busy}
                   onChange={(event) => setLevelName(level.path, { ko: event.target.value })}
                   className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
