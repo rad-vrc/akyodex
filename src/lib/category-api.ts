@@ -34,7 +34,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function applyCategoryAction(action: CategoryAction, dataset: CategoryDataset, body: Record<string, unknown>): CategoryChange {
   switch (action) {
     case 'create':
-      return createCategory(dataset, { path: body.path, en: body.en, ko: body.ko });
+      return createCategory(dataset, { path: body.path, en: body.en, ko: body.ko, ancestors: body.ancestors });
     case 'translate':
       return translateCategory(dataset, { path: body.path, en: body.en, ko: body.ko });
     case 'rename':
@@ -46,11 +46,15 @@ function applyCategoryAction(action: CategoryAction, dataset: CategoryDataset, b
   }
 }
 
-function successMessage(action: CategoryAction, body: Record<string, unknown>, changedRows: number): string {
-  const rows = changedRows > 0 ? `（${changedRows} 件の Akyo を更新）` : '';
+function successMessage(action: CategoryAction, body: Record<string, unknown>, change: CategoryChange): string {
+  const rows = change.changedRows > 0 ? `（${change.changedRows} 件の Akyo を更新）` : '';
   switch (action) {
-    case 'create':
-      return `カテゴリ「${String(body.path)}」を作成しました`;
+    case 'create': {
+      // 何が増えたのかは、要求ではなく実際に登録されたパスから出す
+      const parents = (change.createdPaths ?? []).filter((created) => created !== body.path);
+      const suffix = parents.length > 0 ? `（親階層「${parents.join('」「')}」も作成）` : '';
+      return `カテゴリ「${String(body.path)}」を作成しました${suffix}`;
+    }
     case 'translate':
       return `カテゴリ「${String(body.path)}」の対訳を更新しました`;
     case 'rename':
@@ -111,7 +115,9 @@ export async function processCategoryRequest(
     const commit = await commitCategoryChange(snapshot, change, deps);
     return Response.json({
       success: true,
-      message: successMessage(action, body, change.changedRows),
+      message: successMessage(action, body, change),
+      // 作成で増えたパス（親階層を含む）。画面が自分の一覧をその場で追従させる
+      createdPaths: change.createdPaths,
       changedRows: change.changedRows,
       // The rows this rewrote, so the admin screen can follow without refetching the catalog.
       updatedRows: listChangedCategoryRows(snapshot.dataset, change.dataset),

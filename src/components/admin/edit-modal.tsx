@@ -21,6 +21,7 @@ import {
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
 import { EDIT_FIELD_NAMES, type AkyoEditFields } from '@/lib/akyo-edit-fields';
+import { addCategoryOption } from '@/lib/category-create-levels';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
 import { FormEvent, useCallback, useMemo, useRef, useState } from 'react';
@@ -39,6 +40,8 @@ interface EditModalProps {
   attributes: string[];
 
   onStage: (fields: AkyoEditFields) => void;
+  /** カテゴリを作ったとき。共有の一覧を取り直さないと他のタブが古いままになる */
+  onCategoriesChanged?: () => void;
 }
 
 interface EditFormData {
@@ -176,6 +179,7 @@ export function EditModal({
   categories,
   attributes,
   onStage,
+  onCategoriesChanged,
 }: EditModalProps) {
   const [formData, setFormData] = useState<EditFormData>(() => buildInitialFormData(akyo));
   const initialFormJson = useMemo(() => JSON.stringify(buildInitialFormData(akyo)), [akyo]);
@@ -213,16 +217,7 @@ export function EditModal({
   );
 
   const handleCreateCategory = (categoryName: string) => {
-    const normalizedInput = categoryName.trim().normalize('NFC').toLowerCase();
-    if (!normalizedInput) return;
-
-    setCustomCategories((prev) => {
-      const exists = prev.some(
-        (existing) => existing.normalize('NFC').toLowerCase() === normalizedInput
-      );
-      if (exists) return prev;
-      return [...prev, categoryName.trim()];
-    });
+    setCustomCategories((prev) => addCategoryOption(prev, categoryName));
   };
 
   // 未保存の変更があるときは閉じる前に確認する（Escape / 背景クリック / ×ボタン / キャンセル共通）
@@ -807,6 +802,7 @@ export function EditModal({
         onApply={(nextCategories) => handleInputChange('categories', nextCategories)}
         allAttributes={allCategories}
         onCreateAttribute={handleCreateCategory}
+        onCategoriesChanged={onCategoriesChanged}
         listColumns={4}
         modalSize="wide"
       />

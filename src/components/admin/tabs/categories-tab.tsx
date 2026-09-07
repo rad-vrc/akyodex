@@ -4,6 +4,7 @@ import { IconPlusCircle, IconRedo, IconTags } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
 import type { CategoryRowChange } from '@/lib/admin-catalog';
 import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
+import { findCreateBlocker, planCategoryCreateLevels } from '@/lib/category-create-levels';
 import { isProtectedCategoryPath } from '@/lib/category-operations';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -48,6 +49,8 @@ interface CategoryMutationResponse {
   commitUrl?: string;
   changedRows?: number;
   updatedRows?: CategoryRowChange[];
+  /** 作成で増えたパス（親階層を含む） */
+  createdPaths?: string[];
 }
 
 /**
@@ -155,11 +158,44 @@ export function CategoriesTab({
   const [query, setQuery] = useState('');
   const [editor, setEditor] = useState<Editor | null>(null);
   const [form, setForm] = useState({ ja: '', en: '', ko: '', into: '' });
+  // 一緒に作る上の階層の対訳。キーは完全なパスなので、名前を打ち直しても入力は残る
+  const [levelNames, setLevelNames] = useState<Record<string, { en: string; ko: string }>>({});
+  // カテゴリ名は利用者が決めるので `constructor` のようなプロトタイプの名前もあり得る。
+  // 素引きすると Object.prototype 側の値を拾ってしまう
+  const levelNameOf = (path: string) =>
+    Object.hasOwn(levelNames, path) ? levelNames[path] : { en: '', ko: '' };
+  const setLevelName = (path: string, patch: Partial<{ en: string; ko: string }>) => {
+    setLevelNames((previous) => ({
+      ...previous,
+      [path]: {
+        ...(Object.hasOwn(previous, path) ? previous[path] : { en: '', ko: '' }),
+        ...patch,
+      },
+    }));
+  };
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [message, setMessage] = useState('');
   const [commitUrl, setCommitUrl] = useState('');
+
+  /**
+   * 作成フォームが対象にしているパスと、その階層の内訳。描画と送信の両方がここを見るので、
+   * 出した入力欄と送る内容がずれない
+   */
+  const createPlan = useMemo(() => {
+    if (editor?.kind !== 'create') return { path: '', levels: [] };
+    const leaf = form.ja.trim();
+    const typed = editor.parent ? `${editor.parent}/${leaf}` : leaf;
+    const levels = planCategoryCreateLevels(typed, entries.map((entry) => entry.path));
+    // 階層ごとに trim した後のパスを正とする。原文のままだと、画面が見せた階層と
+    // 送るパスが食い違い、末尾が祖先の一覧からも外れなくなる。パスとして成り立たない
+    // 入力のときだけ原文を送り、サーバーに理由を言わせる
+    return { path: levels.at(-1)?.path ?? typed, levels };
+  }, [editor, form.ja, entries]);
+  const newAncestors = createPlan.levels.filter(
+    (level) => !level.exists && level.path !== createPlan.path,
+  );
 
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -222,6 +258,7 @@ export function CategoriesTab({
     } else {
       setForm({ ja: '', en: '', ko: '', into: '' });
     }
+    setLevelNames({});
     setEditor(next);
   };
 
@@ -273,9 +310,28 @@ export function CategoriesTab({
       return;
     }
     if (editor.kind === 'create') {
-      const leaf = form.ja.trim();
-      const path = editor.parent ? `${editor.parent}/${leaf}` : leaf;
-      await submit({ action: 'create', path, en: form.en.trim(), ko: form.ko.trim() }, editor.head);
+      // 既にある名前と、表記だけが違って見分けの付かない名前を止める。サーバーも
+      // 同じ規則で拒否するので、ここは送る前に気付かせるためのもの
+      const blocker = findCreateBlocker(createPlan.levels);
+      if (blocker) {
+        setFormError(blocker);
+        return;
+      }
+      const ancestors = newAncestors.map((level) => ({
+        path: level.path,
+        en: levelNameOf(level.path).en.trim(),
+        ko: levelNameOf(level.path).ko.trim(),
+      }));
+      await submit(
+        {
+          action: 'create',
+          path: createPlan.path,
+          en: form.en.trim(),
+          ko: form.ko.trim(),
+          ancestors,
+        },
+        editor.head,
+      );
       return;
     }
     if (editor.kind === 'rename') {
@@ -347,6 +403,9 @@ export function CategoriesTab({
             : `「${editor.path}」の対訳`
           : `「${editor.path}」を別のカテゴリに統合`;
     const idBase = `category-editor-${editor.kind}`;
+    // 対訳のラベルは末尾の階層の名前を出す。「この階層」ではどこを指すのか分からない
+    const labelledPath = editor.kind === 'create' ? createPlan.path : form.ja.trim();
+    const leafLabel = labelledPath.split('/').filter(Boolean).at(-1) ?? '';
     return (
       <div className="mt-2 rounded-xl border border-green-200 bg-green-50 p-4 space-y-3" role="group" aria-label={title}>
         <p className="text-sm font-semibold text-green-900">{title}</p>
@@ -377,7 +436,7 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-en`} className="block text-sm font-medium text-green-900 mb-1">
-                英語名（この階層の分だけ）
+                {leafLabel ? `英語名（「${leafLabel}」の分だけ）` : '英語名（末尾の階層の分だけ）'}
               </label>
               <input
                 id={`${idBase}-en`}
@@ -391,7 +450,7 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-ko`} className="block text-sm font-medium text-green-900 mb-1">
-                韓国語名（この階層の分だけ）
+                {leafLabel ? `韓国語名（「${leafLabel}」の分だけ）` : '韓国語名（末尾の階層の分だけ）'}
               </label>
               <input
                 id={`${idBase}-ko`}
@@ -405,6 +464,46 @@ export function CategoriesTab({
             </div>
           </div>
         )}
+        {newAncestors.map((level) => (
+          <div key={level.path} className="rounded-lg border border-green-200 bg-white/70 p-3">
+            <p className="mb-2 text-sm font-medium text-green-900">
+              「{level.segment}」の名前
+              <span className="ml-2 text-xs font-normal text-green-800">
+                新しく作る階層（{level.path}）
+              </span>
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor={`${idBase}-en-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
+                  英語名
+                </label>
+                <input
+                  id={`${idBase}-en-${level.path}`}
+                  type="text"
+                  value={levelNameOf(level.path).en}
+                  disabled={busy}
+                  onChange={(event) => setLevelName(level.path, { en: event.target.value })}
+                  className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                  placeholder="例: Cat"
+                />
+              </div>
+              <div>
+                <label htmlFor={`${idBase}-ko-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
+                  韓国語名
+                </label>
+                <input
+                  id={`${idBase}-ko-${level.path}`}
+                  type="text"
+                  value={levelNameOf(level.path).ko}
+                  disabled={busy}
+                  onChange={(event) => setLevelName(level.path, { ko: event.target.value })}
+                  className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                  placeholder="例: 고양이"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
         {editor.kind === 'merge' && (
           <div>
             <label htmlFor={`${idBase}-into`} className="block text-sm font-medium text-green-900 mb-1">

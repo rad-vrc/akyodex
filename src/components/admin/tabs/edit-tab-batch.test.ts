@@ -32,7 +32,14 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
       }
       if (url === '/api/categories') {
         // Creating a category commits it (with EN/KO) right away; that is not a batch write.
-        assert.deepEqual(JSON.parse(String(init.body)), { action: 'create', path: '技能・特性/演奏', en: 'Musical Performance', ko: '연주' });
+        // 親も子も無いので、両方の対訳を載せて 1 回で作る
+        assert.deepEqual(JSON.parse(String(init.body)), {
+          action: 'create',
+          path: '技能・特性/演奏',
+          en: 'Musical Performance',
+          ko: '연주',
+          ancestors: [{ path: '技能・特性', en: 'Skill', ko: '기능' }],
+        });
         return new Response(JSON.stringify({ success: true, message: 'created' }), { status: 200 });
       }
       assert.equal(url, '/api/update-akyo-batch', 'holding must never call the single-update API');
@@ -175,13 +182,17 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     await click('カテゴリを管理');
     await click('動物');
     await click('新しいカテゴリを作成');
-    for (const [selector, value] of [
-      ['#attributeNewInput', '技能・特性/演奏'],
-      ['#attributeNewEnInput', 'Musical Performance'],
-      ['#attributeNewKoInput', '연주'],
+    // 名前を入れると、まだ無い階層の分だけ対訳の欄が出る
+    for (const [id, value] of [
+      ['attributeNewInput', '技能・特性/演奏'],
+      ['attributeNewEnInput-技能・特性', 'Skill'],
+      ['attributeNewKoInput-技能・特性', '기능'],
+      ['attributeNewEnInput-技能・特性/演奏', 'Musical Performance'],
+      ['attributeNewKoInput-技能・特性/演奏', '연주'],
     ] as const) {
       await act(async () => {
-        const input = win.document.querySelector<HTMLInputElement>(selector)!;
+        const input = win.document.getElementById(id) as HTMLInputElement;
+        assert.ok(input, `${id} が無い`);
         Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, 'value')!.set!.call(input, value);
         input.dispatchEvent(new win.Event('input', { bubbles: true }));
       });

@@ -34,6 +34,8 @@ export interface CategoryChange {
   changedRows: number;
   /** Commit message */
   message: string;
+  /** Paths this operation registered, outermost first. Only `create` sets it. */
+  createdPaths?: string[];
 }
 
 export interface CategorySummary {
@@ -146,16 +148,25 @@ export function validateCategoryPath(value: unknown, label: string = 'カテゴ�
   return value;
 }
 
-export function validateTranslationLeaf(value: unknown, language: CategoryLanguage): string {
+/**
+ * `of` は、その名前がどの階層のものかを言うために付ける。階層をまとめて作るときは
+ * 英語名の欄が複数並ぶので、どれが空なのかを名指ししないと利用者が直せない
+ */
+export function validateTranslationLeaf(
+  value: unknown,
+  language: CategoryLanguage,
+  of?: string,
+): string {
   const labels: Record<CategoryLanguage, string> = { en: '英語名', ko: '韓国語名' };
+  const label = of ? `「${of}」の${labels[language]}` : labels[language];
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new CategoryOperationError(`${labels[language]}を入力してください`);
+    throw new CategoryOperationError(`${label}を入力してください`);
   }
   if (value !== value.trim()) {
-    throw new CategoryOperationError(`${labels[language]}の前後に空白は使えません`);
+    throw new CategoryOperationError(`${label}の前後に空白は使えません`);
   }
   if (/[,、/]/.test(value)) {
-    throw new CategoryOperationError(`${labels[language]}に「,」「、」「/」は使えません（親の名前は自動で付きます）`);
+    throw new CategoryOperationError(`${label}に「,」「、」「/」は使えません（親の名前は自動で付きます）`);
   }
   return value;
 }
@@ -272,11 +283,81 @@ function requireEditable(path: string): void {
   }
 }
 
+/**
+ * 名前が同じかどうかを見るときの畳み込み。表記ゆれを吸収する。
+ * 存在判定には使わない（そちらは完全一致）。「並べたときに見分けが付くか」の判定用
+ */
+export function foldCategoryName(value: string): string {
+  return value.trim().normalize('NFC').toLowerCase();
+}
+
+/** 畳み込んだ名前 → その形を持つ既存カテゴリ。1 操作につき 1 回だけ作る */
+function foldedCategoryIndex(dataset: CategoryDataset): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  for (const existing of listCategoryPaths(dataset)) {
+    const key = foldCategoryName(existing);
+    const bucket = index.get(key);
+    if (bucket) bucket.push(existing);
+    else index.set(key, [existing]);
+  }
+  return index;
+}
+
+/** 「その名前は使えない」と伝える文言。画面とサーバーで同じ言い方にするため 1 か所に置く */
+export function lookAlikeCategoryMessage(
+  conflicts: { path: string; similarTo: readonly string[] }[],
+): string {
+  const described = conflicts
+    .map((conflict) => `「${conflict.path}」は既存の「${conflict.similarTo.join('」「')}」`)
+    .join('、');
+  return `${described}と大文字小文字や表記だけが違います。並ぶと見分けが付かないので、別の名前にしてください。まとめる場合は「統合」を使ってください`;
+}
+
+/**
+ * 表記ゆれだけが違うカテゴリを増やさせない。
+ *
+ * 完全一致では無いのでこれまでの検査は通ってしまうが、一覧に並ぶと見分けが付かず、
+ * どちらに付けたのか誰も分からなくなる。画面側にも同じ判定はあるが、規則そのものは
+ * 他のカテゴリ規則と同じくここで守る（API を直接叩いても通らないように）。
+ *
+ * `paths` はその操作が新しく登場させるパス全部。改名は宛先だけでなく、書き換わる
+ * 子孫の新しいパスも見ないと、子の側で並んでしまう。`ignore` は判定から外す既存
+ * （改名で表記だけを直す場合、自分自身と衝突してはいけない）。
+ */
+function requireNoLookAlike(
+  dataset: CategoryDataset,
+  paths: string[],
+  ignore: (existing: string) => boolean = () => false,
+): void {
+  const index = foldedCategoryIndex(dataset);
+  const conflicts: { path: string; similarTo: string[] }[] = [];
+  for (const path of paths) {
+    const similarTo = (index.get(foldCategoryName(path)) ?? []).filter(
+      (existing) => existing !== path && !ignore(existing),
+    );
+    if (similarTo.length > 0) conflicts.push({ path, similarTo });
+  }
+  if (conflicts.length > 0) {
+    throw new CategoryOperationError(lookAlikeCategoryMessage(conflicts), 409);
+  }
+}
+
 function requireParent(dataset: CategoryDataset, path: string): void {
   const parent = parentOf(path);
   if (parent !== null && !categoryExists(dataset, parent)) {
     throw new CategoryOperationError(`親カテゴリ「${parent}」が存在しません`);
   }
+}
+
+/** Ancestors of `path` that do not exist yet, outermost first. */
+function missingAncestors(dataset: CategoryDataset, path: string): string[] {
+  const segments = path.split('/');
+  const missing: string[] = [];
+  for (let depth = 1; depth < segments.length; depth += 1) {
+    const ancestor = segments.slice(0, depth).join('/');
+    if (!categoryExists(dataset, ancestor)) missing.push(ancestor);
+  }
+  return missing;
 }
 
 /**
@@ -371,21 +452,104 @@ export function assertTranslationHierarchy(translations: CategoryTranslations): 
 // Operations
 // ---------------------------------------------------------------------------
 
+/**
+ * Create `path`, and every ancestor of it that does not exist yet.
+ *
+ * A whole new branch has to be creatable in one go: the Akyo screens cannot write an
+ * unregistered category any more (`akyo-csv-snapshot.ts`), so if this only accepted a leaf
+ * under an existing parent there would be no way to add `新しい親/新しい子` at all.
+ *
+ * Every level needs its own EN/KO, because a child's translation is its parent's plus the
+ * child's leaf (`composeTranslation`). `ancestors` supplies those for the missing levels;
+ * omitting one is an error rather than a guess, so no category is ever registered with a
+ * name nobody chose.
+ */
 export function createCategory(
   input: CategoryDataset,
-  request: { path: unknown; en: unknown; ko: unknown },
+  request: { path: unknown; en: unknown; ko: unknown; ancestors?: unknown },
 ): CategoryChange {
   const path = validateCategoryPath(request.path);
-  const leaf = { en: validateTranslationLeaf(request.en, 'en'), ko: validateTranslationLeaf(request.ko, 'ko') };
+  const leaf = {
+    en: validateTranslationLeaf(request.en, 'en', path),
+    ko: validateTranslationLeaf(request.ko, 'ko', path),
+  };
   if (categoryExists(input, path)) {
     throw new CategoryOperationError(`カテゴリ「${path}」は既に存在します`, 409);
   }
   requireEditable(path);
-  requireParent(input, path);
+  const missing = missingAncestors(input, path);
+  const supplied = parseAncestorTranslations(request.ancestors, missing, ancestorsOf(path));
+  // 作るパスをまとめて 1 回で見る。階層ごとに全件を舐め直さない
+  requireNoLookAlike(input, [...missing, path]);
   const dataset = cloneDataset(input);
+  for (const ancestor of missing) {
+    requireEditable(ancestor);
+    dataset.translations[ancestor] = composeTranslation(dataset, ancestor, supplied.get(ancestor)!);
+    if (parentOf(ancestor) === null) dataset.colors[ancestor] = resolveColor(dataset, ancestor);
+  }
   dataset.translations[path] = composeTranslation(dataset, path, leaf);
   if (parentOf(path) === null) dataset.colors[path] = resolveColor(dataset, path);
-  return { dataset, changedRows: 0, message: `Create category ${path}` };
+  const createdPaths = [...missing, path];
+  return {
+    dataset,
+    changedRows: 0,
+    message:
+      createdPaths.length === 1
+        ? `Create category ${path}`
+        : `Create categories ${createdPaths.join(', ')}`,
+    createdPaths,
+  };
+}
+
+/** Every ancestor of `path`, outermost first (excluding `path` itself). */
+function ancestorsOf(path: string): string[] {
+  const segments = path.split('/');
+  return segments.slice(0, -1).map((_, index) => segments.slice(0, index + 1).join('/'));
+}
+
+/**
+ * EN/KO for each level in `missing`, keyed by path.
+ *
+ * 既に存在する階層が混ざっていても捨てるだけで、エラーにはしない。画面はどの階層を
+ * 訊くかを自分が持つ一覧から決めるので、その一覧が少しでも古いと「サーバー側では既に
+ * ある階層」を送ってしまう。そこで拒否すると、画面上に満たす手段が無いフォームになる。
+ * 書き込むのは `missing` の階層だけなので、既存の対訳が上書きされることはない。
+ * 一方、そもそも対象パスの親ではないものは要求の作りが違うので拒否する。
+ */
+function parseAncestorTranslations(
+  value: unknown,
+  missing: string[],
+  ancestors: string[],
+): Map<string, CategoryTranslation> {
+  const entries = new Map<string, CategoryTranslation>();
+  if (value !== undefined && !Array.isArray(value)) {
+    throw new CategoryOperationError('親階層の対訳の形式が不正です');
+  }
+  for (const item of (value as unknown[] | undefined) ?? []) {
+    if (typeof item !== 'object' || item === null) {
+      throw new CategoryOperationError('親階層の対訳の形式が不正です');
+    }
+    const entry = item as Record<string, unknown>;
+    const ancestorPath = validateCategoryPath(entry.path, '親カテゴリ名');
+    if (!ancestors.includes(ancestorPath)) {
+      throw new CategoryOperationError(`「${ancestorPath}」はこのカテゴリの親階層ではありません`);
+    }
+    if (!missing.includes(ancestorPath)) continue;
+    if (entries.has(ancestorPath)) {
+      throw new CategoryOperationError(`親カテゴリ「${ancestorPath}」が重複しています`);
+    }
+    entries.set(ancestorPath, {
+      en: validateTranslationLeaf(entry.en, 'en', ancestorPath),
+      ko: validateTranslationLeaf(entry.ko, 'ko', ancestorPath),
+    });
+  }
+  const unsupplied = missing.filter((ancestor) => !entries.has(ancestor));
+  if (unsupplied.length > 0) {
+    throw new CategoryOperationError(
+      `親カテゴリ「${unsupplied.join('」「')}」がまだ存在しません。まとめて作るには、その階層の英語名・韓国語名も入力してください`,
+    );
+  }
+  return entries;
 }
 
 /** Set (or replace) the translation of an existing category without touching the CSV. */
@@ -394,7 +558,10 @@ export function translateCategory(
   request: { path: unknown; en: unknown; ko: unknown },
 ): CategoryChange {
   const path = validateCategoryPath(request.path);
-  const leaf = { en: validateTranslationLeaf(request.en, 'en'), ko: validateTranslationLeaf(request.ko, 'ko') };
+  const leaf = {
+    en: validateTranslationLeaf(request.en, 'en', path),
+    ko: validateTranslationLeaf(request.ko, 'ko', path),
+  };
   requireExisting(input, path, 'カテゴリ');
   const dataset = cloneDataset(input);
   const target = composeTranslation(dataset, path, leaf);
@@ -414,7 +581,10 @@ export function renameCategory(
   const from = validateCategoryPath(request.from, '現在のカテゴリ名');
   const to = validateCategoryPath(request.to, '新しいカテゴリ名');
   if (from === to) return translateCategory(input, { path: to, en: request.en, ko: request.ko });
-  const leaf = { en: validateTranslationLeaf(request.en, 'en'), ko: validateTranslationLeaf(request.ko, 'ko') };
+  const leaf = {
+    en: validateTranslationLeaf(request.en, 'en', to),
+    ko: validateTranslationLeaf(request.ko, 'ko', to),
+  };
   requireEditable(from);
   requireEditable(to);
   requireExisting(input, from, 'カテゴリ');
@@ -424,6 +594,13 @@ export function renameCategory(
   if (categoryExists(input, to)) {
     throw new CategoryOperationError(`カテゴリ「${to}」は既に存在します。まとめる場合は「統合」を使ってください`, 409);
   }
+  // 宛先だけでなく、書き換わる子孫の新しいパスも見る。子の側で並ばれても同じこと。
+  // `from` 自身の付け替え先が `to` なので、この一覧に宛先も含まれている。
+  // 表記だけを直す改名（Cat → cat）では自分自身と衝突するので、自分と配下は外す
+  const introduced = listCategoryPaths(input)
+    .filter((existing) => isSelfOrDescendant(existing, from))
+    .map((existing) => replacePathPrefix(existing, from, to));
+  requireNoLookAlike(input, introduced, (existing) => isSelfOrDescendant(existing, from));
   requireParent(input, to);
   const dataset = cloneDataset(input);
   const target = composeTranslation(dataset, to, leaf);

@@ -27,6 +27,8 @@ interface EditTabProps {
   blockedIds?: ReadonlySet<string>;
   /** Rows as the server saved them, with the snapshots they replaced, handed up to AdminTabs. */
   onRowsCommitted?: (rows: AkyoData[], originals: AkyoEditFields[]) => void;
+  /** カテゴリを作ったとき。共有の一覧を取り直さないと他のタブが古いままになる */
+  onCategoriesChanged?: () => void;
 }
 
 interface SavedAkyoUpdate {
@@ -56,7 +58,7 @@ function retireSyncedOverlays(
  * Edit Tab Component
  * 編集・削除タブ（完全再現）
  */
-export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, onCatalogRefresh, blockedIds, onRowsCommitted }: EditTabProps) {
+export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, onCatalogRefresh, blockedIds, onRowsCommitted, onCategoriesChanged }: EditTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
@@ -504,6 +506,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
         akyo={selectedAkyo}
         attributes={editAttributes}
         onStage={handleStage}
+        onCategoriesChanged={onCategoriesChanged}
       />
     </div>
   );
