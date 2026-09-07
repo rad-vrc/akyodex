@@ -40,6 +40,19 @@
   /* 明るい黄色 */
   --primary-blue: #66b2ff;
   /* 空色 */
+  --accent-blue: #2b7fff;
+  /* 濃い青。--primary-blue は白に対して 2.24:1 で WCAG SC 1.4.11 の 3:1 に
+     届かないため、白地に置く UI コントロールにはこちらを使う */
+  --accent-blue-hover: #1d4ed8;
+  /* --accent-blue のホバー時 */
+  --focus-ring: #1d4ed8;
+  /* フォーカスリング。--accent-blue-hover と同値だが役割が別なので分ける */
+
+  /* 検索バーのクリアボタン。入力欄の右余白とボタンの位置・寸法がずれると
+     入力テキストがボタンの下に潜るため、1 か所から導出する */
+  --search-clear-inset: 7px;
+  --search-clear-size: 44px;
+  --search-clear-slot: calc(var(--search-clear-inset) * 2 + var(--search-clear-size));
   --primary-green: #66d9a5;
   /* ミントグリーン */
   --primary-orange: #ffa06d;
@@ -144,7 +157,7 @@ button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible,
 [tabindex="0"]:focus-visible {
-  outline: 3px solid #1d4ed8;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
