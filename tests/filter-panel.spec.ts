@@ -80,3 +80,74 @@ test.describe("Search input focus styling", () => {
     expect(globalFocusStyles).toEqual(authorFocusStyles);
   });
 });
+
+test.describe("検索クリアボタンの寸法と余白", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true });
+
+  const clearButton = (page: import("@playwright/test").Page) =>
+    page.getByRole("button", { name: /検索をクリア|Clear search|검색 지우기/i });
+
+  const paddingOf = (input: ReturnType<import("@playwright/test").Page["locator"]>) =>
+    input.evaluate((el) => {
+      const styles = window.getComputedStyle(el);
+      return {
+        left: parseFloat(styles.paddingLeft),
+        right: parseFloat(styles.paddingRight),
+      };
+    });
+
+  test("空欄ではクリア用の右余白を確保しない", async ({ page }) => {
+    await page.goto("/zukan");
+    const input = page.locator("input.search-input");
+    await expect(input).toBeEnabled();
+
+    // ボタンが無いのに右を空けると、その分だけプレースホルダの表示幅が削られる
+    await expect(clearButton(page)).toHaveCount(0);
+    expect((await paddingOf(input)).right).toBeLessThan(30);
+  });
+
+  test("入力中はボタンが 24px 角以上で、テキストと重ならない", async ({ page }) => {
+    await page.goto("/zukan");
+    const input = page.locator("input.search-input");
+    await input.fill("ミント");
+
+    const button = clearButton(page);
+    await expect(button).toBeVisible();
+
+    const box = await button.boundingBox();
+    // WCAG 2.2 SC 2.5.8 Target Size (Minimum)
+    expect(box!.width).toBeGreaterThanOrEqual(24);
+    expect(box!.height).toBeGreaterThanOrEqual(24);
+
+    // 右余白がボタンの占有幅に足りていること（足りないとテキストが下に潜る）
+    const clearance = await input.evaluate((el) => {
+      const styles = window.getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      const chip = el.parentElement
+        ?.querySelector("button span")
+        ?.getBoundingClientRect();
+      if (!chip) return -1;
+      const textRight =
+        rect.right - parseFloat(styles.paddingRight) - parseFloat(styles.borderRightWidth);
+      return chip.left - textRight;
+    });
+    expect(clearance).toBeGreaterThanOrEqual(0);
+  });
+
+  test("有効時のホバーでチップの色が変わる", async ({ page }) => {
+    await page.goto("/zukan");
+    const input = page.locator("input.search-input");
+    await input.fill("ミント");
+
+    const chip = clearButton(page).locator("span").first();
+    const base = await chip.evaluate((el) => window.getComputedStyle(el).backgroundColor);
+
+    await clearButton(page).hover();
+
+    // transition-colors があるので、色が変わりきるまで待つ。
+    // disabled のときはこのクラス自体を付けないので、ここでは有効時だけを見る。
+    await expect
+      .poll(() => chip.evaluate((el) => window.getComputedStyle(el).backgroundColor))
+      .not.toBe(base);
+  });
+});

@@ -261,8 +261,9 @@ export function FilterPanel({
           {/* min-h-[2.125rem](=34px、OR/ANDトグルのp-1+py-1+text-xs+border2pxの実高): 両ヘッダー行の
               高さを揃える。無指定だと作者側の行が低くなりラベル・検索ボックスの縦位置がずれる */}
           <div className="flex flex-wrap items-center justify-between gap-2 min-h-[2.125rem]">
-            {/* 管理画面のカテゴリタブ（categories-tab.tsx）と同じ IconTags を使う。
-                以前の IconSparkles は魔法の杖の意匠で、小さく描くとペンに見えていた。 */}
+            {/* カテゴリを表すアイコンは管理画面のカテゴリタブ（categories-tab.tsx）
+                と揃える。以前は FontAwesome の wand-magic-sparkles を使っていたが、
+                斜めの杖の意匠で、小さく描くとペンに見えていた。 */}
             <div className="font-bold text-orange-600 flex items-center gap-2">
               <IconTags size="w-4 h-4" />
               {t('filter.category', lang)}

@@ -115,14 +115,21 @@ export function SearchBar({
         value={query}
         onChange={handleChange}
         placeholder={placeholder}
-        className="search-input w-full rounded-[25px] border-[3px] border-[var(--primary-blue)] bg-white px-5 py-3 pl-[60px] pr-[58px] text-[18px] focus:border-[#2b7fff] focus:ring-2 focus:ring-blue-300/50 focus:outline-none focus-visible:border-[#2b7fff] focus-visible:ring-2 focus-visible:ring-blue-300/50 focus-visible:outline-none"
+        // 右の余白はクリアボタンが出ているときだけ空ける。常時空けると、
+        // ボタンが無い空欄時にプレースホルダが縮んで切れる（390px 幅で実測 234px→196px）。
+        className={`search-input w-full rounded-[25px] border-[3px] border-[var(--primary-blue)] bg-white px-5 py-3 pl-[60px] ${query ? 'pr-[58px]' : ''} text-[18px] focus:border-[var(--accent-blue)] focus:ring-2 focus:ring-blue-300/50 focus:outline-none focus-visible:border-[var(--accent-blue)] focus-visible:ring-2 focus-visible:ring-blue-300/50 focus-visible:outline-none`}
         aria-label={ariaLabel}
         autoComplete="off"
         spellCheck="false"
         disabled={disabled}
       />
 
-      {/* クリアボタン。当たり判定は 44px 角を確保し、見た目は 28px の丸チップに収める。 */}
+      {/* クリアボタン。当たり判定は 44px 角、見た目は 28px の丸チップ。
+          入力欄の右余白 pr-[58px] は right-[7px] + w-11(44px) + 右端の余白 7px
+          から来ている。片方だけ変えるとテキストがボタンの下に潜るので、
+          tests/filter-panel.spec.ts の「クリアボタンの寸法と余白」で固定している。
+          ホバーは disabled のとき付けない。button が disabled でも子要素の
+          :hover は成立するため、span に固定で置くと無効時も反応してしまう。 */}
       {query && (
         <button
           type="button"
@@ -131,11 +138,15 @@ export function SearchBar({
           className="absolute right-[7px] top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full"
           aria-label={clearAriaLabel}
         >
-          {/* 地の色は --primary-blue(#66b2ff) ではなく入力欄のフォーカス色 #2b7fff。
+          {/* 地の色は --primary-blue(#66b2ff) ではなく --accent-blue。
               #66b2ff は白に対して 2.24:1 しかなく、白の × を載せると
               WCAG SC 1.4.11 の 3:1 に届かないため。 */}
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2b7fff] text-white transition-colors hover:bg-[#1d4ed8]">
-            <IconClose size="w-[13px] h-[13px]" />
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-blue)] text-white transition-colors ${
+              disabled ? '' : 'hover:bg-[var(--focus-ring)]'
+            }`}
+          >
+            <IconClose size="w-3.5 h-3.5" />
           </span>
         </button>
       )}
