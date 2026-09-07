@@ -495,11 +495,21 @@ select:focus {
     inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
-.detail-button:hover {
-  transform: translateY(-3px) scale(1.08) rotate(1deg) !important;
-  box-shadow: 0 10px 30px rgba(255, 107, 157, 0.5), 0 12px 35px rgba(255, 217, 61, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
-  border-color: #ffd93d !important;
+/* ホバーの見た目は、ホバーできる入力装置があるときだけ出す。
+   タッチ端末は :hover を「タップした要素に貼りつけたまま、次にどこかを触るまで
+   残す」形で模倣する。この条件がないと 1 回タップしただけでボタンが拡大＋傾き＋
+   金枠のまま固まる（Pixel 7 相当で実測: 詳細モーダルを閉じて 3.8 秒後も
+   transform が matrix(1.07984, 0.0188, -0.0188, 1.07984, 0, -3)、border-color が
+   rgb(255,217,61) のまま。別の場所を触ってはじめて戻る）。
+   タッチでの押した感は下の :active が受け持つ（touchstart で :active が付くことは
+   Pixel 7 相当で実測済み）。 */
+@media (hover: hover) {
+  .detail-button:hover {
+    transform: translateY(-3px) scale(1.08) rotate(1deg) !important;
+    box-shadow: 0 10px 30px rgba(255, 107, 157, 0.5), 0 12px 35px rgba(255, 217, 61, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+    border-color: #ffd93d !important;
+  }
 }
 
 .detail-button:active {
@@ -597,25 +607,36 @@ select:focus {
 
    寸法ではなく transform と opacity を動かす。width/height の変化は
    合成レイヤーに乗らず再ペイントを起こすため、虹色グラデーションの
-   無限アニメーションを廃止したのと同じ理由で避ける。 */
-.detail-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.5s ease-out, opacity 0.3s;
-  pointer-events: none;
-}
+   無限アニメーションを廃止したのと同じ理由で避ける。
 
-.detail-button:hover::after {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
+   ホバーできる入力装置があるときだけ出す。タッチ端末は :hover を「タップした
+   要素に貼りつけたまま、次にどこかを触るまで残す」形で模倣するので、この
+   条件がないと 1 回タップしただけで波紋が全開のまま固まる（Pixel 7 相当で
+   実測: タップ 600ms 後に scale 1.00 / opacity 1.00 に達し、4 秒後も
+   :hover が付いたまま同じ値。詳細モーダルを閉じても戻らない）。
+   300px の円がボタンをほぼ覆うので、白 35% がかかりっぱなしになる。
+   タッチでの押した感は .detail-button:active の縮みが受け持つ。
+   疑似要素ごと作らないので、モバイルでは合成レイヤーも増えない。 */
+@media (hover: hover) {
+  .detail-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.5s ease-out, opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .detail-button:hover::after {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 }
 
 /* リスト表示のスタイル */
