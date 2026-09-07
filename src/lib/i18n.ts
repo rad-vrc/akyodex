@@ -285,9 +285,11 @@ export const UI_TEXTS = {
   },
   // 狭い画面用。上の文言は 390px 幅の入力欄（表示可能 234px）に対して
   // 395px 必要で入りきらないため、項目を削った短い版に切り替える。
+  // 3言語とも 234px に収まる必要がある（実測 ja 215 / en 221 / ko 220px）。
+  // "Search avatars and authors..." は 252px で入らなかった。
   "search.placeholderCompact": {
     ja: "アバター・作者名で検索...",
-    en: "Search avatars and authors...",
+    en: "Search avatars, authors...",
     ko: "아바타・작자명으로 검색...",
   },
   "search.ariaLabel": {
