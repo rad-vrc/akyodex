@@ -3,9 +3,11 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
+import { t } from "@/lib/i18n";
 import type { AkyoData } from "@/types/akyo";
 import {
   AkyoCard,
+  JA_DETAIL_LABEL_SEGMENTS,
   getCatalogCardPrimaryImageSrc,
   getCatalogCardImageRequestWidth,
   shouldBypassImageOptimization,
@@ -129,4 +131,39 @@ test("orders author metadata before categories and the detail action", () => {
   assert.notEqual(detailPosition, -1);
   assert.ok(authorPosition < categoryPosition);
   assert.ok(categoryPosition < detailPosition);
+});
+
+// 折返し位置が星の幅に依存しないこと。文節の分割が i18n の文言とずれたら、
+// <wbr> は出ない（表示は i18n が正）ので、まず一致を検査する。
+test("the Japanese detail label is split at the phrase boundary", () => {
+  assert.equal(JA_DETAIL_LABEL_SEGMENTS.join(""), t("card.detail", "ja"));
+  assert.equal(JA_DETAIL_LABEL_SEGMENTS.length, 2);
+});
+
+test("only the Japanese detail label carries a line-break opportunity", () => {
+  const akyo: AkyoData = {
+    id: "0001",
+    entryType: "avatar",
+    appearance: "",
+    nickname: "Test Akyo",
+    avatarName: "Test Avatar",
+    sourceUrl: "https://vrchat.com/home/avatar/avtr_test",
+    category: "動物",
+    comment: "",
+    author: "Test Author",
+    attribute: "動物",
+    notes: "",
+    creator: "Test Author",
+    avatarUrl: "https://vrchat.com/home/avatar/avtr_test",
+  };
+
+  const ja = renderToStaticMarkup(createElement(AkyoCard, { akyo, lang: "ja" }));
+  assert.match(ja, /class="detail-label">くわしく<wbr\/?>見る<\/span>/);
+
+  // 英語と韓国語は語間に空白があるので <wbr> は要らない
+  for (const lang of ["en", "ko"] as const) {
+    const markup = renderToStaticMarkup(createElement(AkyoCard, { akyo, lang }));
+    assert.match(markup, new RegExp(`class="detail-label">${t("card.detail", lang)}</span>`));
+    assert.doesNotMatch(markup, /class="detail-label">[^<]*<wbr/);
+  }
 });

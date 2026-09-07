@@ -17,6 +17,7 @@ import Image from "next/image";
 import {
   memo,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   useRef,
   useState,
 } from "react";
@@ -81,6 +82,40 @@ export function getCatalogAvatarCardImageSrc(
   akyo: Pick<AkyoData, "id">,
 ): string {
   return `/api/avatar-image?id=${encodeURIComponent(akyo.id)}&w=768`;
+}
+
+/**
+ * 「くわしく見る」の文節。
+ *
+ * 折返し位置は長らく絵文字 🌟 の字送り幅（Segoe UI Emoji で 21.97px）に偶然
+ * 依存していた。星を 17px の SVG にしたときラベルへ 10px 余分が渡り、
+ * 「くわしく／見る」だった改行が「くわしく見／る」に動いた（本番実測: カード
+ * 幅 189.2px でラベルの取り分が 75.2px → 85.2px、1 文字 16px なので 5 文字目が
+ * 1 行目に上がる）。幅に依存させず、切る場所をここで決める。
+ *
+ * CSS 側の `.detail-label { word-break: keep-all }` が漢字かな間の改行機会を
+ * すべて消すので、下の <wbr> だけが改行できる場所として残る。
+ */
+export const JA_DETAIL_LABEL_SEGMENTS = ["くわしく", "見る"] as const;
+
+/**
+ * 詳細ボタンのラベル。日本語だけ文節の切れ目に改行機会を入れる。
+ * 英語と韓国語は語間に空白があるので、そのままで文節折返しになる。
+ *
+ * i18n の文言が上の分割と一致しなくなったら分割せずそのまま出す（表示は常に
+ * i18n が正）。一致していることは akyo-card.test.ts が検査する。
+ */
+export function renderDetailLabel(lang: SupportedLanguage): ReactNode {
+  const text = t("card.detail", lang);
+  if (lang !== "ja" || JA_DETAIL_LABEL_SEGMENTS.join("") !== text) return text;
+  const [head, tail] = JA_DETAIL_LABEL_SEGMENTS;
+  return (
+    <>
+      {head}
+      <wbr />
+      {tail}
+    </>
+  );
 }
 
 /**
@@ -362,7 +397,7 @@ function AkyoCardComponent({
             aria-haspopup="dialog"
           >
             <IconStar size="w-[17px] h-[17px]" className="detail-star" />
-            <span>{t("card.detail", lang)}</span>
+            <span className="detail-label">{renderDetailLabel(lang)}</span>
             <IconStar size="w-[17px] h-[17px]" className="detail-star" />
           </button>
         )}

@@ -528,6 +528,22 @@ select:focus {
   overflow: visible;
 }
 
+/* ラベルは文節でだけ折り返す。
+   日本語は語間に空白がないので、既定ではどの文字の間でも改行できてしまう。
+   実際「くわしく見る」の改行位置は絵文字 🌟 の字送り幅に偶然依存していて、
+   星を SVG（17px）にしたらラベルの取り分が 75.2px → 85.2px に増え、
+   「くわしく／見る」が「くわしく見／る」に動いた。カードが最も狭くなる
+   ビューポート 1024px（カード幅 138px）では 3 行に割れていた。
+   keep-all で漢字かな間の改行を止め、akyo-card.tsx が入れる <wbr> だけを
+   改行できる場所として残す。英語と韓国語は語間の空白がそのまま使われる
+   （keep-all は空白での改行には影響しない。韓国語では語中で切らなくなる
+   ぶん、むしろ正しい挙動になる）。
+   word-break: auto-phrase は同じ結果になるが MDN が実験的と明記しており
+   Chrome 系にしか無いので採らない。 */
+.detail-button .detail-label {
+  word-break: keep-all;
+}
+
 /* 三面図ダウンロードボタン（detail-buttonと同じグラデーション） */
 .reference-sheet-button {
   background: linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcf7f, #4facfe) !important;
