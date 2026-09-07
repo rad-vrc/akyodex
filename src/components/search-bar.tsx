@@ -92,9 +92,7 @@ export function SearchBar({
     if (timerRef.current) clearTimeout(timerRef.current);
     setQuery('');
     onSearchRef.current('');
-    requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
+    // フォーカスの戻しは SearchClearButton が inputRef 経由で行う
   };
 
   return (
@@ -131,6 +129,7 @@ export function SearchBar({
         <SearchClearButton
           onClick={handleClear}
           label={clearAriaLabel}
+          inputRef={inputRef}
           disabled={disabled}
         />
       )}

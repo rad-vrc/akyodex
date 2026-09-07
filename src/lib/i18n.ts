@@ -358,7 +358,7 @@ export const UI_TEXTS = {
   "filter.clearAuthorSearch": {
     ja: "作者名の検索をクリア",
     en: "Clear author search",
-    ko: "작가 검색 지우기",
+    ko: "작자 검색 지우기",
   },
   "filter.noneSelected": {
     ja: "カテゴリ未選択（全カテゴリ対象）",

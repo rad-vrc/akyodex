@@ -1,5 +1,7 @@
 'use client';
 
+import type { RefObject } from 'react';
+
 import { IconClose } from '@/components/icons';
 
 /**
@@ -32,15 +34,21 @@ const SIZES: Record<Size, { hit: string; chip: string; icon: string }> = {
 /**
  * 白い × を載せて WCAG SC 1.4.11 の 3:1 を満たす地色だけを持たせる。
  * orange-500(#f97316) は白に対して 2.80:1 で不足するため 600 を使う。
+ *
+ * ホバーは button 側から子の span を狙う。span の :hover に直接置くと、
+ * 当たり判定のうちチップの外側はクリックできるのに色が変わらない。
+ * :enabled を挟むのは、button 自身の disabled だけでなく、祖先の
+ * fieldset[disabled] による無効化も拾うため。React の props では
+ * 後者を知りようがない。
  */
 const TONES: Record<Tone, { base: string; hover: string }> = {
   blue: {
     base: 'bg-[var(--accent-blue)]',
-    hover: 'group-hover:bg-[var(--accent-blue-hover)]',
+    hover: '[&:enabled:hover>span]:bg-[var(--accent-blue-hover)]',
   },
   orange: {
     base: 'bg-orange-600',
-    hover: 'group-hover:bg-orange-700',
+    hover: '[&:enabled:hover>span]:bg-orange-700',
   },
 };
 
@@ -48,6 +56,12 @@ interface SearchClearButtonProps {
   onClick: () => void;
   /** アクセシブル名。呼び出し側で翻訳したものを渡す */
   label: string;
+  /**
+   * クリア後にフォーカスを戻す入力欄。押すと入力が空になり、このボタン自身が
+   * アンマウントされるため、渡さないとフォーカスが body に落ちて
+   * キーボード利用者は先頭から Tab し直しになる。
+   */
+  inputRef?: RefObject<HTMLInputElement | null>;
   disabled?: boolean;
   size?: Size;
   tone?: Tone;
@@ -56,6 +70,7 @@ interface SearchClearButtonProps {
 export function SearchClearButton({
   onClick,
   label,
+  inputRef,
   disabled = false,
   size = 'md',
   tone = 'blue',
@@ -63,22 +78,22 @@ export function SearchClearButton({
   const { hit, chip, icon } = SIZES[size];
   const { base, hover } = TONES[tone];
 
+  const handleClick = () => {
+    onClick();
+    // アンマウントされてからでは focus() が効かないので次のフレームで戻す
+    requestAnimationFrame(() => inputRef?.current?.focus());
+  };
+
   return (
-    // ホバーは button 側の group で拾う。チップの :hover に直接置くと、
-    // 当たり判定のうちチップの外側はクリックできるのに色が変わらない。
-    // disabled のときはクラス自体を付けない。button が disabled でも
-    // 子要素の :hover は成立するため、固定で置くと無効時も反応する。
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled}
-      className={`group absolute top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full ${hit}`}
+      className={`absolute top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full ${hit} ${hover}`}
       aria-label={label}
     >
       <span
-        className={`flex items-center justify-center rounded-full text-white transition-colors ${chip} ${base} ${
-          disabled ? '' : hover
-        }`}
+        className={`flex items-center justify-center rounded-full text-white transition-colors ${chip} ${base}`}
       >
         <IconClose size={icon} />
       </span>

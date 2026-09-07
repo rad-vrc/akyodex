@@ -57,6 +57,9 @@ export function FilterPanel({
   const categoryButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const authorButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const matchModeIdPrefix = useId();
+  const categorySearchRef = useRef<HTMLInputElement | null>(null);
+  const authorSearchRef = useRef<HTMLInputElement | null>(null);
+
   const matchOrId = `${matchModeIdPrefix}-match-or`;
   const matchAndId = `${matchModeIdPrefix}-match-and`;
 
@@ -330,6 +333,7 @@ export function FilterPanel({
 
           <div className="relative">
             <input
+              ref={categorySearchRef}
               type="text"
               value={categoryQuery}
               onChange={(e) => setCategoryQuery(e.target.value)}
@@ -343,6 +347,7 @@ export function FilterPanel({
               <SearchClearButton
                 onClick={() => setCategoryQuery('')}
                 label={t('filter.clearCategorySearch', lang)}
+                inputRef={categorySearchRef}
                 size="sm"
                 tone="orange"
               />
@@ -442,6 +447,7 @@ export function FilterPanel({
 
           <div className="relative">
             <input
+              ref={authorSearchRef}
               type="text"
               value={authorQuery}
               onChange={(e) => setAuthorQuery(e.target.value)}
@@ -455,6 +461,7 @@ export function FilterPanel({
               <SearchClearButton
                 onClick={() => setAuthorQuery('')}
                 label={t('filter.clearAuthorSearch', lang)}
+                inputRef={authorSearchRef}
                 size="sm"
               />
             )}
