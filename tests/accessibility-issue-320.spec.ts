@@ -163,9 +163,13 @@ test.describe("Issue #320 accessibility regressions", () => {
 
     const firstCardArticle = page.locator("article.akyo-card").first();
     const firstCard = firstCardArticle.locator("button[data-card-trigger='true']");
-    await expect(
-      firstCardArticle.locator("button.detail-button span[aria-hidden='true']").filter({ hasText: "🌟" }),
-    ).toHaveCount(2);
+    // 旧: 星が 🌟 の span であること。絵文字をやめて SVG にしたので、星が2つ
+    // あることと、支援技術から隠れていることを SVG で確認する。
+    const detailStars = firstCardArticle.locator("button.detail-button svg.detail-star");
+    await expect(detailStars).toHaveCount(2);
+    for (const star of await detailStars.all()) {
+      await expect(star).toHaveAttribute("aria-hidden", "true");
+    }
 
     await firstCard.click();
 

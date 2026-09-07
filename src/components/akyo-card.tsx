@@ -1,7 +1,7 @@
 "use client";
 
 import { CategoryBadges } from "@/components/category-badges";
-import { IconDownload, IconHeart, IconHeartOutline, IconVRChat } from "@/components/icons";
+import { IconDownload, IconHeart, IconHeartOutline, IconStar, IconVRChat } from "@/components/icons";
 import { parseAndSortCategories } from "@/lib/akyo-data-helpers";
 import {
   formatDisplayId,
@@ -361,9 +361,9 @@ function AkyoCardComponent({
             className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2"
             aria-haspopup="dialog"
           >
-            <span aria-hidden="true">🌟</span>
+            <IconStar size="w-[17px] h-[17px]" className="detail-star" />
             <span>{t("card.detail", lang)}</span>
-            <span aria-hidden="true">🌟</span>
+            <IconStar size="w-[17px] h-[17px]" className="detail-star" />
           </button>
         )}
       </div>
