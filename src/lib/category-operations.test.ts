@@ -115,7 +115,10 @@ test('rename: refuses existing targets, own descendants, protected and unknown c
   );
   assert.throws(() => renameCategory(base, { from: '動物', to: '生き物/動物', en: 'x', ko: 'x' }), /親カテゴリ「生き物」が存在しません/);
   assert.throws(() => renameCategory(base, { from: '動物', to: '生き物', en: 'Ani/mal', ko: 'x' }), /「\/」は使えません/);
-  assert.throws(() => renameCategory(base, { from: '動物', to: '生き物', en: '', ko: 'x' }), /英語名を入力/);
+  // 空欄は「消す」ではなく「変更なし」。入力し忘れで既にある訳が消えないように
+  const kept = renameCategory(base, { from: '動物', to: '生き物', en: '', ko: 'x' });
+  assert.equal(kept.dataset.translations['生き物'].en, 'Animal', '空欄では既存の英語名を残す');
+  assert.equal(kept.dataset.translations['生き物'].ko, 'x');
 });
 
 test('rename with the same path only updates the translations (children follow the prefix)', () => {
@@ -170,12 +173,31 @@ test('merge: grandchildren follow the child kept on the target side, not the sou
 });
 
 test('assertTranslationHierarchy rejects a child whose parent is missing or whose prefix differs', () => {
-  assert.throws(() => assertTranslationHierarchy({ 'A/子': { en: 'Alpha/Child', ko: '알파/자식' } }), /親「A」に対訳がありません/);
+  assert.throws(() => assertTranslationHierarchy({ 'A/子': { en: 'Alpha/Child', ko: '알파/자식' } }), /親「A」がありません/);
   assert.throws(
     () => assertTranslationHierarchy({ A: { en: 'Alpha', ko: '알파' }, 'A/子': { en: 'Beta/Child', ko: '알파/자식' } }),
     /「Alpha\/」で始まっていません/,
   );
   assert.doesNotThrow(() => assertTranslationHierarchy(dataset().translations));
+});
+
+test('merge: 未対訳の統合先でも、統合元の訳を捨てない', () => {
+  // 統合先の項目が存在するだけで丸ごと飛ばすと、訳のあるカテゴリを未対訳へ
+  // 統合したときにその訳が黙って消える
+  const base: CategoryDataset = {
+    ...dataset(),
+    records: [...dataset().records, row('0007', '生物,生物/うま')],
+    translations: {
+      ...dataset().translations,
+      '生物': { en: null, ko: null },
+      '生物/うま': { en: null, ko: null },
+    },
+  };
+
+  const change = mergeCategory(base, { from: '動物', into: '生物' });
+  assert.deepEqual(change.dataset.translations['生物/うま'], { en: '生物/Horse', ko: '生物/말' });
+  // 統合先そのものの名前は引き継がない（「動物」の訳は「生物」の訳ではない）
+  assert.deepEqual(change.dataset.translations['生物'], { en: null, ko: null });
 });
 
 test('merge: refuses parent/child pairs, identical paths, protected and untranslated targets', () => {
@@ -184,7 +206,7 @@ test('merge: refuses parent/child pairs, identical paths, protected and untransl
   assert.throws(() => mergeCategory(base, { from: '動物', into: '動物/うま' }), /親子関係/);
   assert.throws(() => mergeCategory(base, { from: '動物', into: '動物' }), /同じ/);
   assert.throws(() => mergeCategory(base, { from: '動物', into: 'ワールド' }), /自動で扱う/);
-  assert.throws(() => mergeCategory(base, { from: '動物', into: '未翻訳' }), /対訳がありません/);
+  assert.throws(() => mergeCategory(base, { from: '動物', into: '未翻訳' }), /対訳表にありません/);
 });
 
 test('delete: removes the node and descendants from rows, translations and colours', () => {
@@ -222,7 +244,9 @@ test('create: composes EN/KO from the parent, freezes a colour for a new top-lev
     () => createCategory(base, { path: '植物/木', en: 'Tree', ko: '나무' }),
     /親カテゴリ「植物」がまだ存在しません。まとめて作るには/,
   );
-  assert.throws(() => createCategory(base, { path: '未翻訳/子', en: 'Child', ko: '아이' }), /親カテゴリ「未翻訳」に対訳がありません/);
+  // 親が未対訳でも作れる。訳の無い階層は日本語のまま前に付く（段ごとのフォールバック）
+  const underUntranslated = createCategory(base, { path: '未翻訳/子', en: 'Child', ko: '아이' });
+  assert.deepEqual(underUntranslated.dataset.translations['未翻訳/子'], { en: '未翻訳/Child', ko: '未翻訳/아이' });
   // Prototype names are neither "existing" nor special once stored as own properties.
   const prototypeName = createCategory(base, { path: 'constructor', en: 'Constructor', ko: '생성자' });
   assert.equal(Object.hasOwn(prototypeName.dataset.translations, 'constructor'), true);
@@ -401,8 +425,15 @@ test('summarizeCategories: counts rows per path including descendants, merges CS
   assert.equal(byPath.get('動物')?.count, 3);
   assert.equal(byPath.get('動物/うま')?.count, 2);
   assert.equal(byPath.get('動物/うま/ポニー')?.count, 1);
-  assert.deepEqual(byPath.get('未翻訳'), { path: '未翻訳', en: null, ko: null, count: 1 });
-  assert.deepEqual(byPath.get('空箱'), { path: '空箱', en: 'Empty Box', ko: '빈 상자', count: 0 });
+  // 未対訳でも、EN/KO のデータに実際に出る名前（日本語のまま）を添える
+  assert.deepEqual(byPath.get('未翻訳'), {
+    path: '未翻訳', en: null, ko: null, enDisplay: '未翻訳', koDisplay: '未翻訳', count: 1,
+  });
+  assert.deepEqual(byPath.get('空箱'), {
+    path: '空箱', en: 'Empty Box', ko: '빈 상자', enDisplay: 'Empty Box', koDisplay: '빈 상자', count: 0,
+  });
+  // 訳された親の下の未対訳な子は、親の訳＋日本語の葉になる
+  assert.equal(byPath.get('動物/うま/ポニー')?.enDisplay, 'Animal/Horse/Pony');
 });
 
 test('serialization sorts keys and ends with a newline', () => {

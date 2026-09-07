@@ -81,7 +81,8 @@ jobs:
           set -e
           # JA CSV と data/category-translations.json を正として EN/KO CSV を作り直す。
           # 管理画面は JA CSV しか書かないので、ここで回さないと EN/KO が置き去りになる。
-          # 対訳の無いカテゴリがあると生成スクリプトは書き込む前に失敗する。その場合は
+          # 対訳は任意なので、訳の無いカテゴリがあっても生成は止まらない（その階層は
+          # 日本語のまま出て、件数が警告に出る）。それ以外の理由で失敗した場合は
           # 直前の EN/KO をそのまま残して警告だけ出し、JA の反映は止めない。
           CSV_EN="data/akyo-data-en.csv"
           CSV_KO="data/akyo-data-ko.csv"
@@ -90,7 +91,7 @@ jobs:
             echo "✅ EN/KO CSV regenerated from JA"
             git diff --stat -- "$CSV_EN" "$CSV_KO"
           else
-            echo "::warning::EN/KO regeneration failed (missing category translations?); keeping the previous EN/KO CSVs"
+            echo "::warning::EN/KO regeneration failed; keeping the previous EN/KO CSVs"
             git checkout -- "$CSV_EN" "$CSV_KO" "$JSON_KO"
           fi
 

@@ -40,8 +40,11 @@ test('GET builds the list with counts, translations and colours', async () => {
   assert.equal(status, 200);
   assert.equal(body.head, 'head-sha');
   assert.deepEqual(body.categories, [
-    { path: '動物', en: 'Animal', ko: '동물', count: 1 },
-    { path: '動物/うま', en: 'Animal/Horse', ko: '동물/말', count: 1 },
+    { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 1 },
+    {
+      path: '動物/うま', en: 'Animal/Horse', ko: '동물/말',
+      enDisplay: 'Animal/Horse', koDisplay: '동물/말', count: 1,
+    },
   ]);
   assert.deepEqual(body.colors, { '動物': '#111111' });
 });
@@ -94,24 +97,21 @@ test('POST create reports every path it registered, parents included', async () 
   assert.match(String(body.message), /「植物\/木」を作成しました（親階層「植物」も作成）/);
 });
 
-test('POST create names the level whose translation is missing', async () => {
-  const { deps: d } = deps();
+test('POST create accepts a category with no translation at all', async () => {
+  // 対訳は任意。日本語だけで登録でき、訳が入るまでは日本語のまま表示される
+  const { deps: d, commits } = deps();
   const { status, body } = await json(
-    await processCategoryRequest(
-      {
-        action: 'create',
-        path: '植物/木',
-        en: 'Tree',
-        ko: '나무',
-        ancestors: [{ path: '植物', en: '', ko: '식물' }],
-      },
-      'admin',
-      d,
-    ),
+    await processCategoryRequest({ action: 'create', path: '動物/ねこ' }, 'admin', d),
   );
 
-  assert.equal(status, 400);
-  assert.match(String(body.error), /「植物」の英語名を入力してください/);
+  assert.equal(status, 200);
+  assert.deepEqual(body.createdPaths, ['動物/ねこ']);
+  const written = JSON.parse(
+    (commits[0] as { files: { path: string; content: string }[] }).files.find(
+      (file) => file.path === CATEGORY_FILE_PATHS.translations,
+    )!.content,
+  );
+  assert.deepEqual(written['動物/ねこ'], { en: null, ko: null }, 'キーは作る（未登録扱いにしない）');
 });
 
 test('POST checks the head the list was read from before applying a change', async () => {

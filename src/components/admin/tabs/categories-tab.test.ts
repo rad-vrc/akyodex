@@ -21,12 +21,15 @@ async function setup(role: 'owner' | 'admin') {
   const confirms: string[] = [];
   let confirmAnswer = true;
   let listHead = 'h';
+  // API は enDisplay / koDisplay（実データに出る名前。未対訳なら日本語のまま）も返す
   let categories = [
-    { path: '動物', en: 'Animal', ko: '동물', count: 3 },
-    { path: '動物/うま', en: 'Animal/Horse', ko: '동물/말', count: 2 },
-    { path: '動物/Pony', en: 'Animal/Pony', ko: '동물/포니', count: 0 },
-    { path: '乗り物', en: 'Vehicle', ko: '탈것', count: 1 },
-    { path: '未翻訳', en: null, ko: null, count: 1 },
+    { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 3 },
+    { path: '動物/うま', en: 'Animal/Horse', ko: '동물/말', enDisplay: 'Animal/Horse', koDisplay: '동물/말', count: 2 },
+    { path: '動物/Pony', en: 'Animal/Pony', ko: '동물/포니', enDisplay: 'Animal/Pony', koDisplay: '동물/포니', count: 0 },
+    { path: '乗り物', en: 'Vehicle', ko: '탈것', enDisplay: 'Vehicle', koDisplay: '탈것', count: 1 },
+    // 片方だけ未対訳。入っている側は隠さず、無い側は実データと同じ表示を出す
+    { path: '動物/とかげ', en: 'Animal/Lizard', ko: null, enDisplay: 'Animal/Lizard', koDisplay: '동물/とかげ', count: 0 },
+    { path: '未翻訳', en: null, ko: null, enDisplay: '未翻訳', koDisplay: '未翻訳', count: 1 },
   ];
   let postResponse: () => Response = () =>
     new Response(JSON.stringify({ success: true, message: 'done', commitUrl: 'https://github.com/x/commit/1', changedRows: 2 }), {
@@ -131,9 +134,12 @@ test('lists categories from the API, then renames with leaf translations and rel
   try {
     assert.equal(h.calls.length, 1);
     assert.equal(h.calls[0].url, '/api/categories');
-    assert.match(h.win.document.body.textContent!, /全5件中 5件を表示/);
+    assert.match(h.win.document.body.textContent!, /全6件中 6件を表示/);
     assert.match(h.rowOf('動物/うま').textContent!, /Animal\/Horse/);
     assert.match(h.rowOf('未翻訳').textContent!, /対訳なし/);
+    // 片方だけ未対訳なら、入っている側は隠さず、無い側は実データと同じ表示を出す
+    assert.match(h.rowOf('動物/とかげ').textContent!, /Animal\/Lizard/);
+    assert.match(h.rowOf('動物/とかげ').textContent!, /동물\/とかげ（韓国語は日本語のまま）/);
     assert.equal(h.rowButton('未翻訳', '対訳を登録') !== undefined, true);
 
     await h.click(h.rowButton('動物/うま', '改名・対訳'));
@@ -218,7 +224,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
 
     await h.click(h.rowButton('乗り物', '統合'));
     const options = [...h.win.document.querySelectorAll('#category-editor-merge-into option')].map((option) => (option as HTMLOptionElement).value);
-    assert.deepEqual(options, ['', '動物', '動物/うま', '動物/Pony', '未翻訳'], 'a category cannot be merged into itself');
+    assert.deepEqual(options, ['', '動物', '動物/うま', '動物/Pony', '動物/とかげ', '未翻訳'], 'a category cannot be merged into itself');
     await h.click(h.buttons('統合する')[0]);
     assert.match(h.win.document.body.textContent!, /統合先を選んでください/);
     await h.select('category-editor-merge-into', '動物');
@@ -283,10 +289,10 @@ test('a form keeps the head it was opened on: refreshing the list must not lend 
     // Someone else changes the EN name and main moves on.
     h.setCategories(
       [
-        { path: '動物', en: 'Animal', ko: '동물', count: 3 },
-        { path: '動物/うま', en: 'Animal/Equine', ko: '동물/말', count: 2 },
-        { path: '乗り物', en: 'Vehicle', ko: '탈것', count: 1 },
-        { path: '未翻訳', en: null, ko: null, count: 1 },
+        { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 3 },
+        { path: '動物/うま', en: 'Animal/Equine', ko: '동물/말', enDisplay: 'Animal/Equine', koDisplay: '동물/말', count: 2 },
+        { path: '乗り物', en: 'Vehicle', ko: '탈것', enDisplay: 'Vehicle', koDisplay: '탈것', count: 1 },
+        { path: '未翻訳', en: null, ko: null, enDisplay: '未翻訳', koDisplay: '未翻訳', count: 1 },
       ],
       'new-head',
     );

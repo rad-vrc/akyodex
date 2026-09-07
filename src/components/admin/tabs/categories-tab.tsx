@@ -31,6 +31,9 @@ interface CategoryEntry {
   path: string;
   en: string | null;
   ko: string | null;
+  /** EN/KO のデータに実際に出る名前。未対訳の階層は日本語のまま入る */
+  enDisplay: string;
+  koDisplay: string;
   count: number;
 }
 
@@ -403,6 +406,8 @@ export function CategoriesTab({
             : `「${editor.path}」の対訳`
           : `「${editor.path}」を別のカテゴリに統合`;
     const idBase = `category-editor-${editor.kind}`;
+    // 空欄の意味は作成と改名で違う。作成は未対訳、改名は「今のまま」なので、そう書く
+    const optionalHint = editor.kind === 'create' ? '任意' : '空欄なら今のまま';
     // 対訳のラベルは末尾の階層の名前を出す。「この階層」ではどこを指すのか分からない
     const labelledPath = editor.kind === 'create' ? createPlan.path : form.ja.trim();
     const leafLabel = labelledPath.split('/').filter(Boolean).at(-1) ?? '';
@@ -436,7 +441,9 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-en`} className="block text-sm font-medium text-green-900 mb-1">
-                {leafLabel ? `英語名（「${leafLabel}」の分だけ）` : '英語名（末尾の階層の分だけ）'}
+                {leafLabel
+                  ? `英語名（「${leafLabel}」の分だけ・${optionalHint}）`
+                  : `英語名（末尾の階層の分だけ・${optionalHint}）`}
               </label>
               <input
                 id={`${idBase}-en`}
@@ -450,7 +457,9 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-ko`} className="block text-sm font-medium text-green-900 mb-1">
-                {leafLabel ? `韓国語名（「${leafLabel}」の分だけ）` : '韓国語名（末尾の階層の分だけ）'}
+                {leafLabel
+                  ? `韓国語名（「${leafLabel}」の分だけ・${optionalHint}）`
+                  : `韓国語名（末尾の階層の分だけ・${optionalHint}）`}
               </label>
               <input
                 id={`${idBase}-ko`}
@@ -475,7 +484,7 @@ export function CategoriesTab({
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label htmlFor={`${idBase}-en-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
-                  英語名
+                  英語名（任意）
                 </label>
                 <input
                   id={`${idBase}-en-${level.path}`}
@@ -489,7 +498,7 @@ export function CategoriesTab({
               </div>
               <div>
                 <label htmlFor={`${idBase}-ko-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
-                  韓国語名
+                  韓国語名（任意）
                 </label>
                 <input
                   id={`${idBase}-ko-${level.path}`}
@@ -658,7 +667,8 @@ export function CategoriesTab({
               const depth = depthOf(entry.path);
               const topLevel = entry.path.split('/', 1)[0];
               const color = colors[topLevel];
-              const untranslated = entry.en === null || entry.ko === null;
+              // 片方だけ未対訳なら、入っている側は隠さない。未対訳の側は日本語で表示される
+              const untranslated = entry.en === null && entry.ko === null;
               return (
                 <li key={entry.path} className="px-4 py-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2" style={{ paddingLeft: `${depth * 1.5}rem` }}>
@@ -677,10 +687,16 @@ export function CategoriesTab({
                       </div>
                       <div className="text-xs text-gray-500 break-words">
                         {untranslated ? (
-                          <span className="text-amber-700">対訳なし（英語・韓国語のデータに反映されません）</span>
+                          <span className="text-amber-700">対訳なし（英語・韓国語とも日本語のまま表示されます）</span>
                         ) : (
                           <>
-                            {entry.en} <span className="text-gray-300">|</span> {entry.ko}
+                            {entry.en ?? (
+                              <span className="text-amber-700">{entry.enDisplay}（英語は日本語のまま）</span>
+                            )}{' '}
+                            <span className="text-gray-300">|</span>{' '}
+                            {entry.ko ?? (
+                              <span className="text-amber-700">{entry.koDisplay}（韓国語は日本語のまま）</span>
+                            )}
                           </>
                         )}
                       </div>

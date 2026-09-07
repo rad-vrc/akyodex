@@ -46,7 +46,13 @@ function deps(overrides: Partial<CategoryStoreDeps> = {}) {
 test('parseCategoryTranslations / parseCategoryColors validate the shape CI expects', () => {
   assert.deepEqual(parseCategoryTranslations('{"動物":{"en":"Animal","ko":"동물"}}'), { '動物': { en: 'Animal', ko: '동물' } });
   assert.throws(() => parseCategoryTranslations('[]'), /形式が不正/);
-  assert.throws(() => parseCategoryTranslations('{"動物":{"en":"Animal"}}'), /ko がありません/);
+  // 対訳は任意。null もキー欠落も未対訳として読む。ここで拒否すると、日本語だけで
+  // 作ったカテゴリの直後から一覧も操作も 500 で落ちる
+  assert.deepEqual(
+    parseCategoryTranslations('{"動物":{"en":"Animal","ko":null},"植物":{}}'),
+    { '動物': { en: 'Animal', ko: null }, '植物': { en: null, ko: null } },
+  );
+  assert.throws(() => parseCategoryTranslations('{"動物":{"en":" Animal","ko":"동물"}}'), /en が不正/);
   assert.throws(() => parseCategoryTranslations('{"動物 ":{"en":"Animal","ko":"동물"}}'), /キー "動物 " が不正/);
   assert.throws(() => parseCategoryTranslations('nope'), /JSON として読めません/);
   assert.deepEqual(parseCategoryColors('{"動物":"#A1b2C3"}'), { '動物': '#A1b2C3' });

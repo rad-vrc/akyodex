@@ -675,8 +675,9 @@ function main() {
     outRows.push(outRow);
   }
 
-  // Report every untranslated token at once, before anything is written.
-  categoryTranslator.assertComplete();
+  // 対訳は任意。訳の無い階層は日本語のまま出るので、止めずに件数だけ知らせる
+  const untranslatedCategories = categoryTranslator.reportMissing();
+  if (untranslatedCategories) console.warn(`⚠️ ${untranslatedCategories}`);
 
   if (missingRowTranslations.length > 0) {
     console.warn(

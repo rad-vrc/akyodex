@@ -17,7 +17,11 @@ import { WORLD_CATEGORY_MARKERS } from './akyo-entry';
 
 export const CATEGORY_LANGUAGES = ['en', 'ko'] as const;
 export type CategoryLanguage = (typeof CATEGORY_LANGUAGES)[number];
-export type CategoryTranslation = Record<CategoryLanguage, string>;
+/**
+ * 各言語の完全なパス（`Animal/Horse`）。まだ訳していない階層は `null`。
+ * 対訳は後付けでよく、揃うまでは日本語のまま表示する
+ */
+export type CategoryTranslation = Record<CategoryLanguage, string | null>;
 export type CategoryTranslations = Record<string, CategoryTranslation>;
 export type CategoryColors = Record<string, string>;
 
@@ -40,8 +44,12 @@ export interface CategoryChange {
 
 export interface CategorySummary {
   path: string;
+  /** 登録されている訳。未対訳なら `null` */
   en: string | null;
   ko: string | null;
+  /** EN/KO のデータに実際に出る名前。未対訳の階層は日本語のまま入る */
+  enDisplay: string;
+  koDisplay: string;
   /** Rows carrying this token or a descendant of it */
   count: number;
 }
@@ -149,19 +157,25 @@ export function validateCategoryPath(value: unknown, label: string = 'カテゴ�
 }
 
 /**
- * `of` は、その名前がどの階層のものかを言うために付ける。階層をまとめて作るときは
- * 英語名の欄が複数並ぶので、どれが空なのかを名指ししないと利用者が直せない
+ * その階層の名前だけ。空なら `null`（未対訳）を返す。
+ *
+ * 対訳は任意。EN/KO は 1 年ずっと手作業の後付けで、入力を必須にすると日本語だけの
+ * 登録ができず、他の人にカテゴリを足してもらえない。揃うまでは日本語で表示する。
+ * `of` は、その名前がどの階層のものかを言うために付ける（階層をまとめて作るときは
+ * 欄が複数並ぶので、どれが不正なのかを名指ししないと利用者が直せない）。
  */
 export function validateTranslationLeaf(
   value: unknown,
   language: CategoryLanguage,
   of?: string,
-): string {
+): string | null {
   const labels: Record<CategoryLanguage, string> = { en: '英語名', ko: '韓国語名' };
   const label = of ? `「${of}」の${labels[language]}` : labels[language];
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new CategoryOperationError(`${label}を入力してください`);
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new CategoryOperationError(`${label}の形式が不正です`);
   }
+  // 空白だけは打ち間違い。未対訳に化けさせず、前後空白と同じく弾く
   if (value !== value.trim()) {
     throw new CategoryOperationError(`${label}の前後に空白は使えません`);
   }
@@ -233,7 +247,15 @@ export function summarizeCategories(dataset: CategoryDataset): CategorySummary[]
   }
   return listCategoryPaths(dataset).map((path) => {
     const translation = Object.hasOwn(dataset.translations, path) ? dataset.translations[path] : null;
-    return { path, en: translation?.en ?? null, ko: translation?.ko ?? null, count: counts.get(path) ?? 0 };
+    return {
+      path,
+      en: translation?.en ?? null,
+      ko: translation?.ko ?? null,
+      // 画面が「日本語のまま」を出すときも、実データと同じ表示にする
+      enDisplay: resolveTranslation(dataset, path, 'en'),
+      koDisplay: resolveTranslation(dataset, path, 'ko'),
+      count: counts.get(path) ?? 0,
+    };
   });
 }
 
@@ -241,19 +263,62 @@ function translationOf(dataset: CategoryDataset, path: string): CategoryTranslat
   return Object.hasOwn(dataset.translations, path) ? dataset.translations[path] : null;
 }
 
-/** Full EN/KO names for `path` from its parent's translations plus the given leaf names. */
+/**
+ * その言語で表示する名前。訳が無い階層は日本語のまま出す。
+ *
+ * 段ごとに落とすので、訳した分はそのまま活きる（`植物` が未対訳で `木` が Tree なら
+ * `植物/Tree`）。全部揃うまで英語が一切出ない、という状態にはしない。
+ */
+export function resolveTranslation(
+  dataset: CategoryDataset,
+  path: string,
+  language: CategoryLanguage,
+): string {
+  const stored = translationOf(dataset, path)?.[language];
+  if (stored) return stored;
+  const parent = parentOf(path);
+  const leaf = path.slice(path.lastIndexOf('/') + 1);
+  return parent === null ? leaf : `${resolveTranslation(dataset, parent, language)}/${leaf}`;
+}
+
+/**
+ * Full EN/KO names for `path` from its parent's names plus the given leaf names.
+ * 未入力の言語は `null` のまま置く。親が未対訳なら、その分は日本語が前に付く
+ */
 function composeTranslation(
   dataset: CategoryDataset,
   path: string,
   leaf: CategoryTranslation,
 ): CategoryTranslation {
   const parent = parentOf(path);
-  if (parent === null) return { en: leaf.en, ko: leaf.ko };
-  const parentTranslation = translationOf(dataset, parent);
-  if (!parentTranslation) {
-    throw new CategoryOperationError(`親カテゴリ「${parent}」に対訳がありません。先に親の対訳を登録してください`);
-  }
-  return { en: `${parentTranslation.en}/${leaf.en}`, ko: `${parentTranslation.ko}/${leaf.ko}` };
+  const compose = (language: CategoryLanguage): string | null => {
+    const name = leaf[language];
+    // キーごと無い（undefined）場合も未対訳として扱う
+    if (name == null) return null;
+    return parent === null ? name : `${resolveTranslation(dataset, parent, language)}/${name}`;
+  };
+  return { en: compose('en'), ko: compose('ko') };
+}
+
+/**
+ * 空欄を「消す」ではなく「変更なし」と読む。既にある訳が入力し忘れで消えないように。
+ *
+ * 訳は任意なので、改名で英語だけ直して韓国語欄を空のまま送る、というのが普通の使い方に
+ * なる。そこで null をそのまま書くと、既にあった韓国語名が黙って消える。新規作成には
+ * 保つべき既存が無いので、そちらは空欄がそのまま未対訳になる。
+ */
+function keepExistingLeaf(
+  dataset: CategoryDataset,
+  path: string,
+  leaf: CategoryTranslation,
+): CategoryTranslation {
+  const existing = translationOf(dataset, path);
+  const keep = (language: CategoryLanguage): string | null => {
+    if (leaf[language] != null) return leaf[language];
+    const stored = existing?.[language];
+    return stored ? translationLeaf(stored) : null;
+  };
+  return { en: keep('en'), ko: keep('ko') };
 }
 
 function resolveColor(dataset: CategoryDataset, topLevel: string): string {
@@ -385,6 +450,21 @@ function translationLeaf(value: string): string {
   return value.slice(value.lastIndexOf('/') + 1);
 }
 
+/** 移動先の親の表示名に、その項目自身の葉の名前を繋ぎ直す。未対訳はそのまま */
+function rebuildTranslation(
+  dataset: CategoryDataset,
+  nextKey: string,
+  entry: CategoryTranslation,
+  language: CategoryLanguage,
+): string | null {
+  const own = entry[language];
+  // 未対訳のまま動かす。親が訳されていてもここは訳さない
+  if (own == null) return null;
+  const parentPath = parentOf(nextKey);
+  const leaf = translationLeaf(own);
+  return parentPath === null ? leaf : `${resolveTranslation(dataset, parentPath, language)}/${leaf}`;
+}
+
 /**
  * Move translation entries of `from` and its descendants under `to`.
  *
@@ -407,40 +487,50 @@ function moveTranslations(
   for (const key of moved) delete dataset.translations[key];
   for (const key of moved) {
     const nextKey = replacePathPrefix(key, from, to);
-    if (options.keepExistingTarget && Object.hasOwn(dataset.translations, nextKey)) continue;
-    if (key === from) {
-      dataset.translations[nextKey] = { ...target };
+    const entry = entries.get(key);
+    const rebuilt =
+      key === from
+        ? { ...target }
+        : {
+            en: rebuildTranslation(dataset, nextKey, entry!, 'en'),
+            ko: rebuildTranslation(dataset, nextKey, entry!, 'ko'),
+          };
+    const kept = options.keepExistingTarget ? translationOf(dataset, nextKey) : null;
+    if (kept) {
+      // 統合先が残る場合でも、未対訳の言語だけは統合元の名前で埋める。項目ごと飛ばすと
+      // 訳のあるカテゴリを未対訳のカテゴリに統合したときに、その訳が黙って消える
+      dataset.translations[nextKey] = {
+        en: kept.en ?? rebuilt.en,
+        ko: kept.ko ?? rebuilt.ko,
+      };
       continue;
     }
-    const entry = entries.get(key)!;
-    const parentTranslation = translationOf(dataset, parentOf(nextKey)!);
-    dataset.translations[nextKey] = parentTranslation
-      ? {
-          en: `${parentTranslation.en}/${translationLeaf(entry.en)}`,
-          ko: `${parentTranslation.ko}/${translationLeaf(entry.ko)}`,
-        }
-      : { ...entry };
+    dataset.translations[nextKey] = rebuilt;
   }
   if (!Object.hasOwn(dataset.translations, to)) dataset.translations[to] = { ...target };
 }
 
 /**
  * The invariant `scripts/category-translations.test.js` enforces on the committed file:
- * every child key has its parent in the table and its EN/KO start with the parent's.
+ * every child key is in the table and its EN/KO start with the parent's displayed name.
+ * 訳が入っていない階層（`null`）は日本語で表示されるので、その前提で照合する。
  * Checked again right before a commit so no operation can write what CI would reject.
  */
 export function assertTranslationHierarchy(translations: CategoryTranslations): void {
+  const dataset: CategoryDataset = { header: ['Category'], records: [], translations, colors: {} };
   for (const [path, entry] of Object.entries(translations)) {
     const parent = parentOf(path);
     if (parent === null) continue;
     if (!Object.hasOwn(translations, parent)) {
-      throw new CategoryOperationError(`対訳の整合性エラー: 「${path}」の親「${parent}」に対訳がありません`, 500);
+      throw new CategoryOperationError(`対訳の整合性エラー: 「${path}」の親「${parent}」がありません`, 500);
     }
     for (const language of CATEGORY_LANGUAGES) {
-      const prefix = `${translations[parent][language]}/`;
-      if (!entry[language].startsWith(prefix)) {
+      const value = entry[language];
+      if (value == null) continue;
+      const prefix = `${resolveTranslation(dataset, parent, language)}/`;
+      if (!value.startsWith(prefix)) {
         throw new CategoryOperationError(
-          `対訳の整合性エラー: 「${path}」の ${language}「${entry[language]}」が親の「${prefix}」で始まっていません`,
+          `対訳の整合性エラー: 「${path}」の ${language}「${value}」が親の「${prefix}」で始まっていません`,
           500,
         );
       }
@@ -564,7 +654,7 @@ export function translateCategory(
   };
   requireExisting(input, path, 'カテゴリ');
   const dataset = cloneDataset(input);
-  const target = composeTranslation(dataset, path, leaf);
+  const target = composeTranslation(dataset, path, keepExistingLeaf(dataset, path, leaf));
   // Children carry the parent's EN/KO as a prefix, so they follow the new names.
   moveTranslations(dataset, path, path, target, { keepExistingTarget: false });
   return { dataset, changedRows: 0, message: `Translate category ${path}` };
@@ -603,7 +693,7 @@ export function renameCategory(
   requireNoLookAlike(input, introduced, (existing) => isSelfOrDescendant(existing, from));
   requireParent(input, to);
   const dataset = cloneDataset(input);
-  const target = composeTranslation(dataset, to, leaf);
+  const target = composeTranslation(dataset, to, keepExistingLeaf(dataset, from, leaf));
   const changedRows = rewriteRecords(dataset, from, to);
   moveTranslations(dataset, from, to, target, { keepExistingTarget: false });
   const fromTop = parentOf(from) === null;
@@ -634,9 +724,11 @@ export function mergeCategory(
     throw new CategoryOperationError('親子関係にあるカテゴリ同士は統合できません');
   }
   const dataset = cloneDataset(input);
-  const target = translationOf(dataset, into);
+  // 対訳は任意なので、値が null の統合先はそのまま通す。弾くのは対訳表にキーごと
+  // 無い場合だけ（CSV のトークンにしか無いカテゴリ）
+  const target = translationOf(dataset, into) ?? null;
   if (!target) {
-    throw new CategoryOperationError(`統合先「${into}」に対訳がありません。先に対訳を登録してください`);
+    throw new CategoryOperationError(`統合先「${into}」が対訳表にありません。先に対訳を登録してください`);
   }
   const changedRows = rewriteRecords(dataset, from, into);
   moveTranslations(dataset, from, into, target, { keepExistingTarget: true });
