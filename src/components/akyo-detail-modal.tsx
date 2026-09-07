@@ -20,8 +20,8 @@ import {
   IconGlobe,
   IconHeart,
   IconHeartOutline,
-  IconSparkles,
   IconTag,
+  IconTags,
   IconUser,
 } from '@/components/icons';
 import { useModalDialog } from '@/hooks/use-modal-dialog';
@@ -340,7 +340,7 @@ export function AkyoDetailModal({
                   {/* Categories Card — 件数で高さが変わるので最後（右下）に置く */}
                   <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4">
                     <h3 className="text-sm font-bold text-orange-600 mb-2">
-                      <IconSparkles size="w-3.5 h-3.5" className="mr-1" />
+                      <IconTags size="w-3.5 h-3.5" className="mr-1" />
                       {t('modal.category', lang)}
                     </h3>
                     {/* 12px / 高さ20px の小型ピル（旧: 14px / 28px / shadow-md）。
