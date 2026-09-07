@@ -420,8 +420,9 @@ function main() {
     return outRow;
   });
 
-  // Fail before writing so an untranslated category never lands in the Korean data as Japanese.
-  categoryTranslator.assertComplete();
+  // 対訳は任意。訳の無い階層は日本語のまま出るので、止めずに件数だけ知らせる
+  const untranslated = categoryTranslator.reportMissing();
+  if (untranslated) console.warn(`⚠️ ${untranslated}`);
 
   // === Write Korean CSV ===
   console.log("📝 Writing Korean CSV...");

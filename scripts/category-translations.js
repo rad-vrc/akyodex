@@ -2,12 +2,15 @@
  * Category translations (JA -> EN / KO), shared by the EN/KO data generators and tests.
  *
  * Source: `data/category-translations.json`
- *   { "動物": { "en": "Animal", "ko": "동물" }, "動物/うま": { "en": "Animal/Horse", "ko": "동물/말" }, ... }
+ *   { "動物": { "en": "Animal", "ko": "동물" }, "動物/うま": { "en": "Animal/Horse", "ko": null }, ... }
  *
  * - Keys are the exact category tokens used in `data/akyo-data-ja.csv` (comma-separated,
- *   hierarchical with `/`). Every token in use must have an entry. Entries nobody uses are
- *   allowed (a category exists before its first Akyo, and removing the last Akyo must not
- *   break CI); `scripts/category-translations.test.js` only reports them.
+ *   hierarchical with `/`). Every token in use must have an entry, but a language may be
+ *   `null`: 対訳は任意で、EN/KO はずっと手作業の後付け。必須にすると日本語だけの登録が
+ *   できず、他の人にカテゴリを足してもらえない。訳の無い階層は日本語のまま出す
+ *   （段ごとのフォールバック）。訳し忘れは生成を止めず、件数を警告として出すだけ。
+ *   Entries nobody uses are allowed (a category exists before its first Akyo, and removing
+ *   the last Akyo must not break CI); `scripts/category-translations.test.js` only reports them.
  * - The file lives under `data/` rather than `scripts/` so the admin UI can commit new
  *   categories together with their translations, and so the `Sync JSON Data from CSV`
  *   workflow can regenerate EN/KO without a code change.
@@ -42,10 +45,15 @@ function loadCategoryTranslations(filePath = CATEGORY_TRANSLATIONS_PATH) {
     if (!japanese.trim() || japanese !== japanese.trim()) {
       throw new Error(`${filePath}: invalid category key ${JSON.stringify(japanese)}`);
     }
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new Error(`${filePath}: ${JSON.stringify(japanese)} must be an object`);
+    }
     for (const language of LANGUAGES) {
-      const value = entry?.[language];
+      const value = entry[language];
+      // 未対訳は null。日本語のまま出すので、生成は止めない
+      if (value === null || value === undefined) continue;
       if (typeof value !== 'string' || !value.trim() || value !== value.trim()) {
-        throw new Error(`${filePath}: ${JSON.stringify(japanese)} needs a non-empty "${language}" translation`);
+        throw new Error(`${filePath}: ${JSON.stringify(japanese)} "${language}" must be a trimmed non-empty string or null`);
       }
     }
   }
@@ -53,8 +61,24 @@ function loadCategoryTranslations(filePath = CATEGORY_TRANSLATIONS_PATH) {
 }
 
 /**
- * Translate Category cells one token at a time, remembering every token without a
- * translation so the caller can report them all at once after the whole file is processed.
+ * その言語で表示する名前。訳の無い階層は日本語のまま残す（段ごとのフォールバック）。
+ * 訳した分はそのまま活きるので、`植物` が未対訳で `木` が Tree なら `植物/Tree`。
+ */
+function resolveToken(token, language, translations) {
+  // Own properties only: a category named "constructor" or "__proto__" must not resolve
+  // to Object.prototype and slip through as a bogus translation.
+  const entry = Object.hasOwn(translations, token) ? translations[token] : null;
+  const stored = entry ? entry[language] : null;
+  if (typeof stored === 'string' && stored) return stored;
+  const index = token.lastIndexOf('/');
+  const leaf = token.slice(index + 1);
+  return index < 0 ? leaf : `${resolveToken(token.slice(0, index), language, translations)}/${leaf}`;
+}
+
+/**
+ * Translate Category cells one token at a time, remembering every token that still shows
+ * Japanese so the caller can report them all at once after the whole file is processed.
+ * 対訳は任意なので、欠けていても生成は止めない（`reportMissing` が数を出すだけ）。
  */
 function createCategoryTranslator(language, translations = loadCategoryTranslations()) {
   if (!LANGUAGES.includes(language)) throw new Error(`Unsupported language: ${language}`);
@@ -64,23 +88,18 @@ function createCategoryTranslator(language, translations = loadCategoryTranslati
     translate(value) {
       return splitCategoryTokens(value)
         .map((token) => {
-          // Own properties only: a category named "constructor" or "__proto__" must not
-          // resolve to Object.prototype and slip through as an empty translation.
-          if (!Object.hasOwn(translations, token)) {
-            missing.add(token);
-            return token;
-          }
-          return translations[token][language];
+          const entry = Object.hasOwn(translations, token) ? translations[token] : null;
+          const stored = entry ? entry[language] : null;
+          if (typeof stored !== 'string' || !stored) missing.add(token);
+          return resolveToken(token, language, translations);
         })
         .join(',');
     },
-    assertComplete() {
-      if (missing.size === 0) return;
+    /** 訳し忘れを見えるようにするだけ。生成は止めない */
+    reportMissing() {
+      if (missing.size === 0) return '';
       const tokens = [...missing].sort();
-      throw new Error(
-        `Missing ${language} category translations (${tokens.length}). ` +
-          `Add them to data/category-translations.json:\n${tokens.map((token) => `- ${token}`).join('\n')}`,
-      );
+      return `${tokens.length} ${language} category translations are still Japanese: ${tokens.join(', ')}`;
     },
   };
 }

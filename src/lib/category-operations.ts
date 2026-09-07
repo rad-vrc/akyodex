@@ -17,7 +17,11 @@ import { WORLD_CATEGORY_MARKERS } from './akyo-entry';
 
 export const CATEGORY_LANGUAGES = ['en', 'ko'] as const;
 export type CategoryLanguage = (typeof CATEGORY_LANGUAGES)[number];
-export type CategoryTranslation = Record<CategoryLanguage, string>;
+/**
+ * 各言語の完全なパス（`Animal/Horse`）。まだ訳していない階層は `null`。
+ * 対訳は後付けでよく、揃うまでは日本語のまま表示する
+ */
+export type CategoryTranslation = Record<CategoryLanguage, string | null>;
 export type CategoryTranslations = Record<string, CategoryTranslation>;
 export type CategoryColors = Record<string, string>;
 
@@ -149,19 +153,25 @@ export function validateCategoryPath(value: unknown, label: string = 'カテゴ�
 }
 
 /**
- * `of` は、その名前がどの階層のものかを言うために付ける。階層をまとめて作るときは
- * 英語名の欄が複数並ぶので、どれが空なのかを名指ししないと利用者が直せない
+ * その階層の名前だけ。空なら `null`（未対訳）を返す。
+ *
+ * 対訳は任意。EN/KO は 1 年ずっと手作業の後付けで、入力を必須にすると日本語だけの
+ * 登録ができず、他の人にカテゴリを足してもらえない。揃うまでは日本語で表示する。
+ * `of` は、その名前がどの階層のものかを言うために付ける（階層をまとめて作るときは
+ * 欄が複数並ぶので、どれが不正なのかを名指ししないと利用者が直せない）。
  */
 export function validateTranslationLeaf(
   value: unknown,
   language: CategoryLanguage,
   of?: string,
-): string {
+): string | null {
   const labels: Record<CategoryLanguage, string> = { en: '英語名', ko: '韓国語名' };
   const label = of ? `「${of}」の${labels[language]}` : labels[language];
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new CategoryOperationError(`${label}を入力してください`);
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') {
+    throw new CategoryOperationError(`${label}の形式が不正です`);
   }
+  if (value.trim() === '') return null;
   if (value !== value.trim()) {
     throw new CategoryOperationError(`${label}の前後に空白は使えません`);
   }
@@ -241,19 +251,40 @@ function translationOf(dataset: CategoryDataset, path: string): CategoryTranslat
   return Object.hasOwn(dataset.translations, path) ? dataset.translations[path] : null;
 }
 
-/** Full EN/KO names for `path` from its parent's translations plus the given leaf names. */
+/**
+ * その言語で表示する名前。訳が無い階層は日本語のまま出す。
+ *
+ * 段ごとに落とすので、訳した分はそのまま活きる（`植物` が未対訳で `木` が Tree なら
+ * `植物/Tree`）。全部揃うまで英語が一切出ない、という状態にはしない。
+ */
+export function resolveTranslation(
+  dataset: CategoryDataset,
+  path: string,
+  language: CategoryLanguage,
+): string {
+  const stored = translationOf(dataset, path)?.[language];
+  if (stored) return stored;
+  const parent = parentOf(path);
+  const leaf = path.slice(path.lastIndexOf('/') + 1);
+  return parent === null ? leaf : `${resolveTranslation(dataset, parent, language)}/${leaf}`;
+}
+
+/**
+ * Full EN/KO names for `path` from its parent's names plus the given leaf names.
+ * 未入力の言語は `null` のまま置く。親が未対訳なら、その分は日本語が前に付く
+ */
 function composeTranslation(
   dataset: CategoryDataset,
   path: string,
   leaf: CategoryTranslation,
 ): CategoryTranslation {
   const parent = parentOf(path);
-  if (parent === null) return { en: leaf.en, ko: leaf.ko };
-  const parentTranslation = translationOf(dataset, parent);
-  if (!parentTranslation) {
-    throw new CategoryOperationError(`親カテゴリ「${parent}」に対訳がありません。先に親の対訳を登録してください`);
-  }
-  return { en: `${parentTranslation.en}/${leaf.en}`, ko: `${parentTranslation.ko}/${leaf.ko}` };
+  const compose = (language: CategoryLanguage): string | null => {
+    const name = leaf[language];
+    if (name === null) return null;
+    return parent === null ? name : `${resolveTranslation(dataset, parent, language)}/${name}`;
+  };
+  return { en: compose('en'), ko: compose('ko') };
 }
 
 function resolveColor(dataset: CategoryDataset, topLevel: string): string {
@@ -413,34 +444,39 @@ function moveTranslations(
       continue;
     }
     const entry = entries.get(key)!;
-    const parentTranslation = translationOf(dataset, parentOf(nextKey)!);
-    dataset.translations[nextKey] = parentTranslation
-      ? {
-          en: `${parentTranslation.en}/${translationLeaf(entry.en)}`,
-          ko: `${parentTranslation.ko}/${translationLeaf(entry.ko)}`,
-        }
-      : { ...entry };
+    const parentPath = parentOf(nextKey)!;
+    const rebuild = (language: CategoryLanguage): string | null => {
+      const own = entry[language];
+      // 未対訳のまま動かす。親が訳されていてもここは訳さない
+      if (own === null) return null;
+      return `${resolveTranslation(dataset, parentPath, language)}/${translationLeaf(own)}`;
+    };
+    dataset.translations[nextKey] = { en: rebuild('en'), ko: rebuild('ko') };
   }
   if (!Object.hasOwn(dataset.translations, to)) dataset.translations[to] = { ...target };
 }
 
 /**
  * The invariant `scripts/category-translations.test.js` enforces on the committed file:
- * every child key has its parent in the table and its EN/KO start with the parent's.
+ * every child key is in the table and its EN/KO start with the parent's displayed name.
+ * 訳が入っていない階層（`null`）は日本語で表示されるので、その前提で照合する。
  * Checked again right before a commit so no operation can write what CI would reject.
  */
 export function assertTranslationHierarchy(translations: CategoryTranslations): void {
+  const dataset: CategoryDataset = { header: ['Category'], records: [], translations, colors: {} };
   for (const [path, entry] of Object.entries(translations)) {
     const parent = parentOf(path);
     if (parent === null) continue;
     if (!Object.hasOwn(translations, parent)) {
-      throw new CategoryOperationError(`対訳の整合性エラー: 「${path}」の親「${parent}」に対訳がありません`, 500);
+      throw new CategoryOperationError(`対訳の整合性エラー: 「${path}」の親「${parent}」がありません`, 500);
     }
     for (const language of CATEGORY_LANGUAGES) {
-      const prefix = `${translations[parent][language]}/`;
-      if (!entry[language].startsWith(prefix)) {
+      const value = entry[language];
+      if (value === null) continue;
+      const prefix = `${resolveTranslation(dataset, parent, language)}/`;
+      if (!value.startsWith(prefix)) {
         throw new CategoryOperationError(
-          `対訳の整合性エラー: 「${path}」の ${language}「${entry[language]}」が親の「${prefix}」で始まっていません`,
+          `対訳の整合性エラー: 「${path}」の ${language}「${value}」が親の「${prefix}」で始まっていません`,
           500,
         );
       }

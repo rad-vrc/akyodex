@@ -152,6 +152,19 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
       ko: '이끼',
       ancestors: [],
     });
+
+    // 対訳は任意。日本語だけで登録でき、訳が入るまでは日本語のまま表示される
+    await act(async () => button('新しいカテゴリを作成').click());
+    await type('attributeNewInput', '道具');
+    await act(async () => button('追加する').click());
+    await flush();
+    assert.deepEqual(posts.at(-1), {
+      action: 'create',
+      path: '道具',
+      en: '',
+      ko: '',
+      ancestors: [],
+    });
   } finally {
     await flush();
     await act(async () => root.unmount());

@@ -436,7 +436,7 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-en`} className="block text-sm font-medium text-green-900 mb-1">
-                {leafLabel ? `英語名（「${leafLabel}」の分だけ）` : '英語名（末尾の階層の分だけ）'}
+                {leafLabel ? `英語名（「${leafLabel}」の分だけ・任意）` : '英語名（末尾の階層の分だけ・任意）'}
               </label>
               <input
                 id={`${idBase}-en`}
@@ -450,7 +450,7 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-ko`} className="block text-sm font-medium text-green-900 mb-1">
-                {leafLabel ? `韓国語名（「${leafLabel}」の分だけ）` : '韓国語名（末尾の階層の分だけ）'}
+                {leafLabel ? `韓国語名（「${leafLabel}」の分だけ・任意）` : '韓国語名（末尾の階層の分だけ・任意）'}
               </label>
               <input
                 id={`${idBase}-ko`}
@@ -475,7 +475,7 @@ export function CategoriesTab({
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label htmlFor={`${idBase}-en-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
-                  英語名
+                  英語名（任意）
                 </label>
                 <input
                   id={`${idBase}-en-${level.path}`}
@@ -489,7 +489,7 @@ export function CategoriesTab({
               </div>
               <div>
                 <label htmlFor={`${idBase}-ko-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
-                  韓国語名
+                  韓国語名（任意）
                 </label>
                 <input
                   id={`${idBase}-ko-${level.path}`}

@@ -303,7 +303,9 @@ export function AttributeModal({
                   <div key={level.path} className="rounded-lg border border-green-200 bg-green-50/60 p-3">
                     <p className="mb-2 text-sm font-medium text-green-900">
                       「{level.segment}」の名前
-                      <span className="ml-2 text-xs font-normal text-green-800">新しく作る階層（{level.path}）</span>
+                      <span className="ml-2 text-xs font-normal text-green-800">
+                        新しく作る階層（{level.path}）・対訳は任意
+                      </span>
                     </p>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
@@ -311,7 +313,7 @@ export function AttributeModal({
                           htmlFor={`attributeNewEnInput-${level.path}`}
                           className="block text-sm font-medium text-green-900 mb-1"
                         >
-                          英語名
+                          英語名（任意）
                         </label>
                         <input
                           type="text"
@@ -334,7 +336,7 @@ export function AttributeModal({
                           htmlFor={`attributeNewKoInput-${level.path}`}
                           className="block text-sm font-medium text-green-900 mb-1"
                         >
-                          韓国語名
+                          韓国語名（任意）
                         </label>
                         <input
                           type="text"
@@ -363,7 +365,7 @@ export function AttributeModal({
                   </p>
                 )}
                 <p className="text-xs text-green-800">
-                  上の階層の英語名・韓国語名は自動で前に付きます。既にあるカテゴリの分は入力欄が出ません。作成するとすぐに GitHub にコミットされ、英語・韓国語のデータは自動で追従します。
+                  英語名・韓国語名は後からでも登録できます。空のままなら、その階層は英語・韓国語のデータでも日本語のまま表示されます。上の階層の名前は自動で前に付き、既にあるカテゴリの分は入力欄が出ません。作成するとすぐに GitHub にコミットされます。
                 </p>
                 {createError && (
                   <p role="alert" className="text-sm text-red-600">

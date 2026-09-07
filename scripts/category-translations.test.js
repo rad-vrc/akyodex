@@ -41,19 +41,26 @@ test('translates each token and joins with a plain comma', () => {
   });
   assert.equal(translator.translate(' 動物 ,動物/うま、'), 'Animal,Animal/Horse');
   assert.equal(translator.translate(''), '');
-  assert.doesNotThrow(() => translator.assertComplete());
+  assert.equal(translator.reportMissing(), '');
 });
 
-test('reports every untranslated token at once, in sorted order, without stopping the run', () => {
+test('未対訳は日本語のまま出し、生成は止めずに件数だけ知らせる', () => {
+  // 対訳は任意。必須にすると日本語だけの登録ができず、他の人にカテゴリを足してもらえない
   const translator = createCategoryTranslator('ko', { '動物': { en: 'Animal', ko: '동물' } });
   assert.equal(translator.translate('動物,色/赤'), '동물,色/赤');
   assert.equal(translator.translate('乗り物'), '乗り物');
-  assert.throws(() => translator.assertComplete(), (error) => {
-    assert.match(error.message, /Missing ko category translations \(2\)/);
-    assert.match(error.message, /data\/category-translations\.json/);
-    assert.deepEqual(error.message.split('\n').slice(1), ['- 乗り物', '- 色/赤']);
-    return true;
+  assert.match(translator.reportMissing(), /2 ko category translations are still Japanese/);
+  assert.match(translator.reportMissing(), /乗り物, 色\/赤/);
+});
+
+test('訳した階層は活き、訳の無い階層だけ日本語で残る', () => {
+  // 全部揃うまで英語が一切出ない、という状態にはしない（段ごとのフォールバック）
+  const translator = createCategoryTranslator('en', {
+    '植物': { en: null, ko: null },
+    '植物/木': { en: '植物/Tree', ko: null },
   });
+  assert.equal(translator.translate('植物,植物/木'), '植物,植物/Tree');
+  assert.deepEqual([...translator.missing].sort(), ['植物']);
 });
 
 test('treats Object.prototype names as untranslated instead of returning an empty string', () => {
@@ -61,30 +68,31 @@ test('treats Object.prototype names as untranslated instead of returning an empt
   const tokens = ['constructor', 'toString', '__proto__', 'hasOwnProperty'];
   assert.equal(translator.translate(tokens.join(',')), tokens.join(','));
   assert.deepEqual([...translator.missing].sort(), [...tokens].sort());
-  assert.throws(() => translator.assertComplete(), /Missing en category translations \(4\)/);
+  assert.match(translator.reportMissing(), /4 en category translations are still Japanese/);
 });
 
 test('rejects unsupported languages', () => {
   assert.throws(() => createCategoryTranslator('fr', {}), /Unsupported language: fr/);
 });
 
-test('rejects malformed translation files instead of falling back to Japanese', () => {
+test('rejects malformed translation files, but accepts null for an untranslated language', () => {
   assert.throws(() => loadCategoryTranslations(writeTempTranslations([])), /expected an object/);
   assert.throws(
-    () => loadCategoryTranslations(writeTempTranslations({ '動物': { en: 'Animal' } })),
-    /"動物" needs a non-empty "ko" translation/,
+    () => loadCategoryTranslations(writeTempTranslations({ '動物': { en: ' Animal', ko: '동물' } })),
+    /"動物" "en" must be a trimmed non-empty string or null/,
   );
   assert.throws(
-    () => loadCategoryTranslations(writeTempTranslations({ '動物': { en: ' Animal', ko: '동물' } })),
-    /"動物" needs a non-empty "en" translation/,
+    () => loadCategoryTranslations(writeTempTranslations({ '動物': 'Animal' })),
+    /"動物" must be an object/,
   );
   assert.throws(
     () => loadCategoryTranslations(writeTempTranslations({ '動物 ': { en: 'Animal', ko: '동물' } })),
     /invalid category key "動物 "/,
   );
+  // 対訳は任意。片方だけ、あるいは両方が未対訳のまま登録できる
   assert.deepEqual(
-    loadCategoryTranslations(writeTempTranslations({ '動物': { en: 'Animal', ko: '동물' } })),
-    { '動物': { en: 'Animal', ko: '동물' } },
+    loadCategoryTranslations(writeTempTranslations({ '動物': { en: 'Animal' }, '植物': { en: null, ko: null } })),
+    { '動物': { en: 'Animal' }, '植物': { en: null, ko: null } },
   );
 });
 
@@ -146,7 +154,6 @@ test('keeps EN and KO CSV categories equal to the translated Japanese categories
         `${language} ID ${row.ID}: regenerate with scripts/sync-akyo-data-en-from-ja.js / generate-ko-data.js`,
       );
     }
-    translator.assertComplete();
   }
 });
 

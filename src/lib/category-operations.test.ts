@@ -115,7 +115,8 @@ test('rename: refuses existing targets, own descendants, protected and unknown c
   );
   assert.throws(() => renameCategory(base, { from: '動物', to: '生き物/動物', en: 'x', ko: 'x' }), /親カテゴリ「生き物」が存在しません/);
   assert.throws(() => renameCategory(base, { from: '動物', to: '生き物', en: 'Ani/mal', ko: 'x' }), /「\/」は使えません/);
-  assert.throws(() => renameCategory(base, { from: '動物', to: '生き物', en: '', ko: 'x' }), /英語名を入力/);
+  // 対訳は任意。日本語だけの改名も通す（訳が無い分は日本語のまま表示される）
+  assert.equal(renameCategory(base, { from: '動物', to: '生き物', en: '', ko: 'x' }).dataset.translations['生き物'].en, null);
 });
 
 test('rename with the same path only updates the translations (children follow the prefix)', () => {
@@ -170,7 +171,7 @@ test('merge: grandchildren follow the child kept on the target side, not the sou
 });
 
 test('assertTranslationHierarchy rejects a child whose parent is missing or whose prefix differs', () => {
-  assert.throws(() => assertTranslationHierarchy({ 'A/子': { en: 'Alpha/Child', ko: '알파/자식' } }), /親「A」に対訳がありません/);
+  assert.throws(() => assertTranslationHierarchy({ 'A/子': { en: 'Alpha/Child', ko: '알파/자식' } }), /親「A」がありません/);
   assert.throws(
     () => assertTranslationHierarchy({ A: { en: 'Alpha', ko: '알파' }, 'A/子': { en: 'Beta/Child', ko: '알파/자식' } }),
     /「Alpha\/」で始まっていません/,
@@ -222,7 +223,9 @@ test('create: composes EN/KO from the parent, freezes a colour for a new top-lev
     () => createCategory(base, { path: '植物/木', en: 'Tree', ko: '나무' }),
     /親カテゴリ「植物」がまだ存在しません。まとめて作るには/,
   );
-  assert.throws(() => createCategory(base, { path: '未翻訳/子', en: 'Child', ko: '아이' }), /親カテゴリ「未翻訳」に対訳がありません/);
+  // 親が未対訳でも作れる。訳の無い階層は日本語のまま前に付く（段ごとのフォールバック）
+  const underUntranslated = createCategory(base, { path: '未翻訳/子', en: 'Child', ko: '아이' });
+  assert.deepEqual(underUntranslated.dataset.translations['未翻訳/子'], { en: '未翻訳/Child', ko: '未翻訳/아이' });
   // Prototype names are neither "existing" nor special once stored as own properties.
   const prototypeName = createCategory(base, { path: 'constructor', en: 'Constructor', ko: '생성자' });
   assert.equal(Object.hasOwn(prototypeName.dataset.translations, 'constructor'), true);
