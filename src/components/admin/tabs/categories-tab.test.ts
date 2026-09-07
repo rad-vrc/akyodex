@@ -165,7 +165,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
     await h.type('category-editor-create-en', 'Cat');
     await h.type('category-editor-create-ko', '고양이');
     await h.click(h.buttons('作成する')[0]);
-    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', head: 'h' });
+    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', ancestors: [], head: 'h' });
 
     await h.click(h.rowButton('乗り物', '統合'));
     const options = [...h.win.document.querySelectorAll('#category-editor-merge-into option')].map((option) => (option as HTMLOptionElement).value);

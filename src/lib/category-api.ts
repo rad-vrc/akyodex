@@ -34,7 +34,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function applyCategoryAction(action: CategoryAction, dataset: CategoryDataset, body: Record<string, unknown>): CategoryChange {
   switch (action) {
     case 'create':
-      return createCategory(dataset, { path: body.path, en: body.en, ko: body.ko });
+      return createCategory(dataset, { path: body.path, en: body.en, ko: body.ko, ancestors: body.ancestors });
     case 'translate':
       return translateCategory(dataset, { path: body.path, en: body.en, ko: body.ko });
     case 'rename':
@@ -49,8 +49,12 @@ function applyCategoryAction(action: CategoryAction, dataset: CategoryDataset, b
 function successMessage(action: CategoryAction, body: Record<string, unknown>, changedRows: number): string {
   const rows = changedRows > 0 ? `（${changedRows} 件の Akyo を更新）` : '';
   switch (action) {
-    case 'create':
-      return `カテゴリ「${String(body.path)}」を作成しました`;
+    case 'create': {
+      // 親階層もまとめて作った場合は、何が増えたのかを画面に出す
+      const created = Array.isArray(body.ancestors) ? body.ancestors.length : 0;
+      const parents = created > 0 ? `（親階層 ${created} 件も作成）` : '';
+      return `カテゴリ「${String(body.path)}」を作成しました${parents}`;
+    }
     case 'translate':
       return `カテゴリ「${String(body.path)}」の対訳を更新しました`;
     case 'rename':

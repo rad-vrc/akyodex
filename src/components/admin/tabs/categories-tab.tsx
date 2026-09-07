@@ -4,6 +4,7 @@ import { IconPlusCircle, IconRedo, IconTags } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
 import type { CategoryRowChange } from '@/lib/admin-catalog';
 import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
+import { planCategoryCreateLevels } from '@/lib/category-create-levels';
 import { isProtectedCategoryPath } from '@/lib/category-operations';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -155,6 +156,14 @@ export function CategoriesTab({
   const [query, setQuery] = useState('');
   const [editor, setEditor] = useState<Editor | null>(null);
   const [form, setForm] = useState({ ja: '', en: '', ko: '', into: '' });
+  // 一緒に作る上の階層の対訳。キーは完全なパスなので、名前を打ち直しても入力は残る
+  const [levelNames, setLevelNames] = useState<Record<string, { en: string; ko: string }>>({});
+  const setLevelName = (path: string, patch: Partial<{ en: string; ko: string }>) => {
+    setLevelNames((previous) => ({
+      ...previous,
+      [path]: { ...(previous[path] ?? { en: '', ko: '' }), ...patch },
+    }));
+  };
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -222,6 +231,7 @@ export function CategoriesTab({
     } else {
       setForm({ ja: '', en: '', ko: '', into: '' });
     }
+    setLevelNames({});
     setEditor(next);
   };
 
@@ -275,7 +285,17 @@ export function CategoriesTab({
     if (editor.kind === 'create') {
       const leaf = form.ja.trim();
       const path = editor.parent ? `${editor.parent}/${leaf}` : leaf;
-      await submit({ action: 'create', path, en: form.en.trim(), ko: form.ko.trim() }, editor.head);
+      const ancestors = planCategoryCreateLevels(path, entries.map((entry) => entry.path))
+        .filter((level) => !level.exists && level.path !== path)
+        .map((level) => ({
+          path: level.path,
+          en: (levelNames[level.path]?.en ?? '').trim(),
+          ko: (levelNames[level.path]?.ko ?? '').trim(),
+        }));
+      await submit(
+        { action: 'create', path, en: form.en.trim(), ko: form.ko.trim(), ancestors },
+        editor.head,
+      );
       return;
     }
     if (editor.kind === 'rename') {
@@ -347,6 +367,19 @@ export function CategoriesTab({
             : `「${editor.path}」の対訳`
           : `「${editor.path}」を別のカテゴリに統合`;
     const idBase = `category-editor-${editor.kind}`;
+    // 入力中のパスを階層に分け、まだ無い上の階層は対訳も一緒に訊く。
+    // これが無いと「新しい親/新しい子」を一度に作れない
+    const typedPath =
+      editor.kind === 'create' && editor.parent
+        ? `${editor.parent}/${form.ja.trim()}`
+        : form.ja.trim();
+    const newAncestors =
+      editor.kind === 'create'
+        ? planCategoryCreateLevels(typedPath, entries.map((entry) => entry.path)).filter(
+            (level) => !level.exists && level.path !== typedPath,
+          )
+        : [];
+    const leafLabel = typedPath.split('/').filter(Boolean).at(-1) ?? '';
     return (
       <div className="mt-2 rounded-xl border border-green-200 bg-green-50 p-4 space-y-3" role="group" aria-label={title}>
         <p className="text-sm font-semibold text-green-900">{title}</p>
@@ -377,7 +410,7 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-en`} className="block text-sm font-medium text-green-900 mb-1">
-                英語名（この階層の分だけ）
+                {leafLabel ? `英語名（「${leafLabel}」の分だけ）` : '英語名（末尾の階層の分だけ）'}
               </label>
               <input
                 id={`${idBase}-en`}
@@ -391,7 +424,7 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-ko`} className="block text-sm font-medium text-green-900 mb-1">
-                韓国語名（この階層の分だけ）
+                {leafLabel ? `韓国語名（「${leafLabel}」の分だけ）` : '韓国語名（末尾の階層の分だけ）'}
               </label>
               <input
                 id={`${idBase}-ko`}
@@ -405,6 +438,46 @@ export function CategoriesTab({
             </div>
           </div>
         )}
+        {newAncestors.map((level) => (
+          <div key={level.path} className="rounded-lg border border-green-200 bg-white/70 p-3">
+            <p className="mb-2 text-sm font-medium text-green-900">
+              「{level.segment}」の名前
+              <span className="ml-2 text-xs font-normal text-green-800">
+                新しく作る階層（{level.path}）
+              </span>
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor={`${idBase}-en-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
+                  英語名
+                </label>
+                <input
+                  id={`${idBase}-en-${level.path}`}
+                  type="text"
+                  value={levelNames[level.path]?.en ?? ''}
+                  disabled={busy}
+                  onChange={(event) => setLevelName(level.path, { en: event.target.value })}
+                  className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                  placeholder="例: Cat"
+                />
+              </div>
+              <div>
+                <label htmlFor={`${idBase}-ko-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">
+                  韓国語名
+                </label>
+                <input
+                  id={`${idBase}-ko-${level.path}`}
+                  type="text"
+                  value={levelNames[level.path]?.ko ?? ''}
+                  disabled={busy}
+                  onChange={(event) => setLevelName(level.path, { ko: event.target.value })}
+                  className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                  placeholder="例: 고양이"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
         {editor.kind === 'merge' && (
           <div>
             <label htmlFor={`${idBase}-into`} className="block text-sm font-medium text-green-900 mb-1">

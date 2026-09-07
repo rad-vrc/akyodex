@@ -2,6 +2,7 @@
 
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
 import { isComposingKeyboardEvent, useModalDialog } from '@/hooks/use-modal-dialog';
+import { planCategoryCreateLevels } from '@/lib/category-create-levels';
 import { useState, useEffect, useRef } from 'react';
 
 interface AttributeModalProps {
@@ -33,8 +34,8 @@ export function AttributeModal({
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newAttributeName, setNewAttributeName] = useState('');
-  const [newAttributeEn, setNewAttributeEn] = useState('');
-  const [newAttributeKo, setNewAttributeKo] = useState('');
+  // 階層ごとの対訳。キーは完全なパスなので、名前を打ち直しても既に入れた分は残る
+  const [levelNames, setLevelNames] = useState<Record<string, { en: string; ko: string }>>({});
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [availableAttributes, setAvailableAttributes] = useState<string[]>(allAttributes);
@@ -84,9 +85,16 @@ export function AttributeModal({
 
   const resetCreateForm = () => {
     setNewAttributeName('');
-    setNewAttributeEn('');
-    setNewAttributeKo('');
+    setLevelNames({});
     setCreateError('');
+  };
+
+  // 入力されたパスを階層に分け、まだ無い階層だけ対訳を訊く
+  const createLevels = planCategoryCreateLevels(newAttributeName, availableAttributes);
+  const missingLevels = createLevels.filter((level) => !level.exists);
+  const nameOf = (path: string) => levelNames[path] ?? { en: '', ko: '' };
+  const setNameOf = (path: string, patch: Partial<{ en: string; ko: string }>) => {
+    setLevelNames((previous) => ({ ...previous, [path]: { ...nameOf(path), ...patch } }));
   };
 
   // カテゴリは対訳（EN/KO）とセットで登録し、その場で GitHub にコミットする。
@@ -119,8 +127,16 @@ export function AttributeModal({
         body: JSON.stringify({
           action: 'create',
           path: trimmed,
-          en: newAttributeEn.trim(),
-          ko: newAttributeKo.trim(),
+          en: nameOf(trimmed).en.trim(),
+          ko: nameOf(trimmed).ko.trim(),
+          // 末尾以外で足りない階層は、まとめて作ってもらう
+          ancestors: missingLevels
+            .filter((level) => level.path !== trimmed)
+            .map((level) => ({
+              path: level.path,
+              en: nameOf(level.path).en.trim(),
+              ko: nameOf(level.path).ko.trim(),
+            })),
         }),
       });
       const result = (await response.json()) as { success?: boolean; error?: string };
@@ -254,56 +270,64 @@ export function AttributeModal({
                     placeholder="例: 動物/ねこ"
                   />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="attributeNewEnInput"
-                      className="block text-sm font-medium text-green-900 mb-1"
-                    >
-                      英語名（この階層の分だけ）
-                    </label>
-                    <input
-                      type="text"
-                      id="attributeNewEnInput"
-                      value={newAttributeEn}
-                      disabled={creating}
-                      onChange={(e) => setNewAttributeEn(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
-                          e.preventDefault();
-                          void handleCreateAttribute();
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="例: Cat"
-                    />
+                {missingLevels.map((level) => (
+                  <div key={level.path} className="rounded-lg border border-green-200 bg-green-50/60 p-3">
+                    <p className="mb-2 text-sm font-medium text-green-900">
+                      「{level.segment}」の名前
+                      <span className="ml-2 text-xs font-normal text-green-800">新しく作る階層（{level.path}）</span>
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`attributeNewEnInput-${level.path}`}
+                          className="block text-sm font-medium text-green-900 mb-1"
+                        >
+                          英語名
+                        </label>
+                        <input
+                          type="text"
+                          id={`attributeNewEnInput-${level.path}`}
+                          value={nameOf(level.path).en}
+                          disabled={creating}
+                          onChange={(e) => setNameOf(level.path, { en: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
+                              e.preventDefault();
+                              void handleCreateAttribute();
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="例: Cat"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`attributeNewKoInput-${level.path}`}
+                          className="block text-sm font-medium text-green-900 mb-1"
+                        >
+                          韓国語名
+                        </label>
+                        <input
+                          type="text"
+                          id={`attributeNewKoInput-${level.path}`}
+                          value={nameOf(level.path).ko}
+                          disabled={creating}
+                          onChange={(e) => setNameOf(level.path, { ko: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
+                              e.preventDefault();
+                              void handleCreateAttribute();
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="例: 고양이"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="attributeNewKoInput"
-                      className="block text-sm font-medium text-green-900 mb-1"
-                    >
-                      韓国語名（この階層の分だけ）
-                    </label>
-                    <input
-                      type="text"
-                      id="attributeNewKoInput"
-                      value={newAttributeKo}
-                      disabled={creating}
-                      onChange={(e) => setNewAttributeKo(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
-                          e.preventDefault();
-                          void handleCreateAttribute();
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="例: 고양이"
-                    />
-                  </div>
-                </div>
+                ))}
                 <p className="text-xs text-green-800">
-                  親の英語名・韓国語名は自動で前に付きます。作成するとすぐに GitHub にコミットされ、英語・韓国語のデータは自動で追従します。
+                  上の階層の英語名・韓国語名は自動で前に付きます。既にあるカテゴリの分は入力欄が出ません。作成するとすぐに GitHub にコミットされ、英語・韓国語のデータは自動で追従します。
                 </p>
                 {createError && (
                   <p role="alert" className="text-sm text-red-600">

@@ -42,14 +42,23 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
     );
     const button = (text: string) => [...win.document.querySelectorAll('button')].find((b) => b.textContent?.trim() === text)!;
     await act(async () => button('新しいカテゴリを作成').click());
-    for (const [id, value] of [['attributeNewInput', '動物/ねこ'], ['attributeNewEnInput', 'Cat'], ['attributeNewKoInput', '고양이']]) {
+    const type = async (id: string, value: string) => {
       const input = win.document.getElementById(id) as HTMLInputElement;
+      assert.ok(input, `${id} が無い`);
       await act(async () => {
         Object.getOwnPropertyDescriptor(win.HTMLInputElement.prototype, 'value')!.set!.call(input, value);
         input.dispatchEvent(new win.Event('input', { bubbles: true }));
       });
-    }
-    const ko = win.document.getElementById('attributeNewKoInput')!;
+    };
+    await type('attributeNewInput', '動物/ねこ');
+    assert.equal(
+      win.document.getElementById('attributeNewEnInput-動物'),
+      null,
+      '既にある階層の名前は訊かない',
+    );
+    await type('attributeNewEnInput-動物/ねこ', 'Cat');
+    await type('attributeNewKoInput-動物/ねこ', '고양이');
+    const ko = win.document.getElementById('attributeNewKoInput-動物/ねこ')!;
     await act(async () => {
       ko.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, isComposing: true }));
     });
@@ -64,9 +73,29 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
       ko.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
     });
     await flush();
-    assert.deepEqual(posts, [{ action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이' }]);
+    assert.deepEqual(posts, [
+      { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', ancestors: [] },
+    ]);
     assert.deepEqual(created, ['動物/ねこ']);
     assert.ok(button('動物/ねこ'), 'the new category is listed and selectable');
+
+    // 親も子も無い枝をまとめて作る。Akyo 側の画面は未登録カテゴリを書けないので、
+    // ここで作れないと新しい枝を足す手段がどこにも無い
+    await act(async () => button('新しいカテゴリを作成').click());
+    await type('attributeNewInput', '植物/木');
+    await type('attributeNewEnInput-植物', 'Plant');
+    await type('attributeNewKoInput-植物', '식물');
+    await type('attributeNewEnInput-植物/木', 'Tree');
+    await type('attributeNewKoInput-植物/木', '나무');
+    await act(async () => button('追加する').click());
+    await flush();
+    assert.deepEqual(posts[1], {
+      action: 'create',
+      path: '植物/木',
+      en: 'Tree',
+      ko: '나무',
+      ancestors: [{ path: '植物', en: 'Plant', ko: '식물' }],
+    });
   } finally {
     await flush();
     await act(async () => root.unmount());

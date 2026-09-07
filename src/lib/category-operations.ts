@@ -279,6 +279,17 @@ function requireParent(dataset: CategoryDataset, path: string): void {
   }
 }
 
+/** Ancestors of `path` that do not exist yet, outermost first. */
+export function missingAncestors(dataset: CategoryDataset, path: string): string[] {
+  const segments = path.split('/');
+  const missing: string[] = [];
+  for (let depth = 1; depth < segments.length; depth += 1) {
+    const ancestor = segments.slice(0, depth).join('/');
+    if (!categoryExists(dataset, ancestor)) missing.push(ancestor);
+  }
+  return missing;
+}
+
 /**
  * Replace `from` (and descendants) by `to` in every Category cell. Ancestors of the new
  * path are inserted so a move to another parent keeps the "child implies parent" invariant.
@@ -371,9 +382,21 @@ export function assertTranslationHierarchy(translations: CategoryTranslations): 
 // Operations
 // ---------------------------------------------------------------------------
 
+/**
+ * Create `path`, and every ancestor of it that does not exist yet.
+ *
+ * A whole new branch has to be creatable in one go: the Akyo screens cannot write an
+ * unregistered category any more (`akyo-csv-snapshot.ts`), so if this only accepted a leaf
+ * under an existing parent there would be no way to add `新しい親/新しい子` at all.
+ *
+ * Every level needs its own EN/KO, because a child's translation is its parent's plus the
+ * child's leaf (`composeTranslation`). `ancestors` supplies those for the missing levels;
+ * omitting one is an error rather than a guess, so no category is ever registered with a
+ * name nobody chose.
+ */
 export function createCategory(
   input: CategoryDataset,
-  request: { path: unknown; en: unknown; ko: unknown },
+  request: { path: unknown; en: unknown; ko: unknown; ancestors?: unknown },
 ): CategoryChange {
   const path = validateCategoryPath(request.path);
   const leaf = { en: validateTranslationLeaf(request.en, 'en'), ko: validateTranslationLeaf(request.ko, 'ko') };
@@ -381,11 +404,57 @@ export function createCategory(
     throw new CategoryOperationError(`カテゴリ「${path}」は既に存在します`, 409);
   }
   requireEditable(path);
-  requireParent(input, path);
+  const missing = missingAncestors(input, path);
+  const supplied = parseAncestorTranslations(request.ancestors, missing);
   const dataset = cloneDataset(input);
+  for (const ancestor of missing) {
+    requireEditable(ancestor);
+    dataset.translations[ancestor] = composeTranslation(dataset, ancestor, supplied.get(ancestor)!);
+    if (parentOf(ancestor) === null) dataset.colors[ancestor] = resolveColor(dataset, ancestor);
+  }
   dataset.translations[path] = composeTranslation(dataset, path, leaf);
   if (parentOf(path) === null) dataset.colors[path] = resolveColor(dataset, path);
-  return { dataset, changedRows: 0, message: `Create category ${path}` };
+  const created = [...missing, path];
+  return {
+    dataset,
+    changedRows: 0,
+    message: created.length === 1 ? `Create category ${path}` : `Create categories ${created.join(', ')}`,
+  };
+}
+
+/** EN/KO for each level in `missing`, keyed by path. Every level must be supplied exactly once. */
+function parseAncestorTranslations(
+  value: unknown,
+  missing: string[],
+): Map<string, CategoryTranslation> {
+  const entries = new Map<string, CategoryTranslation>();
+  if (value !== undefined && !Array.isArray(value)) {
+    throw new CategoryOperationError('親階層の対訳の形式が不正です');
+  }
+  for (const item of (value as unknown[] | undefined) ?? []) {
+    if (typeof item !== 'object' || item === null) {
+      throw new CategoryOperationError('親階層の対訳の形式が不正です');
+    }
+    const entry = item as Record<string, unknown>;
+    const ancestorPath = validateCategoryPath(entry.path, '親カテゴリ名');
+    if (!missing.includes(ancestorPath)) {
+      throw new CategoryOperationError(`「${ancestorPath}」は作成対象の親階層ではありません`);
+    }
+    if (entries.has(ancestorPath)) {
+      throw new CategoryOperationError(`親カテゴリ「${ancestorPath}」が重複しています`);
+    }
+    entries.set(ancestorPath, {
+      en: validateTranslationLeaf(entry.en, 'en'),
+      ko: validateTranslationLeaf(entry.ko, 'ko'),
+    });
+  }
+  const unsupplied = missing.filter((ancestor) => !entries.has(ancestor));
+  if (unsupplied.length > 0) {
+    throw new CategoryOperationError(
+      `親カテゴリ「${unsupplied.join('」「')}」がまだ存在しません。まとめて作るには、その階層の英語名・韓国語名も入力してください`,
+    );
+  }
+  return entries;
 }
 
 /** Set (or replace) the translation of an existing category without touching the CSV. */

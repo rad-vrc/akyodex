@@ -218,13 +218,89 @@ test('create: composes EN/KO from the parent, freezes a colour for a new top-lev
     (error: unknown) => error instanceof CategoryOperationError && error.status === 409,
   );
   assert.throws(() => createCategory(base, { path: '空箱', en: 'x', ko: 'x' }), /既に存在/);
-  assert.throws(() => createCategory(base, { path: '植物/木', en: 'Tree', ko: '나무' }), /親カテゴリ「植物」が存在しません/);
+  assert.throws(
+    () => createCategory(base, { path: '植物/木', en: 'Tree', ko: '나무' }),
+    /親カテゴリ「植物」がまだ存在しません。まとめて作るには/,
+  );
   assert.throws(() => createCategory(base, { path: '未翻訳/子', en: 'Child', ko: '아이' }), /親カテゴリ「未翻訳」に対訳がありません/);
   // Prototype names are neither "existing" nor special once stored as own properties.
   const prototypeName = createCategory(base, { path: 'constructor', en: 'Constructor', ko: '생성자' });
   assert.equal(Object.hasOwn(prototypeName.dataset.translations, 'constructor'), true);
   assert.throws(() => createCategory(base, { path: '__proto__', en: 'x', ko: 'x' }), /__proto__/);
   assert.throws(() => createCategory(base, { path: '動物/__proto__', en: 'x', ko: 'x' }), /__proto__/);
+});
+
+test('create: builds a whole new branch when no level exists yet', () => {
+  // Akyo 側の画面は未登録カテゴリを書けないので、ここで枝ごと作れないと
+  // 「新しい親/新しい子」を足す手段がどこにも無くなる
+  const change = createCategory(dataset(), {
+    path: '植物/木',
+    en: 'Tree',
+    ko: '나무',
+    ancestors: [{ path: '植物', en: 'Plant', ko: '식물' }],
+  });
+
+  assert.deepEqual(change.dataset.translations['植物'], { en: 'Plant', ko: '식물' });
+  assert.deepEqual(change.dataset.translations['植物/木'], { en: 'Plant/Tree', ko: '식물/나무' });
+  assert.match(change.dataset.colors['植物'], /^#[0-9a-f]{6}$/, '新しい最上位は色を固定する');
+  assert.equal(change.changedRows, 0, 'Akyo の行は変えない');
+  assert.match(change.message, /Create categories 植物, 植物\/木/);
+});
+
+test('create: builds three levels at once and keeps the ancestors editable on their own', () => {
+  const change = createCategory(dataset(), {
+    path: '道具/工具/ハンマー',
+    en: 'Hammer',
+    ko: '망치',
+    ancestors: [
+      { path: '道具', en: 'Tool', ko: '도구' },
+      { path: '道具/工具', en: 'Hardware', ko: '공구' },
+    ],
+  });
+
+  assert.deepEqual(change.dataset.translations['道具/工具'], { en: 'Tool/Hardware', ko: '도구/공구' });
+  assert.deepEqual(change.dataset.translations['道具/工具/ハンマー'], {
+    en: 'Tool/Hardware/Hammer',
+    ko: '도구/공구/망치',
+  });
+});
+
+test('create: refuses to guess a missing level and refuses levels that already exist', () => {
+  const base = dataset();
+
+  assert.throws(
+    () => createCategory(base, {
+      path: '道具/工具/ハンマー',
+      en: 'Hammer',
+      ko: '망치',
+      ancestors: [{ path: '道具', en: 'Tool', ko: '도구' }],
+    }),
+    /親カテゴリ「道具\/工具」がまだ存在しません/,
+    '足りない階層を勝手に埋めない',
+  );
+  assert.throws(
+    () => createCategory(base, {
+      path: '動物/ねこ',
+      en: 'Cat',
+      ko: '고양이',
+      ancestors: [{ path: '動物', en: 'Beast', ko: '짐승' }],
+    }),
+    /「動物」は作成対象の親階層ではありません/,
+    '既存の階層の対訳をこの経路で書き換えない',
+  );
+  assert.throws(
+    () => createCategory(base, {
+      path: '植物/木',
+      en: 'Tree',
+      ko: '나무',
+      ancestors: [{ path: '植物', en: 'Plant/Extra', ko: '식물' }],
+    }),
+    /「\/」は使えません/,
+  );
+  assert.throws(
+    () => createCategory(base, { path: '植物/木', en: 'Tree', ko: '나무', ancestors: 'x' }),
+    /形式が不正/,
+  );
 });
 
 test('summarizeCategories: counts rows per path including descendants, merges CSV tokens and table keys', () => {
