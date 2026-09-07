@@ -549,7 +549,7 @@ Fonts remain bundled with the Worker. This is a guarded Worker release, not a se
 
 - Production is healthy and reports a full Git commit ID and Worker version UUID; its commit is an ancestor of the candidate.
 - The actual `src/fonts/mplus2-variable.subset.woff2` has changed.
-- Every changed path is an existing file in the allowlist: that WOFF2, `src/fonts/subset-manifest.json`, `src/lib/category-canonical.json`, or `data/akyo-data-{ja,en,ko}.{csv,json}`. Added/deleted files and all other paths are rejected.
+- Every changed path is an existing file in the allowlist: that WOFF2, `src/fonts/subset-manifest.json`, `src/lib/category-canonical.json`, `data/category-translations.json`, or `data/akyo-data-{ja,en,ko}.{csv,json}`. Added/deleted files and all other paths are rejected. The translations file is on the list because it is only read from GitHub at runtime and never enters the bundle; `src/lib/category-colors.json`, which the admin writes in the same commit, is imported by `src/lib/akyo-data-helpers.ts` and therefore stays off it.
 - Font inventory verification and the production Workers build succeed. The built font must exactly match the generated WOFF2.
 - Production still has the same commit **and version** immediately before deployment.
 

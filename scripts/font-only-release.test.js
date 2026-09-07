@@ -14,6 +14,16 @@ const {
 } = require('./font-only-release.js');
 
 const FONT = 'src/fonts/mplus2-variable.subset.woff2';
+// フォントの再生成に付いてくるもの。対訳表はカテゴリを作ると動くが、実行時に GitHub から
+// 読むだけでバンドルには入らないので、フォントの自動追従を止める理由にはならない
+const SYNC_OUTPUTS = [
+  FONT,
+  'src/fonts/subset-manifest.json',
+  'data/akyo-data-ja.csv',
+  'data/akyo-data-ja.json',
+  'src/lib/category-canonical.json',
+  'data/category-translations.json',
+];
 const SHA = 'a'.repeat(40);
 const VERSION = 'a04aec5d-8266-4a56-89b6-a38c353995a6';
 
@@ -29,7 +39,7 @@ function repository(t) {
     mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
     writeFileSync(path.join(root, file), body);
   };
-  for (const file of [FONT, 'src/fonts/subset-manifest.json', 'data/akyo-data-ja.csv', 'data/akyo-data-ja.json', 'src/lib/category-canonical.json']) write(file, 'before');
+  for (const file of SYNC_OUTPUTS) write(file, 'before');
   const commit = () => { git('add', '.'); git('commit', '-m', 'fixture'); return git('rev-parse', 'HEAD'); };
   const base = commit();
   return { root, git, write, commit, base };
@@ -37,10 +47,34 @@ function repository(t) {
 
 test('permits regenerated fonts with catalog sync outputs', (t) => {
   const r = repository(t);
-  for (const file of [FONT, 'src/fonts/subset-manifest.json', 'data/akyo-data-ja.csv', 'data/akyo-data-ja.json', 'src/lib/category-canonical.json']) r.write(file);
+  for (const file of SYNC_OUTPUTS) r.write(file);
   const changes = inspectFontOnlyChanges(r.base, r.commit(), r.root);
   assert.ok(changes.includes(FONT));
-  assert.equal(changes.length, 5);
+  assert.equal(changes.length, SYNC_OUTPUTS.length);
+});
+
+// カテゴリを 1 つ作ると対訳表が動く。除いておくと、そのあと最初のフォント再生成が
+// 必ずゲートで止まり、新しい字が本番に出ないまま残る
+test('permits a category created between production and the font candidate', (t) => {
+  const r = repository(t);
+  r.write('data/category-translations.json');
+  const afterCategory = r.commit();
+  r.write(FONT);
+  r.write('src/fonts/subset-manifest.json');
+  const changes = inspectFontOnlyChanges(r.base, r.commit(), r.root);
+  assert.deepEqual([...changes].sort(), [
+    'data/category-translations.json', FONT, 'src/fonts/subset-manifest.json',
+  ].sort());
+  // 対訳表だけが動いた時点では、まだ差し替えるフォントが無い
+  assert.throws(() => inspectFontOnlyChanges(r.base, afterCategory, r.root), /font binary has not changed/);
+});
+
+// 管理画面は色も書く。こちらは akyo-data-helpers.ts が import していてバンドルが変わる
+test('still rejects the colour map the admin writes alongside the translations', (t) => {
+  const r = repository(t);
+  r.write(FONT);
+  r.write('src/lib/category-colors.json');
+  assert.throws(() => inspectFontOnlyChanges(r.base, r.commit(), r.root), /non-font changes/);
 });
 
 test('rejects application, dependency, configuration and workflow changes even with a new font', (t) => {

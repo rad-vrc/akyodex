@@ -7,10 +7,17 @@ const SITE = 'https://akyodex.com';
 const FONT = 'src/fonts/mplus2-variable.subset.woff2';
 const COMMIT = /^[0-9a-f]{40}$/;
 const VERSION = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
+// 自動でフォントを差し替えてよいのは、Worker の中身が変わらないときだけ。
+// `data/category-translations.json` は実行時に GitHub から読むだけでバンドルに入らない
+// （`akyo-csv-snapshot.ts` が持つのはパスの定数）ので、ここに含めてよい。管理画面で
+// カテゴリを 1 つ作るとこのファイルが動くため、除いておくとフォントの自動追従が
+// そのたびに止まる。同じく管理画面が書く `src/lib/category-colors.json` は
+// `akyo-data-helpers.ts` が import していてバンドルを変えるので、含めてはいけない。
 const ALLOWED = new Set([
   FONT,
   'src/fonts/subset-manifest.json',
   'src/lib/category-canonical.json',
+  'data/category-translations.json',
   ...['ja', 'en', 'ko'].flatMap((locale) => [
     `data/akyo-data-${locale}.csv`, `data/akyo-data-${locale}.json`,
   ]),
