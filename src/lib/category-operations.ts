@@ -407,7 +407,7 @@ export function createCategory(
   }
   requireEditable(path);
   const missing = missingAncestors(input, path);
-  const supplied = parseAncestorTranslations(request.ancestors, missing);
+  const supplied = parseAncestorTranslations(request.ancestors, missing, ancestorsOf(path));
   const dataset = cloneDataset(input);
   for (const ancestor of missing) {
     requireEditable(ancestor);
@@ -428,10 +428,25 @@ export function createCategory(
   };
 }
 
-/** EN/KO for each level in `missing`, keyed by path. Every level must be supplied exactly once. */
+/** Every ancestor of `path`, outermost first (excluding `path` itself). */
+function ancestorsOf(path: string): string[] {
+  const segments = path.split('/');
+  return segments.slice(0, -1).map((_, index) => segments.slice(0, index + 1).join('/'));
+}
+
+/**
+ * EN/KO for each level in `missing`, keyed by path.
+ *
+ * 既に存在する階層が混ざっていても捨てるだけで、エラーにはしない。画面はどの階層を
+ * 訊くかを自分が持つ一覧から決めるので、その一覧が少しでも古いと「サーバー側では既に
+ * ある階層」を送ってしまう。そこで拒否すると、画面上に満たす手段が無いフォームになる。
+ * 書き込むのは `missing` の階層だけなので、既存の対訳が上書きされることはない。
+ * 一方、そもそも対象パスの親ではないものは要求の作りが違うので拒否する。
+ */
 function parseAncestorTranslations(
   value: unknown,
   missing: string[],
+  ancestors: string[],
 ): Map<string, CategoryTranslation> {
   const entries = new Map<string, CategoryTranslation>();
   if (value !== undefined && !Array.isArray(value)) {
@@ -443,9 +458,10 @@ function parseAncestorTranslations(
     }
     const entry = item as Record<string, unknown>;
     const ancestorPath = validateCategoryPath(entry.path, '親カテゴリ名');
-    if (!missing.includes(ancestorPath)) {
-      throw new CategoryOperationError(`「${ancestorPath}」は作成対象の親階層ではありません`);
+    if (!ancestors.includes(ancestorPath)) {
+      throw new CategoryOperationError(`「${ancestorPath}」はこのカテゴリの親階層ではありません`);
     }
+    if (!missing.includes(ancestorPath)) continue;
     if (entries.has(ancestorPath)) {
       throw new CategoryOperationError(`親カテゴリ「${ancestorPath}」が重複しています`);
     }

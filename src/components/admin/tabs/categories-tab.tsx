@@ -49,6 +49,8 @@ interface CategoryMutationResponse {
   commitUrl?: string;
   changedRows?: number;
   updatedRows?: CategoryRowChange[];
+  /** 作成で増えたパス（親階層を含む） */
+  createdPaths?: string[];
 }
 
 /**
@@ -171,6 +173,19 @@ export function CategoriesTab({
       },
     }));
   };
+  /**
+   * 作成フォームが対象にしているパスと、その階層の内訳。描画と送信の両方がここを見るので、
+   * 出した入力欄と送る内容がずれない
+   */
+  const createPlan = useMemo(() => {
+    if (editor?.kind !== 'create') return { path: '', levels: [] };
+    const leaf = form.ja.trim();
+    const path = editor.parent ? `${editor.parent}/${leaf}` : leaf;
+    return { path, levels: planCategoryCreateLevels(path, entries.map((entry) => entry.path)) };
+  }, [editor, form.ja, entries]);
+  const newAncestors = createPlan.levels.filter(
+    (level) => !level.exists && level.path !== createPlan.path,
+  );
   const [formError, setFormError] = useState('');
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -290,17 +305,19 @@ export function CategoriesTab({
       return;
     }
     if (editor.kind === 'create') {
-      const leaf = form.ja.trim();
-      const path = editor.parent ? `${editor.parent}/${leaf}` : leaf;
-      const ancestors = planCategoryCreateLevels(path, entries.map((entry) => entry.path))
-        .filter((level) => !level.exists && level.path !== path)
-        .map((level) => ({
-          path: level.path,
-          en: (levelNameOf(level.path).en).trim(),
-          ko: (levelNameOf(level.path).ko).trim(),
-        }));
+      const ancestors = newAncestors.map((level) => ({
+        path: level.path,
+        en: levelNameOf(level.path).en.trim(),
+        ko: levelNameOf(level.path).ko.trim(),
+      }));
       await submit(
-        { action: 'create', path, en: form.en.trim(), ko: form.ko.trim(), ancestors },
+        {
+          action: 'create',
+          path: createPlan.path,
+          en: form.en.trim(),
+          ko: form.ko.trim(),
+          ancestors,
+        },
         editor.head,
       );
       return;
@@ -374,19 +391,9 @@ export function CategoriesTab({
             : `「${editor.path}」の対訳`
           : `「${editor.path}」を別のカテゴリに統合`;
     const idBase = `category-editor-${editor.kind}`;
-    // 入力中のパスを階層に分け、まだ無い上の階層は対訳も一緒に訊く。
-    // これが無いと「新しい親/新しい子」を一度に作れない
-    const typedPath =
-      editor.kind === 'create' && editor.parent
-        ? `${editor.parent}/${form.ja.trim()}`
-        : form.ja.trim();
-    const newAncestors =
-      editor.kind === 'create'
-        ? planCategoryCreateLevels(typedPath, entries.map((entry) => entry.path)).filter(
-            (level) => !level.exists && level.path !== typedPath,
-          )
-        : [];
-    const leafLabel = typedPath.split('/').filter(Boolean).at(-1) ?? '';
+    // 対訳のラベルは末尾の階層の名前を出す。「この階層」ではどこを指すのか分からない
+    const labelledPath = editor.kind === 'create' ? createPlan.path : form.ja.trim();
+    const leafLabel = labelledPath.split('/').filter(Boolean).at(-1) ?? '';
     return (
       <div className="mt-2 rounded-xl border border-green-200 bg-green-50 p-4 space-y-3" role="group" aria-label={title}>
         <p className="text-sm font-semibold text-green-900">{title}</p>
@@ -453,6 +460,11 @@ export function CategoriesTab({
                 新しく作る階層（{level.path}）
               </span>
             </p>
+            {level.similarTo && (
+              <p className="mb-2 text-xs text-amber-800">
+                既存の「{level.similarTo}」と大文字小文字や表記だけが違います。別のカテゴリとして作られます。
+              </p>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label htmlFor={`${idBase}-en-${level.path}`} className="block text-sm font-medium text-green-900 mb-1">

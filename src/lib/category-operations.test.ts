@@ -278,15 +278,30 @@ test('create: refuses to guess a missing level and refuses levels that already e
     /親カテゴリ「道具\/工具」がまだ存在しません/,
     '足りない階層を勝手に埋めない',
   );
+  // 画面の一覧が古いと、サーバー側では既にある階層を送ってしまう。捨てるだけにして、
+  // 画面上に満たす手段が無いフォームを作らない。既存の対訳は書き換えない
+  const stale = createCategory(base, {
+    path: '動物/ねこ',
+    en: 'Cat',
+    ko: '고양이',
+    ancestors: [{ path: '動物', en: 'Beast', ko: '짐승' }],
+  });
+  assert.deepEqual(stale.dataset.translations['動物'], { en: 'Animal', ko: '동물' });
+  assert.deepEqual(stale.dataset.translations['動物/ねこ'], { en: 'Animal/Cat', ko: '동물/고양이' });
+  assert.deepEqual(stale.createdPaths, ['動物/ねこ']);
+
   assert.throws(
     () => createCategory(base, {
-      path: '動物/ねこ',
-      en: 'Cat',
-      ko: '고양이',
-      ancestors: [{ path: '動物', en: 'Beast', ko: '짐승' }],
+      path: '植物/木',
+      en: 'Tree',
+      ko: '나무',
+      ancestors: [
+        { path: '植物', en: 'Plant', ko: '식물' },
+        { path: '乗り物', en: 'Vehicle', ko: '탈것' },
+      ],
     }),
-    /「動物」は作成対象の親階層ではありません/,
-    '既存の階層の対訳をこの経路で書き換えない',
+    /「乗り物」はこのカテゴリの親階層ではありません/,
+    '親ですらないものは要求の作りが違う',
   );
   assert.throws(
     () => createCategory(base, {

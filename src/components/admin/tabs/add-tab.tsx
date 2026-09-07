@@ -26,6 +26,8 @@ interface AddTabProps {
   // 旧フィールド（互換性）
   attributes: string[];
   creators: string[];
+  /** カテゴリを作ったとき。共有の一覧を取り直さないと他のタブが古いままになる */
+  onCategoriesChanged?: () => void;
 }
 
 interface AddTabDraft {
@@ -103,7 +105,7 @@ function normalizeCategoriesForSubmit(
  * Add Tab Component
  * 新規登録タブ（完全再現 + VRChat自動取得 + 属性管理）
  */
-export function AddTab({ userRole, categories, authors, attributes, creators }: AddTabProps) {
+export function AddTab({ userRole, categories, authors, attributes, creators, onCategoriesChanged }: AddTabProps) {
   // 新旧フィールドのマージ
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const allAttributes = Array.from(
@@ -1100,6 +1102,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         onApply={(attributes) => handleInputChange('categories', attributes)}
         allAttributes={allAttributes}
         onCreateAttribute={handleCreateCategory}
+        onCategoriesChanged={onCategoriesChanged}
         listColumns={4}
         modalSize="wide"
       />

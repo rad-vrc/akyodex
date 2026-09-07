@@ -167,6 +167,24 @@ test('create under a parent sends the full path; merge and delete confirm with t
     await h.click(h.buttons('作成する')[0]);
     assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', ancestors: [], head: 'h' });
 
+    // 途中の階層が無い名前を打つと、その階層の対訳も一緒に訊いて 1 回で作る
+    await h.click(h.rowButton('動物', '子を追加'));
+    await h.type('category-editor-create-ja', 'とり/インコ');
+    assert.equal(h.win.document.getElementById('category-editor-create-en-動物'), null, '既存の階層は訊かない');
+    await h.type('category-editor-create-en-動物/とり', 'Bird');
+    await h.type('category-editor-create-ko-動物/とり', '새');
+    await h.type('category-editor-create-en', 'Parakeet');
+    await h.type('category-editor-create-ko', '잉꼬');
+    await h.click(h.buttons('作成する')[0]);
+    assert.deepEqual(h.calls.at(-2)?.body, {
+      action: 'create',
+      path: '動物/とり/インコ',
+      en: 'Parakeet',
+      ko: '잉꼬',
+      ancestors: [{ path: '動物/とり', en: 'Bird', ko: '새' }],
+      head: 'h',
+    });
+
     await h.click(h.rowButton('乗り物', '統合'));
     const options = [...h.win.document.querySelectorAll('#category-editor-merge-into option')].map((option) => (option as HTMLOptionElement).value);
     assert.deepEqual(options, ['', '動物', '動物/うま', '未翻訳'], 'a category cannot be merged into itself');

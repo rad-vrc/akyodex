@@ -39,6 +39,8 @@ interface EditModalProps {
   attributes: string[];
 
   onStage: (fields: AkyoEditFields) => void;
+  /** カテゴリを作ったとき。共有の一覧を取り直さないと他のタブが古いままになる */
+  onCategoriesChanged?: () => void;
 }
 
 interface EditFormData {
@@ -176,6 +178,7 @@ export function EditModal({
   categories,
   attributes,
   onStage,
+  onCategoriesChanged,
 }: EditModalProps) {
   const [formData, setFormData] = useState<EditFormData>(() => buildInitialFormData(akyo));
   const initialFormJson = useMemo(() => JSON.stringify(buildInitialFormData(akyo)), [akyo]);
@@ -807,6 +810,7 @@ export function EditModal({
         onApply={(nextCategories) => handleInputChange('categories', nextCategories)}
         allAttributes={allCategories}
         onCreateAttribute={handleCreateCategory}
+        onCategoriesChanged={onCategoriesChanged}
         listColumns={4}
         modalSize="wide"
       />

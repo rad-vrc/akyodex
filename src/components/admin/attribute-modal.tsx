@@ -12,6 +12,8 @@ interface AttributeModalProps {
   onApply: (attributes: string[]) => void;
   allAttributes: string[];
   onCreateAttribute?: (attribute: string) => void;
+  /** 作成がコミットされたとき。共有の一覧を取り直さないと他のタブが古いままになる */
+  onCategoriesChanged?: () => void;
   listColumns?: 3 | 4;
   modalSize?: 'default' | 'wide';
 }
@@ -27,6 +29,7 @@ export function AttributeModal({
   onApply,
   allAttributes,
   onCreateAttribute,
+  onCategoriesChanged,
   listColumns = 3,
   modalSize = 'default',
 }: AttributeModalProps) {
@@ -132,7 +135,11 @@ export function AttributeModal({
 
     setCreating(true);
     setCreateError('');
-    let created: string[] = [trimmed];
+    // 作られるのは足りない階層と末尾。応答が createdPaths を返さなくても、
+    // 送った内容から同じものを組み立てられるようにしておく
+    const requested = [...missingLevels.map((level) => level.path)];
+    if (!requested.includes(trimmed)) requested.push(trimmed);
+    let created: string[] = requested;
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
@@ -162,7 +169,7 @@ export function AttributeModal({
       }
       // 一緒に作られた親階層も一覧に入れる。入れ忘れると、同じ親の下に続けて
       // もう 1 つ作るときに「作成対象の親階層ではありません」で拒否される
-      created = result.createdPaths?.length ? result.createdPaths : [trimmed];
+      created = result.createdPaths?.length ? result.createdPaths : requested;
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : 'カテゴリを作成できませんでした');
       setCreating(false);
@@ -173,6 +180,7 @@ export function AttributeModal({
     // 選択に足すのは作った末尾の階層だけ。親は一覧に出るだけでよい
     setSelectedAttributes((prev) => [...prev, trimmed]);
     for (const path of created) onCreateAttribute?.(path);
+    onCategoriesChanged?.();
     resetCreateForm();
     setCreating(false);
     setShowCreateForm(false);
@@ -297,6 +305,11 @@ export function AttributeModal({
                       「{level.segment}」の名前
                       <span className="ml-2 text-xs font-normal text-green-800">新しく作る階層（{level.path}）</span>
                     </p>
+                    {level.similarTo && (
+                      <p className="mb-2 text-xs text-amber-800">
+                        既存の「{level.similarTo}」と大文字小文字や表記だけが違います。別のカテゴリとして作られます。
+                      </p>
+                    )}
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
                         <label

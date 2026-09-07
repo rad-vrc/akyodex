@@ -14,6 +14,11 @@ export interface CategoryCreateLevel {
   segment: string;
   /** 既に存在するか。存在するなら対訳は既にあるので入力欄を出さない */
   exists: boolean;
+  /**
+   * 大文字小文字や Unicode 正規化だけが違う既存カテゴリ。別物として作れてしまうので、
+   * 画面はこれを出して「本当に新しい階層か」を確かめられるようにする
+   */
+  similarTo?: string;
 }
 
 /**
@@ -24,6 +29,11 @@ export interface CategoryCreateLevel {
  * 吸収して「既存」と見なすと、サーバーが対訳を要求する階層の入力欄を画面が出さず、
  * 画面上に満たす手段が無いエラーになる。
  */
+/** 表記ゆれの検出用。作成の可否には使わない（サーバーは完全一致で判定する） */
+function fold(value: string): string {
+  return value.normalize('NFC').toLowerCase();
+}
+
 export function planCategoryCreateLevels(
   path: string,
   existing: Iterable<string>,
@@ -33,9 +43,13 @@ export function planCategoryCreateLevels(
   const segments = trimmed.split('/').map((segment) => segment.trim());
   if (segments.some((segment) => segment === '')) return [];
 
-  const known = new Set(existing);
+  const known = [...existing];
+  const exact = new Set(known);
+  const loose = new Map(known.map((entry) => [fold(entry), entry]));
   return segments.map((segment, index) => {
     const levelPath = segments.slice(0, index + 1).join('/');
-    return { path: levelPath, segment, exists: known.has(levelPath) };
+    if (exact.has(levelPath)) return { path: levelPath, segment, exists: true };
+    const similarTo = loose.get(fold(levelPath));
+    return { path: levelPath, segment, exists: false, ...(similarTo ? { similarTo } : {}) };
   });
 }
