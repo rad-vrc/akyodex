@@ -289,7 +289,7 @@ test.describe("絞り込み入力のクリアボタン", () => {
 test.describe("検索プレースホルダの幅による出し分け", () => {
   // placeholder は属性なので CSS では切り替えられない。幅で出し分けている。
   const FULL = /アバター・ワールド・作者・カテゴリ名で検索|Search by avatar, world, author|아바타・월드・작자/;
-  const COMPACT = /アバター・ワールド名で検索|Search avatars and worlds|아바타・월드 이름으로/;
+  const COMPACT = /アバター・作者名で検索|Search avatars and authors|아바타・작자명으로/;
 
   test("狭い画面では短い方を出す", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
