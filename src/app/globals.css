@@ -550,24 +550,34 @@ select:focus {
   transform: translateY(-1px) scale(1.02) !important;
 }
 
-/* ボタンに波紋エフェクト */
+/* ボタンに波紋エフェクト。中心から広がって現れ、離れると縮んで消える。
+
+   以前は transition に opacity が入っておらず、動きが裏返っていた。
+   ホバーで opacity が 0 へ即座に跳ぶため広がる円は透明で見えず、離れた
+   瞬間に 1 へ戻りながら縮むので「離すと白い円が収束する」だけが見えていた
+   （本番実測: ホバー50ms で直径21px/opacity 0、離脱50ms で250px/opacity 1）。
+
+   寸法ではなく transform と opacity を動かす。width/height の変化は
+   合成レイヤーに乗らず再ペイントを起こすため、虹色グラデーションの
+   無限アニメーションを廃止したのと同じ理由で避ける。 */
 .detail-button::after {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 0;
-  height: 0;
+  width: 300px;
+  height: 300px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  background: rgba(255, 255, 255, 0.35);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s ease-out, opacity 0.3s;
+  pointer-events: none;
 }
 
 .detail-button:hover::after {
-  width: 300px;
-  height: 300px;
-  opacity: 0;
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
 }
 
 /* リスト表示のスタイル */
