@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 
+const clearButton = (page: import("@playwright/test").Page) =>
+  page.getByRole("button", { name: /検索をクリア|Clear search|검색 지우기/i });
+
 test.describe("Filter panel responsive defaults", () => {
   test.use({
     viewport: { width: 390, height: 844 },
@@ -84,9 +87,6 @@ test.describe("Search input focus styling", () => {
 test.describe("検索クリアボタンの寸法と余白", () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true });
 
-  const clearButton = (page: import("@playwright/test").Page) =>
-    page.getByRole("button", { name: /検索をクリア|Clear search|검색 지우기/i });
-
   const paddingOf = (input: ReturnType<import("@playwright/test").Page["locator"]>) =>
     input.evaluate((el) => {
       const styles = window.getComputedStyle(el);
@@ -115,25 +115,36 @@ test.describe("検索クリアボタンの寸法と余白", () => {
     await expect(button).toBeVisible();
 
     const box = await button.boundingBox();
+    expect(box, "クリアボタンの寸法を取得できなかった").not.toBeNull();
+
     // WCAG 2.2 の下限は SC 2.5.8 の 24px だが、この PR は SC 2.5.5(AAA) の
     // 44px を狙って広げている。24 で固定すると 25〜43px への縮小を見逃す。
     expect(box!.width).toBeGreaterThanOrEqual(44);
     expect(box!.height).toBeGreaterThanOrEqual(44);
 
+    // マークアップ構造の変化と余白不足を切り分けられるよう、chip の存在を先に見る
+    const chip = button.locator("span").first();
+    await expect(chip, "チップ（button > span）が見つからない").toBeVisible();
+
     // 右余白がボタンの占有幅に足りていること（足りないとテキストが下に潜る）
     const clearance = await input.evaluate((el) => {
       const styles = window.getComputedStyle(el);
       const rect = el.getBoundingClientRect();
-      const chip = el.parentElement
-        ?.querySelector("button span")
-        ?.getBoundingClientRect();
-      if (!chip) return -1;
+      const chipRect = el.parentElement!
+        .querySelector("button span")!
+        .getBoundingClientRect();
       const textRight =
         rect.right - parseFloat(styles.paddingRight) - parseFloat(styles.borderRightWidth);
-      return chip.left - textRight;
+      return chipRect.left - textRight;
     });
     expect(clearance).toBeGreaterThanOrEqual(0);
   });
+
+});
+
+test.describe("検索クリアボタンのホバー", () => {
+  // タッチ端末では :hover が実機と挙動が違うので、デスクトップ相当で検証する
+  test.use({ viewport: { width: 1280, height: 900 }, isMobile: false, hasTouch: false });
 
   test("当たり判定の外周をホバーしてもチップの色が変わる", async ({ page }) => {
     await page.goto("/zukan");

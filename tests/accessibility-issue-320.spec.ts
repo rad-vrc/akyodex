@@ -177,5 +177,13 @@ test.describe("Issue #320 accessibility regressions", () => {
     await expect(zoomControl).toHaveAttribute("aria-pressed", "false");
     await page.keyboard.press("Enter");
     await expect(zoomControl).toHaveAttribute("aria-pressed", "true");
+
+    // 旧: 見出しの ✨ が aria-hidden な span であること。装飾が SVG に変わった
+    // ので、見出し内のアイコンが支援技術から隠れていることを SVG で確認する。
+    const headingIcons = dialog.locator("h3 svg");
+    expect(await headingIcons.count()).toBeGreaterThan(0);
+    for (const icon of await headingIcons.all()) {
+      await expect(icon).toHaveAttribute("aria-hidden", "true");
+    }
   });
 });
