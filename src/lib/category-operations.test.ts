@@ -65,6 +65,8 @@ test('ensureCategoryAncestors: completes a cell, leaves a complete one byte-for-
   // 足りていないものが無ければ、区切りも並びもそのまま返す
   assert.equal(ensureCategoryAncestors('色/紫色系、色'), '色/紫色系、色');
   assert.equal(ensureCategoryAncestors(''), '');
+  // 落とした重複と補った祖先の数が打ち消し合う形。長さで見ていると素通りする
+  assert.equal(ensureCategoryAncestors('色/紫色系,色/紫色系'), '色,色/紫色系');
 });
 
 test('selectCategoryPath: fills in the ancestors of the picked path only', () => {

@@ -134,7 +134,10 @@ export function withAncestors(tokens: string[]): string[] {
 export function ensureCategoryAncestors(value: string): string {
   const tokens = splitCategoryCell(value);
   const complete = withAncestors(tokens);
-  return complete.length === tokens.length ? value : complete.join(',');
+  // 「足りていない」の判定に長さを使うと、同じトークンが 2 回書かれたセルで、落とした
+  // 重複と補った祖先の数が打ち消し合い、祖先を足さないまま素通りする
+  const carried = new Set(tokens);
+  return complete.every((token) => carried.has(token)) ? value : complete.join(',');
 }
 
 /**

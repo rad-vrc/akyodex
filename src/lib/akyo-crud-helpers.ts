@@ -243,7 +243,8 @@ export async function processAkyoCRUD(
 
         // A form opened before another admin renamed or deleted a category would otherwise
         // write a token with no translation, which stops the EN/KO regeneration. Check what
-        // the client submitted, not the markers the server itself adds afterwards.
+        // the client submitted together with the ancestors it implies — that is what gets
+        // written — and not the markers the server itself adds afterwards.
         if (operation !== 'delete') {
             const unknown = findUnregisteredCategories(snapshot, [submittedCategory]);
             if (unknown.length > 0) {
