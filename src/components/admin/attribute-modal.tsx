@@ -2,6 +2,7 @@
 
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
 import { isComposingKeyboardEvent, useModalDialog } from '@/hooks/use-modal-dialog';
+import { findCreateBlocker, planCategoryCreateLevels } from '@/lib/category-create-levels';
 import { useState, useEffect, useRef } from 'react';
 
 interface AttributeModalProps {
@@ -11,6 +12,8 @@ interface AttributeModalProps {
   onApply: (attributes: string[]) => void;
   allAttributes: string[];
   onCreateAttribute?: (attribute: string) => void;
+  /** 作成がコミットされたとき。共有の一覧を取り直さないと他のタブが古いままになる */
+  onCategoriesChanged?: () => void;
   listColumns?: 3 | 4;
   modalSize?: 'default' | 'wide';
 }
@@ -26,6 +29,7 @@ export function AttributeModal({
   onApply,
   allAttributes,
   onCreateAttribute,
+  onCategoriesChanged,
   listColumns = 3,
   modalSize = 'default',
 }: AttributeModalProps) {
@@ -33,8 +37,8 @@ export function AttributeModal({
   const [selectedAttributes, setSelectedAttributes] = useState<string[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newAttributeName, setNewAttributeName] = useState('');
-  const [newAttributeEn, setNewAttributeEn] = useState('');
-  const [newAttributeKo, setNewAttributeKo] = useState('');
+  // 階層ごとの対訳。キーは完全なパスなので、名前を打ち直しても既に入れた分は残る
+  const [levelNames, setLevelNames] = useState<Record<string, { en: string; ko: string }>>({});
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [availableAttributes, setAvailableAttributes] = useState<string[]>(allAttributes);
@@ -84,9 +88,30 @@ export function AttributeModal({
 
   const resetCreateForm = () => {
     setNewAttributeName('');
-    setNewAttributeEn('');
-    setNewAttributeKo('');
+    setLevelNames({});
     setCreateError('');
+  };
+
+  // 入力されたパスを階層に分け、まだ無い階層だけ対訳を訊く
+  const createLevels = planCategoryCreateLevels(newAttributeName, availableAttributes);
+  const missingLevels = createLevels.filter((level) => !level.exists);
+  // 末尾の階層は planCategoryCreateLevels が返したパスで持つ。入力文字列から別に
+  // 組み立てると、階層の前後に空白がある入力で入力欄とキーがずれ、画面が見せた
+  // 階層と送るパスも食い違う。パスとして成り立たない入力のときだけ原文を送り、
+  // サーバーに理由を言わせる
+  const leafPath = createLevels.at(-1)?.path ?? '';
+  // カテゴリ名は利用者が決めるので `constructor` のようなプロトタイプの名前もあり得る。
+  // 素引きすると Object.prototype 側の値を拾ってしまう
+  const nameOf = (path: string) =>
+    Object.hasOwn(levelNames, path) ? levelNames[path] : { en: '', ko: '' };
+  const setNameOf = (path: string, patch: Partial<{ en: string; ko: string }>) => {
+    setLevelNames((previous) => ({
+      ...previous,
+      [path]: {
+        ...(Object.hasOwn(previous, path) ? previous[path] : { en: '', ko: '' }),
+        ...patch,
+      },
+    }));
   };
 
   // カテゴリは対訳（EN/KO）とセットで登録し、その場で GitHub にコミットする。
@@ -99,43 +124,63 @@ export function AttributeModal({
       return;
     }
 
-    // Check for duplicates with Unicode normalization (NFC)
-    const normalizedInput = trimmed.normalize('NFC');
-    const isDuplicate = availableAttributes.some(
-      attr => attr.normalize('NFC').toLowerCase() === normalizedInput.toLowerCase()
-    );
-
-    if (isDuplicate) {
-      setCreateError('このカテゴリは既に存在します');
+    // 既にある名前と、表記だけが違って見分けの付かない名前を止める。サーバーも
+    // 同じ規則で拒否するので、ここは送る前に気付かせるためのもの
+    const blocker = findCreateBlocker(createLevels);
+    if (blocker) {
+      setCreateError(blocker);
       return;
     }
 
     setCreating(true);
     setCreateError('');
+    // 作られるのは足りない階層と末尾。応答が createdPaths を返さなくても、
+    // 送った内容から同じものを組み立てられるようにしておく
+    const submittedPath = leafPath || trimmed;
+    const requested = [...missingLevels.map((level) => level.path)];
+    if (!requested.includes(submittedPath)) requested.push(submittedPath);
+    let created: string[] = requested;
     try {
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
-          path: trimmed,
-          en: newAttributeEn.trim(),
-          ko: newAttributeKo.trim(),
+          path: submittedPath,
+          en: nameOf(leafPath).en.trim(),
+          ko: nameOf(leafPath).ko.trim(),
+          // 末尾以外で足りない階層は、まとめて作ってもらう
+          ancestors: missingLevels
+            .filter((level) => level.path !== leafPath)
+            .map((level) => ({
+              path: level.path,
+              en: nameOf(level.path).en.trim(),
+              ko: nameOf(level.path).ko.trim(),
+            })),
         }),
       });
-      const result = (await response.json()) as { success?: boolean; error?: string };
+      const result = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        createdPaths?: string[];
+      };
       if (!response.ok || !result.success) {
         throw new Error(result.error || 'カテゴリを作成できませんでした');
       }
+      // 一緒に作られた親階層も一覧に入れる。入れ忘れると、同じ親の下に続けて
+      // もう 1 つ作るときに「作成対象の親階層ではありません」で拒否される
+      created = result.createdPaths?.length ? result.createdPaths : requested;
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : 'カテゴリを作成できませんでした');
       setCreating(false);
       return;
     }
 
-    setAvailableAttributes((prev) => [...prev, trimmed].sort());
-    setSelectedAttributes((prev) => [...prev, trimmed]);
-    onCreateAttribute?.(trimmed);
+    setAvailableAttributes((prev) => [...new Set([...prev, ...created])].sort());
+    // 選択に足すのは作った末尾の階層だけ。親は一覧に出るだけでよい
+    setSelectedAttributes((prev) => [...prev, submittedPath]);
+    for (const path of created) onCreateAttribute?.(path);
+    onCategoriesChanged?.();
     resetCreateForm();
     setCreating(false);
     setShowCreateForm(false);
@@ -254,56 +299,71 @@ export function AttributeModal({
                     placeholder="例: 動物/ねこ"
                   />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="attributeNewEnInput"
-                      className="block text-sm font-medium text-green-900 mb-1"
-                    >
-                      英語名（この階層の分だけ）
-                    </label>
-                    <input
-                      type="text"
-                      id="attributeNewEnInput"
-                      value={newAttributeEn}
-                      disabled={creating}
-                      onChange={(e) => setNewAttributeEn(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
-                          e.preventDefault();
-                          void handleCreateAttribute();
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="例: Cat"
-                    />
+                {missingLevels.map((level) => (
+                  <div key={level.path} className="rounded-lg border border-green-200 bg-green-50/60 p-3">
+                    <p className="mb-2 text-sm font-medium text-green-900">
+                      「{level.segment}」の名前
+                      <span className="ml-2 text-xs font-normal text-green-800">新しく作る階層（{level.path}）</span>
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={`attributeNewEnInput-${level.path}`}
+                          className="block text-sm font-medium text-green-900 mb-1"
+                        >
+                          英語名
+                        </label>
+                        <input
+                          type="text"
+                          id={`attributeNewEnInput-${level.path}`}
+                          value={nameOf(level.path).en}
+                          disabled={creating}
+                          onChange={(e) => setNameOf(level.path, { en: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
+                              e.preventDefault();
+                              void handleCreateAttribute();
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="例: Cat"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor={`attributeNewKoInput-${level.path}`}
+                          className="block text-sm font-medium text-green-900 mb-1"
+                        >
+                          韓国語名
+                        </label>
+                        <input
+                          type="text"
+                          id={`attributeNewKoInput-${level.path}`}
+                          value={nameOf(level.path).ko}
+                          disabled={creating}
+                          onChange={(e) => setNameOf(level.path, { ko: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
+                              e.preventDefault();
+                              void handleCreateAttribute();
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          placeholder="例: 고양이"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="attributeNewKoInput"
-                      className="block text-sm font-medium text-green-900 mb-1"
-                    >
-                      韓国語名（この階層の分だけ）
-                    </label>
-                    <input
-                      type="text"
-                      id="attributeNewKoInput"
-                      value={newAttributeKo}
-                      disabled={creating}
-                      onChange={(e) => setNewAttributeKo(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !isComposingKeyboardEvent(e.nativeEvent)) {
-                          e.preventDefault();
-                          void handleCreateAttribute();
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="例: 고양이"
-                    />
-                  </div>
-                </div>
+                ))}
+                {newAttributeName.trim() !== '' && missingLevels.length === 0 && (
+                  <p className="text-xs text-amber-800">
+                    {createLevels.length === 0
+                      ? '「/」の前後には階層の名前が必要です。例: 動物/ねこ'
+                      : 'このカテゴリは既にあります。'}
+                  </p>
+                )}
                 <p className="text-xs text-green-800">
-                  親の英語名・韓国語名は自動で前に付きます。作成するとすぐに GitHub にコミットされ、英語・韓国語のデータは自動で追従します。
+                  上の階層の英語名・韓国語名は自動で前に付きます。既にあるカテゴリの分は入力欄が出ません。作成するとすぐに GitHub にコミットされ、英語・韓国語のデータは自動で追従します。
                 </p>
                 {createError && (
                   <p role="alert" className="text-sm text-red-600">

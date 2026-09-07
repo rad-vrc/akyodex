@@ -10,6 +10,7 @@ import {
   extractVRChatWorldIdFromUrl,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
+import { addCategoryOption } from '@/lib/category-create-levels';
 import { assertWorldRegistrationAssets } from '@/lib/world-registration';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { AttributeModal } from '../attribute-modal';
@@ -26,6 +27,8 @@ interface AddTabProps {
   // 旧フィールド（互換性）
   attributes: string[];
   creators: string[];
+  /** カテゴリを作ったとき。共有の一覧を取り直さないと他のタブが古いままになる */
+  onCategoriesChanged?: () => void;
 }
 
 interface AddTabDraft {
@@ -103,7 +106,7 @@ function normalizeCategoriesForSubmit(
  * Add Tab Component
  * 新規登録タブ（完全再現 + VRChat自動取得 + 属性管理）
  */
-export function AddTab({ userRole, categories, authors, attributes, creators }: AddTabProps) {
+export function AddTab({ userRole, categories, authors, attributes, creators, onCategoriesChanged }: AddTabProps) {
   // 新旧フィールドのマージ
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const allAttributes = Array.from(
@@ -626,16 +629,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
   };
 
   const handleCreateCategory = (categoryName: string) => {
-    const normalizedInput = categoryName.trim().normalize('NFC').toLowerCase();
-    if (!normalizedInput) return;
-
-    setCustomCategories((prev) => {
-      const exists = prev.some(
-        (existing) => existing.normalize('NFC').toLowerCase() === normalizedInput
-      );
-      if (exists) return prev;
-      return [...prev, categoryName.trim()];
-    });
+    setCustomCategories((prev) => addCategoryOption(prev, categoryName));
   };
 
   // Nickname duplicate check function
@@ -1100,6 +1094,7 @@ export function AddTab({ userRole, categories, authors, attributes, creators }: 
         onApply={(attributes) => handleInputChange('categories', attributes)}
         allAttributes={allAttributes}
         onCreateAttribute={handleCreateCategory}
+        onCategoriesChanged={onCategoriesChanged}
         listColumns={4}
         modalSize="wide"
       />

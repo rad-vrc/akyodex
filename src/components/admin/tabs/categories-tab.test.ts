@@ -24,6 +24,7 @@ async function setup(role: 'owner' | 'admin') {
   let categories = [
     { path: '動物', en: 'Animal', ko: '동물', count: 3 },
     { path: '動物/うま', en: 'Animal/Horse', ko: '동물/말', count: 2 },
+    { path: '動物/Pony', en: 'Animal/Pony', ko: '동물/포니', count: 0 },
     { path: '乗り物', en: 'Vehicle', ko: '탈것', count: 1 },
     { path: '未翻訳', en: null, ko: null, count: 1 },
   ];
@@ -130,7 +131,7 @@ test('lists categories from the API, then renames with leaf translations and rel
   try {
     assert.equal(h.calls.length, 1);
     assert.equal(h.calls[0].url, '/api/categories');
-    assert.match(h.win.document.body.textContent!, /全4件中 4件を表示/);
+    assert.match(h.win.document.body.textContent!, /全5件中 5件を表示/);
     assert.match(h.rowOf('動物/うま').textContent!, /Animal\/Horse/);
     assert.match(h.rowOf('未翻訳').textContent!, /対訳なし/);
     assert.equal(h.rowButton('未翻訳', '対訳を登録') !== undefined, true);
@@ -165,11 +166,59 @@ test('create under a parent sends the full path; merge and delete confirm with t
     await h.type('category-editor-create-en', 'Cat');
     await h.type('category-editor-create-ko', '고양이');
     await h.click(h.buttons('作成する')[0]);
-    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', head: 'h' });
+    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', ancestors: [], head: 'h' });
+
+    // 途中の階層が無い名前を打つと、その階層の対訳も一緒に訊いて 1 回で作る
+    await h.click(h.rowButton('動物', '子を追加'));
+    await h.type('category-editor-create-ja', 'とり/インコ');
+    assert.equal(h.win.document.getElementById('category-editor-create-en-動物'), null, '既存の階層は訊かない');
+    await h.type('category-editor-create-en-動物/とり', 'Bird');
+    await h.type('category-editor-create-ko-動物/とり', '새');
+    await h.type('category-editor-create-en', 'Parakeet');
+    await h.type('category-editor-create-ko', '잉꼬');
+    await h.click(h.buttons('作成する')[0]);
+    assert.deepEqual(h.calls.at(-2)?.body, {
+      action: 'create',
+      path: '動物/とり/インコ',
+      en: 'Parakeet',
+      ko: '잉꼬',
+      ancestors: [{ path: '動物/とり', en: 'Bird', ko: '새' }],
+      head: 'h',
+    });
+
+    // 画面が見せた階層と、送るパスを一致させる。原文のままだと末尾が祖先の一覧からも
+    // 外れず、そのまま ancestors に混ざって飛ぶ
+    await h.click(h.rowButton('動物', '子を追加'));
+    await h.type('category-editor-create-ja', 'とり / スズメ');
+    await h.type('category-editor-create-en-動物/とり', 'Bird');
+    await h.type('category-editor-create-ko-動物/とり', '새');
+    await h.type('category-editor-create-en', 'Sparrow');
+    await h.type('category-editor-create-ko', '참새');
+    await h.click(h.buttons('作成する')[0]);
+    assert.deepEqual(h.calls.at(-2)?.body, {
+      action: 'create',
+      path: '動物/とり/スズメ',
+      en: 'Sparrow',
+      ko: '참새',
+      ancestors: [{ path: '動物/とり', en: 'Bird', ko: '새' }],
+      head: 'h',
+    });
+
+    // 大文字小文字だけが違う階層は、並ぶと見分けが付かないので送らせない。
+    // モーダルと違いこのタブには重複チェックが無いので、ここが唯一の歯止め
+    const before = h.calls.length;
+    await h.click(h.rowButton('動物', '子を追加'));
+    await h.type('category-editor-create-ja', 'pony');
+    await h.type('category-editor-create-en', 'Pony');
+    await h.type('category-editor-create-ko', '포니');
+    await h.click(h.buttons('作成する')[0]);
+    assert.equal(h.calls.length, before, '紛らわしい名前は送らない');
+    assert.match(h.win.document.body.textContent!, /「動物\/pony」は既存の「動物\/Pony」と/);
+    assert.match(h.win.document.body.textContent!, /別の名前にしてください/);
 
     await h.click(h.rowButton('乗り物', '統合'));
     const options = [...h.win.document.querySelectorAll('#category-editor-merge-into option')].map((option) => (option as HTMLOptionElement).value);
-    assert.deepEqual(options, ['', '動物', '動物/うま', '未翻訳'], 'a category cannot be merged into itself');
+    assert.deepEqual(options, ['', '動物', '動物/うま', '動物/Pony', '未翻訳'], 'a category cannot be merged into itself');
     await h.click(h.buttons('統合する')[0]);
     assert.match(h.win.document.body.textContent!, /統合先を選んでください/);
     await h.select('category-editor-merge-into', '動物');

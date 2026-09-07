@@ -193,6 +193,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
             userRole={userRole}
             attributes={currentAttributes}
             creators={currentCreators}
+            onCategoriesChanged={() => void refreshCategories()}
           />
         </div>
         {editVisited && (
@@ -201,6 +202,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
             userRole={userRole}
             akyoData={catalog}
             attributes={currentAttributes}
+            onCategoriesChanged={() => void refreshCategories()}
             blockedIds={categoriesHeldIds}
             onCatalogRefresh={handleCatalogRefresh}
             onRowsCommitted={handleRowsCommitted}
