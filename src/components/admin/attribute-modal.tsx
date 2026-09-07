@@ -96,7 +96,9 @@ export function AttributeModal({
   const createLevels = planCategoryCreateLevels(newAttributeName, availableAttributes);
   const missingLevels = createLevels.filter((level) => !level.exists);
   // 末尾の階層は planCategoryCreateLevels が返したパスで持つ。入力文字列から別に
-  // 組み立てると、階層の前後に空白がある入力で入力欄とキーがずれる
+  // 組み立てると、階層の前後に空白がある入力で入力欄とキーがずれ、画面が見せた
+  // 階層と送るパスも食い違う。パスとして成り立たない入力のときだけ原文を送り、
+  // サーバーに理由を言わせる
   const leafPath = createLevels.at(-1)?.path ?? '';
   // カテゴリ名は利用者が決めるので `constructor` のようなプロトタイプの名前もあり得る。
   // 素引きすると Object.prototype 側の値を拾ってしまう
@@ -134,8 +136,9 @@ export function AttributeModal({
     setCreateError('');
     // 作られるのは足りない階層と末尾。応答が createdPaths を返さなくても、
     // 送った内容から同じものを組み立てられるようにしておく
+    const submittedPath = leafPath || trimmed;
     const requested = [...missingLevels.map((level) => level.path)];
-    if (!requested.includes(trimmed)) requested.push(trimmed);
+    if (!requested.includes(submittedPath)) requested.push(submittedPath);
     let created: string[] = requested;
     try {
       const response = await fetch('/api/categories', {
@@ -143,7 +146,7 @@ export function AttributeModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
-          path: trimmed,
+          path: submittedPath,
           en: nameOf(leafPath).en.trim(),
           ko: nameOf(leafPath).ko.trim(),
           // 末尾以外で足りない階層は、まとめて作ってもらう
@@ -175,7 +178,7 @@ export function AttributeModal({
 
     setAvailableAttributes((prev) => [...new Set([...prev, ...created])].sort());
     // 選択に足すのは作った末尾の階層だけ。親は一覧に出るだけでよい
-    setSelectedAttributes((prev) => [...prev, trimmed]);
+    setSelectedAttributes((prev) => [...prev, submittedPath]);
     for (const path of created) onCreateAttribute?.(path);
     onCategoriesChanged?.();
     resetCreateForm();

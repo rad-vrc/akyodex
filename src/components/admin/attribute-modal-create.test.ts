@@ -137,6 +137,21 @@ test('AttributeModal: Enter during IME composition does not create; a real Enter
     assert.equal(posts.length, 3, '紛らわしい名前は送らない');
     assert.match(win.document.body.textContent!, /「cat」は既存の「Cat」と/);
     assert.match(win.document.body.textContent!, /別の名前にしてください/);
+
+    // 画面が見せた階層と、送るパスを一致させる。原文のままだと「植物/ 木」が
+    // そのまま飛んで、入力欄のキー（植物/木）とも食い違う
+    await type('attributeNewInput', '植物/ 苔');
+    await type('attributeNewEnInput-植物/苔', 'Moss');
+    await type('attributeNewKoInput-植物/苔', '이끼');
+    await act(async () => button('追加する').click());
+    await flush();
+    assert.deepEqual(posts[3], {
+      action: 'create',
+      path: '植物/苔',
+      en: 'Moss',
+      ko: '이끼',
+      ancestors: [],
+    });
   } finally {
     await flush();
     await act(async () => root.unmount());

@@ -280,6 +280,19 @@ test('改名は宛先だけでなく、書き換わる子孫の新しいパス�
     () => renameCategory(base, { from: 'Gear', to: 'Zed', en: 'Zed', ko: '제드' }),
     /「Zed\/bolt」は既存の「Zed\/BOLT」と/,
   );
+
+  // 宛先は「自分自身の付け替え先」として既に一覧に入っている。二重に渡すと同じ指摘が並ぶ
+  const clash: CategoryDataset = {
+    ...dataset(),
+    translations: { ...dataset().translations, 'Gear': { en: 'G', ko: 'g' }, 'zed': { en: 'Z', ko: 'z' } },
+  };
+  assert.throws(
+    () => renameCategory(clash, { from: 'Gear', to: 'Zed', en: 'Zed', ko: '제드' }),
+    (error: unknown) =>
+      error instanceof CategoryOperationError &&
+      error.message.match(/「Zed」は既存の「zed」/g)?.length === 1,
+    '同じ宛先の指摘は 1 回だけ',
+  );
 });
 
 test('表記ゆれを止めるときは、まとめる手段も伝える', () => {

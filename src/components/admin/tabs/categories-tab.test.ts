@@ -186,6 +186,24 @@ test('create under a parent sends the full path; merge and delete confirm with t
       head: 'h',
     });
 
+    // 画面が見せた階層と、送るパスを一致させる。原文のままだと末尾が祖先の一覧からも
+    // 外れず、そのまま ancestors に混ざって飛ぶ
+    await h.click(h.rowButton('動物', '子を追加'));
+    await h.type('category-editor-create-ja', 'とり / スズメ');
+    await h.type('category-editor-create-en-動物/とり', 'Bird');
+    await h.type('category-editor-create-ko-動物/とり', '새');
+    await h.type('category-editor-create-en', 'Sparrow');
+    await h.type('category-editor-create-ko', '참새');
+    await h.click(h.buttons('作成する')[0]);
+    assert.deepEqual(h.calls.at(-2)?.body, {
+      action: 'create',
+      path: '動物/とり/スズメ',
+      en: 'Sparrow',
+      ko: '참새',
+      ancestors: [{ path: '動物/とり', en: 'Bird', ko: '새' }],
+      head: 'h',
+    });
+
     // 大文字小文字だけが違う階層は、並ぶと見分けが付かないので送らせない。
     // モーダルと違いこのタブには重複チェックが無いので、ここが唯一の歯止め
     const before = h.calls.length;

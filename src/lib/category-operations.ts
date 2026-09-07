@@ -595,11 +595,12 @@ export function renameCategory(
     throw new CategoryOperationError(`カテゴリ「${to}」は既に存在します。まとめる場合は「統合」を使ってください`, 409);
   }
   // 宛先だけでなく、書き換わる子孫の新しいパスも見る。子の側で並ばれても同じこと。
+  // `from` 自身の付け替え先が `to` なので、この一覧に宛先も含まれている。
   // 表記だけを直す改名（Cat → cat）では自分自身と衝突するので、自分と配下は外す
   const introduced = listCategoryPaths(input)
     .filter((existing) => isSelfOrDescendant(existing, from))
     .map((existing) => replacePathPrefix(existing, from, to));
-  requireNoLookAlike(input, [to, ...introduced], (existing) => isSelfOrDescendant(existing, from));
+  requireNoLookAlike(input, introduced, (existing) => isSelfOrDescendant(existing, from));
   requireParent(input, to);
   const dataset = cloneDataset(input);
   const target = composeTranslation(dataset, to, leaf);

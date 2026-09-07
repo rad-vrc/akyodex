@@ -186,8 +186,12 @@ export function CategoriesTab({
   const createPlan = useMemo(() => {
     if (editor?.kind !== 'create') return { path: '', levels: [] };
     const leaf = form.ja.trim();
-    const path = editor.parent ? `${editor.parent}/${leaf}` : leaf;
-    return { path, levels: planCategoryCreateLevels(path, entries.map((entry) => entry.path)) };
+    const typed = editor.parent ? `${editor.parent}/${leaf}` : leaf;
+    const levels = planCategoryCreateLevels(typed, entries.map((entry) => entry.path));
+    // 階層ごとに trim した後のパスを正とする。原文のままだと、画面が見せた階層と
+    // 送るパスが食い違い、末尾が祖先の一覧からも外れなくなる。パスとして成り立たない
+    // 入力のときだけ原文を送り、サーバーに理由を言わせる
+    return { path: levels.at(-1)?.path ?? typed, levels };
   }, [editor, form.ja, entries]);
   const newAncestors = createPlan.levels.filter(
     (level) => !level.exists && level.path !== createPlan.path,
