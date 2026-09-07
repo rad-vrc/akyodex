@@ -44,8 +44,12 @@ export interface CategoryChange {
 
 export interface CategorySummary {
   path: string;
+  /** 登録されている訳。未対訳なら `null` */
   en: string | null;
   ko: string | null;
+  /** EN/KO のデータに実際に出る名前。未対訳の階層は日本語のまま入る */
+  enDisplay: string;
+  koDisplay: string;
   /** Rows carrying this token or a descendant of it */
   count: number;
 }
@@ -243,7 +247,15 @@ export function summarizeCategories(dataset: CategoryDataset): CategorySummary[]
   }
   return listCategoryPaths(dataset).map((path) => {
     const translation = Object.hasOwn(dataset.translations, path) ? dataset.translations[path] : null;
-    return { path, en: translation?.en ?? null, ko: translation?.ko ?? null, count: counts.get(path) ?? 0 };
+    return {
+      path,
+      en: translation?.en ?? null,
+      ko: translation?.ko ?? null,
+      // 画面が「日本語のまま」を出すときも、実データと同じ表示にする
+      enDisplay: resolveTranslation(dataset, path, 'en'),
+      koDisplay: resolveTranslation(dataset, path, 'ko'),
+      count: counts.get(path) ?? 0,
+    };
   });
 }
 
@@ -438,6 +450,21 @@ function translationLeaf(value: string): string {
   return value.slice(value.lastIndexOf('/') + 1);
 }
 
+/** 移動先の親の表示名に、その項目自身の葉の名前を繋ぎ直す。未対訳はそのまま */
+function rebuildTranslation(
+  dataset: CategoryDataset,
+  nextKey: string,
+  entry: CategoryTranslation,
+  language: CategoryLanguage,
+): string | null {
+  const own = entry[language];
+  // 未対訳のまま動かす。親が訳されていてもここは訳さない
+  if (own == null) return null;
+  const parentPath = parentOf(nextKey);
+  const leaf = translationLeaf(own);
+  return parentPath === null ? leaf : `${resolveTranslation(dataset, parentPath, language)}/${leaf}`;
+}
+
 /**
  * Move translation entries of `from` and its descendants under `to`.
  *
@@ -460,20 +487,25 @@ function moveTranslations(
   for (const key of moved) delete dataset.translations[key];
   for (const key of moved) {
     const nextKey = replacePathPrefix(key, from, to);
-    if (options.keepExistingTarget && Object.hasOwn(dataset.translations, nextKey)) continue;
-    if (key === from) {
-      dataset.translations[nextKey] = { ...target };
+    const entry = entries.get(key);
+    const rebuilt =
+      key === from
+        ? { ...target }
+        : {
+            en: rebuildTranslation(dataset, nextKey, entry!, 'en'),
+            ko: rebuildTranslation(dataset, nextKey, entry!, 'ko'),
+          };
+    const kept = options.keepExistingTarget ? translationOf(dataset, nextKey) : null;
+    if (kept) {
+      // 統合先が残る場合でも、未対訳の言語だけは統合元の名前で埋める。項目ごと飛ばすと
+      // 訳のあるカテゴリを未対訳のカテゴリに統合したときに、その訳が黙って消える
+      dataset.translations[nextKey] = {
+        en: kept.en ?? rebuilt.en,
+        ko: kept.ko ?? rebuilt.ko,
+      };
       continue;
     }
-    const entry = entries.get(key)!;
-    const parentPath = parentOf(nextKey)!;
-    const rebuild = (language: CategoryLanguage): string | null => {
-      const own = entry[language];
-      // 未対訳のまま動かす。親が訳されていてもここは訳さない
-      if (own == null) return null;
-      return `${resolveTranslation(dataset, parentPath, language)}/${translationLeaf(own)}`;
-    };
-    dataset.translations[nextKey] = { en: rebuild('en'), ko: rebuild('ko') };
+    dataset.translations[nextKey] = rebuilt;
   }
   if (!Object.hasOwn(dataset.translations, to)) dataset.translations[to] = { ...target };
 }

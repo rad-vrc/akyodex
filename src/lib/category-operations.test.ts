@@ -181,6 +181,25 @@ test('assertTranslationHierarchy rejects a child whose parent is missing or whos
   assert.doesNotThrow(() => assertTranslationHierarchy(dataset().translations));
 });
 
+test('merge: 未対訳の統合先でも、統合元の訳を捨てない', () => {
+  // 統合先の項目が存在するだけで丸ごと飛ばすと、訳のあるカテゴリを未対訳へ
+  // 統合したときにその訳が黙って消える
+  const base: CategoryDataset = {
+    ...dataset(),
+    records: [...dataset().records, row('0007', '生物,生物/うま')],
+    translations: {
+      ...dataset().translations,
+      '生物': { en: null, ko: null },
+      '生物/うま': { en: null, ko: null },
+    },
+  };
+
+  const change = mergeCategory(base, { from: '動物', into: '生物' });
+  assert.deepEqual(change.dataset.translations['生物/うま'], { en: '生物/Horse', ko: '生物/말' });
+  // 統合先そのものの名前は引き継がない（「動物」の訳は「生物」の訳ではない）
+  assert.deepEqual(change.dataset.translations['生物'], { en: null, ko: null });
+});
+
 test('merge: refuses parent/child pairs, identical paths, protected and untranslated targets', () => {
   const base = dataset();
   assert.throws(() => mergeCategory(base, { from: '動物/うま', into: '動物' }), /親子関係/);
@@ -406,8 +425,15 @@ test('summarizeCategories: counts rows per path including descendants, merges CS
   assert.equal(byPath.get('動物')?.count, 3);
   assert.equal(byPath.get('動物/うま')?.count, 2);
   assert.equal(byPath.get('動物/うま/ポニー')?.count, 1);
-  assert.deepEqual(byPath.get('未翻訳'), { path: '未翻訳', en: null, ko: null, count: 1 });
-  assert.deepEqual(byPath.get('空箱'), { path: '空箱', en: 'Empty Box', ko: '빈 상자', count: 0 });
+  // 未対訳でも、EN/KO のデータに実際に出る名前（日本語のまま）を添える
+  assert.deepEqual(byPath.get('未翻訳'), {
+    path: '未翻訳', en: null, ko: null, enDisplay: '未翻訳', koDisplay: '未翻訳', count: 1,
+  });
+  assert.deepEqual(byPath.get('空箱'), {
+    path: '空箱', en: 'Empty Box', ko: '빈 상자', enDisplay: 'Empty Box', koDisplay: '빈 상자', count: 0,
+  });
+  // 訳された親の下の未対訳な子は、親の訳＋日本語の葉になる
+  assert.equal(byPath.get('動物/うま/ポニー')?.enDisplay, 'Animal/Horse/Pony');
 });
 
 test('serialization sorts keys and ends with a newline', () => {

@@ -31,6 +31,9 @@ interface CategoryEntry {
   path: string;
   en: string | null;
   ko: string | null;
+  /** EN/KO のデータに実際に出る名前。未対訳の階層は日本語のまま入る */
+  enDisplay: string;
+  koDisplay: string;
   count: number;
 }
 
@@ -403,6 +406,8 @@ export function CategoriesTab({
             : `「${editor.path}」の対訳`
           : `「${editor.path}」を別のカテゴリに統合`;
     const idBase = `category-editor-${editor.kind}`;
+    // 空欄の意味は作成と改名で違う。作成は未対訳、改名は「今のまま」なので、そう書く
+    const optionalHint = editor.kind === 'create' ? '任意' : '空欄なら今のまま';
     // 対訳のラベルは末尾の階層の名前を出す。「この階層」ではどこを指すのか分からない
     const labelledPath = editor.kind === 'create' ? createPlan.path : form.ja.trim();
     const leafLabel = labelledPath.split('/').filter(Boolean).at(-1) ?? '';
@@ -436,7 +441,9 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-en`} className="block text-sm font-medium text-green-900 mb-1">
-                {leafLabel ? `英語名（「${leafLabel}」の分だけ・任意）` : '英語名（末尾の階層の分だけ・任意）'}
+                {leafLabel
+                  ? `英語名（「${leafLabel}」の分だけ・${optionalHint}）`
+                  : `英語名（末尾の階層の分だけ・${optionalHint}）`}
               </label>
               <input
                 id={`${idBase}-en`}
@@ -450,7 +457,9 @@ export function CategoriesTab({
             </div>
             <div>
               <label htmlFor={`${idBase}-ko`} className="block text-sm font-medium text-green-900 mb-1">
-                {leafLabel ? `韓国語名（「${leafLabel}」の分だけ・任意）` : '韓国語名（末尾の階層の分だけ・任意）'}
+                {leafLabel
+                  ? `韓国語名（「${leafLabel}」の分だけ・${optionalHint}）`
+                  : `韓国語名（末尾の階層の分だけ・${optionalHint}）`}
               </label>
               <input
                 id={`${idBase}-ko`}
@@ -682,11 +691,11 @@ export function CategoriesTab({
                         ) : (
                           <>
                             {entry.en ?? (
-                              <span className="text-amber-700">{leafOf(entry.path)}（英語は日本語のまま）</span>
+                              <span className="text-amber-700">{entry.enDisplay}（英語は日本語のまま）</span>
                             )}{' '}
                             <span className="text-gray-300">|</span>{' '}
                             {entry.ko ?? (
-                              <span className="text-amber-700">{leafOf(entry.path)}（韓国語は日本語のまま）</span>
+                              <span className="text-amber-700">{entry.koDisplay}（韓国語は日本語のまま）</span>
                             )}
                           </>
                         )}

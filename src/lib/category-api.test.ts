@@ -40,8 +40,11 @@ test('GET builds the list with counts, translations and colours', async () => {
   assert.equal(status, 200);
   assert.equal(body.head, 'head-sha');
   assert.deepEqual(body.categories, [
-    { path: '動物', en: 'Animal', ko: '동물', count: 1 },
-    { path: '動物/うま', en: 'Animal/Horse', ko: '동물/말', count: 1 },
+    { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 1 },
+    {
+      path: '動物/うま', en: 'Animal/Horse', ko: '동물/말',
+      enDisplay: 'Animal/Horse', koDisplay: '동물/말', count: 1,
+    },
   ]);
   assert.deepEqual(body.colors, { '動物': '#111111' });
 });
