@@ -14,9 +14,14 @@ on:
 permissions:
   contents: read
 
+# staging.akyodex.com は 1 つしかない Worker で、このジョブはデプロイした自分の
+# タグを検証する。並走させると互いのデプロイを踏むので直列化は必要。
+# ただし cancel-in-progress: true だと、後から来た別ブランチが実行中のものを
+# 打ち切り、打ち切られた側の PR に失敗チェックが残る（2026-09-07 に 2 回発生）。
+# 打ち切らずに順番待ちさせる。本番用ワークフローも同じ形にしている。
 concurrency:
   group: cloudflare-workers-staging
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy-workers-staging:
