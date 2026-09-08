@@ -16,6 +16,81 @@ import type { AkyoData } from '@/types/akyo';
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 
 /**
+ * 最上位カテゴリを JA の正規名に揃える。
+ *
+ * EN/KO のカテゴリ名（"Supported Platform" / "지원 기기"）も同じキーになるので、
+ * 言語によらず同じ判定ができる。対訳辞書はデータ同期で自動再生成される。
+ *
+ * Object.hasOwn 必須: 素の添字参照だと "constructor" や "toString" というカテゴリ名で
+ * prototype 上の関数が返る。
+ */
+function canonicalTopLevel(category: string): string {
+  const rawTopLevel = (category || '').split('/', 1)[0].trim();
+  return Object.hasOwn(categoryCanonical, rawTopLevel)
+    ? (categoryCanonical as Record<string, string>)[rawTopLevel]
+    : rawTopLevel;
+}
+
+/** すべてに優先して先頭に出す最上位カテゴリ（JA 正規名） */
+const PINNED_TOP_LEVEL = '対応機種';
+
+/**
+ * 固定する最上位カテゴリ名を、対訳ぶんも含めて起動時に 1 度だけ展開しておく
+ * （"対応機種" / "Supported Platform" / "지원 기기"）。
+ *
+ * 比較のたびに canonicalTopLevel を呼ぶと split と trim が O(n log n) 回走る。
+ * カタログ全 949 行のバッジ整列で実測 0.50ms → 2.19ms になったので、前方一致だけで
+ * 済ませる。
+ */
+const PINNED_ROOTS: readonly string[] = [
+  PINNED_TOP_LEVEL,
+  ...Object.entries(categoryCanonical)
+    .filter(([, canonical]) => canonical === PINNED_TOP_LEVEL)
+    .map(([localized]) => localized),
+];
+
+/** 配下判定用の前置詞。比較のたびに `${root}/` を作らないよう、これも先に持っておく。 */
+const PINNED_PREFIXES: readonly string[] = PINNED_ROOTS.map((root) => `${root}/`);
+
+/** 固定対象か（最上位そのものと、その配下すべて）。入力は trim 済みを前提にする。 */
+function isPinnedCategory(category: string): boolean {
+  return (
+    PINNED_ROOTS.includes(category) ||
+    PINNED_PREFIXES.some((prefix) => category.startsWith(prefix))
+  );
+}
+
+/**
+ * カテゴリの並び順。
+ *
+ * 対応機種（Supported Platform / 지원 기기）だけを最優先で先頭に固定し、それ以外は
+ * 従来どおり文字コード順（ひらがな → カタカナ → 漢字）。対応機種は Akyo を選ぶとき
+ * 最初に効く情報なので、フィルタ一覧でもカードのバッジでも先頭に来るようにする。
+ *
+ * 固定分以外の比較は `.sort()` の既定（UTF-16 コード単位の辞書順）と同じ結果になる。
+ */
+export function compareCategories(a: string, b: string): number {
+  const pinnedA = isPinnedCategory(a) ? 0 : 1;
+  const pinnedB = isPinnedCategory(b) ? 0 : 1;
+  if (pinnedA !== pinnedB) return pinnedA - pinnedB;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
+ * 図鑑の絞り込み一覧に出すカテゴリだけにする。
+ *
+ * 対応機種（親単体）は判定できた全行に付くので、押しても件数がほぼ変わらない。
+ * 一覧の先頭を占有するだけなので出さない。配下の PC / Quest(Android) / iOS は残す。
+ *
+ * 外すのは親単体だけで、ほかの「常に子を持つ」親（Booth 191 件など）は実際に
+ * 絞り込めるので触らない。カードのバッジでは親名がグループの見出しになるため、
+ * そちらでも外さない。管理画面のカテゴリ付与にも影響させない。
+ */
+export function categoriesForFilterPanel(categories: readonly string[]): string[] {
+  return categories.filter((category) => !PINNED_ROOTS.includes(category));
+}
+
+/**
  * Extract all unique categories from a dataset
  * Handles both 'category' and legacy 'attribute' fields
  * Supports both Japanese (、) and Western (,) delimiters
@@ -32,7 +107,7 @@ export function extractCategories(data: AkyoData[]): string[] {
     cats.forEach((cat) => categoriesSet.add(cat));
   });
 
-  return Array.from(categoriesSet).sort();
+  return Array.from(categoriesSet).sort(compareCategories);
 }
 
 /**
@@ -60,8 +135,8 @@ export function extractAuthors(data: AkyoData[]): string[] {
 
 /**
  * Parse category string and sort with the same logic as filter panel
- * (default JavaScript lexical sort).
- * 
+ * (compareCategories: pinned platform category first, then lexical order).
+ *
  * @param category - Raw category string from data
  * @returns Sorted array of trimmed category strings
  */
@@ -70,7 +145,7 @@ export function parseAndSortCategories(category: string): string[] {
     .split(MULTI_VALUE_SPLIT_PATTERN)
     .map((value) => value.trim())
     .filter(Boolean)
-    .sort();
+    .sort(compareCategories);
 }
 
 export interface CategoryGroup {
@@ -210,16 +285,10 @@ function hashString(str: string): number {
  * @returns HEX カラーコード
  */
 export function getCategoryColor(category: string): string {
-  const rawTopLevel = (category || '').split('/', 1)[0].trim();
   // EN/KOのカテゴリ名をJA正規名へ変換してから色を決める。これをしないと
   // ハッシュフォールバックが言語ごとに別の色へ散り、同じAkyoのカテゴリが
   // 言語によって違う色になる（対訳辞書はデータ同期で自動再生成される）。
-  // Object.hasOwn必須: 素の添字参照だと "constructor" や "toString" という
-  // カテゴリ名でprototype上の関数が返り、後段のincludesで例外になる。
-  const canonicalName = Object.hasOwn(categoryCanonical, rawTopLevel)
-    ? (categoryCanonical as Record<string, string>)[rawTopLevel]
-    : undefined;
-  const topLevelCategory = canonicalName ?? rawTopLevel;
+  const topLevelCategory = canonicalTopLevel(category);
 
   // 名前ごとに固定した色（category-colors.json）。管理画面でカテゴリを改名しても
   // キーが一緒に付け替わるので、下のキーワード一致やハッシュに落ちて色が変わらない。
