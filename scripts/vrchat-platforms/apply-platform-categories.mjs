@@ -1,12 +1,16 @@
 /**
  * platforms.json をもとに、日本語 CSV の Category 列へ対応機種カテゴリを付ける。
  *
- *   全件（判定できたもの）  対応機種, 対応機種/PC
- *   android の実ビルドあり   対応機種/Quest(Android)
- *   ios の実ビルドあり       対応機種/iOS
+ *   判定できた行   対応機種, 対応機種/PC
+ *   android あり   対応機種/Quest(Android)
+ *   ios あり       対応機種/iOS
  *
  * impostor（VRChat の自動生成）は platforms.json の時点で除外済み。
- * 判定できなかった個体には何も付けない。
+ *
+ * 判定できた行では、対応機種配下を今回の判定で**置き換える**。追加だけにすると、
+ * 作者が Quest 版を取り下げたあとに取り直しても古いタグが残ってしまう。
+ * 判定できなかった行（非公開・削除済みなど）は既存のカテゴリに触れない。
+ * 取得失敗を「対応終了」と読み替えて消すのは危険なため。
  *
  * EN/KO CSV と JSON は、このあと既存の生成スクリプトで作り直す。
  *
@@ -15,17 +19,15 @@
  */
 
 import { readFile, writeFile } from "node:fs/promises";
+import { pathToFileURL } from "node:url";
 
-const [csvPath, platformsPath, ...flags] = process.argv.slice(2);
-const dryRun = flags.includes("--dry-run");
-
-const ROOT = "対応機種";
-const PC = "対応機種/PC";
-const QUEST = "対応機種/Quest(Android)";
-const IOS = "対応機種/iOS";
+export const ROOT = "対応機種";
+export const PC = "対応機種/PC";
+export const QUEST = "対応機種/Quest(Android)";
+export const IOS = "対応機種/iOS";
 
 /** RFC4180 相当。引用符内の改行と "" を扱う。 */
-function parseCsv(text) {
+export function parseCsv(text) {
   const rows = [];
   let row = [], field = "", quoted = false;
   for (let i = 0; i < text.length; i++) {
@@ -48,58 +50,98 @@ function parseCsv(text) {
 }
 
 /** 元の CSV は全フィールドを引用符で囲んでいるので、その形で書き戻す。 */
-const serialize = (rows, eol) =>
+export const serializeCsv = (rows, eol) =>
   rows.map((row) => row.map((f) => `"${String(f).replaceAll('"', '""')}"`).join(",")).join(eol) + eol;
 
-const original = await readFile(csvPath, "utf8");
-// 引用符の中に CRLF があると全体を CRLF と誤判定して全行が差分になるので、
-// ヘッダ行の終端だけを見る。
-const firstBreak = original.indexOf("\n");
-const eol = firstBreak > 0 && original[firstBreak - 1] === "\r" ? "\r\n" : "\n";
-const rows = parseCsv(original);
-const header = rows[0];
-const idx = Object.fromEntries(header.map((h, i) => [h, i]));
-const platforms = JSON.parse(await readFile(platformsPath, "utf8"));
+/**
+ * 対応機種配下だけを今回の判定で置き換える。ほかのカテゴリは順序ごと保つ。
+ *
+ * @param {string} categoryField CSV の Category 列
+ * @param {string[]|null} platforms 実ビルドのプラットフォーム。判定できなければ null
+ * @returns {string} 新しい Category 列
+ */
+export function mergePlatformCategories(categoryField, platforms) {
+  const current = String(categoryField ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 
-let touched = 0, quest = 0, ios = 0, skipped = 0;
-const skippedIds = [];
+  // 判定できなかった行は触らない（取得失敗＝対応終了ではない）
+  if (platforms === null) return current.join(",");
 
-for (let i = 1; i < rows.length; i++) {
-  const row = rows[i];
-  if (!row[idx.ID]) continue;
-
-  const vrcId = `${row[idx.AvatarURL] ?? ""} ${row[idx.SourceURL] ?? ""}`.match(
-    /(avtr|wrld)_[0-9a-fA-F-]{36}/,
-  )?.[0];
-  const record = vrcId ? platforms[vrcId] : null;
-
-  // 判定できなかったものには何も付けない（非公開・削除済みなど）
-  if (!record || record.status !== 200) {
-    skipped += 1;
-    skippedIds.push(row[idx.ID]);
-    continue;
-  }
-
-  const current = (row[idx.Category] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  const add = [];
-  const push = (name) => { if (!current.includes(name) && !add.includes(name)) add.push(name); };
-
-  push(ROOT);
-  push(PC); // PC を持たない個体は 0 件だったので全件に付ける
-  if ((record.platforms ?? []).includes("android")) { push(QUEST); quest += 1; }
-  if ((record.platforms ?? []).includes("ios")) { push(IOS); ios += 1; }
-
-  if (add.length === 0) continue;
-  row[idx.Category] = [...current, ...add].join(",");
-  touched += 1;
+  const kept = current.filter((c) => c !== ROOT && !c.startsWith(`${ROOT}/`));
+  const added = [ROOT, PC]; // PC を持たない個体は 0 件だったので判定できた行には必ず付ける
+  if (platforms.includes("android")) added.push(QUEST);
+  if (platforms.includes("ios")) added.push(IOS);
+  return [...kept, ...added].join(",");
 }
 
-console.log(`付与した行 ${touched}（Quest ${quest} / iOS ${ios}）`);
-console.log(`何も付けなかった行 ${skipped}${skippedIds.length ? `（${skippedIds.join(", ")}）` : ""}`);
+/** 行から VRChat の ID を取り出す */
+export const vrchatIdOf = (row, idx) =>
+  `${row[idx.AvatarURL] ?? ""} ${row[idx.SourceURL] ?? ""}`.match(
+    /(avtr|wrld)_[0-9a-fA-F-]{36}/,
+  )?.[0] ?? null;
 
-if (dryRun) {
-  console.log("\n--dry-run のため書き込みませんでした。");
-} else {
-  await writeFile(csvPath, serialize(rows, eol), "utf8");
+async function main() {
+  const [csvPath, platformsPath, ...flags] = process.argv.slice(2);
+  const dryRun = flags.includes("--dry-run");
+
+  if (!csvPath || !platformsPath) {
+    console.error("使い方: node apply-platform-categories.mjs <akyo-data-ja.csv> <platforms.json> [--dry-run]");
+    process.exitCode = 2;
+    return;
+  }
+
+  const original = await readFile(csvPath, "utf8");
+  // 引用符の中に CRLF があると全体を CRLF と誤判定して全行が差分になるので、
+  // ヘッダ行の終端だけを見る。
+  const firstBreak = original.indexOf("\n");
+  const eol = firstBreak > 0 && original[firstBreak - 1] === "\r" ? "\r\n" : "\n";
+
+  const rows = parseCsv(original);
+  const header = rows[0];
+  const idx = Object.fromEntries(header.map((h, i) => [h, i]));
+  const platforms = JSON.parse(await readFile(platformsPath, "utf8"));
+
+  let changed = 0, quest = 0, ios = 0, removed = 0;
+  const untouched = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row[idx.ID]) continue;
+
+    const id = vrchatIdOf(row, idx);
+    const record = id ? platforms[id] : null;
+    const judged = record && record.status === 200 ? (record.platforms ?? []) : null;
+
+    if (judged === null) {
+      untouched.push(row[idx.ID]);
+      continue;
+    }
+
+    const before = row[idx.Category] ?? "";
+    const after = mergePlatformCategories(before, judged);
+    if (before !== after) {
+      const had = before.split(",").filter((c) => c.startsWith(ROOT)).length;
+      const has = after.split(",").filter((c) => c.startsWith(ROOT)).length;
+      if (had > has) removed += had - has;
+      row[idx.Category] = after;
+      changed += 1;
+    }
+    if (judged.includes("android")) quest += 1;
+    if (judged.includes("ios")) ios += 1;
+  }
+
+  console.log(`書き換えた行 ${changed}（判定: Quest ${quest} / iOS ${ios}）`);
+  if (removed) console.log(`対応終了により外したタグ ${removed} 個`);
+  console.log(`判定できず触らなかった行 ${untouched.length}${untouched.length ? `（${untouched.join(", ")}）` : ""}`);
+
+  if (dryRun) {
+    console.log("\n--dry-run のため書き込みませんでした。");
+    return;
+  }
+  await writeFile(csvPath, serializeCsv(rows, eol), "utf8");
   console.log(`\n書き込み: ${csvPath}`);
+}
+
+// テストから import したときは実行しない
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
 }

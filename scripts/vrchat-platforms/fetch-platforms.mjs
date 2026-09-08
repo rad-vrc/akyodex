@@ -29,8 +29,12 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
-const [csvPath, outPath = "platforms.json"] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const flags = args.filter((a) => a.startsWith("--"));
+const [csvPath, outPath = "platforms.json"] = args.filter((a) => !a.startsWith("--"));
+const refresh = flags.includes("--refresh");
 const cookie = process.env.VRCHAT_AUTH_COOKIE;
 
 const USER_AGENT = "akyodex-platform-backfill/1.0 (+https://akyodex.com)";
@@ -39,14 +43,19 @@ const MIN_GAP_MS = 1200;
 const JITTER_MS = 800;
 const MAX_RETRY = 5;
 
-if (!csvPath) {
-  console.error("使い方: node fetch-platforms.mjs <akyo-data-ja.csv> [出力先.json]");
-  process.exit(2);
-}
-if (!cookie) {
-  console.error("VRCHAT_AUTH_COOKIE が設定されていません。");
-  console.error('PowerShell: $env:VRCHAT_AUTH_COOKIE = "<auth クッキーの値>"');
-  process.exit(2);
+/** 実行時だけ検査する。テストから import したときに終了させないため。 */
+function checkArgs() {
+  if (!csvPath) {
+    console.error("使い方: node fetch-platforms.mjs <akyo-data-ja.csv> [出力先.json] [--refresh]");
+    console.error("  --refresh  取得済みの記録も取り直す（作者が後から Quest 版を上げた分を拾う）");
+    return false;
+  }
+  if (!cookie) {
+    console.error("VRCHAT_AUTH_COOKIE が設定されていません。");
+    console.error('PowerShell: $env:VRCHAT_AUTH_COOKIE = "<auth クッキーの値>"');
+    return false;
+  }
+  return true;
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -60,6 +69,24 @@ async function collectIds(path) {
     if (!seen.has(id)) seen.set(id, id.startsWith("avtr_") ? "avatar" : "world");
   }
   return [...seen].map(([id, kind]) => ({ id, kind }));
+}
+
+/**
+ * 取得しにいく対象を選ぶ。
+ *
+ * 既定は中断からの再開なので、成功済みは飛ばす。ただし対応機種は後から増える
+ * （作者が Quest 版を上げる）ので、それを取り込むには --refresh で全件を
+ * 取り直す必要がある。schema が無い記録は impostor 除外前の古い形式なので、
+ * --refresh の有無にかかわらず取り直す。
+ */
+export function selectTargets(targets, results, { refresh = false } = {}) {
+  return targets.filter((t) => {
+    const previous = results[t.id];
+    if (!previous) return true;
+    if (previous.status === 0) return true;       // 通信に失敗した記録
+    if (previous.schema !== 2) return true;       // 古い形式
+    return refresh;
+  });
 }
 
 /** 1 件取得する。429 / 5xx は指数バックオフで粘り、それ以外は結果を返す。 */
@@ -124,7 +151,6 @@ async function fetchOne(id, kind) {
   return { status: 0, error: "retry exhausted" };
 }
 
-const targets = await collectIds(csvPath);
 
 /**
  * 開始前の検査。
@@ -133,7 +159,7 @@ const targets = await collectIds(csvPath);
  * そのまま走らせると 948 件を取り切ったうえで「全件プラットフォーム不明」に
  * なり、失敗に見えない。アバターは無効なら 401 を返すので、そちらで確かめる。
  */
-async function preflight() {
+async function preflight(targets) {
   const probe = targets.find((t) => t.kind === "avatar");
   if (!probe) return;
   const result = await fetchOne(probe.id, probe.kind); // 401 なら fetchOne が投げる
@@ -156,16 +182,14 @@ async function preflight() {
  * "Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)" を吐き、壊れたように見える。
  */
 async function main() {
-  await preflight();
+  const targets = await collectIds(csvPath);
+  await preflight(targets);
 
   const results = existsSync(outPath) ? JSON.parse(await readFile(outPath, "utf8")) : {};
-// schema が無い記録は impostor を除外する前の古い形式なので取り直す。
-  const todo = targets.filter(
-    (t) => !results[t.id] || results[t.id].status === 0 || results[t.id].schema !== 2,
-  );
+  const todo = selectTargets(targets, results, { refresh });
 
   console.log(`対象 ${targets.length} 件（アバター ${targets.filter((t) => t.kind === "avatar").length} / ワールド ${targets.filter((t) => t.kind === "world").length}）`);
-  console.log(`取得済み ${targets.length - todo.length} 件、これから ${todo.length} 件`);
+  console.log(`${refresh ? "--refresh: 全件を取り直します。" : ""}取得済みで飛ばす ${targets.length - todo.length} 件、これから ${todo.length} 件`);
   console.log(`想定所要 約 ${Math.ceil((todo.length * (MIN_GAP_MS + JITTER_MS / 2)) / 60000)} 分\n`);
 
   let done = 0;
@@ -179,7 +203,14 @@ async function main() {
       console.error(`ここまでの ${done} 件は ${outPath} に保存しました。`);
       throw error;
     }
+    // --refresh で取り直したが API が失敗した場合、オーナー申告（source: manual）の
+  // 記録は上書きしない。API の 404 で手入力の情報を失わないようにする。
+  const previous = results[id];
+  if (result.status !== 200 && previous?.source?.startsWith("manual")) {
+    console.warn(`  ${id} は ${result.status} だったが、手入力の記録を残す`);
+  } else {
     results[id] = { kind, ...result };
+  }
     done += 1;
 
     if (done % 10 === 0 || done === todo.length) {
@@ -227,8 +258,14 @@ async function main() {
   console.log(`\n出力: ${outPath}`);
 }
 
+// テストから import したときは実行しない
+const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
 try {
-  await main();
+  if (isDirectRun) {
+    if (!checkArgs()) process.exitCode = 2;
+    else await main();
+  }
 } catch (error) {
   console.error(`
 中断: ${error instanceof Error ? error.message : error}`);
