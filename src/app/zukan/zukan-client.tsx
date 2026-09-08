@@ -904,9 +904,12 @@ export function ZukanClient({
             </div>
           </div>
 
-          {/* 統計情報 */}
+          {/* 統計情報 — ラベルと中身は文字の大きさが違い、狭い画面では中身だけが
+              複数行に折り返す。items-center だと 1 行のラベルが折り返した中身の
+              上下中央に置かれ、360px 幅では 1 行目から 8.5px 下がっていた。
+              ベースラインで揃えれば、ラベルは常に 1 行目の文字に並ぶ */}
           <dl className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-4 text-sm sm:text-base font-bold text-white w-full sm:w-auto">
-            <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">
+            <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-baseline gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.totalLabel", lang)}：</dt>
               <dd className="min-w-0 text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap">
                 {t("stats.totalBreakdown", lang)
@@ -916,7 +919,7 @@ export function ZukanClient({
                   .replace("{products}", String(stats.totalProducts))}
               </dd>
             </div>
-            <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">
+            <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-baseline gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.displayedLabel", lang)}：</dt>
               <dd className="min-w-0 text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap">
                 {canShowDisplayedBreakdown
@@ -933,7 +936,7 @@ export function ZukanClient({
                     )}
               </dd>
             </div>
-            <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-center gap-1 sm:gap-2">
+            <div className="min-w-0 bg-white/20 backdrop-blur-sm px-3 py-1.5 sm:py-2 rounded-2xl sm:rounded-full flex items-baseline gap-1 sm:gap-2">
               <dt className="text-xs sm:text-sm text-white/90 whitespace-nowrap">{t("stats.favoritesLabel", lang)}：</dt>
               <dd className="min-w-[5ch] text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap flex items-center gap-1">
                 {/* OSの絵文字ハートは3D調で浮くため、白塗りのフラットなSVGに統一。
