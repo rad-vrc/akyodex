@@ -34,3 +34,18 @@ test("お気に入りの中身も、ハートではなく数字のベースラ�
   assert.ok(dd, "お気に入りの dd が見つからない");
   assert.match(dd[0], /flex items-baseline gap-1/, `中央揃えのまま: ${dd[0]}`);
 });
+
+/**
+ * ハートは 1em 四方の SVG で、箱の中心と数字グリフのインク中心は一致しない。
+ * ずれは書体とアイコンの絵柄で決まるので、実測した値を translate-y に固定する。
+ *
+ * 本番の /zukan で、数字の ink は canvas の TextMetrics、ハートの ink は path の
+ * bbox から測った結果: 0.05em ではハートが 1.54px 上（16px 時）/ 1.28px 上（12px 時）。
+ * 0.15em にすると +0.06px / -0.08px に収まる。
+ */
+test("お気に入りのハートは、実測した視覚補正を持つ", () => {
+  const heart = source.match(/<IconHeart[\s\S]{0,200}?\/>/);
+  assert.ok(heart, "IconHeart が見つからない");
+  assert.match(heart[0], /translate-y-\[0\.15em\]/, `補正値が違う: ${heart[0]}`);
+  assert.match(heart[0], /shrink-0/);
+});
