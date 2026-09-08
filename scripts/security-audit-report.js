@@ -21,7 +21,8 @@ module.exports = async function reportSecurityAudit({
     [...severities, 'total'].every((key) => Number.isInteger(counts[key]) && counts[key] >= 0) &&
     severities.reduce((sum, key) => sum + counts[key], 0) === counts.total;
   const failures = [];
-  if (!npmComplete) failures.push('npm audit: incomplete or invalid report; inspect the run logs.');
+  const npmFailure = 'npm audit: incomplete or invalid report; inspect the run logs.';
+  if (!npmComplete) failures.push(npmFailure);
 
   let snykStatus;
   let snykCount = 0;
@@ -36,7 +37,6 @@ module.exports = async function reportSecurityAudit({
     if (valid) snykCount = reports.reduce((sum, report) => sum + report.vulnerabilities.length, 0);
     const expectedOutcome = snykCount > 0 ? 'failure' : 'success';
     if (!valid || snykOutcome !== expectedOutcome) {
-      snykCount = 0;
       snykStatus = 'scan failed or returned an invalid report; findings are unknown (see run logs).';
       failures.push(`Snyk: ${snykStatus}`);
     } else {
@@ -45,6 +45,7 @@ module.exports = async function reportSecurityAudit({
   }
 
   const npmCount = npmComplete ? counts.total : 0;
+  // Missing credentials remain actionable until the owner chooses the scanner policy.
   const needsAttention = npmCount > 0 || snykCount > 0 || !snykConfigured || failures.length > 0;
   const title = `Weekly Security Audit - ${npmCount > 0 ? `${npmCount} affected npm package(s); ` : ''}${
     failures.length > 0 ? 'scanner failure' : !snykConfigured ? 'scanner setup required' :
@@ -54,15 +55,16 @@ module.exports = async function reportSecurityAudit({
   const body = [
     '## Security Audit Results', '',
     `**Date**: ${new Date().toISOString()}`,
-    `**Ref**: ${context.ref}`, `**Commit**: ${context.sha}`, `**Run and artifacts**: ${runUrl}`, '',
+    `**Ref**: ${context.ref ?? 'unknown'}`, `**Commit**: ${context.sha}`, `**Run and artifacts**: ${runUrl}`, '',
     '**npm audit**:',
-    ...(npmComplete ? [...severities, 'total'].map((key) => `- ${key}: ${counts[key]}`) : [failures[0]]),
+    ...(npmComplete ? [...severities, 'total'].map((key) => `- ${key}: ${counts[key]}`) : [npmFailure]),
     '', '`total` counts affected packages, not distinct advisories; it is not added to severity counts.',
     '', `**Snyk**: ${snykStatus}`, '',
     'This issue tracks the latest dependency scans. CodeQL findings remain in GitHub code scanning.',
     'Previous weekly reports remain in closed issues. A clean scan does not automatically close this tracker.',
   ].join('\n');
   await core.summary.addRaw(body).write();
+  // Labels are an ownership boundary; do not relabel or auto-close other trackers.
   const issues = await github.paginate(github.rest.issues.listForRepo, {
     ...context.repo, state: 'open', labels: 'security,automated', per_page: 100,
   });
