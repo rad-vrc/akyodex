@@ -57,6 +57,9 @@ test("アイコン付きの見出しは flex で中央に揃え、余白は gap 
     assert.match(heading.open, /class="[^"]*\bgap-\d\b[^"]*"/, `gap が無い: ${heading.open}`);
     // gap と mr が両方効くと、見出しごとに余白が変わる
     assert.doesNotMatch(heading.inner, /<svg[^>]*\bmr-\d/, `svg に mr が残っている: ${heading.inner.slice(0, 120)}`);
+    // flex アイテムは既定で縮む。w-4 を持っていても、幅が足りなければ潰れる
+    // （shrink-0 なしで実測すると、枠 180px でアイコンが 0.34px まで縮んだ）
+    assert.match(heading.inner, /<svg[^>]*\bshrink-0\b/, `svg に shrink-0 が無い: ${heading.inner.slice(0, 120)}`);
   }
 });
 
