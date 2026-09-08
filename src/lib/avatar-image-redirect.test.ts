@@ -6,6 +6,7 @@ import ts from 'typescript';
 import * as entry from './akyo-entry';
 import { fetchVrchatResource } from './vrchat-resource-fetch';
 import { createAvatarImageFailureResponse } from './avatar-card-image';
+import { VRCHAT_USER_AGENT } from './vrchat-utils';
 
 const source = readFileSync(new URL('../app/api/avatar-image/route.ts', import.meta.url), 'utf8');
 
@@ -15,6 +16,7 @@ function loadRoute(fetchFn: typeof fetch) {
     'next/server': { connection: async () => {} },
     '@/lib/api-helpers': { jsonError: (error: string, status: number) => Response.json({ error }, { status }) },
     '@/lib/akyo-entry': entry,
+    '@/lib/vrchat-utils': { VRCHAT_USER_AGENT },
     '@/lib/vrchat-resource-fetch': {
       fetchVrchatResource: (...args: Parameters<typeof fetchVrchatResource>) =>
         fetchVrchatResource(args[0], args[1], args[2], fetchFn),
@@ -44,9 +46,11 @@ for (const blocked of ['page', 'image', 'none']) {
   test(`actual avatar route enforces redirect policy (${blocked})`, async () => {
     const calls: string[] = [];
     const redirectModes: Array<RequestRedirect | undefined> = [];
+    const userAgents: Array<string | null> = [];
     const GET = loadRoute(async (url, init) => {
       calls.push(String(url));
       redirectModes.push(init?.redirect);
+      userAgents.push(new Headers(init?.headers).get('User-Agent'));
       if (calls.length === 1) {
         return blocked === 'page'
           ? new Response(null, { status: 302, headers: { Location: 'https://evil.example/' } })
@@ -61,6 +65,7 @@ for (const blocked of ['page', 'image', 'none']) {
     });
     const response = await GET(request());
     assert.ok(redirectModes.every(mode => mode === 'manual'), 'every fetch must disable automatic redirects');
+    assert.ok(userAgents.every(value => value === VRCHAT_USER_AGENT), 'every fetch must preserve the VRChat User-Agent');
     assert.equal(calls.length, blocked === 'page' ? 1 : blocked === 'image' ? 2 : 3);
     assert.ok(calls.every(url => new URL(url).hostname !== 'evil.example'));
     if (blocked === 'none') {
