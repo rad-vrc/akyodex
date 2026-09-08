@@ -33,6 +33,8 @@
     "scripts/tmp/register-verified-worlds.test.js",
     "scripts/tmp/world-serial-migration.js",
     "scripts/tmp/world-serial-migration.test.js",
+    "scripts/vrchat-platforms/fetch-platforms.mjs",
+    "scripts/vrchat-platforms/apply-platform-categories.mjs",
     "src/lib/blur-data-url.ts",
     "src/lib/cloudflare-image-loader.ts",
     "src/lib/akyo-data-server.ts",
