@@ -1147,6 +1147,10 @@
     "en": "Color",
     "ko": "색상"
   },
+  "色/無彩色系": {
+    "en": "Color/Achromatic Colors",
+    "ko": "색상/무채색 계열"
+  },
   "色/紫色系": {
     "en": null,
     "ko": null
