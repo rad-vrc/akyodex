@@ -187,7 +187,7 @@ export async function GET(request: Request) {
 
       // Security: Explicitly construct VRChat URL to prevent SSRF
       // Only allow vrchat.com domain
-      const vrchatPageUrl = `https://vrchat.com/home/avatar/${cleanAvtr}`;
+      const vrchatPageUrl = `https://vrchat.com/home/avatar/${encodeURIComponent(cleanAvtr)}`;
 
       // Validate URL is actually vrchat.com (defense in depth)
       const parsedUrl = new URL(vrchatPageUrl);
