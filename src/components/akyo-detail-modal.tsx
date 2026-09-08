@@ -288,11 +288,11 @@ export function AkyoDetailModal({
                       isWorldEntry ? 'md:col-span-2' : ''
                     }`}
                   >
-                    <h3 className="text-sm font-bold mb-2" style={{ color: '#FF6B9D' }}>
+                    <h3 className="flex items-center gap-1 text-sm font-bold mb-2" style={{ color: '#FF6B9D' }}>
                       {isWorldEntry ? (
-                        <IconGlobe size="w-3.5 h-3.5" className="mr-1" />
+                        <IconGlobe size="w-3.5 h-3.5" />
                       ) : (
-                        <IconTag size="w-3.5 h-3.5" className="mr-1" />
+                        <IconTag size="w-3.5 h-3.5" />
                       )}
                       {t(isWorldEntry ? 'modal.worldName' : 'modal.name', lang)}
                     </h3>
@@ -320,8 +320,8 @@ export function AkyoDetailModal({
                   {/* Author Card — 名前・作者の「誰の何か」を先に、属性はその後。
                       一覧カードで作者の下にカテゴリを置いた並びと揃える */}
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4">
-                    <h3 className="text-sm font-bold text-green-600 mb-2">
-                      <IconUser size="w-3.5 h-3.5" className="mr-1" />
+                    <h3 className="flex items-center gap-1 text-sm font-bold text-green-600 mb-2">
+                      <IconUser size="w-3.5 h-3.5" />
                       {t('modal.author', lang)}
                     </h3>
                     <p className="text-xl font-bold">{authorStr || ''}</p>
@@ -329,8 +329,8 @@ export function AkyoDetailModal({
 
                   {/* Categories Card — 件数で高さが変わるので最後（右下）に置く */}
                   <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4">
-                    <h3 className="text-sm font-bold text-orange-600 mb-2">
-                      <IconTags size="w-3.5 h-3.5" className="mr-1" />
+                    <h3 className="flex items-center gap-1 text-sm font-bold text-orange-600 mb-2">
+                      <IconTags size="w-3.5 h-3.5" />
                       {t('modal.category', lang)}
                     </h3>
                     {/* 12px / 高さ20px の小型ピル（旧: 14px / 28px / shadow-md）。
@@ -417,8 +417,8 @@ export function AkyoDetailModal({
                     中間色で止め、情報カード群（隣接色相ペア）と同じ穏やかな変化量に揃える */}
                 {commentStr && (
                   <div className="bg-gradient-to-br from-pink-50 to-[#fef4f3] rounded-3xl p-5">
-                    <h3 className="text-lg font-bold text-gray-900 mb-3">
-                      <IconGift size="w-4 h-4" className="mr-2" />
+                    <h3 className="flex items-center gap-2 text-lg font-bold text-gray-900 mb-3">
+                      <IconGift size="w-4 h-4" />
                       {t('modal.bonus', lang)}
                     </h3>
                     <div className="bg-white bg-opacity-80 rounded-2xl p-4 shadow-inner">
