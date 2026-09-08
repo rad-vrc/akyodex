@@ -134,13 +134,14 @@ test('Booth uses the WCAG-safe semi-bright red without triggering darkening', ()
   assert.equal(ensureContrastForWhiteText(getCategoryColor('Booth')), '#d63d43');
 });
 
-test('Animal uses the WCAG-safe warm red without triggering darkening', () => {
-  // Boothと同じ設計。旧#ff6f61は補正で#eb1500(信号赤)化していた。
-  assert.equal(getCategoryColor('動物'), '#d44335');
-  assert.equal(getCategoryColor('動物/きつね'), '#d44335');
-  assert.equal(getCategoryColor('Animal'), '#d44335');
-  assert.equal(getCategoryColor('동물'), '#d44335');
-  assert.equal(ensureContrastForWhiteText(getCategoryColor('動物')), '#d44335');
+test('Animal shares the orange-red with Food', () => {
+  // 元は #d44335 単独だったが、実描画で食べ物の #d84315 と ΔE 14.5 しか離れておらず
+  // 見分けが付かないという判断で食べ物側に寄せた（2026-09-08、オーナー確認済み）。
+  // #d44335 は補正が要らない色だったのに対し、#d84315 は #d34215 へ ΔE 2.0 だけ暗くなる。
+  for (const category of ['動物', '動物/きつね', 'Animal', '동물', '食べ物', 'きつね']) {
+    assert.equal(getCategoryColor(category), '#d84315');
+  }
+  assert.equal(ensureContrastForWhiteText('#d84315'), '#d34215');
 });
 
 test('formerly purple semantic colors use established non-purple colors', () => {
@@ -207,8 +208,10 @@ test('renamed equipment and split machine categories preserve their established 
   ]) {
     assert.equal(getCategoryColor(category), '#1a73cc');
   }
-  for (const category of ['機械', 'Machine', '기계']) {
-    assert.equal(getCategoryColor(category), '#43a047');
+  // 緑は #43a047 と #4caf50 が実描画で ΔE 0.8（識別限界以下）だったので、
+  // ギミック・特殊が使っていた #4caf50 に寄せて 1 色にした（2026-09-08）
+  for (const category of ['機械', 'Machine', '기계', 'ギミック・特殊', 'レア', '設備']) {
+    assert.equal(getCategoryColor(category), '#4caf50');
   }
 });
 
