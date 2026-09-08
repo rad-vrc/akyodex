@@ -43,6 +43,7 @@ import {
   captureCatalogResume,
   reportCatalogLoadToSentry,
 } from "./catalog-performance";
+import { compareCategories } from "@/lib/akyo-data-helpers";
 import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
 import {
   sortCatalogForDisplay,
@@ -209,7 +210,9 @@ function extractTaxonomy(
   }
 
   return {
-    categories: Array.from(uniqueCategories).sort(),
+    // 対応機種を先頭に固定する。サーバ側の extractCategories と同じ並びにしないと、
+    // 初期表示から差し替わるときにフィルタ一覧の順序が入れ替わって見える。
+    categories: Array.from(uniqueCategories).sort(compareCategories),
     authors: Array.from(uniqueAuthors).sort(),
   };
 }
