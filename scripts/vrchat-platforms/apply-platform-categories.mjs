@@ -9,8 +9,9 @@
  *
  * 判定できた行では、対応機種配下を今回の判定で**置き換える**。追加だけにすると、
  * 作者が Quest 版を取り下げたあとに取り直しても古いタグが残ってしまう。
- * 判定できなかった行（非公開・削除済みなど）は既存のカテゴリに触れない。
- * 取得失敗を「対応終了」と読み替えて消すのは危険なため。
+ * 判定できなかった行（非公開・削除済み、および HTTP 200 でも実ビルドが空だった
+ * もの）は既存のカテゴリに触れない。取得失敗を「対応終了」と読み替えて消すのは
+ * 危険なため。判定できたかどうかは record.mjs の realPlatformsOf が決める。
  *
  * EN/KO CSV と JSON は、このあと既存の生成スクリプトで作り直す。
  *
@@ -20,6 +21,8 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+
+import { realPlatformsOf } from "./record.mjs";
 
 export const ROOT = "対応機種";
 export const PC = "対応機種/PC";
@@ -102,6 +105,7 @@ async function main() {
 
   let changed = 0, quest = 0, ios = 0, removed = 0;
   const untouched = [];
+  const empty200 = [];
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
@@ -109,10 +113,12 @@ async function main() {
 
     const id = vrchatIdOf(row, idx);
     const record = id ? platforms[id] : null;
-    const judged = record && record.status === 200 ? (record.platforms ?? []) : null;
+    const judged = realPlatformsOf(record);
 
     if (judged === null) {
       untouched.push(row[idx.ID]);
+      // 200 なのに実ビルドが空。非公開ではなく、取得がうまくいっていない疑い。
+      if (record?.status === 200) empty200.push(row[idx.ID]);
       continue;
     }
 
@@ -132,6 +138,12 @@ async function main() {
   console.log(`書き換えた行 ${changed}（判定: Quest ${quest} / iOS ${ios}）`);
   if (removed) console.log(`対応終了により外したタグ ${removed} 個`);
   console.log(`判定できず触らなかった行 ${untouched.length}${untouched.length ? `（${untouched.join(", ")}）` : ""}`);
+  if (empty200.length) {
+    console.warn(
+      `  うち ${empty200.length} 件は HTTP 200 なのに実ビルドが空でした（${empty200.join(", ")}）。\n` +
+        "  取得の途中でクッキーが切れた可能性があります。--refresh で取り直してください。",
+    );
+  }
 
   if (dryRun) {
     console.log("\n--dry-run のため書き込みませんでした。");

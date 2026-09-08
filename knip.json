@@ -35,6 +35,7 @@
     "scripts/tmp/world-serial-migration.test.js",
     "scripts/vrchat-platforms/fetch-platforms.mjs",
     "scripts/vrchat-platforms/apply-platform-categories.mjs",
+    "scripts/vrchat-platforms/record.mjs",
     "src/lib/blur-data-url.ts",
     "src/lib/cloudflare-image-loader.ts",
     "src/lib/akyo-data-server.ts",

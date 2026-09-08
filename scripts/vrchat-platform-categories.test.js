@@ -52,6 +52,30 @@ test("leaves the row untouched when the platform could not be judged", async () 
   assert.equal(mergePlatformCategories("乗り物", null), "乗り物");
 });
 
+/**
+ * Codex の指摘 3。クッキーが切れるとワールドは 401 ではなく 200 ＋ 空の
+ * unityPackages を返す。開始前のアバター検査はその 1 件しか保証しないので、
+ * 途中で切れた分は 200 のまま実ビルドが空で記録される。これを「対応終了」と
+ * 読み替えると、確認できていないのに Quest / iOS タグを消してしまう。
+ */
+test("treats a 200 with no real build as unjudged, not as support ending", async () => {
+  const { realPlatformsOf } = await load("record.mjs");
+  assert.equal(realPlatformsOf({ status: 200, platforms: [] }), null);
+  assert.equal(realPlatformsOf({ status: 200 }), null); // platforms ごと欠落
+  assert.equal(realPlatformsOf({ status: 404 }), null);
+  assert.equal(realPlatformsOf(undefined), null);
+  assert.deepEqual(realPlatformsOf({ status: 200, platforms: ["android"] }), ["android"]);
+});
+
+test("keeps the existing platform tags when the record is a 200 with no real build", async () => {
+  const { mergePlatformCategories } = await load("apply-platform-categories.mjs");
+  const { realPlatformsOf } = await load("record.mjs");
+  const before = "動物,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS";
+  // 付与スクリプトが record から判定を取り出す経路をそのまま通す
+  const judged = realPlatformsOf({ kind: "world", schema: 2, status: 200, platforms: [], packageCount: 0 });
+  assert.equal(mergePlatformCategories(before, judged), before);
+});
+
 test("is idempotent", async () => {
   const { mergePlatformCategories } = await load("apply-platform-categories.mjs");
   const once = mergePlatformCategories("動物", ["standalonewindows", "android"]);
@@ -115,4 +139,37 @@ test("always re-fetches old-format and failed records", async () => {
   assert.ok(picked.includes("avtr_old"), "古い形式は取り直す");
   assert.ok(picked.includes("avtr_neterr"), "通信失敗は取り直す");
   assert.ok(!picked.includes("avtr_404"), "404 は非公開なので再開時は飛ばす");
+});
+
+test("never overwrites a good record with a 200 that has no real build", async () => {
+  const { keepPreviousReason } = await load("fetch-platforms.mjs");
+  const good = { kind: "world", schema: 2, status: 200, platforms: ["standalonewindows", "android"] };
+  const empty = { schema: 2, status: 200, platforms: [], packageCount: 0 };
+
+  // クッキーが途中で切れたときに良い記録を潰さない
+  assert.equal(keepPreviousReason(good, empty), "200 だが実ビルドが空だった");
+  // オーナー申告も同じく守る
+  assert.equal(keepPreviousReason({ source: "manual — 申告", status: 200, platforms: ["standalonewindows"] }, empty), "200 だが実ビルドが空だった");
+  assert.equal(keepPreviousReason({ source: "manual — 申告", status: 200 }, { status: 404 }), "404 だったが手入力の記録がある");
+
+  // 初回取得は記録する（判定できなかったことも情報なので残す）
+  assert.equal(keepPreviousReason(undefined, empty), null);
+  // 実ビルドが取れたときは当然上書きする
+  assert.equal(keepPreviousReason(good, { status: 200, platforms: ["standalonewindows"] }), null);
+  // 404 は API が明確に「無い」と答えているので上書きしてよい
+  assert.equal(keepPreviousReason(good, { status: 404 }), null);
+});
+
+/** 200 ＋ 空を成功として確定させると、二度と取り直さなくなる。 */
+test("always re-fetches a 200 that came back with no real build", async () => {
+  const { selectTargets } = await load("fetch-platforms.mjs");
+  const targets = [
+    { id: "wrld_empty", kind: "world" },
+    { id: "wrld_ok", kind: "world" },
+  ];
+  const results = {
+    wrld_empty: { schema: 2, status: 200, platforms: [], packageCount: 0 },
+    wrld_ok: { schema: 2, status: 200, platforms: ["standalonewindows"], packageCount: 4 },
+  };
+  assert.deepEqual(selectTargets(targets, results).map((t) => t.id), ["wrld_empty"]);
 });

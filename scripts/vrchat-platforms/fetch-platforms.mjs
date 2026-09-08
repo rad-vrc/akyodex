@@ -31,6 +31,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
+import { realPlatformsOf } from "./record.mjs";
+
 const args = process.argv.slice(2);
 const flags = args.filter((a) => a.startsWith("--"));
 const [csvPath, outPath = "platforms.json"] = args.filter((a) => !a.startsWith("--"));
@@ -78,6 +80,9 @@ async function collectIds(path) {
  * （作者が Quest 版を上げる）ので、それを取り込むには --refresh で全件を
  * 取り直す必要がある。schema が無い記録は impostor 除外前の古い形式なので、
  * --refresh の有無にかかわらず取り直す。
+ *
+ * 200 なのに実ビルドが空の記録も同じ扱いにする。取得はできているが判定は
+ * できていない状態で、成功として確定させると二度と取り直さなくなる。
  */
 export function selectTargets(targets, results, { refresh = false } = {}) {
   return targets.filter((t) => {
@@ -85,8 +90,32 @@ export function selectTargets(targets, results, { refresh = false } = {}) {
     if (!previous) return true;
     if (previous.status === 0) return true;       // 通信に失敗した記録
     if (previous.schema !== 2) return true;       // 古い形式
+    if (previous.status === 200 && realPlatformsOf(previous) === null) return true; // 200 だが空
     return refresh;
   });
+}
+
+/**
+ * 取得結果で前の記録を上書きしてよいか決める。上書きしないならその理由を返す。
+ *
+ * 根拠のある記録を、根拠のない結果で消さないための関門。
+ *
+ * @param {object|undefined} previous 既存の記録
+ * @param {{status: number, platforms?: string[]}} result 今回の取得結果
+ * @returns {string|null} 前の記録を残す理由。上書きしてよければ null
+ */
+export function keepPreviousReason(previous, result) {
+  // 200 でも実ビルドが空なら「対応終了」ではなく判定できていない。クッキーが
+  // 切れると 401 ではなく 200 ＋ 空で返ってくるので、根拠のある記録を消さない。
+  if (previous && result.status === 200 && realPlatformsOf(result) === null) {
+    return "200 だが実ビルドが空だった";
+  }
+  // --refresh で取り直したが API が失敗した場合、オーナー申告（source: manual）の
+  // 記録は上書きしない。API の 404 で手入力の情報を失わないようにする。
+  if (result.status !== 200 && previous?.source?.startsWith("manual")) {
+    return `${result.status} だったが手入力の記録がある`;
+  }
+  return null;
 }
 
 /** 1 件取得する。429 / 5xx は指数バックオフで粘り、それ以外は結果を返す。 */
@@ -193,6 +222,7 @@ async function main() {
   console.log(`想定所要 約 ${Math.ceil((todo.length * (MIN_GAP_MS + JITTER_MS / 2)) / 60000)} 分\n`);
 
   let done = 0;
+  const emptyRun = []; // 200 で返ってきたが実ビルドが空だったもの
   for (const { id, kind } of todo) {
     let result;
     try {
@@ -203,14 +233,11 @@ async function main() {
       console.error(`ここまでの ${done} 件は ${outPath} に保存しました。`);
       throw error;
     }
-    // --refresh で取り直したが API が失敗した場合、オーナー申告（source: manual）の
-  // 記録は上書きしない。API の 404 で手入力の情報を失わないようにする。
-  const previous = results[id];
-  if (result.status !== 200 && previous?.source?.startsWith("manual")) {
-    console.warn(`  ${id} は ${result.status} だったが、手入力の記録を残す`);
-  } else {
-    results[id] = { kind, ...result };
-  }
+    if (result.status === 200 && realPlatformsOf(result) === null) emptyRun.push(id);
+
+    const keep = keepPreviousReason(results[id], result);
+    if (keep) console.warn(`  ${id} は ${keep}ため、前の記録を残します`);
+    else results[id] = { kind, ...result };
     done += 1;
 
     if (done % 10 === 0 || done === todo.length) {
@@ -256,6 +283,14 @@ async function main() {
   console.log(`  ${"取得できず (401以外)".padEnd(24)} ${failed}`);
   console.log(`\n  variant の実測値: ${[...new Set(Object.values(results).flatMap((r) => r.variants ?? []))].sort().join(", ")}`);
   console.log(`\n出力: ${outPath}`);
+
+  if (emptyRun.length) {
+    console.warn(
+      `\n注意: ${emptyRun.length} 件が HTTP 200 なのに実ビルドが空でした。` +
+        "途中でクッキーが切れた可能性があります。\n" +
+        "これらは判定できなかった扱いなので、付与スクリプトはカテゴリを変えません。次回の実行で取り直します。",
+    );
+  }
 }
 
 // テストから import したときは実行しない
