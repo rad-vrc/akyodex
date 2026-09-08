@@ -11,6 +11,9 @@ on:
       - 'package.json'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 # Prevent multiple runs
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
