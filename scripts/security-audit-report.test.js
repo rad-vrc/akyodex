@@ -5,9 +5,9 @@ const reportSecurityAudit = require('./security-audit-report');
 const clean = { metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0, total: 0 } } };
 
 async function run(overrides = {}, issues = []) {
-  const calls = { created: [], updated: [], warnings: [], failures: [], summary: '' };
+  const calls = { created: [], updated: [], warnings: [], failures: [], summary: '', queries: [] };
   const github = {
-    paginate: async () => issues,
+    paginate: async (method, options) => { calls.queries.push(options); return issues; },
     rest: { issues: {
       listForRepo() {},
       create: async (value) => calls.created.push(value),
@@ -20,7 +20,7 @@ async function run(overrides = {}, issues = []) {
     summary: { addRaw(value) { calls.summary = value; return this; }, async write() {} },
   };
   await reportSecurityAudit({ github, core,
-    context: { repo: { owner: 'owner', repo: 'repo' }, serverUrl: 'https://github.com', runId: 123, sha: 'abc' },
+    context: { repo: { owner: 'owner', repo: 'repo' }, serverUrl: 'https://github.com', runId: 123, sha: 'abc', ref: 'refs/heads/main' },
     auditResults: clean, snykConfigured: true, snykOutcome: 'success',
     snykResults: { ok: true, vulnerabilities: [] }, ...overrides,
   });
@@ -115,4 +115,76 @@ test('inconsistent totals and scan outcomes do not pass as clean', async () => {
   assert.equal(countResult.failures.length, 1);
   const outcomeResult = await run({ snykOutcome: 'failure' });
   assert.equal(outcomeResult.failures.length, 1);
+  const findingsWithSuccess = await run({ snykOutcome: 'success', snykResults: { ok: false, vulnerabilities: [{ id: 'finding' }] } });
+  assert.equal(findingsWithSuccess.failures.length, 1);
+  assert.match(findingsWithSuccess.created[0].body, /findings are unknown/);
+});
+
+test('invalid npm data reports scanner failure without claiming an affected package count', async () => {
+  // Exercise invalid reports, not every redundant validation expression in isolation.
+  for (const auditResults of [
+    { error: { code: 'EAUDIT' }, ...clean },
+    { metadata: { vulnerabilities: { ...clean.metadata.vulnerabilities, moderate: 1.5, total: 1.5 } } },
+    { metadata: { vulnerabilities: { ...clean.metadata.vulnerabilities, moderate: -1, total: -1 } } },
+    { metadata: { vulnerabilities: { total: 7 } } },
+  ]) {
+    const result = await run({ auditResults });
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.created[0].title, 'Weekly Security Audit - scanner failure');
+    assert.match(result.created[0].body, /\*\*npm audit\*\*:\nnpm audit: incomplete/);
+  }
+});
+
+test('invalid Snyk reports cannot appear clean even when the process claims success', async () => {
+  // Mutations of redundant subconditions (review cases 6/8) may survive;
+  // the contract is rejection of bad reports, not one test per internal guard.
+  for (const snykResults of [[], { error: 'failed' }, { ok: true },
+    { ok: true, vulnerabilities: [{ id: 'finding' }] },
+    { ok: true, vulnerabilities: [], error: 'failed' }]) {
+    const result = await run({ snykResults, snykOutcome: 'success' });
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.created[0].title, 'Weekly Security Audit - scanner failure');
+    assert.match(result.created[0].body, /findings are unknown/);
+  }
+});
+
+test('public titles distinguish clean scans, npm findings, Snyk findings and failure', async () => {
+  const tracker = [{ number: 532, title: 'Weekly Security Audit', user: { login: 'github-actions[bot]' } }];
+  for (const [options, expected] of [
+    [{}, 'no findings in latest scans'],
+    [{ auditResults: { metadata: { vulnerabilities: { ...clean.metadata.vulnerabilities, high: 1, total: 1 } } } }, '1 affected npm package(s); dependency updates required'],
+    [{ snykOutcome: 'failure', snykResults: { ok: false, vulnerabilities: [{ id: 'a' }] } }, 'Snyk findings'],
+    [{ auditResults: null }, 'scanner failure'],
+  ]) {
+    const result = await run(options, tracker);
+    assert.equal(result.updated[0].title, `Weekly Security Audit - ${expected}`);
+    assert.equal(result.summary, result.updated[0].body);
+    assert.match(result.summary, /\*\*Ref\*\*: refs\/heads\/main/);
+  }
+});
+
+test('selects the newest eligible tracker regardless of API ordering without closing older ones', async () => {
+  const older = { number: 400, title: 'Weekly Security Audit - older', user: { login: 'github-actions[bot]' } };
+  const newer = { ...older, number: 532 };
+  for (const issues of [[older, newer], [newer, older]]) {
+    const result = await run({}, issues);
+    assert.equal(result.updated.length, 1);
+    assert.equal(result.updated[0].issue_number, 532);
+    assert.equal(result.updated[0].state, undefined);
+    assert.equal(result.updated[0].labels, undefined);
+  }
+  const unrelated = await run({ snykConfigured: false }, [{ ...newer, title: 'Dependency Dashboard' }]);
+  assert.equal(unrelated.updated.length, 0);
+  assert.equal(unrelated.created.length, 1);
+});
+
+test('tracker discovery remains scoped to open security and automated issues', async () => {
+  const result = await run();
+  assert.deepEqual(result.queries, [{ owner: 'owner', repo: 'repo', state: 'open', labels: 'security,automated', per_page: 100 }]);
+  assert.match(result.summary, /no high\/critical findings/);
+});
+
+test('missing optional ref is displayed explicitly rather than undefined', async () => {
+  const result = await run({ context: { repo: { owner: 'owner', repo: 'repo' }, serverUrl: 'https://github.com', runId: 123, sha: 'abc' } });
+  assert.match(result.summary, /\*\*Ref\*\*: unknown/);
 });
