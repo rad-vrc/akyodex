@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-08T11:48:26.371Z",
+  "updatedAt": "2026-09-08T12:14:48.474Z",
   "count": 949,
   "data": [
     {
@@ -4341,13 +4341,15 @@
     {
       "id": "0383",
       "entryType": "avatar",
+      "displaySerial": "0383",
       "nickname": "和メイドきつねAkyo",
       "avatarName": "akyo_きつね和メイド",
-      "category": "動物,動物/きつね,身分・役割,作風・スタイル,作風・スタイル/プリティ,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "category": "動物,動物/きつね,身分・役割,作風・スタイル,作風・スタイル/プリティ,対応機種,対応機種/PC,対応機種/Quest(Android),Booth,Booth/アバター",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666",
+      "boothUrl": "https://sasanoki.booth.pm/items/8818402"
     },
     {
       "id": "0384",

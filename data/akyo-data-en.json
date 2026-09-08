@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-08T11:48:26.422Z",
+  "updatedAt": "2026-09-08T12:14:48.527Z",
   "count": 949,
   "data": [
     {
@@ -4341,13 +4341,15 @@
     {
       "id": "0383",
       "entryType": "avatar",
+      "displaySerial": "0383",
       "nickname": "Japanese Maid Fox Akyo",
       "avatarName": "akyo_きつね和メイド",
-      "category": "Animal,Animal/Fox,Role・Status,Style,Style/Pretty,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Animal,Animal/Fox,Role・Status,Style,Style/Pretty,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Booth,Booth/Avatar",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666",
+      "boothUrl": "https://sasanoki.booth.pm/items/8818402"
     },
     {
       "id": "0384",

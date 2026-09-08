@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-08T11:48:26.448Z",
+  "updatedAt": "2026-09-08T12:14:48.580Z",
   "count": 949,
   "data": [
     {
@@ -4722,11 +4722,12 @@
       "displaySerial": "0383",
       "nickname": "화풍 메이드 여우 Akyo",
       "avatarName": "akyo_きつね和メイド",
-      "category": "동물,동물/여우,신분・역할,스타일,스타일/프리티,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "category": "동물,동물/여우,신분・역할,스타일,스타일/프리티,지원 기기,지원 기기/PC,지원 기기/Quest(Android),Booth,Booth/아바타",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2ebe0457-ed55-4618-96d4-dfde88bee666",
+      "boothUrl": "https://sasanoki.booth.pm/items/8818402"
     },
     {
       "id": "0384",
