@@ -15,6 +15,9 @@ on:
   # 同期後の木を検証できるよう、Sync 側から明示的に起動できるようにする
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 # Prevent multiple CI runs for the same commit
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
