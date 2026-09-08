@@ -7,7 +7,9 @@ import {
   createCategory,
   deleteCategory,
   ensureCategoryAncestors,
+  listCategoryColors,
   mergeCategory,
+  recolorCategory,
   renameCategory,
   selectCategoryPath,
   serializeCategoryColors,
@@ -236,6 +238,41 @@ test('merge: refuses parent/child pairs, identical paths, protected and untransl
   assert.throws(() => mergeCategory(base, { from: '動物', into: '動物' }), /同じ/);
   assert.throws(() => mergeCategory(base, { from: '動物', into: 'ワールド' }), /自動で扱う/);
   assert.throws(() => mergeCategory(base, { from: '動物', into: '未翻訳' }), /対訳表にありません/);
+});
+
+test('recolor: 最上位カテゴリに、既に使われている色だけを付け替えられる', () => {
+  const change = recolorCategory(dataset(), { path: '動物', color: '#222222' });
+  assert.equal(change.dataset.colors['動物'], '#222222');
+  assert.equal(change.changedRows, 0, '行のカテゴリは変わらない');
+  // 元の色を使っていた他のカテゴリは巻き込まない
+  assert.equal(change.dataset.colors['乗り物'], '#222222');
+  assert.equal(change.dataset.colors['空箱'], '#333333');
+  assert.match(change.message, /Recolor category 動物 to #222222/);
+});
+
+test('recolor: 子階層・未登録の色・同じ色・保護カテゴリは拒む', () => {
+  const base = dataset();
+  const refuses = (request: { path: unknown; color: unknown }, pattern: RegExp) => {
+    assert.throws(() => recolorCategory(base, request), (error: unknown) => {
+      assert.ok(error instanceof CategoryOperationError);
+      assert.match(error.message, pattern);
+      return true;
+    });
+  };
+  refuses({ path: '動物/うま', color: '#222222' }, /最上位/);
+  refuses({ path: '動物', color: '#abcdef' }, /既に使われている色/);
+  refuses({ path: '動物', color: '#111111' }, /同じ色/);
+  refuses({ path: 'ワールド', color: '#222222' }, /アプリ/);
+  refuses({ path: '無いカテゴリ', color: '#222222' }, /存在しません/);
+  assert.deepEqual(base.colors, dataset().colors, '拒んだときは元のまま');
+});
+
+test('listCategoryColors: 使っている色を、使用カテゴリつきでまとめる', () => {
+  const listed = listCategoryColors({ ...dataset(), colors: { a: '#111111', b: '#111111', c: '#222222' } });
+  assert.deepEqual(
+    listed.sort((x, y) => x.color.localeCompare(y.color)),
+    [{ color: '#111111', usedBy: ['a', 'b'] }, { color: '#222222', usedBy: ['c'] }],
+  );
 });
 
 test('delete: removes the node and descendants from rows, translations and colours', () => {

@@ -784,6 +784,50 @@ export function mergeCategory(
   return { dataset, changedRows, message: `Merge category ${from} into ${into} (${changedRows} rows)` };
 }
 
+/**
+ * Colours already used by at least one top-level category, brightest use first.
+ *
+ * 色は最上位カテゴリの持ち物で、子は親の色を継ぐ。新しい色を増やすと白文字との
+ * コントラストを一件ずつ確かめ直すことになるので、差し替えは既に使われている色の
+ * 中からだけ選べるようにする。
+ */
+export function listCategoryColors(dataset: CategoryDataset): { color: string; usedBy: string[] }[] {
+  const byColor = new Map<string, string[]>();
+  for (const [name, color] of Object.entries(dataset.colors)) {
+    const bucket = byColor.get(color);
+    if (bucket) bucket.push(name);
+    else byColor.set(color, [name]);
+  }
+  return [...byColor].map(([color, usedBy]) => ({ color, usedBy: usedBy.sort() }));
+}
+
+/** Give a top-level category one of the colours already in use. */
+export function recolorCategory(
+  input: CategoryDataset,
+  request: { path: unknown; color: unknown },
+): CategoryChange {
+  const path = validateCategoryPath(request.path);
+  requireEditable(path);
+  requireExisting(input, path, 'カテゴリ');
+  if (parentOf(path) !== null) {
+    throw new CategoryOperationError('色は最上位のカテゴリだけが持ちます', 400);
+  }
+  if (!Object.hasOwn(input.colors, path)) {
+    throw new CategoryOperationError(`「${path}」に色が登録されていません`, 400);
+  }
+  const color = typeof request.color === 'string' ? request.color.trim() : '';
+  const available = new Set(Object.values(input.colors));
+  if (!available.has(color)) {
+    throw new CategoryOperationError('既に使われている色の中から選んでください', 400);
+  }
+  if (input.colors[path] === color) {
+    throw new CategoryOperationError('同じ色です', 400);
+  }
+  const dataset = cloneDataset(input);
+  dataset.colors[path] = color;
+  return { dataset, changedRows: 0, message: `Recolor category ${path} to ${color}` };
+}
+
 /** Remove `path` and its descendants from every row and from the translation table. */
 export function deleteCategory(input: CategoryDataset, request: { path: unknown }): CategoryChange {
   const path = validateCategoryPath(request.path);

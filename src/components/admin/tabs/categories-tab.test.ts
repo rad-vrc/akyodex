@@ -52,7 +52,7 @@ async function setup(role: 'owner' | 'admin') {
       const method = init?.method ?? 'GET';
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (method === 'GET') {
-        return new Response(JSON.stringify({ success: true, head: listHead, categories, colors: { '動物': '#111111' } }), {
+        return new Response(JSON.stringify({ success: true, head: listHead, categories, colors: { '動物': '#607d8b', '乗り物': '#222222', '未翻訳': '#222222' } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -332,4 +332,60 @@ test('owner: an unchanged Japanese name sends translate instead of rename', asyn
   } finally {
     await h.cleanup();
   }
+});
+
+/**
+ * 色は最上位カテゴリの持ち物で、子は親の色を継ぐ。差し替えは既に使われている色の中から
+ * 選び、見本は白文字用の調整を通した「実際に描かれる色」で塗る（生の値で塗ると、
+ * 調整で変わったぶんだけ見本が嘘になる）。
+ */
+test("色の差し替えは最上位だけに出て、既存の色から選んで送る", async (t) => {
+  const h = await setup("owner");
+  t.after(h.cleanup);
+
+  assert.ok(h.rowButton("動物", "色"), "最上位には色ボタンが出る");
+  assert.equal(
+    [...h.rowOf("動物/うま").querySelectorAll("button")].some((b) => b.textContent?.trim() === "色"),
+    false,
+    "子階層には色ボタンを出さない",
+  );
+
+  await h.click(h.rowButton("動物", "色"));
+  const swatches = [...h.win.document.querySelectorAll("button")].filter((b) =>
+    b.textContent?.includes("件") && b.textContent?.includes("#"),
+  );
+  assert.equal(swatches.length, 2, `使われている色の数だけ出る: ${swatches.length}`);
+  const current = swatches.find((b) => b.textContent?.includes("（今の色）"))!;
+  assert.ok(current.textContent?.includes("#607d8b"), "今の色が分かる");
+  // 見本は「実際に描かれる色」で塗る。#607d8b は白文字用に #5e7a88 まで暗くされるので、
+  // 生の値のままだと見本と実物が食い違う
+  const chip = current.querySelector("span")!;
+  assert.equal(chip.style.background, "rgb(94, 122, 136)");
+  assert.notEqual(chip.style.background, "rgb(96, 125, 139)", "生の #607d8b で塗ってはいけない");
+  assert.equal(chip.textContent, "動物", "見本にはカテゴリ名を入れる");
+
+  const other = swatches.find((b) => b.textContent?.includes("#222222"))!;
+  assert.ok(other.textContent?.includes("2 件"), "その色を使っているカテゴリ数を出す");
+  await h.click(other as HTMLButtonElement);
+  await h.click(h.buttons("色を変える")[0]);
+
+  const post = h.calls.find((call) => call.method === "POST");
+  assert.deepEqual(post?.body, { action: "recolor", path: "動物", color: "#222222", head: "h" });
+});
+
+test("同じ色のまま送らない", async (t) => {
+  const h = await setup("owner");
+  t.after(h.cleanup);
+  await h.click(h.rowButton("動物", "色"));
+  await h.click(h.buttons("色を変える")[0]);
+  assert.equal(h.calls.some((call) => call.method === "POST"), false, "書き込まない");
+  assert.match(h.win.document.body.textContent!, /今と同じ色です/);
+});
+
+test("色の差し替えはらどだけ", async (t) => {
+  const h = await setup("admin");
+  t.after(h.cleanup);
+  const button = h.rowButton("動物", "色");
+  assert.equal(button.disabled, true);
+  assert.match(button.title, /らど/);
 });
