@@ -37,10 +37,7 @@ import {
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData } from '@/types/akyo';
 import Image from 'next/image';
-import type {
-  MouseEvent as ReactMouseEvent,
-  RefObject,
-} from 'react';
+import type { RefObject } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ReferenceImageViewer } from './reference-image-viewer';
 
@@ -132,7 +129,7 @@ export function AkyoDetailModal({
 
   // body スクロールロック・初期フォーカス・Tab の循環・Escape・閉じた後の復帰は共有フックに任せる。
   // 復帰先は呼び出し側の returnFocusRef（開くきっかけになったカードなど）
-  useModalDialog({
+  const { backdropProps } = useModalDialog({
     isOpen,
     onRequestClose: onClose,
     dialogRef,
@@ -152,13 +149,6 @@ export function AkyoDetailModal({
     ? parseAndSortCategories(categoryStr)
     : [];
   const isWorldEntry = resolveEntryType(localAkyo) === 'world';
-  const handleBackdropClick = (e: ReactMouseEvent<HTMLDivElement>) => {
-    // モーダル外（backdrop または modal container）をクリックしたら閉じる
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   const handleFavoriteClick = () => {
     if (!localAkyo) return;
 
@@ -186,7 +176,7 @@ export function AkyoDetailModal({
   };
 
   return (
-    <div className="modal-overlay fixed inset-0 z-50 overflow-y-auto" onClick={handleBackdropClick}>
+    <div className="modal-overlay fixed inset-0 z-50 overflow-y-auto" {...backdropProps}>
       {/* Backdrop - クリックで閉じる */}
       <div
         className="modal-backdrop fixed inset-0"
@@ -194,11 +184,11 @@ export function AkyoDetailModal({
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           backdropFilter: 'blur(4px)',
         }}
-        onClick={handleBackdropClick}
+        {...backdropProps}
       />
 
       {/* Modal Container - クリックで閉じる */}
-      <div className="relative min-h-screen px-4 py-8" onClick={handleBackdropClick}>
+      <div className="relative min-h-screen px-4 py-8" {...backdropProps}>
         <div className="relative mx-auto max-w-2xl">
           <div
             ref={dialogRef}

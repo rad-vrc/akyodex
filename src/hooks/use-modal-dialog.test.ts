@@ -43,6 +43,7 @@ async function createHarness(): Promise<Harness> {
   expose("HTMLDivElement", win.HTMLDivElement);
   expose("Node", win.Node);
   expose("KeyboardEvent", win.KeyboardEvent);
+  expose("MouseEvent", win.MouseEvent);
   // フックは window.requestAnimationFrame を呼ぶ。jsdom 標準の rAF は約16ms周期なので
   // 0ms の setTimeout に差し替え、flush の待ち時間内に初期フォーカスが走るようにする
   const immediateRaf = (cb: FrameRequestCallback) => win.setTimeout(() => cb(0), 0);
@@ -103,6 +104,45 @@ function Dialog({ onRequestClose, suspended = false }: DialogProps) {
     createElement("input", { id: "second", type: "text" }),
     createElement("button", { type: "button" }, "ok"),
   );
+}
+
+/** 背景（backdropProps を持つ層）とその中のパネル。パネル内には選択できる文章を置く */
+function BackdropDialog({ onRequestClose }: { onRequestClose: () => void }) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const { backdropProps } = useModalDialog({
+    isOpen: true,
+    onRequestClose,
+    dialogRef: dialogRef as RefObject<HTMLElement | null>,
+  });
+  return createElement(
+    "div",
+    { id: "backdrop", ...backdropProps },
+    createElement(
+      "div",
+      // eslint-disable-next-line react-hooks/refs
+      { ref: dialogRef, role: "dialog", tabIndex: -1 },
+      createElement("textarea", { id: "comment" }),
+    ),
+  );
+}
+
+/**
+ * ブラウザは mousedown と mouseup が別の要素で起きたとき、その 2 つの共通の親で
+ * click を起こす。パネル内で押して背景で離した場合の共通の親は背景そのものなので、
+ * click だけを見ると「背景を押した」と区別が付かない。ここではその挙動を再現する。
+ */
+function dragAndClick(
+  win: Window & typeof globalThis,
+  downId: string,
+  upId: string,
+  clickId: string,
+) {
+  const at = (id: string) => win.document.getElementById(id) as HTMLElement;
+  const fire = (id: string, type: string) =>
+    at(id).dispatchEvent(new win.MouseEvent(type, { bubbles: true, cancelable: true }));
+  fire(downId, "mousedown");
+  fire(upId, "mouseup");
+  fire(clickId, "click");
 }
 
 function dispatchEscape(
@@ -236,6 +276,60 @@ test("suspended で開いた場合は初期フォーカスを奪わない（子�
     });
 
     assert.equal(h.win.document.activeElement?.tagName, "BODY");
+
+    await act(async () => {
+      h.root.unmount();
+    });
+  } finally {
+    h.cleanup();
+  }
+});
+
+/**
+ * あきょうちしき（コメント欄）の文章を選ぼうとしてドラッグが少し外へ出ると、
+ * それだけでモーダルが閉じて編集できなかった。押した場所と離した場所の
+ * 両方がパネルの外だったときにだけ閉じる。
+ */
+test("パネル内から始めたドラッグが背景で終わっても閉じない", async () => {
+  const h = await createHarness();
+  try {
+    let closeCalls = 0;
+    await act(async () => {
+      h.root.render(createElement(BackdropDialog, { onRequestClose: () => { closeCalls += 1; } }));
+    });
+    await flush();
+
+    // 文章を選ぼうとして、コメント欄から背景へドラッグした
+    dragAndClick(h.win, "comment", "backdrop", "backdrop");
+    assert.equal(closeCalls, 0, "中から始めたドラッグで閉じてはいけない");
+
+    // 背景から始めてパネル内で離した場合も、閉じる操作ではない
+    dragAndClick(h.win, "backdrop", "comment", "backdrop");
+    assert.equal(closeCalls, 0, "パネル内で離したら閉じてはいけない");
+
+    // 背景を押して背景で離した、ふつうの背景クリック
+    dragAndClick(h.win, "backdrop", "backdrop", "backdrop");
+    assert.equal(closeCalls, 1, "背景クリックでは閉じる");
+
+    await act(async () => {
+      h.root.unmount();
+    });
+  } finally {
+    h.cleanup();
+  }
+});
+
+test("パネル自身に届いた click では閉じない（背景の層だけが閉じる）", async () => {
+  const h = await createHarness();
+  try {
+    let closeCalls = 0;
+    await act(async () => {
+      h.root.render(createElement(BackdropDialog, { onRequestClose: () => { closeCalls += 1; } }));
+    });
+    await flush();
+
+    dragAndClick(h.win, "comment", "comment", "comment");
+    assert.equal(closeCalls, 0);
 
     await act(async () => {
       h.root.unmount();

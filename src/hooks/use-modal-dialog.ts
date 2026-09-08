@@ -1,7 +1,7 @@
 'use client';
 
 import { getFocusableElements } from '@/lib/focusable-elements';
-import { useEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type MouseEvent as ReactMouseEvent, type RefObject } from 'react';
 
 interface UseModalDialogOptions {
   isOpen: boolean;
@@ -69,6 +69,12 @@ function lockBodyScroll(): () => void {
   };
 }
 
+export interface ModalBackdropProps {
+  onMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
+  onMouseUp: (event: ReactMouseEvent<HTMLElement>) => void;
+  onClick: (event: ReactMouseEvent<HTMLElement>) => void;
+}
+
 /**
  * WAI-ARIA APG の Modal Dialog パターンに沿った挙動をまとめたフック。
  *
@@ -77,6 +83,7 @@ function lockBodyScroll(): () => void {
  * - Escape で onRequestClose を呼ぶ
  * - 背面の body スクロールを止める
  * - 閉じたら returnFocusRef（未指定なら開く前にフォーカスがあった要素）へ戻す
+ * - 背景クリックで閉じる（`backdropProps`）
  *
  * 公開側の akyo-detail-modal.tsx と管理画面の edit-modal.tsx が共用する。
  */
@@ -87,7 +94,7 @@ export function useModalDialog({
   initialFocusRef,
   returnFocusRef,
   suspended = false,
-}: UseModalDialogOptions) {
+}: UseModalDialogOptions): { backdropProps: ModalBackdropProps } {
   // 呼び出し側が毎レンダー新しい関数を渡しても effect を張り直さないよう ref 経由で読む
   const onRequestCloseRef = useRef(onRequestClose);
   const suspendedRef = useRef(suspended);
@@ -204,4 +211,44 @@ export function useModalDialog({
       }
     };
   }, [isOpen, dialogRef, initialFocusRef, returnFocusRef]);
+
+  // 押した場所と離した場所の両方がパネルの外だったか。click だけを見ると、パネル内の
+  // 文章を選ぼうとしてドラッグが少し外へ出た時点で閉じてしまう（click は押した要素と
+  // 離した要素の共通の親で起きるので、背景そのものを押したときと見分けが付かない）
+  const pressedOutside = useRef(false);
+  const releasedOutside = useRef(false);
+  const isOutsideDialog = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) =>
+      !dialogRef.current?.contains(event.target as Node),
+    [dialogRef],
+  );
+
+  const onMouseDown = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) => {
+      pressedOutside.current = isOutsideDialog(event);
+    },
+    [isOutsideDialog],
+  );
+  const onMouseUp = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) => {
+      releasedOutside.current = isOutsideDialog(event);
+    },
+    [isOutsideDialog],
+  );
+  const onClick = useCallback((event: ReactMouseEvent<HTMLElement>) => {
+    // 背景は入れ子になっていて同じ props を複数の層が持つ。click の当たった層だけが
+    // 閉じることで、1 回のクリックで onRequestClose が何度も走らないようにする
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (!pressedOutside.current || !releasedOutside.current) {
+      return;
+    }
+    onRequestCloseRef.current();
+  }, []);
+
+  return useMemo(
+    () => ({ backdropProps: { onMouseDown, onMouseUp, onClick } }),
+    [onMouseDown, onMouseUp, onClick],
+  );
 }
