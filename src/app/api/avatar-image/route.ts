@@ -23,6 +23,7 @@ import {
   shouldTransformAvatarCardImage,
   type AvatarImageFailureKind,
 } from '@/lib/avatar-card-image';
+import { VRCHAT_USER_AGENT } from '@/lib/vrchat-utils';
 
 function createNoStoreJsonError(message: string, status: number): Response {
   const response = jsonError(message, status);
@@ -204,7 +205,7 @@ export async function GET(request: Request) {
         try {
           const pageResponse = await fetch(vrchatPageUrl, {
             headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'User-Agent': VRCHAT_USER_AGENT,
               Accept: 'text/html',
             },
             signal: controller.signal,
@@ -295,7 +296,7 @@ export async function GET(request: Request) {
           try {
             const imageResponse = await fetch(imageUrl, {
               headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'User-Agent': VRCHAT_USER_AGENT,
                 Accept: 'image/webp,image/png,image/*,*/*',
               },
               signal: imageController.signal,
