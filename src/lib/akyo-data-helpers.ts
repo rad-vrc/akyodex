@@ -77,6 +77,20 @@ export function compareCategories(a: string, b: string): number {
 }
 
 /**
+ * 図鑑の絞り込み一覧に出すカテゴリだけにする。
+ *
+ * 対応機種（親単体）は判定できた全行に付くので、押しても件数がほぼ変わらない。
+ * 一覧の先頭を占有するだけなので出さない。配下の PC / Quest(Android) / iOS は残す。
+ *
+ * 外すのは親単体だけで、ほかの「常に子を持つ」親（Booth 191 件など）は実際に
+ * 絞り込めるので触らない。カードのバッジでは親名がグループの見出しになるため、
+ * そちらでも外さない。管理画面のカテゴリ付与にも影響させない。
+ */
+export function categoriesForFilterPanel(categories: readonly string[]): string[] {
+  return categories.filter((category) => !PINNED_ROOTS.includes(category));
+}
+
+/**
  * Extract all unique categories from a dataset
  * Handles both 'category' and legacy 'attribute' fields
  * Supports both Japanese (、) and Western (,) delimiters

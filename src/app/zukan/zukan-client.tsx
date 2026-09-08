@@ -43,7 +43,7 @@ import {
   captureCatalogResume,
   reportCatalogLoadToSentry,
 } from "./catalog-performance";
-import { compareCategories } from "@/lib/akyo-data-helpers";
+import { categoriesForFilterPanel, compareCategories } from "@/lib/akyo-data-helpers";
 import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
 import {
   sortCatalogForDisplay,
@@ -344,6 +344,12 @@ export function ZukanClient({
       (favoritesOnly ? 1 : 0) +
       (entryTypeFilter ? 1 : 0),
     [selectedAttributes, selectedCreators, favoritesOnly, entryTypeFilter],
+  );
+  // 絞り込みに使えない対応機種（親単体）だけを一覧から外す。サーバから来た初期値も
+  // 言語切替後に作り直した分もここを通るので、外し忘れが起きない。
+  const filterPanelCategories = useMemo(
+    () => categoriesForFilterPanel(currentCategories),
+    [currentCategories],
   );
   const catalogControlsDisabled = !isCurrentDatasetComplete;
   const languageStatusMessage = refetchError
@@ -1094,10 +1100,10 @@ export function ZukanClient({
             {isCurrentDatasetComplete ? (
               <DeferredFilterPanel
                 // 動的に更新されるカテゴリ/作者を使用
-                categories={currentCategories}
+                categories={filterPanelCategories}
                 authors={currentAuthors}
                 // TODO: Remove legacy props once FilterPanel fully drops attribute/creator support.
-                attributes={currentCategories}
+                attributes={filterPanelCategories}
                 creators={currentAuthors}
                 selectedAttributes={selectedAttributes}
                 selectedCreators={selectedCreators}

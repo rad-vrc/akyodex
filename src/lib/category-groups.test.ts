@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  categoriesForFilterPanel,
   compareCategories,
   groupCategoriesByParent,
   parseAndSortCategories,
@@ -94,4 +95,38 @@ test('parseAndSortCategories: カードのバッジでも対応機種が先頭�
 
 test('parseAndSortCategories: 対応機種を持たない行は従来どおりの並び', () => {
   assert.deepEqual(parseAndSortCategories('動物,まめ,Booth'), ['Booth', 'まめ', '動物']);
+});
+
+test('categoriesForFilterPanel: 絞り込みに使えない対応機種（親単体）だけを外す', () => {
+  // 対応機種は判定できた全行に付くので、押しても件数がほぼ変わらない
+  assert.deepEqual(
+    categoriesForFilterPanel([
+      '対応機種',
+      '対応機種/PC',
+      '対応機種/Quest(Android)',
+      '対応機種/iOS',
+      'Booth',
+      'Booth/アバター',
+      '動物',
+    ]),
+    ['対応機種/PC', '対応機種/Quest(Android)', '対応機種/iOS', 'Booth', 'Booth/アバター', '動物'],
+  );
+});
+
+test('categoriesForFilterPanel: EN/KO の親単体も外す', () => {
+  assert.deepEqual(
+    categoriesForFilterPanel(['Supported Platform', 'Supported Platform/PC', 'Animal']),
+    ['Supported Platform/PC', 'Animal'],
+  );
+  assert.deepEqual(categoriesForFilterPanel(['지원 기기', '지원 기기/iOS', '동물']), [
+    '지원 기기/iOS',
+    '동물',
+  ]);
+});
+
+test('categoriesForFilterPanel: 実際に絞り込める親カテゴリは残す', () => {
+  // Booth は 949 行中 191 行なので絞り込みとして機能する。常に子を持つかどうかは
+  // 判定基準ではない（Booth も形状・触り心地も常に子を持つ）。
+  const others = ['Booth', '形状・触り心地', '自然', '技能・特性', '動物', 'まめ'];
+  assert.deepEqual(categoriesForFilterPanel(others), others);
 });
