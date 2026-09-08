@@ -943,11 +943,14 @@ export function ZukanClient({
                   下辺になり、ラベルが数字ではなくハートに合わせられる */}
               <dd className="min-w-[5ch] text-xs leading-snug whitespace-normal sm:text-base sm:whitespace-nowrap flex items-baseline gap-1">
                 {/* OSの絵文字ハートは3D調で浮くため、白塗りのフラットなSVGに統一。
-                    サイズは1em(フォント連動)、translate-y-0.05emは数字グリフの
-                    インク中心とハート中心を一致させる視覚補正（フォントメトリクス実測値） */}
+                    サイズは1em(フォント連動)、translate-y は数字グリフのインク中心と
+                    ハートのインク中心を一致させる視覚補正。0.05em では本番実測で
+                    ハートが 1.54px（16px時）上に残っていた。数字の ink は canvas の
+                    TextMetrics、ハートの ink は path の bbox から測って 0.15em を選んだ
+                    （16px で +0.06px、12px で -0.08px） */}
                 <IconHeart
                   size="w-[1em] h-[1em]"
-                  className="inline-block shrink-0 translate-y-[0.05em]"
+                  className="inline-block shrink-0 translate-y-[0.15em]"
                   aria-hidden="true"
                 />
                 {isCurrentDatasetComplete ? (
