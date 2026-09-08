@@ -15,6 +15,7 @@
 import { connection } from 'next/server';
 import { jsonError } from '@/lib/api-helpers';
 import { VRCHAT_AVATAR_ID_PATTERN, extractVRChatAvatarIdFromUrl } from '@/lib/akyo-entry';
+import { fetchVrchatResource } from '@/lib/vrchat-resource-fetch';
 import {
   createAvatarImageFailureResponse,
   fetchAvatarCardImageWithFallback,
@@ -187,7 +188,7 @@ export async function GET(request: Request) {
 
       // Security: Explicitly construct VRChat URL to prevent SSRF
       // Only allow vrchat.com domain
-      const vrchatPageUrl = `https://vrchat.com/home/avatar/${cleanAvtr}`;
+      const vrchatPageUrl = `https://vrchat.com/home/avatar/${encodeURIComponent(cleanAvtr)}`;
 
       // Validate URL is actually vrchat.com (defense in depth)
       const parsedUrl = new URL(vrchatPageUrl);
@@ -203,7 +204,7 @@ export async function GET(request: Request) {
 
         let html: string;
         try {
-          const pageResponse = await fetch(vrchatPageUrl, {
+          const pageResponse = await fetchVrchatResource(vrchatPageUrl, 'page', {
             headers: {
               'User-Agent': VRCHAT_USER_AGENT,
               Accept: 'text/html',
@@ -294,7 +295,7 @@ export async function GET(request: Request) {
           const imageTimeoutId = setTimeout(() => imageController.abort(), 30000);
 
           try {
-            const imageResponse = await fetch(imageUrl, {
+            const imageResponse = await fetchVrchatResource(imageUrl, 'image', {
               headers: {
                 'User-Agent': VRCHAT_USER_AGENT,
                 Accept: 'image/webp,image/png,image/*,*/*',
