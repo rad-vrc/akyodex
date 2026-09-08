@@ -3,8 +3,22 @@ const test = require("node:test");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 
+const fs = require("node:fs/promises");
+const os = require("node:os");
+
 const load = (name) =>
   import(pathToFileURL(path.join(__dirname, "vrchat-platforms", name)).href);
+
+/** CLI は進捗を大量に出すので、通しテストのあいだだけ黙らせる。 */
+async function quiet(fn) {
+  const { log, warn, error } = console;
+  Object.assign(console, { log() {}, warn() {}, error() {} });
+  try {
+    return await fn();
+  } finally {
+    Object.assign(console, { log, warn, error });
+  }
+}
 
 // ── 付与側 ───────────────────────────────────────────────────────────
 
@@ -141,23 +155,39 @@ test("always re-fetches old-format and failed records", async () => {
   assert.ok(!picked.includes("avtr_404"), "404 は非公開なので再開時は飛ばす");
 });
 
-test("never overwrites a good record with a 200 that has no real build", async () => {
-  const { keepPreviousReason } = await load("fetch-platforms.mjs");
-  const good = { kind: "world", schema: 2, status: 200, platforms: ["standalonewindows", "android"] };
+test("keeps the previous value but records that this run could not judge it", async () => {
+  const { resolveRecord } = await load("fetch-platforms.mjs");
+  const good = { kind: "world", schema: 2, status: 200, platforms: ["standalonewindows"], packageCount: 4 };
   const empty = { schema: 2, status: 200, platforms: [], packageCount: 0 };
 
-  // クッキーが途中で切れたときに良い記録を潰さない
-  assert.equal(keepPreviousReason(good, empty), "200 だが実ビルドが空だった");
-  // オーナー申告も同じく守る
-  assert.equal(keepPreviousReason({ source: "manual — 申告", status: 200, platforms: ["standalonewindows"] }, empty), "200 だが実ビルドが空だった");
-  assert.equal(keepPreviousReason({ source: "manual — 申告", status: 200 }, { status: 404 }), "404 だったが手入力の記録がある");
+  // 値は守る。ただし「今回は判定できなかった」も必ず書き残す。これが無いと
+  // 付与側が古い成功キャッシュを最新の判定として使ってしまう。
+  const kept = resolveRecord(good, empty, "world");
+  assert.deepEqual(kept.record.platforms, ["standalonewindows"], "前の値は残す");
+  assert.equal(kept.record.unjudged, "200 だが実ビルドが空だった", "判定できなかった事実も残す");
+  assert.ok(kept.reason);
 
-  // 初回取得は記録する（判定できなかったことも情報なので残す）
-  assert.equal(keepPreviousReason(undefined, empty), null);
-  // 実ビルドが取れたときは当然上書きする
-  assert.equal(keepPreviousReason(good, { status: 200, platforms: ["standalonewindows"] }), null);
+  // オーナー申告は API の失敗で無効化しない（API では取れないと分かっているもの）
+  const manual = { source: "manual — 申告", schema: 2, status: 200, platforms: ["standalonewindows"] };
+  assert.equal(resolveRecord(manual, empty, "avatar").record, manual);
+  assert.equal(resolveRecord(manual, { status: 404 }, "avatar").record, manual);
+
+  // 取り直せたら丸ごと差し替わり、unjudged は消える
+  const fixed = resolveRecord({ ...good, unjudged: "x" }, { schema: 2, status: 200, platforms: ["android", "standalonewindows"] }, "world");
+  assert.equal(fixed.record.unjudged, undefined);
+  assert.equal(fixed.reason, null);
+
   // 404 は API が明確に「無い」と答えているので上書きしてよい
-  assert.equal(keepPreviousReason(good, { status: 404 }), null);
+  assert.equal(resolveRecord(good, { status: 404 }, "world").record.status, 404);
+
+  // 初回取得で空だった場合も、判定できなかったこととして記録する
+  assert.equal(resolveRecord(undefined, empty, "world").record.unjudged, "200 だが実ビルドが空だった");
+});
+
+test("realPlatformsOf ignores a record flagged unjudged even though it still has values", async () => {
+  const { realPlatformsOf } = await load("record.mjs");
+  const stale = { status: 200, platforms: ["standalonewindows"], unjudged: "200 だが実ビルドが空だった" };
+  assert.equal(realPlatformsOf(stale), null);
 });
 
 /** 200 ＋ 空を成功として確定させると、二度と取り直さなくなる。 */
@@ -172,4 +202,74 @@ test("always re-fetches a 200 that came back with no real build", async () => {
     wrld_ok: { schema: 2, status: 200, platforms: ["standalonewindows"], packageCount: 4 },
   };
   assert.deepEqual(selectTargets(targets, results).map((t) => t.id), ["wrld_empty"]);
+});
+
+// ── 取得 → 付与 → 再開の通し ─────────────────────────────────────
+//
+// 関数単位のテストだけだと、各段の出力を次の段に渡したときの抜けを捕まえられない。
+// キャッシュと CSV の対応機種が食い違った状態から、3 つの CLI をつないで確かめる。
+
+const PROBE = "avtr_00000000-0000-4000-8000-000000000001";
+const SUBJECT = "wrld_00000000-0000-4000-8000-000000000002";
+
+const csvWith = (category) =>
+  '"ID","Category","AvatarURL","SourceURL"\n' +
+  `"0001","動物","https://vrchat.com/home/avatar/${PROBE}",""\n` +
+  `"0002","${category}","","https://vrchat.com/home/world/${SUBJECT}"\n`;
+
+const okBuild = (platforms) => ({
+  schema: 2, status: 200, name: "", releaseStatus: "public",
+  platforms, impostorPlatforms: [], variants: ["security"], packageCount: platforms.length * 2,
+});
+/** クッキーが切れたときのワールドの応答。401 ではなく 200 ＋ 空で返る。 */
+const emptyBuild = { ...okBuild([]), packageCount: 0 };
+
+test("a refresh that comes back unjudged keeps hand-entered tags and is retried next run", async () => {
+  const { main: fetchMain } = await load("fetch-platforms.mjs");
+  const { main: applyMain } = await load("apply-platform-categories.mjs");
+
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "akyo-platforms-"));
+  const csvPath = path.join(dir, "akyo-data-ja.csv");
+  const outPath = path.join(dir, "platforms.json");
+  try {
+    // 古いキャッシュは PC のみ。そのあと管理画面から Quest 対応を手入力してある。
+    await fs.writeFile(outPath, JSON.stringify({
+      [PROBE]: { kind: "avatar", ...okBuild(["standalonewindows"]) },
+      [SUBJECT]: { kind: "world", ...okBuild(["standalonewindows"]) },
+    }));
+    const handEntered = "動物,対応機種,対応機種/PC,対応機種/Quest(Android)";
+    await fs.writeFile(csvPath, csvWith(handEntered));
+
+    // --refresh の途中でクッキーが切れる。開始前検査（アバター）は通ってしまう。
+    await quiet(() => fetchMain({
+      csvPath, outPath, cookie: "dummy", refresh: true, gap: () => 0,
+      fetcher: async (id) => (id === PROBE ? okBuild(["standalonewindows"]) : emptyBuild),
+    }));
+
+    const afterRefresh = JSON.parse(await fs.readFile(outPath, "utf8"));
+    assert.deepEqual(afterRefresh[SUBJECT].platforms, ["standalonewindows"], "前の値は残る");
+    assert.ok(afterRefresh[SUBJECT].unjudged, "判定できなかったことがファイルに残る");
+
+    // 付与: 判定不能なので触らない。手入力の Quest タグが生き残る。
+    await quiet(() => applyMain([csvPath, outPath]));
+    const csvAfterApply = await fs.readFile(csvPath, "utf8");
+    assert.ok(csvAfterApply.includes(handEntered), `Quest タグが消えた: ${csvAfterApply}`);
+
+    // 再開（--refresh なし）: 成功済みとして飛ばさず取り直す。今度は Quest 版が取れる。
+    await quiet(() => fetchMain({
+      csvPath, outPath, cookie: "dummy", gap: () => 0,
+      fetcher: async (id) =>
+        okBuild(id === PROBE ? ["standalonewindows"] : ["android", "standalonewindows"]),
+    }));
+
+    const afterResume = JSON.parse(await fs.readFile(outPath, "utf8"));
+    assert.equal(afterResume[SUBJECT].unjudged, undefined, "取り直せたら解除される");
+    assert.deepEqual(afterResume[SUBJECT].platforms, ["android", "standalonewindows"]);
+
+    // 付与し直すと、今度は取得結果にもとづいて正しく並ぶ
+    await quiet(() => applyMain([csvPath, outPath]));
+    assert.ok((await fs.readFile(csvPath, "utf8")).includes(handEntered));
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
 });

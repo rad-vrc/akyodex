@@ -82,8 +82,8 @@ export const vrchatIdOf = (row, idx) =>
     /(avtr|wrld)_[0-9a-fA-F-]{36}/,
   )?.[0] ?? null;
 
-async function main() {
-  const [csvPath, platformsPath, ...flags] = process.argv.slice(2);
+export async function main(argv = process.argv.slice(2)) {
+  const [csvPath, platformsPath, ...flags] = argv;
   const dryRun = flags.includes("--dry-run");
 
   if (!csvPath || !platformsPath) {
@@ -117,7 +117,8 @@ async function main() {
 
     if (judged === null) {
       untouched.push(row[idx.ID]);
-      // 200 なのに実ビルドが空。非公開ではなく、取得がうまくいっていない疑い。
+      // 200 で返ってきたのに判定できていない。非公開（404）ではなく、
+      // 取得がうまくいっていない疑い。
       if (record?.status === 200) empty200.push(row[idx.ID]);
       continue;
     }
@@ -140,7 +141,7 @@ async function main() {
   console.log(`判定できず触らなかった行 ${untouched.length}${untouched.length ? `（${untouched.join(", ")}）` : ""}`);
   if (empty200.length) {
     console.warn(
-      `  うち ${empty200.length} 件は HTTP 200 なのに実ビルドが空でした（${empty200.join(", ")}）。\n` +
+      `  うち ${empty200.length} 件は取得できたのに判定できませんでした（${empty200.join(", ")}）。\n` +
         "  取得の途中でクッキーが切れた可能性があります。--refresh で取り直してください。",
     );
   }

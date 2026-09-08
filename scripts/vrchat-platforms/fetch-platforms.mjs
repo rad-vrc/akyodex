@@ -33,31 +33,31 @@ import { pathToFileURL } from "node:url";
 
 import { realPlatformsOf } from "./record.mjs";
 
-const args = process.argv.slice(2);
-const flags = args.filter((a) => a.startsWith("--"));
-const [csvPath, outPath = "platforms.json"] = args.filter((a) => !a.startsWith("--"));
-const refresh = flags.includes("--refresh");
-const cookie = process.env.VRCHAT_AUTH_COOKIE;
-
 const USER_AGENT = "akyodex-platform-backfill/1.0 (+https://akyodex.com)";
 const BASE = "https://api.vrchat.cloud/api/1";
 const MIN_GAP_MS = 1200;
 const JITTER_MS = 800;
 const MAX_RETRY = 5;
 
-/** 実行時だけ検査する。テストから import したときに終了させないため。 */
-function checkArgs() {
+/**
+ * 実行時だけ検査する。テストから import したときに終了させないため。
+ * @returns {object|null} main() に渡す設定。不足があれば null
+ */
+function parseArgs(argv, env) {
+  const [csvPath, outPath = "platforms.json"] = argv.filter((a) => !a.startsWith("--"));
+  const cookie = env.VRCHAT_AUTH_COOKIE;
+
   if (!csvPath) {
     console.error("使い方: node fetch-platforms.mjs <akyo-data-ja.csv> [出力先.json] [--refresh]");
     console.error("  --refresh  取得済みの記録も取り直す（作者が後から Quest 版を上げた分を拾う）");
-    return false;
+    return null;
   }
   if (!cookie) {
     console.error("VRCHAT_AUTH_COOKIE が設定されていません。");
     console.error('PowerShell: $env:VRCHAT_AUTH_COOKIE = "<auth クッキーの値>"');
-    return false;
+    return null;
   }
-  return true;
+  return { csvPath, outPath, cookie, refresh: argv.includes("--refresh") };
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -96,30 +96,43 @@ export function selectTargets(targets, results, { refresh = false } = {}) {
 }
 
 /**
- * 取得結果で前の記録を上書きしてよいか決める。上書きしないならその理由を返す。
+ * 今回の取得結果を受けて、ファイルに保存する記録を決める。
  *
- * 根拠のある記録を、根拠のない結果で消さないための関門。
+ * 根拠のある値を根拠のない結果で消さないのと同時に、**今回判定できなかった事実も
+ * 必ず記録に残す**のが役目。値だけ残して事実を落とすと、次に付与スクリプトが古い
+ * 成功キャッシュを最新の判定として使い、あいだに手入力で足された対応機種タグを
+ * 消してしまう。しかも再開時は成功済みとして飛ばされ、取り直されない。
  *
  * @param {object|undefined} previous 既存の記録
  * @param {{status: number, platforms?: string[]}} result 今回の取得結果
- * @returns {string|null} 前の記録を残す理由。上書きしてよければ null
+ * @param {"avatar"|"world"} kind
+ * @returns {{record: object, reason: string|null}} record が保存するもの。reason は上書きしなかった理由
  */
-export function keepPreviousReason(previous, result) {
+export function resolveRecord(previous, result, kind) {
+  const gotBuild = realPlatformsOf(result) !== null;
+
+  // オーナー申告（source: manual）は API の結果で上書きも無効化もしない。
+  // API では取れないと分かっているものを手で入れた記録なので、失敗は想定内。
+  if (!gotBuild && previous?.source?.startsWith("manual")) {
+    const what = result.status === 200 ? "200 だが実ビルドが空" : String(result.status);
+    return { record: previous, reason: `${what} だったが手入力の記録がある` };
+  }
+
   // 200 でも実ビルドが空なら「対応終了」ではなく判定できていない。クッキーが
-  // 切れると 401 ではなく 200 ＋ 空で返ってくるので、根拠のある記録を消さない。
-  if (previous && result.status === 200 && realPlatformsOf(result) === null) {
-    return "200 だが実ビルドが空だった";
+  // 切れると 401 ではなく 200 ＋ 空で返ってくるため。前の値は残しつつ、
+  // 判定できなかったことを unjudged に書き残す。
+  if (result.status === 200 && !gotBuild) {
+    const reason = "200 だが実ビルドが空だった";
+    return { record: { ...(previous ?? { kind, ...result }), unjudged: reason }, reason };
   }
-  // --refresh で取り直したが API が失敗した場合、オーナー申告（source: manual）の
-  // 記録は上書きしない。API の 404 で手入力の情報を失わないようにする。
-  if (result.status !== 200 && previous?.source?.startsWith("manual")) {
-    return `${result.status} だったが手入力の記録がある`;
-  }
-  return null;
+
+  // 取り直せた場合と、404 のように API が明確に答えた場合。丸ごと差し替えるので、
+  // 前回付いていた unjudged はここで消える。
+  return { record: { kind, ...result }, reason: null };
 }
 
 /** 1 件取得する。429 / 5xx は指数バックオフで粘り、それ以外は結果を返す。 */
-async function fetchOne(id, kind) {
+async function fetchOne(id, kind, cookie) {
   const url = `${BASE}/${kind === "avatar" ? "avatars" : "worlds"}/${encodeURIComponent(id)}`;
 
   for (let attempt = 0; attempt <= MAX_RETRY; attempt++) {
@@ -188,7 +201,7 @@ async function fetchOne(id, kind) {
  * そのまま走らせると 948 件を取り切ったうえで「全件プラットフォーム不明」に
  * なり、失敗に見えない。アバターは無効なら 401 を返すので、そちらで確かめる。
  */
-async function preflight(targets) {
+async function preflight(targets, fetchOne) {
   const probe = targets.find((t) => t.kind === "avatar");
   if (!probe) return;
   const result = await fetchOne(probe.id, probe.kind); // 401 なら fetchOne が投げる
@@ -210,9 +223,18 @@ async function preflight(targets) {
  * exit() で即座に落とすと、生きているソケットと競合して Windows の Node が
  * "Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)" を吐き、壊れたように見える。
  */
-async function main() {
+export async function main({
+  csvPath,
+  outPath = "platforms.json",
+  cookie,
+  refresh = false,
+  // テストから差し替えられるようにしてある。既定は実 API を叩く。
+  fetcher = (id, kind) => fetchOne(id, kind, cookie),
+  gap = jitteredGap,
+} = {}) {
+  const fetch1 = fetcher;
   const targets = await collectIds(csvPath);
-  await preflight(targets);
+  await preflight(targets, fetch1);
 
   const results = existsSync(outPath) ? JSON.parse(await readFile(outPath, "utf8")) : {};
   const todo = selectTargets(targets, results, { refresh });
@@ -226,7 +248,7 @@ async function main() {
   for (const { id, kind } of todo) {
     let result;
     try {
-      result = await fetchOne(id, kind);
+      result = await fetch1(id, kind);
     } catch (error) {
       // 途中でクッキーが失効した場合。ここまでの結果は残してから投げる。
       await writeFile(outPath, JSON.stringify(results, null, 1), "utf8");
@@ -235,9 +257,9 @@ async function main() {
     }
     if (result.status === 200 && realPlatformsOf(result) === null) emptyRun.push(id);
 
-    const keep = keepPreviousReason(results[id], result);
-    if (keep) console.warn(`  ${id} は ${keep}ため、前の記録を残します`);
-    else results[id] = { kind, ...result };
+    const { record, reason } = resolveRecord(results[id], result, kind);
+    if (reason) console.warn(`  ${id} は ${reason}ため、前の記録を残します`);
+    results[id] = record;
     done += 1;
 
     if (done % 10 === 0 || done === todo.length) {
@@ -246,7 +268,7 @@ async function main() {
       console.log(`  ${done}/${todo.length} (${pct}%) 最新: ${id} → ${result.status} ${result.platforms?.join("+") ?? ""}`);
     }
 
-    if (done < todo.length) await sleep(jitteredGap());
+    if (done < todo.length) await sleep(gap());
   }
 
   await writeFile(outPath, JSON.stringify(results, null, 1), "utf8");
@@ -298,8 +320,9 @@ const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process
 
 try {
   if (isDirectRun) {
-    if (!checkArgs()) process.exitCode = 2;
-    else await main();
+    const options = parseArgs(process.argv.slice(2), process.env);
+    if (!options) process.exitCode = 2;
+    else await main(options);
   }
 } catch (error) {
   console.error(`
