@@ -6,7 +6,7 @@
 import { connection } from 'next/server';
 import { VRCHAT_AVATAR_ID_PATTERN } from '@/lib/akyo-entry';
 import { getApiErrorResponse, jsonError } from '@/lib/api-helpers';
-import { fetchVRChatPage } from '@/lib/vrchat-utils';
+import { fetchVRChatPage, VRCHAT_USER_AGENT } from '@/lib/vrchat-utils';
 
 export async function GET(request: Request) {
   await connection();
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
     try {
       imageResponse = await fetch(imageUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': VRCHAT_USER_AGENT,
           'Accept': 'image/webp,image/png,image/*,*/*',
         },
         signal: imageController.signal,

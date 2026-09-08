@@ -476,6 +476,7 @@ async function updateCacheInBackground(cache, request) {
  * Message Event - Handle messages from clients
  */
 self.addEventListener('message', (event) => {
+  if (event.origin !== self.location.origin) return;
   if (event.data && event.data.type === 'SKIP_WAITING') {
     console.log('[SW] Received SKIP_WAITING message');
     self.skipWaiting();

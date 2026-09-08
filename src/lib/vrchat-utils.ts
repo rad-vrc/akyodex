@@ -12,6 +12,21 @@ import {
  */
 
 /**
+ * VRChat へ出すときに名乗る User-Agent。
+ *
+ * VRChat の Creator Guidelines は「Applications must identify themselves properly
+ * using the User-Agent request header」と書き、形式を
+ * `applicationName/Version contactInfo` と定めている
+ * （https://hello.vrchat.com/creator-guidelines）。
+ * この要求は文面上 API 利用者向けで、公開ページの取得に及ぶかは明記がないが、
+ * どちらの読み方でもブラウザを騙るのは「properly identify」の逆なので名乗る。
+ *
+ * 以前はここが `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36` で、
+ * Chrome のふりをしていた。
+ */
+export const VRCHAT_USER_AGENT = 'akyodex/1.0 (+https://akyodex.com)';
+
+/**
  * Fetch VRChat entity page with security validation and timeout
  * @param entryType - The VRChat entity type
  * @param id - The VRChat ID (e.g., avtr_xxx / wrld_xxx)
@@ -45,7 +60,7 @@ export async function fetchVRChatEntityPage(
   try {
     const pageResponse = await fetch(parsedUrl.toString(), {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent': VRCHAT_USER_AGENT,
         'Accept': 'text/html',
       },
       signal: controller.signal,

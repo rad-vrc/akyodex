@@ -1,4 +1,5 @@
 import { getPreferredImageFormat } from './accept-image-format';
+import { VRCHAT_USER_AGENT } from './vrchat-utils';
 
 const DEFAULT_VRCHAT_IMAGE_WIDTH = 512;
 const MIN_VRCHAT_IMAGE_WIDTH = 32;
@@ -87,8 +88,7 @@ export function createVRChatWorldImageFetchInit(args: {
   const { width, format, signal } = args;
   const init: RequestInit = {
     headers: {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent': VRCHAT_USER_AGENT,
       Accept: format
         ? `image/${format},image/webp,image/png,image/*,*/*`
         : 'image/png,image/*,*/*',
