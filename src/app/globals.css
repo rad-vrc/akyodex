@@ -503,7 +503,13 @@ select:focus {
   background-size: 300% 300% !important;
   color: white !important;
   border-radius: 25px !important;
-  padding: 12px 24px !important;
+  /* 左右は 8px。ボタンはカード幅いっぱい・内容は中央寄せなので、広い画面では
+     余白が余っていて 24px でも 8px でも見た目は変わらない。効くのはカードが
+     最も狭くなるところ（1024px ビューポートで幅 138px）で、ここで 24px だと
+     ラベルの取り分が 34px しか残らず、「くわしく」も "Details" も入らない。
+     3 言語 × 1024/1100/1280px で測ると、語の切れ目を保てるのは 8px だけだった
+     （10〜12px は日本語が「くわし／く見る」、14〜16px は英語が "Detail／s"）。 */
+  padding: 12px 8px !important;
   font-weight: 900 !important;
   font-family: var(--font-m-plus-rounded), var(--font-kosugi-maru), 'Kosugi Maru', 'Noto Sans JP', sans-serif !important;
   border: 3px solid white !important;
@@ -572,6 +578,18 @@ select:focus {
    Chrome 系にしか無いので採らない。 */
 .detail-button .detail-label {
   word-break: keep-all;
+  /* keep-all だけだと「くわしく」が分割できない最小単位になり、フレックス
+     アイテムの自動最小サイズ（min-width: auto ＝ min-content）が効いて、
+     入りきらないぶんがボタンの外へ押し出される。ボタンは overflow: hidden
+     なのでそこで切られる。ブラウザの文字サイズを 200% にして 1024px 幅
+     （カードが最も狭くなる 138px）で実測すると、星が左右あわせて 46px 切れた。
+     min-width: 0 で縮めるようにし、overflow-wrap で最後の手段としての分割を
+     許す。ふだんは <wbr> の位置で折り返し、本当に入らないときだけ語中で折る。
+     break-word を使うのは、anywhere と違って min-content の計算を変えない
+     ぶん控えめだから（min-width: 0 を併用する今回は挙動は同じだが、意図が
+     「はみ出すときだけ」であることを指定で示しておく）。 */
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 /* 三面図ダウンロードボタン（detail-buttonと同じグラデーション） */

@@ -88,7 +88,34 @@ test.describe("detail button label wrapping (ja)", () => {
       await expect(label).toHaveCSS("word-break", "keep-all");
       await expect(label).toHaveText("くわしく見る");
 
-      expect(await labelLines(page)).toEqual(["くわしく", "見る"]);
+      // 収まれば 1 行、折り返すなら文節の切れ目で。語の途中では切らない。
+      const lines = await labelLines(page);
+      expect(["くわしく見る", "くわしく|見る"]).toContain(lines.join("|"));
+
+      const clipped = await clippedBy(page);
+      expect(clipped.left).toBeLessThan(0.5);
+      expect(clipped.right).toBeLessThan(0.5);
+    });
+  }
+});
+
+/**
+ * ブラウザの「最小フォントサイズ」を上げると、rem（＝レイアウト）は変わらないまま
+ * 文字だけ大きくなる。keep-all はそのとき「くわしく」を分割できない最小単位に
+ * するので、フレックスの自動最小サイズが効いて中身がボタンの外へ押し出され、
+ * overflow: hidden で切られていた（32px で星が左右あわせて 46px 切れた）。
+ * min-width: 0 と overflow-wrap で最後の手段の分割を許し、左右パディングを
+ * 8px にして必要な幅を確保した。
+ */
+test.describe("detail button label wrapping (ja, enlarged text)", () => {
+  test.use({ locale: "ja-JP" });
+
+  for (const fontSize of [20, 32]) {
+    test(`never clips the label or the stars at ${fontSize}px text`, async ({ page }) => {
+      // 1024px はカードが最も狭くなる幅（カード幅 138px）
+      const button = await openCatalog(page, 1024);
+      await page.addStyleTag({ content: `body{font-size:${fontSize}px!important}` });
+      await expect(button.locator(".detail-label")).toHaveCSS("font-size", `${fontSize}px`);
 
       const clipped = await clippedBy(page);
       expect(clipped.left).toBeLessThan(0.5);
