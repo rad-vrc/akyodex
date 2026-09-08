@@ -49,7 +49,7 @@ export function AttributeModal({
   // 親（EditModal）は showAttributeModal 中に suspended=true で自分のトラップを止めるので、
   // ここで張るトラップと競合しない。復帰先は未指定 = 開いた時点の activeElement
   // （「カテゴリを管理」ボタン）。AddTab から開いた場合も同じ経路で戻る
-  useModalDialog({
+  const { backdropProps } = useModalDialog({
     isOpen,
     onRequestClose: onClose,
     dialogRef,
@@ -189,12 +189,6 @@ export function AttributeModal({
     onClose();
   };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   if (!isOpen) return null;
 
   const modalWidthClass = modalSize === 'wide' ? 'max-w-4xl' : 'max-w-3xl';
@@ -207,13 +201,13 @@ export function AttributeModal({
       <div
         className="absolute inset-0 bg-black/40"
         aria-hidden="true"
-        onClick={handleBackdropClick}
+        {...backdropProps}
       />
 
       {/* Modal Container */}
       <div
         className="relative z-10 flex min-h-full items-center justify-center px-4 py-8 sm:py-12"
-        onClick={handleBackdropClick}
+        {...backdropProps}
       >
         {/* Modal Content — role="dialog" はフォーカストラップの範囲と一致させるためパネル側に置く */}
         <div

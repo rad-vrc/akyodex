@@ -368,7 +368,9 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   作者
                 </th>
-                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* 表は w-full なので、はみ出す分は各列が縮んで吸収する。ここを縮ませると
+                    「編集」「削除」が 2 行に割れるので、この列だけ折り返さない */}
+                <th scope="col" className="whitespace-nowrap px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -428,7 +430,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
                     </td>
 
                     {/* 操作 */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="whitespace-nowrap px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => handleEdit(akyo)}

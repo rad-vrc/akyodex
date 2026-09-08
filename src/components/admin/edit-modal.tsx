@@ -226,7 +226,7 @@ export function EditModal({
     onClose();
   }, [isDirty, onClose]);
 
-  useModalDialog({
+  const { backdropProps } = useModalDialog({
     isOpen: isOpen && akyo !== null,
     onRequestClose: requestClose,
     dialogRef,
@@ -439,24 +439,18 @@ export function EditModal({
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      requestClose();
-    }
-  };
-
   if (!isOpen || !akyo) return null;
 
   const formId = 'edit-akyo-form';
   const nicknameLabel = NICKNAME_LABEL[formData.entryType];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto" onClick={handleBackdropClick}>
+    <div className="fixed inset-0 z-50 overflow-y-auto" {...backdropProps}>
       <div className="modal-backdrop fixed inset-0" aria-hidden="true" />
 
       <div
         className="relative flex min-h-full items-start justify-center p-4 sm:items-center sm:p-8"
-        onClick={handleBackdropClick}
+        {...backdropProps}
       >
         <div
           ref={dialogRef}
