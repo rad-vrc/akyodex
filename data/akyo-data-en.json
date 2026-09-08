@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-08T11:44:51.679Z",
+  "updatedAt": "2026-09-08T11:48:26.422Z",
   "count": 949,
   "data": [
     {
@@ -6242,9 +6242,10 @@
     {
       "id": "0552",
       "entryType": "avatar",
+      "displaySerial": "0552",
       "nickname": "Shuttle Akyo",
       "avatarName": "Akyo シャトル",
-      "category": "Vehicle,Vehicle/Aviation,Environment・Weather,Environment・Weather/Outer Space,Skill・Trait,Skill・Trait/Zero-G Resistance,Skill・Trait/Hypoxia Resistance",
+      "category": "Vehicle,Vehicle/Aviation,Environment・Weather,Environment・Weather/Outer Space,Skill・Trait,Skill・Trait/Zero-G Resistance,Skill・Trait/Hypoxia Resistance,Those Beyond,Skill・Trait/Flying",
       "comment": "",
       "author": "katsuya 9366",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857",
@@ -7584,9 +7585,10 @@
     {
       "id": "0673",
       "entryType": "avatar",
+      "displaySerial": "0673",
       "nickname": "Agyo",
       "avatarName": "agyo",
-      "category": "Mint Chocolate,Gimmick・Special,Skill・Trait,Skill・Trait/Transformation,Unknown UMAkyo",
+      "category": "Mint Chocolate,Gimmick・Special,Skill・Trait,Skill・Trait/Transformation,Unknown UMAkyo,Strongest Warrior,Those Beyond",
       "comment": "",
       "author": "․reiki",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_349aeb2b-df20-4499-9729-fb818392a97f",

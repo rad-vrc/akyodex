@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-08T11:44:51.627Z",
+  "updatedAt": "2026-09-08T11:48:26.371Z",
   "count": 949,
   "data": [
     {
@@ -6242,9 +6242,10 @@
     {
       "id": "0552",
       "entryType": "avatar",
+      "displaySerial": "0552",
       "nickname": "シャトルAkyo",
       "avatarName": "Akyo シャトル",
-      "category": "乗り物,乗り物/航空,環境・天候,環境・天候/外宇宙,技能・特性,技能・特性/無重力耐性,技能・特性/酸素欠乏耐性",
+      "category": "乗り物,乗り物/航空,環境・天候,環境・天候/外宇宙,技能・特性,技能・特性/無重力耐性,技能・特性/酸素欠乏耐性,向こう側の存在,技能・特性/ひこう",
       "comment": "",
       "author": "katsuya 9366",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857",
@@ -7584,9 +7585,10 @@
     {
       "id": "0673",
       "entryType": "avatar",
+      "displaySerial": "0673",
       "nickname": "Agyo",
       "avatarName": "agyo",
-      "category": "チョコミント類,ギミック・特殊,技能・特性,技能・特性/合体・変身,正体不明のUMAkyo",
+      "category": "チョコミント類,ギミック・特殊,技能・特性,技能・特性/合体・変身,正体不明のUMAkyo,最強戦士,向こう側の存在",
       "comment": "",
       "author": "․reiki",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_349aeb2b-df20-4499-9729-fb818392a97f",
