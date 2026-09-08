@@ -15,6 +15,7 @@
 import { connection } from 'next/server';
 import { jsonError } from '@/lib/api-helpers';
 import { VRCHAT_AVATAR_ID_PATTERN, extractVRChatAvatarIdFromUrl } from '@/lib/akyo-entry';
+import { fetchVrchatResource } from '@/lib/vrchat-resource-fetch';
 import {
   createAvatarImageFailureResponse,
   fetchAvatarCardImageWithFallback,
@@ -202,7 +203,7 @@ export async function GET(request: Request) {
 
         let html: string;
         try {
-          const pageResponse = await fetch(vrchatPageUrl, {
+          const pageResponse = await fetchVrchatResource(vrchatPageUrl, 'page', {
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
               Accept: 'text/html',
@@ -293,7 +294,7 @@ export async function GET(request: Request) {
           const imageTimeoutId = setTimeout(() => imageController.abort(), 30000);
 
           try {
-            const imageResponse = await fetch(imageUrl, {
+            const imageResponse = await fetchVrchatResource(imageUrl, 'image', {
               headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 Accept: 'image/webp,image/png,image/*,*/*',
