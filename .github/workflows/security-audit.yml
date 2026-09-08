@@ -11,6 +11,10 @@ permissions:
   security-events: write
   issues: write
 
+concurrency:
+  group: weekly-security-audit
+  cancel-in-progress: false
+
 jobs:
   security-audit:
     name: Security Audit
@@ -33,20 +37,30 @@ jobs:
         if: github.event_name != 'pull_request'
         id: npm-audit
         run: |
-          npm audit --audit-level=moderate --json > audit-results.json || true
-          cat audit-results.json
+          npm audit --audit-level=moderate --json > audit-results.json
         continue-on-error: true
         
       - name: Upload npm audit results
-        if: github.event_name != 'pull_request'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: npm-audit-results
           path: audit-results.json
           retention-days: 30
           
+      - name: Check Snyk configuration
+        id: snyk-config
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -n "$SNYK_TOKEN" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run Snyk Security Scan
-        if: github.event_name != 'pull_request'
+        if: steps.snyk-config.outputs.configured == 'true'
         id: snyk-scan
         uses: snyk/actions/node@0.4.0
         continue-on-error: true
@@ -54,6 +68,15 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
+          json: true
+
+      - name: Upload Snyk results
+        if: always() && steps.snyk-config.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-results
+          path: snyk.json
+          retention-days: 30
           
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -81,37 +104,12 @@ jobs:
           path: outdated.md
           retention-days: 30
           
-      - name: Create security issue (if vulnerabilities found)
+      - name: Update security audit tracker
         if: github.event_name != 'pull_request' && always()
         uses: actions/github-script@v7
         env:
           SNYK_OUTCOME: ${{ steps.snyk-scan.outcome }}
+          SNYK_CONFIGURED: ${{ steps.snyk-config.outputs.configured }}
         with:
           script: |
-            const fs = require('fs');
-            let auditResults = {};
-            try {
-              auditResults = JSON.parse(fs.readFileSync('audit-results.json', 'utf8'));
-            } catch (e) {
-              console.log('Could not parse audit results');
-            }
-
-            const vulnerabilityCount = auditResults.metadata?.vulnerabilities || {};
-            const totalVulnerabilities = Object.values(vulnerabilityCount).reduce((a, b) => a + b, 0);
-            const snykOutcome = process.env.SNYK_OUTCOME;
-            const hasAuditFindings = totalVulnerabilities > 0;
-            const hasSnykFindings = snykOutcome === 'failure';
-
-            if (hasAuditFindings || hasSnykFindings) {
-              const issueTitle = hasAuditFindings
-                ? `🔒 Weekly Security Audit - ${totalVulnerabilities} vulnerabilities found`
-                : '🔒 Weekly Security Audit - Review Snyk findings';
-
-              github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: issueTitle,
-                body: `## Security Audit Results\n\n**Date**: ${new Date().toISOString()}\n\n**npm audit vulnerabilities**:\n${Object.entries(vulnerabilityCount).map(([k, v]) => `- ${k}: ${v}`).join('\n') || '- None reported'}\n\n**Snyk scan status**: ${hasSnykFindings ? 'Action required' : 'No issues detected'}\n\nPlease review the attached artifacts for detailed information.`,
-                labels: ['security', 'automated']
-              });
-            }
+            await require('./scripts/security-audit-report.js')({ github, context, core });
