@@ -182,9 +182,13 @@ a:focus-visible,
 }
 
 /* インタラクティブカードのみホバーでリフト */
-.akyo-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--card-hover-shadow);
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .akyo-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--card-hover-shadow);
+  }
 }
 
 /* 静的カード（検索バー・フィルター等）はホバーアニメーションなし */
@@ -223,8 +227,12 @@ a:focus-visible,
   transition: transform 0.3s ease !important;
 }
 
-.akyo-card:hover img {
-  transform: scale(1.1);
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .akyo-card:hover img {
+    transform: scale(1.1);
+  }
 }
 
 /* お気に入りボタン — 令和モダンスタイル
@@ -245,9 +253,13 @@ a:focus-visible,
   padding: 0 !important;
 }
 
-.favorite-btn:hover {
-  transform: scale(1.15);
-  background: rgba(255, 255, 255, 0.9) !important;
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .favorite-btn:hover {
+    transform: scale(1.15);
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
 }
 
 .favorite-btn:active {
@@ -316,9 +328,13 @@ select:focus {
   filter: drop-shadow(0 4px 8px rgba(255, 107, 157, 0.3));
 }
 
-.logo-animation:hover {
-  transform: scale(1.05);
-  filter: drop-shadow(0 6px 12px rgba(255, 107, 157, 0.4));
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .logo-animation:hover {
+    transform: scale(1.05);
+    filter: drop-shadow(0 6px 12px rgba(255, 107, 157, 0.4));
+  }
 }
 
 /* 属性バッジ（元の実装を完全再現） */
@@ -465,8 +481,12 @@ select:focus {
   transform: translateY(-2px) scale(1.18);
 }
 
-.view-toggle-btn:hover {
-  transform: scale(1.05);
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .view-toggle-btn:hover {
+    transform: scale(1.05);
+  }
 }
 
 /* くわしく見るボタン（元の実装を完全再現） */
@@ -483,7 +503,13 @@ select:focus {
   background-size: 300% 300% !important;
   color: white !important;
   border-radius: 25px !important;
-  padding: 12px 24px !important;
+  /* 左右は 8px。ボタンはカード幅いっぱい・内容は中央寄せなので、広い画面では
+     余白が余っていて 24px でも 8px でも見た目は変わらない。効くのはカードが
+     最も狭くなるところ（1024px ビューポートで幅 138px）で、ここで 24px だと
+     ラベルの取り分が 34px しか残らず、「くわしく」も "Details" も入らない。
+     3 言語 × 1024/1100/1280px で測ると、語の切れ目を保てるのは 8px だけだった
+     （10〜12px は日本語が「くわし／く見る」、14〜16px は英語が "Detail／s"）。 */
+  padding: 12px 8px !important;
   font-weight: 900 !important;
   font-family: var(--font-m-plus-rounded), var(--font-kosugi-maru), 'Kosugi Maru', 'Noto Sans JP', sans-serif !important;
   border: 3px solid white !important;
@@ -495,11 +521,21 @@ select:focus {
     inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
 }
 
-.detail-button:hover {
-  transform: translateY(-3px) scale(1.08) rotate(1deg) !important;
-  box-shadow: 0 10px 30px rgba(255, 107, 157, 0.5), 0 12px 35px rgba(255, 217, 61, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
-  border-color: #ffd93d !important;
+/* ホバーの見た目は、ホバーできる入力装置があるときだけ出す。
+   タッチ端末は :hover を「タップした要素に貼りつけたまま、次にどこかを触るまで
+   残す」形で模倣する。この条件がないと 1 回タップしただけでボタンが拡大＋傾き＋
+   金枠のまま固まる（Pixel 7 相当で実測: 詳細モーダルを閉じて 3.8 秒後も
+   transform が matrix(1.07984, 0.0188, -0.0188, 1.07984, 0, -3)、border-color が
+   rgb(255,217,61) のまま。別の場所を触ってはじめて戻る）。
+   タッチでの押した感は下の :active が受け持つ（touchstart で :active が付くことは
+   Pixel 7 相当で実測済み）。 */
+@media (hover: hover) {
+  .detail-button:hover {
+    transform: translateY(-3px) scale(1.08) rotate(1deg) !important;
+    box-shadow: 0 10px 30px rgba(255, 107, 157, 0.5), 0 12px 35px rgba(255, 217, 61, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+    border-color: #ffd93d !important;
+  }
 }
 
 .detail-button:active {
@@ -519,13 +555,56 @@ select:focus {
    はその半分）。overflow: visible は、viewBox いっぱいに広がる星のフチが端で
    切れないようにするため。 */
 .detail-button .detail-star {
-  flex: none;
+  /* 通常は 17px のまま（縮む余地はラベルが先に受け取る）。ラベルが 1em の
+     下限に達してもまだ入らないときだけ、装飾であるここが縮んで場所を譲る。
+     flex: none のままだと、そのぶんがボタンの外へ押し出されて切られていた
+     （ルート 200% ・1024px で星が左右あわせて 26.8px 切れる）。 */
+  flex: 0 1 auto;
+  min-width: 0;
   fill: #ffd93d;
   stroke: #ffffff;
   stroke-width: 52;
   stroke-linejoin: round;
   paint-order: stroke;
   overflow: visible;
+}
+
+/* ラベルは文節でだけ折り返す。
+   日本語は語間に空白がないので、既定ではどの文字の間でも改行できてしまう。
+   実際「くわしく見る」の改行位置は絵文字 🌟 の字送り幅に偶然依存していて、
+   星を SVG（17px）にしたらラベルの取り分が 75.2px → 85.2px に増え、
+   「くわしく／見る」が「くわしく見／る」に動いた。カードが最も狭くなる
+   ビューポート 1024px（カード幅 138px）では 3 行に割れていた。
+   keep-all で漢字かな間の改行を止め、akyo-card.tsx が入れる <wbr> だけを
+   改行できる場所として残す。英語と韓国語は語間の空白がそのまま使われる
+   （keep-all は空白での改行には影響しない。韓国語では語中で切らなくなる
+   ぶん、むしろ正しい挙動になる）。
+   word-break: auto-phrase は同じ結果になるが MDN が実験的と明記しており
+   Chrome 系にしか無いので採らない。 */
+.detail-button .detail-label {
+  word-break: keep-all;
+  /* keep-all だけだと「くわしく」が分割できない最小単位になり、フレックス
+     アイテムの自動最小サイズ（min-width: auto ＝ min-content）が効いて、
+     入りきらないぶんがボタンの外へ押し出される。ボタンは overflow: hidden
+     なのでそこで切られる。ブラウザの文字サイズを 200% にして 1024px 幅
+     （カードが最も狭くなる 138px）で実測すると、星が左右あわせて 46px 切れた。
+     min-width: 0 で縮めるようにし、overflow-wrap で最後の手段としての分割を
+     許す。ふだんは <wbr> の位置で折り返し、本当に入らないときだけ語中で折る。
+     break-word を使うのは、anywhere と違って min-content の計算を変えない
+     ぶん控えめだから（min-width: 0 を併用する今回は挙動は同じだが、意図が
+     「はみ出すときだけ」であることを指定で示しておく）。 */
+  overflow-wrap: break-word;
+  /* 下限は 0 ではなく 1 文字ぶん。0 まで縮むと箱の幅が 0 になり、そこから
+     描かれた文字が箱の外へあふれて隣の星と重なる（ルート 200% ・1024px ・
+     ボタン幅 77.2px で実測: ラベル幅 0px、韓国語「히」と星が 16×17px、
+     日本語「し」で 16×7.5px、英語 "e" で 2.7×17px 重なった）。
+     1em にすると全角 1 文字ぶんは必ず確保される。 */
+  min-width: 1em;
+  /* 縮む余地はまずラベルへ回す。星は装飾なので、ラベルが下限に達したあとの
+     最後の手段としてだけ縮む（下の .detail-star を参照）。値が大きいのは
+     「ラベルが縮み切るまで星を縮ませない」ための比率で、1000 なら通常幅で
+     星は 17.0px のまま動かない。 */
+  flex-shrink: 1000;
 }
 
 /* 三面図ダウンロードボタン（detail-buttonと同じグラデーション） */
@@ -561,11 +640,15 @@ select:focus {
   }
 }
 
-.reference-sheet-button:hover {
-  transform: translateY(-2px) scale(1.05) !important;
-  box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4), 0 8px 20px rgba(255, 217, 61, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-  border-color: #ffd93d !important;
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .reference-sheet-button:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4), 0 8px 20px rgba(255, 217, 61, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+    border-color: #ffd93d !important;
+  }
 }
 
 .reference-sheet-button:active {
@@ -581,25 +664,36 @@ select:focus {
 
    寸法ではなく transform と opacity を動かす。width/height の変化は
    合成レイヤーに乗らず再ペイントを起こすため、虹色グラデーションの
-   無限アニメーションを廃止したのと同じ理由で避ける。 */
-.detail-button::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 300px;
-  height: 300px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.5s ease-out, opacity 0.3s;
-  pointer-events: none;
-}
+   無限アニメーションを廃止したのと同じ理由で避ける。
 
-.detail-button:hover::after {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
+   ホバーできる入力装置があるときだけ出す。タッチ端末は :hover を「タップした
+   要素に貼りつけたまま、次にどこかを触るまで残す」形で模倣するので、この
+   条件がないと 1 回タップしただけで波紋が全開のまま固まる（Pixel 7 相当で
+   実測: タップ 600ms 後に scale 1.00 / opacity 1.00 に達し、4 秒後も
+   :hover が付いたまま同じ値。詳細モーダルを閉じても戻らない）。
+   300px の円がボタンをほぼ覆うので、白 35% がかかりっぱなしになる。
+   タッチでの押した感は .detail-button:active の縮みが受け持つ。
+   疑似要素ごと作らないので、モバイルでは合成レイヤーも増えない。 */
+@media (hover: hover) {
+  .detail-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.5s ease-out, opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .detail-button:hover::after {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 }
 
 /* リスト表示のスタイル */
@@ -648,8 +742,12 @@ select:focus {
   transition: background-color 0.2s ease;
 }
 
-.list-view-table tbody tr:hover {
-  background-color: #f9fafb;
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .list-view-table tbody tr:hover {
+    background-color: #f9fafb;
+  }
 }
 
 .list-view-table td {
@@ -692,8 +790,12 @@ select:focus {
   justify-content: center;
 }
 
-.list-action-btn:hover {
-  background-color: #f3f4f6;
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .list-action-btn:hover {
+    background-color: #f3f4f6;
+  }
 }
 
 /* VRChatリンクボタンのカーソル設定 */
@@ -706,8 +808,12 @@ select:focus {
   transition: transform 0.2s ease;
 }
 
-.list-action-btn:hover .list-favorite-icon {
-  transform: scale(1.15);
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .list-action-btn:hover .list-favorite-icon {
+    transform: scale(1.15);
+  }
 }
 
 /* Language Toggle Button */
@@ -733,9 +839,13 @@ select:focus {
   font-size: 16px;
 }
 
-.admin-button:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(255, 107, 157, 0.6) !important;
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .admin-button:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(255, 107, 157, 0.6) !important;
+  }
 }
 
 .admin-button:active {
@@ -764,9 +874,13 @@ select:focus {
   font-size: 16px;
 }
 
-.language-toggle-btn:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(255, 107, 157, 0.6) !important;
+/* タッチ端末では :hover がタップした要素に貼りついたまま残るので、
+   ホバーできる入力装置があるときだけ出す（経緯は .detail-button の項）。 */
+@media (hover: hover) {
+  .language-toggle-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(255, 107, 157, 0.6) !important;
+  }
 }
 
 .language-toggle-btn:active {
