@@ -192,9 +192,7 @@ export function EditModal({
 
   // Duplicate check states
   const [nicknameStatus, setNicknameStatus] = useState<FieldStatusState>(EMPTY_STATUS);
-  const [avatarNameStatus, setAvatarNameStatus] = useState<FieldStatusState>(EMPTY_STATUS);
   const [checkingNickname, setCheckingNickname] = useState(false);
-  const [checkingAvatarName, setCheckingAvatarName] = useState(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -306,46 +304,6 @@ export function EditModal({
     }
   };
 
-  // Duplicate check for avatar name
-  const handleCheckAvatarNameDuplicate = async () => {
-    const value = formData.avatarName.trim();
-
-    if (!value) {
-      setAvatarNameStatus({ message: 'アバター名を入力してください', tone: 'neutral' });
-      return;
-    }
-
-    setCheckingAvatarName(true);
-    setAvatarNameStatus(EMPTY_STATUS);
-
-    try {
-      const response = await fetch('/api/check-duplicate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          field: 'avatarName',
-          value: value,
-          excludeId: akyo?.id, // Exclude current akyo from duplicate check
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Duplicate check failed');
-      }
-
-      const data = await response.json();
-      setAvatarNameStatus({
-        message: data.message,
-        tone: data.isDuplicate ? 'error' : 'success',
-      });
-    } catch (error) {
-      console.error('Avatar name duplicate check error:', error);
-      setAvatarNameStatus({ message: '重複チェックに失敗しました', tone: 'error' });
-    } finally {
-      setCheckingAvatarName(false);
-    }
-  };
-
   // VRChat URLからアバター名を取得
   const handleFetchAvatarName = async () => {
     const url = formData.sourceUrl.trim();
@@ -424,8 +382,8 @@ export function EditModal({
     }
 
     // Check for duplicates (excluding current akyo)
-    if (nicknameStatus.tone === 'error' || avatarNameStatus.tone === 'error') {
-      if (!confirm('重複する名前またはアバター名が検出されました。\n更新を続行しますか？')) {
+    if (nicknameStatus.tone === 'error') {
+      if (!confirm('重複する名前が検出されました。\n更新を続行しますか？')) {
         return;
       }
     }
@@ -580,32 +538,22 @@ export function EditModal({
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {/* 作者と同じ「ラベル＋入力欄」の形にする。片方だけラベル行にボタンを
+                    置くと行の高さが変わり、隣り合う 2 つの入力欄がずれる */}
                 {isAvatarEntry && (
                   <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label htmlFor="edit-avatar-name" className={LABEL_CLASS}>
-                        アバター名
-                      </label>
-                      <DuplicateCheckButton
-                        checking={checkingAvatarName}
-                        onClick={handleCheckAvatarNameDuplicate}
-                        fieldLabel="アバター名"
-                      />
-                    </div>
+                    <label htmlFor="edit-avatar-name" className={LABEL_CLASS}>
+                      アバター名
+                    </label>
                     <input
                       id="edit-avatar-name"
                       type="text"
                       value={formData.avatarName}
-                      onChange={(e) => {
-                        handleInputChange('avatarName', e.target.value);
-                        setAvatarNameStatus(EMPTY_STATUS);
-                      }}
+                      onChange={(e) => handleInputChange('avatarName', e.target.value)}
                       required
-                      aria-describedby="edit-avatar-name-status"
                       className={`mt-2 ${INPUT_CLASS}`}
                       placeholder="例: Akyo origin"
                     />
-                    <FieldStatus id="edit-avatar-name-status" status={avatarNameStatus} />
                   </div>
                 )}
 

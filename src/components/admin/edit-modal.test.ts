@@ -96,8 +96,22 @@ test("関連する項目は fieldset/legend でまとめる（WCAG 1.3.1）", ()
 
 test("重複確認の結果は aria-live 領域で通知する（WCAG 4.1.3）", () => {
   const markup = render(avatar);
-  const statuses = markup.match(/role="status"[^>]*aria-live="polite"/g) ?? [];
-  assert.ok(statuses.length >= 2, `status 領域が ${statuses.length} 個しかない`);
+  // 重複確認はニックネームだけ。結果の受け皿が入力欄と紐づいていることを見る
+  assert.match(markup, /id="edit-nickname-status"[^>]*role="status"[^>]*aria-live="polite"/);
+  assert.match(markup, /id="edit-nickname"[\s\S]*?aria-describedby="edit-nickname-status"/);
+});
+
+// アバター名だけラベル行に重複確認ボタンがあり、その分の高さで隣の作者欄と
+// 入力欄がずれていた。ボタンを外して、作者と同じ「ラベル＋入力欄」に揃える
+test("アバター名は作者と同じ形で並び、重複確認ボタンを持たない", () => {
+  const markup = render(avatar);
+  assert.doesNotMatch(markup, /アバター名の重複を確認/);
+  assert.match(markup, /重複を確認/, "ニックネーム側の重複確認は残す");
+
+  const shapeOf = (id: string) =>
+    new RegExp(`<label for="${id}"[^>]*>[^<]*</label><input id="${id}"`).test(markup);
+  assert.ok(shapeOf("edit-avatar-name"), "アバター名がラベル直後に入力欄を持たない");
+  assert.ok(shapeOf("edit-author"), "作者がラベル直後に入力欄を持たない");
 });
 
 test("背景は modal-backdrop クラスを使う（Tailwind v4 に無い bg-opacity を使わない）", () => {
