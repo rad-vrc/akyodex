@@ -128,7 +128,8 @@ export function findAkyoById(data: AkyoData[], id: string): AkyoData | null {
  * 低コントラストだった自然色も WCAG 1.4.3 準拠のために暗めに調整済み。
  */
 const CATEGORY_COLOR_MAP: Record<string, string> = {
-  チョコミント: '#00bfa5',
+  // 2026-09-09: 単独の色を持つほど特別ではないという判断で、グッズなどと同じシアンへ
+  チョコミント: '#00acc1',
   // Boothと同じ設計: 旧#ff6f61は白文字コントラスト補正（彩度維持の暗色化）で
   // #eb1500の信号赤として表示されていた。補正を発動させない白文字4.51:1準拠の
   // 落ち着いた赤（彩度65%相当）を最初から登録する。

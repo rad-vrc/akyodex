@@ -31,7 +31,6 @@ const tint20 = (hex: string) => {
 };
 // 実データで最上位として生きているマップキー＋フォールバック5色の代表元色
 const LIVE_BASE_COLORS = [
-  '#00bfa5', // チョコミント
   '#d44335', // 動物
   '#4caf50', // ギミック
   '#d84315', // 食べ物
@@ -74,7 +73,7 @@ test('translated categories resolve to the same color as their Japanese counterp
     assert.equal(getCategoryColor(koName), jaColor, `${koName} != ${jaName}`);
   }
   // マップ命中系はマップ色そのものになる
-  assert.equal(getCategoryColor('Mint Chocolate'), '#00bfa5');
+  assert.equal(getCategoryColor('Mint Chocolate'), '#00acc1');
   assert.equal(getCategoryColor('Food'), '#d84315');
 });
 
@@ -208,10 +207,11 @@ test('renamed equipment and split machine categories preserve their established 
   ]) {
     assert.equal(getCategoryColor(category), '#1a73cc');
   }
-  // 緑は #43a047 と #4caf50 が実描画で ΔE 0.8（識別限界以下）だったので、
-  // ギミック・特殊が使っていた #4caf50 に寄せて 1 色にした（2026-09-08）
-  for (const category of ['機械', 'Machine', '기계', 'ギミック・特殊', 'レア', '設備']) {
-    assert.equal(getCategoryColor(category), '#4caf50');
+  // 緑系は実描画で 124°/141°/178° の 3 色あり、赤系 2・青系 2 に対して 1 つ多かった。
+  // 141° の緑を 124° のオリーブに寄せて 2 色にする。オリーブを残す方が、使用弧の中の
+  // 色相の間隔が均される（ばらつき 20.5° 対 25.6°）（2026-09-09）
+  for (const category of ['機械', 'Machine', '기계', 'ギミック・特殊', 'レア', '設備', '自然']) {
+    assert.equal(getCategoryColor(category), '#5a8a1a');
   }
 });
 
