@@ -10,6 +10,7 @@ import {
   deleteCategory,
   listChangedCategoryRows,
   mergeCategory,
+  recolorCategory,
   renameCategory,
   summarizeCategories,
   translateCategory,
@@ -19,10 +20,10 @@ import {
 import { commitCategoryChange, loadCategorySnapshot, type CategoryStoreDeps } from './category-store';
 import { GitHubConflictError } from './github-utils';
 
-export const CATEGORY_ACTIONS = ['create', 'translate', 'rename', 'merge', 'delete'] as const;
+export const CATEGORY_ACTIONS = ['create', 'translate', 'recolor', 'rename', 'merge', 'delete'] as const;
 export type CategoryAction = (typeof CATEGORY_ACTIONS)[number];
 /** Structural changes are the owner's call; adding a category or a translation is not. */
-export const OWNER_ONLY_CATEGORY_ACTIONS: ReadonlySet<CategoryAction> = new Set(['rename', 'merge', 'delete']);
+export const OWNER_ONLY_CATEGORY_ACTIONS: ReadonlySet<CategoryAction> = new Set(['recolor', 'rename', 'merge', 'delete']);
 
 const CONFLICT_MESSAGE = '他の更新が先に入りました。一覧を再読み込みしてからやり直してください';
 const STALE_LIST_MESSAGE = '一覧を表示してから他の更新が入りました。再読み込みして内容を確認してからやり直してください';
@@ -37,6 +38,8 @@ function applyCategoryAction(action: CategoryAction, dataset: CategoryDataset, b
       return createCategory(dataset, { path: body.path, en: body.en, ko: body.ko, ancestors: body.ancestors });
     case 'translate':
       return translateCategory(dataset, { path: body.path, en: body.en, ko: body.ko });
+    case 'recolor':
+      return recolorCategory(dataset, { path: body.path, color: body.color });
     case 'rename':
       return renameCategory(dataset, { from: body.from, to: body.to, en: body.en, ko: body.ko });
     case 'merge':
@@ -57,6 +60,8 @@ function successMessage(action: CategoryAction, body: Record<string, unknown>, c
     }
     case 'translate':
       return `カテゴリ「${String(body.path)}」の対訳を更新しました`;
+    case 'recolor':
+      return `カテゴリ「${String(body.path)}」の色を ${String(body.color)} に変更しました`;
     case 'rename':
       return body.from === body.to
         ? `カテゴリ「${String(body.to)}」の対訳を更新しました`

@@ -5,6 +5,7 @@ import { SearchBar } from '@/components/search-bar';
 import type { CategoryRowChange } from '@/lib/admin-catalog';
 import type { AkyoEditFields } from '@/lib/akyo-edit-fields';
 import { findCreateBlocker, planCategoryCreateLevels } from '@/lib/category-create-levels';
+import { ensureContrastForWhiteText } from '@/lib/akyo-data-helpers';
 import { isProtectedCategoryPath } from '@/lib/category-operations';
 import type { AdminRole, AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -64,10 +65,11 @@ interface CategoryMutationResponse {
 type EditorTarget =
   | { kind: 'create'; parent: string | null }
   | { kind: 'rename'; path: string }
+  | { kind: 'recolor'; path: string }
   | { kind: 'merge'; path: string };
 type Editor = EditorTarget & { head: string };
 
-const OWNER_ONLY_TITLE = '改名・統合・削除はらど（上位管理者）のみ使用できます';
+const OWNER_ONLY_TITLE = '改名・色・統合・削除はらど（上位管理者）のみ使用できます';
 const LOCKED_TITLE = '保留中のカテゴリ変更を反映または取り消してから操作してください';
 const PROTECTED_TITLE = 'アプリが自動で付けるカテゴリなので、ここでは付け外しできません';
 const EMPTY_IDS: ReadonlySet<string> = new Set();
@@ -160,7 +162,7 @@ export function CategoriesTab({
   const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
   const [editor, setEditor] = useState<Editor | null>(null);
-  const [form, setForm] = useState({ ja: '', en: '', ko: '', into: '' });
+  const [form, setForm] = useState({ ja: '', en: '', ko: '', into: '', color: '' });
   // 一緒に作る上の階層の対訳。キーは完全なパスなので、名前を打ち直しても入力は残る
   const [levelNames, setLevelNames] = useState<Record<string, { en: string; ko: string }>>({});
   // カテゴリ名は利用者が決めるので `constructor` のようなプロトタイプの名前もあり得る。
@@ -245,6 +247,23 @@ export function CategoriesTab({
     );
   }, [entries, query]);
 
+  /**
+   * 選べる色。既に最上位カテゴリが使っている色だけを、使用数の多い順に並べる。
+   * チップは `ensureContrastForWhiteText` を通した「実際に描かれる色」で塗る。
+   * 生の値で塗ると、白文字用の調整で変わったぶんだけ見本が嘘になる。
+   */
+  const palette = useMemo(() => {
+    const byColor = new Map<string, string[]>();
+    for (const [name, color] of Object.entries(colors)) {
+      const bucket = byColor.get(color);
+      if (bucket) bucket.push(name);
+      else byColor.set(color, [name]);
+    }
+    return [...byColor]
+      .map(([color, usedBy]) => ({ color, rendered: ensureContrastForWhiteText(color), usedBy: usedBy.sort() }))
+      .sort((a, b) => b.usedBy.length - a.usedBy.length || a.color.localeCompare(b.color));
+  }, [colors]);
+
   const openEditor = (opened: EditorTarget) => {
     const next: Editor = { ...opened, head };
     setFormError('');
@@ -257,9 +276,12 @@ export function CategoriesTab({
         en: entry?.en ? leafOf(entry.en) : '',
         ko: entry?.ko ? leafOf(entry.ko) : '',
         into: '',
+        color: '',
       });
+    } else if (next.kind === 'recolor') {
+      setForm({ ja: '', en: '', ko: '', into: '', color: colors[next.path] ?? '' });
     } else {
-      setForm({ ja: '', en: '', ko: '', into: '' });
+      setForm({ ja: '', en: '', ko: '', into: '', color: '' });
     }
     setLevelNames({});
     setEditor(next);
@@ -337,6 +359,18 @@ export function CategoriesTab({
       );
       return;
     }
+    if (editor.kind === 'recolor') {
+      if (!form.color) {
+        setFormError('色を選んでください');
+        return;
+      }
+      if (form.color === colors[editor.path]) {
+        setFormError('今と同じ色です');
+        return;
+      }
+      await submit({ action: 'recolor', path: editor.path, color: form.color }, editor.head);
+      return;
+    }
     if (editor.kind === 'rename') {
       const to = form.ja.trim();
       const en = form.en.trim();
@@ -404,7 +438,9 @@ export function CategoriesTab({
           ? isOwner
             ? `「${editor.path}」の名前と対訳`
             : `「${editor.path}」の対訳`
-          : `「${editor.path}」を別のカテゴリに統合`;
+          : editor.kind === 'recolor'
+            ? `「${editor.path}」の色を差し替え`
+            : `「${editor.path}」を別のカテゴリに統合`;
     const idBase = `category-editor-${editor.kind}`;
     // 空欄の意味は作成と改名で違う。作成は未対訳、改名は「今のまま」なので、そう書く
     const optionalHint = editor.kind === 'create' ? '任意' : '空欄なら今のまま';
@@ -414,7 +450,7 @@ export function CategoriesTab({
     return (
       <div className="mt-2 rounded-xl border border-green-200 bg-green-50 p-4 space-y-3" role="group" aria-label={title}>
         <p className="text-sm font-semibold text-green-900">{title}</p>
-        {editor.kind !== 'merge' && (
+        {editor.kind !== 'merge' && editor.kind !== 'recolor' && (
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label htmlFor={`${idBase}-ja`} className="block text-sm font-medium text-green-900 mb-1">
@@ -513,6 +549,51 @@ export function CategoriesTab({
             </div>
           </div>
         ))}
+        {editor.kind === 'recolor' && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-green-900">
+              色を選ぶ
+              <span className="ml-2 text-xs font-normal text-green-800">
+                既に使われている {palette.length} 色から選べます。見本は実際に表示される色です
+              </span>
+            </p>
+            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {palette.map((option) => {
+                const current = colors[editor.path] === option.color;
+                const picked = form.color === option.color;
+                return (
+                  <li key={option.color}>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={picked}
+                      onClick={() => setForm((previous) => ({ ...previous, color: option.color }))}
+                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors disabled:opacity-50 ${
+                        picked ? 'border-green-600 bg-white ring-2 ring-green-500' : 'border-green-200 bg-white hover:bg-green-100'
+                      }`}
+                    >
+                      {/* 図鑑のバッジと同じ塗り・同じ文字色で、カテゴリ名を入れて見せる */}
+                      <span
+                        className="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-bold text-white"
+                        style={{ background: option.rendered }}
+                      >
+                        {editor.path}
+                      </span>
+                      <span className="min-w-0 flex-1 text-xs text-gray-600">
+                        <span className="font-mono">{option.color}</span>
+                        <span className="ml-1">・{option.usedBy.length} 件</span>
+                        {current && <span className="ml-1 font-semibold text-green-800">（今の色）</span>}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="text-xs text-green-800">
+              色は最上位カテゴリが持ち、その配下はこの色を受け継ぎます。新しい色は増やせません（白文字とのコントラストを確かめ直す必要があるため）。
+            </p>
+          </div>
+        )}
         {editor.kind === 'merge' && (
           <div>
             <label htmlFor={`${idBase}-into`} className="block text-sm font-medium text-green-900 mb-1">
@@ -534,9 +615,11 @@ export function CategoriesTab({
             </select>
           </div>
         )}
-        <p className="text-xs text-green-800">
-          親の英語名・韓国語名は自動で前に付きます。決定すると GitHub に 1 コミットされ、英語・韓国語のデータは自動で追従します。
-        </p>
+        {editor.kind !== 'recolor' && (
+          <p className="text-xs text-green-800">
+            親の英語名・韓国語名は自動で前に付きます。決定すると GitHub に 1 コミットされ、英語・韓国語のデータは自動で追従します。
+          </p>
+        )}
         {formError && (
           <p role="alert" className="text-sm text-red-600">
             {formError}
@@ -558,7 +641,7 @@ export function CategoriesTab({
             title={locked && changesCategoryTokens(editor, form.ja) ? LOCKED_TITLE : undefined}
             className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
           >
-            {busy ? '反映中…' : editor.kind === 'create' ? '作成する' : editor.kind === 'rename' ? '決定' : '統合する'}
+            {busy ? '反映中…' : editor.kind === 'create' ? '作成する' : editor.kind === 'merge' ? '統合する' : editor.kind === 'recolor' ? '色を変える' : '決定'}
           </button>
         </div>
       </div>
@@ -748,6 +831,18 @@ export function CategoriesTab({
                       >
                         {untranslated ? '対訳を登録' : isOwner ? '改名・対訳' : '対訳'}
                       </button>
+                      {/* 色は最上位カテゴリの持ち物。子は親の色を継ぐので、ここには出さない */}
+                      {depth === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => openEditor({ kind: 'recolor', path: entry.path })}
+                          disabled={busy || !isOwner}
+                          title={!isOwner ? OWNER_ONLY_TITLE : undefined}
+                          className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          色
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'merge', path: entry.path })}
@@ -770,6 +865,7 @@ export function CategoriesTab({
                   </div>
                   {renderEditor({ kind: 'create', parent: entry.path })}
                   {renderEditor({ kind: 'rename', path: entry.path })}
+                  {depth === 0 && renderEditor({ kind: 'recolor', path: entry.path })}
                   {renderEditor({ kind: 'merge', path: entry.path })}
                 </li>
               );
