@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-09T15:02:15.272Z",
-  "count": 950,
+  "updatedAt": "2026-09-09T15:04:16.316Z",
+  "count": 951,
   "data": [
     {
       "id": "0001",
@@ -11595,6 +11595,18 @@
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ab5e706b-c76b-4a26-ba2a-ee461482a2f7",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ab5e706b-c76b-4a26-ba2a-ee461482a2f7"
+    },
+    {
+      "id": "0951",
+      "entryType": "avatar",
+      "displaySerial": "0843",
+      "nickname": "大福Akyo",
+      "avatarName": "だいふくあきょ",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),마메,색상,색상/무채색 계열,색상/흰색 계열,음식,음식/디저트",
+      "comment": "まめがいっぱい入ってる！",
+      "author": "ky_chan",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_5ecfb083-8440-4fa4-9db0-2690b6d60ef5",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5ecfb083-8440-4fa4-9db0-2690b6d60ef5"
     }
   ]
 }
