@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-09T22:57:35.525Z",
-  "count": 951,
+  "updatedAt": "2026-09-09T23:04:48.843Z",
+  "count": 952,
   "data": [
     {
       "id": "0001",
@@ -10869,6 +10869,18 @@
       "author": "ky_chan",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5ecfb083-8440-4fa4-9db0-2690b6d60ef5",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_5ecfb083-8440-4fa4-9db0-2690b6d60ef5"
+    },
+    {
+      "id": "0952",
+      "entryType": "avatar",
+      "displaySerial": "0844",
+      "nickname": "ゼリー入りコップAkyo",
+      "avatarName": "ゼリーいりコップあきょ",
+      "category": "形状・触り心地,形状・触り心地/ぷるぷる,素材・原材料,素材・原材料/ガラス,素材・原材料/水,食べ物,食べ物/スイーツ",
+      "comment": "こぼさないように気をつけて！",
+      "author": "ky_chan",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_83512e06-4eb2-4d08-b43a-1f9c750123ee",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_83512e06-4eb2-4d08-b43a-1f9c750123ee"
     }
   ]
 }
