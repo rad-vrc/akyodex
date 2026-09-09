@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { getCategoryColor } from './akyo-data-helpers';
+import categoryColors from './category-colors.json';
 import {
   CategoryOperationError,
   assertTranslationHierarchy,
@@ -289,6 +291,65 @@ test('delete: removes the node and descendants from rows, translations and colou
   assert.equal(categoriesOf(topLevel.dataset.records, '0004'), '');
   assert.equal(Object.hasOwn(topLevel.dataset.colors, '動物'), false);
   assert.throws(() => deleteCategory(dataset(), { path: 'Booth' }), /自動で扱う/);
+});
+
+/*
+ * 新規作成の初期色は、そのデータセットに登録済みの色（`recolorCategory` が選ばせる
+ * 集合）の中から選ぶ。`getCategoryColor` の後ろ 2 段（キーワード表・ハッシュ）には
+ * どのカテゴリも使っていない色が残っていて、そのまま採るとパレットが 1 色増える。
+ * 付け替えは「既に使われている色の中から」に絞ってあるので、新規作成だけが外へ
+ * 出られる状態になっていた（例: `機械: #43a047` を踏む「機械仕掛け」）。
+ *
+ * どの色になるかは固定しない。管理画面の「色を変える」で登録済みの色はいつでも
+ * 書き換わるので、色を書き写すとその操作のたびに落ちる（PR #554）。
+ */
+test('create: 新しい最上位の初期色は、そのデータセットの登録済みパレットから選ぶ', () => {
+  const base = dataset();
+  const palette = new Set(Object.values(base.colors));
+  // キーワード表を踏む名前・ハッシュへ落ちる名前を、どちらも通す
+  for (const path of ['機械仕掛け', 'ドラゴン', '道具', '未定義0']) {
+    const change = createCategory(base, { path, en: 'X', ko: 'X' });
+    assert.ok(
+      palette.has(change.dataset.colors[path]),
+      `${path} → ${change.dataset.colors[path]} は登録済みパレットの外`,
+    );
+  }
+
+  // まとめて作った親階層も同じ規則で色を持つ（`植物` はキーワード表に載っている）
+  const branch = createCategory(base, {
+    path: '植物/木',
+    en: 'Tree',
+    ko: '나무',
+    ancestors: [{ path: '植物', en: 'Plant', ko: '식물' }],
+  });
+  assert.ok(
+    palette.has(branch.dataset.colors['植物']),
+    `植物 → ${branch.dataset.colors['植物']} は登録済みパレットの外`,
+  );
+
+  // 実データの色を積んだ場合。報告そのままの再現
+  const live: CategoryDataset = { ...base, colors: { ...(categoryColors as Record<string, string>) } };
+  const registered = new Set(Object.values(live.colors));
+  const onLive = createCategory(live, { path: '機械仕掛け', en: 'Clockwork', ko: '태엽' });
+  assert.ok(
+    registered.has(onLive.dataset.colors['機械仕掛け']),
+    `機械仕掛け → ${onLive.dataset.colors['機械仕掛け']} は登録済みパレットの外`,
+  );
+
+  // 寄せる先が無いデータセットでは、これまでどおり候補をそのまま採る
+  const empty = createCategory({ ...base, colors: {} }, { path: '機械仕掛け', en: 'X', ko: 'X' });
+  assert.equal(empty.dataset.colors['機械仕掛け'], getCategoryColor('機械仕掛け'));
+});
+
+test('create: パレットへ寄せるときは、いちばん近い色を選ぶ', () => {
+  // パレット外の色の多くは登録済みの色とほぼ同じで（`機械: #43a047` は実描画で
+  // `#4caf50` と ΔE 0.8）、寄せても意図した色相のまま残る。ハッシュで振り直すと
+  // その意図ごと捨てることになる。ここは自前の色見本なので値を書いてよい
+  const base: CategoryDataset = { ...dataset(), colors: { 赤: '#c62828', 緑: '#2e7d32', 青: '#1565c0' } };
+  const initial = (path: string) => createCategory(base, { path, en: 'X', ko: 'X' }).dataset.colors[path];
+  assert.equal(initial('機械仕掛け'), base.colors['緑'], 'キーワード表の緑 #43a047');
+  assert.equal(initial('ドラゴン'), base.colors['赤'], 'キーワード表の赤 #d32f2f');
+  assert.equal(initial('人類学'), base.colors['青'], 'キーワード表の青 #2196f3');
 });
 
 test('create: composes EN/KO from the parent, freezes a colour for a new top-level', () => {

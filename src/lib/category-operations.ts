@@ -12,7 +12,7 @@
  * `Sync JSON Data from CSV` workflow regenerates them from the JA CSV and the translations.
  */
 
-import { getCategoryColor } from './akyo-data-helpers';
+import { ensureContrastForWhiteText, getCategoryColor } from './akyo-data-helpers';
 import { WORLD_CATEGORY_MARKERS } from './akyo-entry';
 
 export const CATEGORY_LANGUAGES = ['en', 'ko'] as const;
@@ -369,8 +369,82 @@ function keepExistingLeaf(
   return { en: keep('en'), ko: keep('ko') };
 }
 
+/**
+ * 既存カテゴリが今まさに見せている色。改名で色を持ち越すためだけに使う。
+ *
+ * ここはパレットに寄せない。寄せると「名前を直しただけ」で表示色が変わる。
+ * 登録済みは JSON 引きで当たるので、`getCategoryColor` まで落ちるのは色を
+ * 持たない最上位（CSV のトークンにしか無い等）だけで、それは今も画面で
+ * その色で出ている。新規作成の初期色は `initialColor` を使うこと。
+ */
 function resolveColor(dataset: CategoryDataset, topLevel: string): string {
   return Object.hasOwn(dataset.colors, topLevel) ? dataset.colors[topLevel] : getCategoryColor(topLevel);
+}
+
+/** 既に最上位カテゴリが使っている色。`recolorCategory` が選ばせる集合と同じ */
+function paletteOf(dataset: CategoryDataset): Set<string> {
+  return new Set(Object.values(dataset.colors));
+}
+
+/**
+ * 新しい最上位カテゴリの初期色。登録済みの色の中からだけ選ぶ。
+ *
+ * `getCategoryColor` の後ろ 2 段（キーワード表・ハッシュ）には、今どのカテゴリも
+ * 使っていない色が残っている。そのまま採ると、作った瞬間にパレットが 1 色増え、
+ * 白文字コントラストを確かめ直す対象も増える。`recolorCategory` が「既に使われて
+ * いる色の中から選んでください」と拒む一方で、新規作成だけがその外へ出られる、
+ * という食い違いでもある。
+ *
+ * 選び方は「今までの候補にいちばん近い登録済みの色」。パレット外の色の多くは
+ * 登録済みの色とほぼ同じで（`機械: #43a047` は `#4caf50` と実描画 ΔE 0.8、知覚閾の
+ * 約 2.3 未満）、寄せてもたいていは色相が残る。ハッシュで振り直すと、その寄りごと
+ * 捨てることになる。
+ *
+ * ただし色相が残るのは、彩度がそこそこある色に限る。彩度が低いと Lab 距離が明度
+ * 主導になって色相が保たれず、茶色の `ネコ: #795548` は青灰の `#607d8b` へ寄る
+ * （色相差 167°）。パレットに無い色域はどこかへ寄せるしかないので、そこは諦める。
+ */
+function initialColor(dataset: CategoryDataset, topLevel: string): string {
+  // 色だけが JSON に残っていて実体が無い名前は、その色を引き継ぐ（それも登録済みの色）。
+  // 消して作り直すと戻る、ではない: delete も merge も最上位からの改名も色エントリごと
+  // 片付けるので、この分岐を踏むのは手で編集した JSON のような旧データだけ
+  if (Object.hasOwn(dataset.colors, topLevel)) return dataset.colors[topLevel];
+  const suggested = getCategoryColor(topLevel);
+  const palette = paletteOf(dataset);
+  // 1 色も登録されていないデータセットには寄せる先が無い
+  if (palette.size === 0 || palette.has(suggested)) return suggested;
+  return [...palette]
+    .map((color) => ({ color, distance: renderedDistance(suggested, color) }))
+    .sort((a, b) => a.distance - b.distance || a.color.localeCompare(b.color))[0].color;
+}
+
+/**
+ * 実際にチップへ描かれる色どうしの CIE76 ΔE（Lab のユークリッド距離）。
+ *
+ * 生の HEX ではなく `ensureContrastForWhiteText` を通してから測る。白文字用の
+ * 暗色化を挟むと色は動くので（`#43a047` → `#37833a`）、生の値で比べると
+ * 「見た目にどれと同じか」とはずれた答えになる。
+ */
+function renderedDistance(a: string, b: string): number {
+  const [l1, a1, b1] = labOf(ensureContrastForWhiteText(a));
+  const [l2, a2, b2] = labOf(ensureContrastForWhiteText(b));
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+}
+
+/** `#rrggbb` → CIE Lab（sRGB / D65） */
+function labOf(hex: string): [number, number, number] {
+  const linear = (offset: number): number => {
+    const value = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  const [r, g, b] = [linear(1), linear(3), linear(5)];
+  // sRGB → XYZ を D65 白色点で正規化してから Lab へ
+  const x = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047;
+  const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+  const f = (t: number) => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116);
+  const [fx, fy, fz] = [f(x), f(y), f(z)];
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 }
 
 function cloneDataset(dataset: CategoryDataset): CategoryDataset {
@@ -623,10 +697,10 @@ export function createCategory(
   for (const ancestor of missing) {
     requireEditable(ancestor);
     dataset.translations[ancestor] = composeTranslation(dataset, ancestor, supplied.get(ancestor)!);
-    if (parentOf(ancestor) === null) dataset.colors[ancestor] = resolveColor(dataset, ancestor);
+    if (parentOf(ancestor) === null) dataset.colors[ancestor] = initialColor(dataset, ancestor);
   }
   dataset.translations[path] = composeTranslation(dataset, path, leaf);
-  if (parentOf(path) === null) dataset.colors[path] = resolveColor(dataset, path);
+  if (parentOf(path) === null) dataset.colors[path] = initialColor(dataset, path);
   const createdPaths = [...missing, path];
   return {
     dataset,
@@ -816,8 +890,7 @@ export function recolorCategory(
     throw new CategoryOperationError(`「${path}」に色が登録されていません`, 400);
   }
   const color = typeof request.color === 'string' ? request.color.trim() : '';
-  const available = new Set(Object.values(input.colors));
-  if (!available.has(color)) {
+  if (!paletteOf(input).has(color)) {
     throw new CategoryOperationError('既に使われている色の中から選んでください', 400);
   }
   if (input.colors[path] === color) {
