@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-08T12:14:48.580Z",
-  "count": 949,
+  "updatedAt": "2026-09-09T04:48:26.561Z",
+  "count": 950,
   "data": [
     {
       "id": "0001",
@@ -11583,6 +11583,18 @@
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_19d04ca9-680e-4a77-9d93-0630823f8ba1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_19d04ca9-680e-4a77-9d93-0630823f8ba1"
+    },
+    {
+      "id": "0950",
+      "entryType": "avatar",
+      "displaySerial": "0842",
+      "nickname": "かぶりものヒューマノイドAkyo",
+      "avatarName": "Humanoid Akyo HR test",
+      "category": "패션・장비,패션・장비/후드,동물,동물/인간",
+      "comment": "Akyoをかぶって、生きていく。",
+      "author": "uqai",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ab5e706b-c76b-4a26-ba2a-ee461482a2f7",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ab5e706b-c76b-4a26-ba2a-ee461482a2f7"
     }
   ]
 }
