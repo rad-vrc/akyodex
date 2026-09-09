@@ -19,7 +19,7 @@ const WORKFLOW_PATH = path.join(
 );
 
 interface JobState {
-  /** 同期コミットを push できたか（`commit-json` ステップの出力） */
+  /** 同期コミットを push できたか（`sync-data` ステップの出力） */
   pushed: boolean;
   /** それより前のステップが失敗しているか（R2 アップロード、ISR 再検証など） */
   earlierFailure: boolean;
@@ -40,9 +40,8 @@ function runsStep(condition: string, state: JobState): boolean {
       ? !state.cancelled
       : true
     : !state.earlierFailure && !state.cancelled;
-  const pushedGate = /steps\.commit-json\.outputs\.pushed == 'true'/.test(condition)
-    ? state.pushed
-    : true;
+  assert.match(condition, /steps\.sync-data\.outputs\.pushed == 'true'/);
+  const pushedGate = state.pushed;
   return statusGate && pushedGate;
 }
 
@@ -105,4 +104,12 @@ test('CI ワークフローは dispatch を受け付ける', async () => {
     'utf8',
   );
   assert.match(ci, /^\s{2}workflow_dispatch:\s*$/m);
+});
+
+test('catalog synchronization runs the retry helper before publishing and only on main', async () => {
+  const workflow = await readFile(WORKFLOW_PATH, 'utf8');
+  assert.match(workflow, /if: github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /id: sync-data\s+run: node scripts\/sync-catalog-data\.js/);
+  assert.ok(workflow.indexOf('run: node scripts/sync-catalog-data.js') < workflow.indexOf('- name: Upload JSON'));
+  assert.doesNotMatch(workflow, /git pull --rebase|steps\.(commit-json|font-subsets|json-changes)\./);
 });

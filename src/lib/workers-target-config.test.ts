@@ -200,9 +200,11 @@ test('font activation is guarded, verifies delivery and never changes routes', a
   assert.match(workflow, /rollback_args\+=\("\$\{RELEASE_BASE_VERSION\}"\)/);
 
   const sync = await readFile(path.join(process.cwd(), '.github/workflows/sync-json-data.yml'), 'utf8');
-  assert.match(sync, /elif git diff --quiet -- src\/fonts\/mplus2-variable\.subset\.woff2/);
-  assert.match(sync, /if: steps\.commit-json\.outputs\.pushed == 'true'/);
-  assert.match(sync, /FONT_CHANGED: \$\{\{ steps\.font-subsets\.outputs\.changed \}\}/);
+  // The helper computes this flag from the successful attempt's staged WOFF2 diff.
+  // Real Git retry coverage lives in scripts/sync-catalog-data.test.js.
+  assert.match(sync, /id: sync-data\s+run: node scripts\/sync-catalog-data\.js/);
+  assert.match(sync, /if: steps\.sync-data\.outputs\.pushed == 'true'/);
+  assert.match(sync, /FONT_CHANGED: \$\{\{ steps\.sync-data\.outputs\.fontChanged \}\}/);
   assert.match(sync, /action=upload\s+if \[ "\$FONT_CHANGED" = "true" \]; then\s+action=activate-fonts/);
 });
 
