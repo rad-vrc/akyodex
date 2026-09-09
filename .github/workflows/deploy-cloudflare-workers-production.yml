@@ -28,6 +28,12 @@ permissions:
 
 concurrency:
   group: cloudflare-workers-production
+  # queue: max が無いと、待機中の activate 要求を後から来た候補アップロードが取り消す。
+  # GitHub の既定は「同じグループの pending をキャンセルして新しいものが置き換わる」で、
+  # cancel-in-progress: false が守るのは実行中のものだけ。activate-colors は dispatch して
+  # 終わるので、取り消されると再要求する経路が無く、色が本番に出ないまま残る。
+  # queue: max は最大 100 件を FIFO で保持する（cancel-in-progress: true との併用のみ不可）
+  queue: max
   cancel-in-progress: false
 
 env:
@@ -52,6 +58,10 @@ jobs:
     outputs:
       release-base-tag: ${{ steps.release-gate.outputs.base-tag }}
       release-base-version: ${{ steps.release-gate.outputs.base-version }}
+      # フォント固有の検証を回すかどうかは action 名ではなく実差分で決める。
+      # activate-colors のゲートは WOFF2 が一緒に動いていても通すので、action 名で
+      # 分岐すると未検証のフォントがそのまま公開される
+      font-changed: ${{ steps.release-gate.outputs.font-changed }}
       font-asset: ${{ steps.font-asset.outputs.font-asset }}
     env:
       GITHUB_SHA: ${{ github.sha }}
@@ -90,7 +100,7 @@ jobs:
         run: npm ci
 
       - name: Verify generated font inventory
-        if: inputs.action == 'activate-fonts'
+        if: steps.release-gate.outputs.font-changed == 'true'
         run: node --test scripts/font-subset-coverage.test.js
 
       - name: Verify Cloudflare credentials
@@ -107,7 +117,7 @@ jobs:
 
       - name: Identify the generated font in the built assets
         id: font-asset
-        if: inputs.action == 'activate-fonts'
+        if: steps.release-gate.outputs.font-changed == 'true'
         run: node scripts/guarded-release.js asset
 
       - name: Upload tagged production candidate without routing traffic
@@ -411,7 +421,7 @@ jobs:
           exit 1
 
       - name: Verify the exact generated font is served in production
-        if: inputs.action == 'activate-fonts'
+        if: needs.prepare-version.outputs.font-changed == 'true'
         run: node scripts/guarded-release.js verify
 
       - name: Roll back failed activation to the previous Worker

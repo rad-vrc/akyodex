@@ -553,10 +553,12 @@ Worker rollback cannot cross a Durable Object class lifecycle change; Durable Ob
 - Production is healthy and reports a full Git commit ID and Worker version UUID; its commit is an ancestor of the candidate.
 - その action が差し替えるファイルが実際に変わっていること（`activate-fonts` なら `src/fonts/mplus2-variable.subset.woff2`、`activate-colors` なら `src/lib/category-colors.json`）。
 - Every changed path is an existing file in the allowlist: that WOFF2, `src/fonts/subset-manifest.json`, `src/lib/category-canonical.json`, `src/lib/category-colors.json`, `data/category-translations.json`, or `data/akyo-data-{ja,en,ko}.{csv,json}`. Added/deleted files and all other paths are rejected. 対訳表は実行時に GitHub から読むだけでバンドルに入らないため、色の対応表は書けるのが管理画面だけで内容が色コードに限られる（`category-operations.ts` が最上位カテゴリと登録済みの色しか通さない）ため、それぞれ許可しています。
-- Font inventory verification and the production Workers build succeed. The built font must exactly match the generated WOFF2.（フォント固有の検証は `activate-fonts` のみ）
+- Font inventory verification and the production Workers build succeed. The built font must exactly match the generated WOFF2. **フォント固有の 3 つの検証（収録状況・ビルド内 WOFF2 のバイト一致・本番の配信と CSS 参照）を回すかどうかは action 名ではなく、ゲートが検出した実差分で決まります。** `activate-colors` のゲートは WOFF2 が一緒に動いていても通すので、action 名で分岐すると未反映のフォント更新がある状態で色を変えたときに、従来必須だった検証なしでそのフォントまで公開されてしまいます（フォント起因の失敗を検出できないため巻き戻しも働きません）。
 - Production still has the same commit **and version** immediately before deployment.
 
 色替えがコード変更と同じ push に乗っていた場合、`Activate category colors` は失敗せずに理由を warning と job summary に残して終わります。その変更を activate するのはそのマージを見た人の判断だからです。
+
+本番ワークフローの concurrency は `queue: max`（`cancel-in-progress: false`）です。GitHub の既定は「同じグループの **pending** をキャンセルして新しいものが置き換わる」で、`cancel-in-progress: false` が守るのは実行中のものだけです。これがないと、待機中の activate 要求を後から来た候補アップロードが取り消してしまい、`Activate category colors` は dispatch 成功のまま本番は旧色のまま残ります（再要求する経路がありません）。`queue: max` は本番操作の直列化を保ったまま、最大 100 件を FIFO で待たせます。
 
 Pending application code, dependencies, scripts, configuration, or workflow changes stop the automatic action with an explicit error; they are never silently activated together with a font. Review those changes and use normal manual activation first. The existing locale-ID regression test remains unchanged; automatic font activation does not translate or repair missing EN/KO records.
 

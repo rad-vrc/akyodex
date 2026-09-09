@@ -89,6 +89,17 @@ test('activates a colour change the admin screen made on its own', (t) => {
   assert.deepEqual(changes, [COLORS]);
 });
 
+// 色の activate でも WOFF2 が一緒に動いていることはある。ワークフローはこの戻り値から
+// font-changed を作ってフォント固有の検証を回すので、action 名では分岐できない
+test('a colour activation still reports the font when the font moved too', (t) => {
+  const r = repository(t);
+  r.write(COLORS);
+  r.write(FONT);
+  const changed = inspectGuardedChanges(r.base, r.commit(), COLORS, r.root);
+  assert.ok(changed.includes(FONT), 'フォントの変更を握り潰してはいけない');
+  assert.ok(changed.includes(COLORS));
+});
+
 test('lets a colour change ride along with a font release, and stops blocking it', (t) => {
   const r = repository(t);
   r.write(COLORS);

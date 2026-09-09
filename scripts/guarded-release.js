@@ -140,6 +140,10 @@ async function main(command) {
       console.log(`Auto-releasable changes verified: ${changed.join(', ')}`);
       output('base-tag', current.tag);
       output('base-version', current.version);
+      // フォント固有の検証を回すかどうかは action 名ではなく実差分で決める。
+      // activate-colors のゲートは WOFF2 が一緒に動いていても通すので、action 名で
+      // 分岐すると未検証のフォントがそのまま公開される
+      output('font-changed', String(changed.includes(FONT)));
       break;
     }
     // 起動側（activate-category-colors.yml）が「今 activate してよいか」を判定するための、

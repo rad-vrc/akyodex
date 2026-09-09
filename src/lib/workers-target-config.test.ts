@@ -230,6 +230,32 @@ test('a category recolor reaches production without a manual activate', async ()
   assert.match(workflow, /if: inputs\.action == 'activate-fonts' \|\| inputs\.action == 'activate-colors'[\s\S]*?node scripts\/guarded-release\.js gate/);
   // 色の activate でルートを張り替えてはいけない（既に張ってある）
   assert.match(workflow, /id: activate-route\s+if: inputs\.action == 'activate'/);
+
+  // 待機中の activate 要求を、後から来た候補アップロードに取り消させない。
+  // GitHub の既定は「同じグループの pending をキャンセルして新しいものが置き換わる」で、
+  // cancel-in-progress: false が守るのは実行中のものだけ
+  // 行頭アンカーで見る。`  # queue: max が無いと…` のような説明コメントに当てない。
+  // 作業コピーは CRLF なので改行を正規化してから照合する
+  const lines = workflow.replace(/\r\n/g, '\n');
+  assert.match(lines, /^concurrency:\n(?:.*\n)*?  queue: max$/m);
+  assert.match(lines, /^  cancel-in-progress: false$/m);
+  // queue: max と cancel-in-progress: true の併用は GitHub 側の検証エラーになる
+  assert.doesNotMatch(lines, /^  cancel-in-progress: true$/m);
+});
+
+// activate-colors のゲートは WOFF2 が一緒に動いていても通す。フォント固有の 3 つの検証を
+// action 名で分岐すると、未反映のフォント更新がある状態で色を変えたときに、従来必須だった
+// 検証なしでそのフォントまで公開される（フォント起因の失敗を検出できないので巻き戻しも
+// 働かない）。実差分から作った font-changed で回す
+test('a font that rides along with a colour activation is still verified', async () => {
+  const workflow = await readFile(path.join(process.cwd(), '.github/workflows/deploy-cloudflare-workers-production.yml'), 'utf8');
+  assert.match(workflow, /font-changed: \$\{\{ steps\.release-gate\.outputs\.font-changed \}\}/);
+  assert.match(workflow, /if: steps\.release-gate\.outputs\.font-changed == 'true'\s+run: node --test scripts\/font-subset-coverage\.test\.js/);
+  assert.match(workflow, /id: font-asset\s+if: steps\.release-gate\.outputs\.font-changed == 'true'/);
+  assert.match(workflow, /if: needs\.prepare-version\.outputs\.font-changed == 'true'\s+run: node scripts\/guarded-release\.js verify/);
+  // フォント検証が action 名に戻っていないこと
+  assert.doesNotMatch(workflow, /if: inputs\.action == 'activate-fonts'\s+run: node --test scripts\/font-subset-coverage/);
+  assert.doesNotMatch(workflow, /if: inputs\.action == 'activate-fonts'\s+run: node scripts\/guarded-release\.js (asset|verify)/);
 });
 
 test('Workers production workflow configures managed secrets without activating traffic', async () => {
