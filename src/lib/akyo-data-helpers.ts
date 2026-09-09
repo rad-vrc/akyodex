@@ -203,7 +203,8 @@ export function findAkyoById(data: AkyoData[], id: string): AkyoData | null {
  * 低コントラストだった自然色も WCAG 1.4.3 準拠のために暗めに調整済み。
  */
 const CATEGORY_COLOR_MAP: Record<string, string> = {
-  チョコミント: '#00bfa5',
+  // 2026-09-09: 単独の色を持つほど特別ではないという判断で、グッズなどと同じシアンへ
+  チョコミント: '#00acc1',
   // Boothと同じ設計: 旧#ff6f61は白文字コントラスト補正（彩度維持の暗色化）で
   // #eb1500の信号赤として表示されていた。補正を発動させない白文字4.51:1準拠の
   // 落ち着いた赤（彩度65%相当）を最初から登録する。
@@ -226,9 +227,9 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   グッズ: '#00acc1',
   Goods: '#00acc1',
   굿즈: '#00acc1',
-  自然: '#5a8a1a',
-  Nature: '#5a8a1a',
-  자연: '#5a8a1a',
+  自然: '#4caf50',
+  Nature: '#4caf50',
+  자연: '#4caf50',
   // 「芸術・アート」から階層化しても既存の青灰色を維持する。
   芸術: '#607d8b',
   // 廃止した「電子」の落ち着いた赤を、後継の作風カテゴリへ引き継ぐ。
@@ -236,7 +237,7 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   // 既存カテゴリの改名・分離後も一覧で急に色が変わらないよう維持する。
   'ファッション・装備': '#1a73cc',
   機械: '#43a047',
-  植物: '#5a8a1a',
+  植物: '#4caf50',
   宇宙: '#3f51b5',
   和風: '#d32f2f',
   洋風: '#1976d2',

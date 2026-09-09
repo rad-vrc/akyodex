@@ -31,13 +31,11 @@ const tint20 = (hex: string) => {
 };
 // 実データで最上位として生きているマップキー＋フォールバック5色の代表元色
 const LIVE_BASE_COLORS = [
-  '#00bfa5', // チョコミント
   '#d44335', // 動物
   '#4caf50', // ギミック
   '#d84315', // 食べ物
   '#d63d43', // Booth
   '#00acc1', // グッズ / fallback0
-  '#5a8a1a', // 自然
   '#43a047', // fallback1
   '#607d8b', // fallback2
   '#1a73cc', // fallback4
@@ -74,7 +72,7 @@ test('translated categories resolve to the same color as their Japanese counterp
     assert.equal(getCategoryColor(koName), jaColor, `${koName} != ${jaName}`);
   }
   // マップ命中系はマップ色そのものになる
-  assert.equal(getCategoryColor('Mint Chocolate'), '#00bfa5');
+  assert.equal(getCategoryColor('Mint Chocolate'), '#00acc1');
   assert.equal(getCategoryColor('Food'), '#d84315');
 });
 
@@ -134,13 +132,14 @@ test('Booth uses the WCAG-safe semi-bright red without triggering darkening', ()
   assert.equal(ensureContrastForWhiteText(getCategoryColor('Booth')), '#d63d43');
 });
 
-test('Animal uses the WCAG-safe warm red without triggering darkening', () => {
-  // Boothと同じ設計。旧#ff6f61は補正で#eb1500(信号赤)化していた。
-  assert.equal(getCategoryColor('動物'), '#d44335');
-  assert.equal(getCategoryColor('動物/きつね'), '#d44335');
-  assert.equal(getCategoryColor('Animal'), '#d44335');
-  assert.equal(getCategoryColor('동물'), '#d44335');
-  assert.equal(ensureContrastForWhiteText(getCategoryColor('動物')), '#d44335');
+test('Animal shares the orange-red with Food', () => {
+  // 元は #d44335 単独だったが、実描画で食べ物の #d84315 と ΔE 14.5 しか離れておらず
+  // 見分けが付かないという判断で食べ物側に寄せた（2026-09-08、オーナー確認済み）。
+  // #d44335 は補正が要らない色だったのに対し、#d84315 は #d34215 へ ΔE 2.0 だけ暗くなる。
+  for (const category of ['動物', '動物/きつね', 'Animal', '동물', '食べ物', 'きつね']) {
+    assert.equal(getCategoryColor(category), '#d84315');
+  }
+  assert.equal(ensureContrastForWhiteText('#d84315'), '#d34215');
 });
 
 test('formerly purple semantic colors use established non-purple colors', () => {
@@ -207,9 +206,21 @@ test('renamed equipment and split machine categories preserve their established 
   ]) {
     assert.equal(getCategoryColor(category), '#1a73cc');
   }
-  for (const category of ['機械', 'Machine', '기계']) {
-    assert.equal(getCategoryColor(category), '#43a047');
+  // 緑系は実描画で 124°/141°/178° の 3 色あり、赤系 2・青系 2 に対して 1 つ多かった。
+  // 一度は 141° の緑を 124° のオリーブ #5a8a1a に寄せたが、パレット全体で見ると
+  // ギミック・特殊が持っていた #4caf50 の方が良いというオーナー判断で逆向きに統合した。
+  // オリーブは 自然 単体には合っていたが、緑を共有する 8 カテゴリ全体には合わなかった
+  // （2026-09-09）
+  for (const category of ['機械', 'Machine', '기계', 'ギミック・特殊', '設備', '自然']) {
+    assert.equal(getCategoryColor(category), '#4caf50');
   }
+});
+
+test('Rare uses cyan because yellow is unavailable at the chip lightness', () => {
+  // レアの語感は本来は黄色だが、チップは補正後 L≈49 に固定されるので、その明度の
+  // 黄色帯（60〜105°）は上限彩度 55〜67 の茶／オリーブにしかならず黄色に見えない。
+  // 残る中ではシアンが一番素直だというオーナー判断（2026-09-09）
+  assert.equal(getCategoryColor('レア'), '#00acc1');
 });
 
 test('Nature and its translated hierarchies retain the established plant green', () => {
@@ -224,7 +235,7 @@ test('Nature and its translated hierarchies retain the established plant green',
   ];
 
   for (const category of natureCategories) {
-    assert.equal(getCategoryColor(category), '#5a8a1a');
+    assert.equal(getCategoryColor(category), '#4caf50');
   }
 });
 
