@@ -180,13 +180,13 @@ test('Workers rollback documentation warns about Durable Object lifecycle change
 test('font activation is guarded, verifies delivery and never changes routes', async () => {
   const workflow = await readFile(path.join(process.cwd(), '.github/workflows/deploy-cloudflare-workers-production.yml'), 'utf8');
   const ordered = [
-    'node scripts/font-only-release.js gate',
+    'node scripts/guarded-release.js gate',
     'node --test scripts/font-subset-coverage.test.js',
-    'node scripts/font-only-release.js asset',
+    'node scripts/guarded-release.js asset',
     'npx wrangler versions upload',
-    'node scripts/font-only-release.js assert-base',
+    'node scripts/guarded-release.js assert-base',
     'npx wrangler versions deploy',
-    'node scripts/font-only-release.js verify',
+    'node scripts/guarded-release.js verify',
     'npx wrangler rollback',
   ];
   let previous = -1;
@@ -195,15 +195,67 @@ test('font activation is guarded, verifies delivery and never changes routes', a
     assert.ok(index > previous, `${command} must exist and run in safety order`);
     previous = index;
   }
-  assert.match(workflow, /needs: prepare-version\s+if:[\s\S]*?github\.ref_name == 'main'[\s\S]*?github\.event_name == 'workflow_dispatch'[\s\S]*?\(inputs\.action == 'activate' \|\| inputs\.action == 'activate-fonts'\)/);
+  assert.match(workflow, /needs: prepare-version\s+if:[\s\S]*?github\.ref_name == 'main'[\s\S]*?github\.event_name == 'workflow_dispatch'[\s\S]*?\(inputs\.action == 'activate' \|\| inputs\.action == 'activate-fonts' \|\| inputs\.action == 'activate-colors'\)/);
   assert.match(workflow, /id: activate-route\s+if: inputs\.action == 'activate'\s+run: npx wrangler triggers deploy/);
-  assert.match(workflow, /rollback_args\+=\("\$\{FONT_BASE_VERSION\}"\)/);
+  assert.match(workflow, /rollback_args\+=\("\$\{RELEASE_BASE_VERSION\}"\)/);
 
   const sync = await readFile(path.join(process.cwd(), '.github/workflows/sync-json-data.yml'), 'utf8');
   assert.match(sync, /elif git diff --quiet -- src\/fonts\/mplus2-variable\.subset\.woff2/);
   assert.match(sync, /if: steps\.commit-json\.outputs\.pushed == 'true'/);
   assert.match(sync, /FONT_CHANGED: \$\{\{ steps\.font-subsets\.outputs\.changed \}\}/);
   assert.match(sync, /action=upload\s+if \[ "\$FONT_CHANGED" = "true" \]; then\s+action=activate-fonts/);
+});
+
+// 色替えは CSV も対訳も動かさず文字も増やさないので、カタログの自動反映にも
+// フォントの自動追従にも乗らない。この経路が消えると、管理画面で色を変えても
+// 反映されないまま残り、次のフォント自動追従もそこで止まる
+test('a category recolor reaches production without a manual activate', async () => {
+  const trigger = await readFile(path.join(process.cwd(), '.github/workflows/activate-category-colors.yml'), 'utf8');
+  assert.match(trigger, /on:\s+push:\s+branches:\s+- main\s+paths:\s+- 'src\/lib\/category-colors\.json'/);
+  assert.match(trigger, /actions: write/);
+  // ゲートは本番タグから main までを見るので、浅いクローンでは判定できない
+  assert.match(trigger, /fetch-depth: 0/);
+  assert.match(trigger, /GUARDED_ACTION: activate-colors\s+GITHUB_SHA: \$\{\{ github\.sha \}\}\s+run: node scripts\/guarded-release\.js gate-report/);
+  assert.match(trigger, /if: steps\.gate\.outputs\.releasable == 'true'[\s\S]*?-f "action=activate-colors"/);
+  // 通らなかった場合は赤くせず理由を残す。コード PR に同梱された色替えは人が activate する
+  assert.match(trigger, /if: steps\.gate\.outputs\.releasable != 'true'/);
+  // 理由文にはコミットのファイル名が入る。run に直接展開するとシェルとして走るので、
+  // 出てきてよいのは env に渡す 1 か所だけ
+  assert.match(trigger, /REASON: \$\{\{ steps\.gate\.outputs\.reason \}\}/);
+  assert.equal(trigger.match(/steps\.gate\.outputs\.reason/g)?.length, 1);
+
+  const workflow = await readFile(path.join(process.cwd(), '.github/workflows/deploy-cloudflare-workers-production.yml'), 'utf8');
+  assert.match(workflow, /- activate-colors/);
+  assert.match(workflow, /GUARDED_ACTION: \$\{\{ inputs\.action \}\}/);
+  assert.match(workflow, /if: inputs\.action == 'activate-fonts' \|\| inputs\.action == 'activate-colors'[\s\S]*?node scripts\/guarded-release\.js gate/);
+  // 色の activate でルートを張り替えてはいけない（既に張ってある）
+  assert.match(workflow, /id: activate-route\s+if: inputs\.action == 'activate'/);
+
+  // 待機中の activate 要求を、後から来た候補アップロードに取り消させない。
+  // GitHub の既定は「同じグループの pending をキャンセルして新しいものが置き換わる」で、
+  // cancel-in-progress: false が守るのは実行中のものだけ
+  // 行頭アンカーで見る。`  # queue: max が無いと…` のような説明コメントに当てない。
+  // 作業コピーは CRLF なので改行を正規化してから照合する
+  const lines = workflow.replace(/\r\n/g, '\n');
+  assert.match(lines, /^concurrency:\n(?:.*\n)*?  queue: max$/m);
+  assert.match(lines, /^  cancel-in-progress: false$/m);
+  // queue: max と cancel-in-progress: true の併用は GitHub 側の検証エラーになる
+  assert.doesNotMatch(lines, /^  cancel-in-progress: true$/m);
+});
+
+// activate-colors のゲートは WOFF2 が一緒に動いていても通す。フォント固有の 3 つの検証を
+// action 名で分岐すると、未反映のフォント更新がある状態で色を変えたときに、従来必須だった
+// 検証なしでそのフォントまで公開される（フォント起因の失敗を検出できないので巻き戻しも
+// 働かない）。実差分から作った font-changed で回す
+test('a font that rides along with a colour activation is still verified', async () => {
+  const workflow = await readFile(path.join(process.cwd(), '.github/workflows/deploy-cloudflare-workers-production.yml'), 'utf8');
+  assert.match(workflow, /font-changed: \$\{\{ steps\.release-gate\.outputs\.font-changed \}\}/);
+  assert.match(workflow, /if: steps\.release-gate\.outputs\.font-changed == 'true'\s+run: node --test scripts\/font-subset-coverage\.test\.js/);
+  assert.match(workflow, /id: font-asset\s+if: steps\.release-gate\.outputs\.font-changed == 'true'/);
+  assert.match(workflow, /if: needs\.prepare-version\.outputs\.font-changed == 'true'\s+run: node scripts\/guarded-release\.js verify/);
+  // フォント検証が action 名に戻っていないこと
+  assert.doesNotMatch(workflow, /if: inputs\.action == 'activate-fonts'\s+run: node --test scripts\/font-subset-coverage/);
+  assert.doesNotMatch(workflow, /if: inputs\.action == 'activate-fonts'\s+run: node scripts\/guarded-release\.js (asset|verify)/);
 });
 
 test('Workers production workflow configures managed secrets without activating traffic', async () => {
@@ -238,7 +290,7 @@ test('CI builds and dry-runs the production Workers target on Linux', async () =
   );
 
   assert.match(workflow, /run: npm run build:workers:production/);
-  assert.match(workflow, /node scripts\/font-only-release\.js asset/);
+  assert.match(workflow, /node scripts\/guarded-release\.js asset/);
   assert.match(workflow, /run: npm run dry-run:workers:production/);
   assert.match(workflow, /run: npm run test:reference-images/);
   assert.match(workflow, /run: npm run typecheck:reference-images/);

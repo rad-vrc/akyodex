@@ -541,17 +541,24 @@ The current runtime code reads `ADMIN_PASSWORD_OWNER`, `ADMIN_PASSWORD_ADMIN`, a
 PagesはPRの画面確認専用です。本番のsource of truth、activation、rollbackはすべてWorkers workflowです。
 Worker rollback cannot cross a Durable Object class lifecycle change; Durable Object migrationを跨ぐ復帰は専用のmigration手順として扱います。
 
-### Automatic Font Subset Activation
+### Guarded Automatic Activation (fonts and category colors)
 
-`Sync JSON Data from CSV` requests `activate-fonts` only after font generation succeeds, the WOFF2 bytes change, the generated commit is pushed, and the R2 upload completes. When the font is unchanged or generation fails, sync retains the existing candidate-upload-only behavior. Font generation failure still does not block catalog synchronization.
+管理画面の変更に手動 activate を要求しない、というのが運用の原則です。Akyo の登録・編集は KV/R2 配信なのでそのまま反映されますが、バンドルに入るファイルは activate しないと出ません。そこで 2 つの経路が自動で activate を投げます。
 
-Fonts remain bundled with the Worker. This is a guarded Worker release, not a separate R2 font upload. Before building or uploading, `scripts/font-only-release.js` compares the candidate with the full commit ID reported by the **live production Worker**, not just the preceding sync commit. Automatic activation requires all of these conditions:
+- **`activate-fonts`** — `Sync JSON Data from CSV` が、フォント生成に成功し、WOFF2 のバイト列が変わり、生成コミットが push され、R2 アップロードが完了したときだけ要求します。フォントが変わらない場合や生成に失敗した場合は候補アップロードのみの従来動作に戻ります。フォント生成の失敗はカタログ同期を止めません。
+- **`activate-colors`** — `Activate category colors` が、`src/lib/category-colors.json` だけが動いた push を拾って要求します。管理画面の「色を変える」は CSV も対訳も動かさず文字も増やさないため、カタログの自動反映にもフォントの自動追従にも乗らないからです。この経路が無いと、色を変えても反映されないまま残り、次のフォント自動追従もそこで止まります。
+
+どちらも「ガード付きの Worker リリース」で、R2 への個別アップロードではありません。ビルドやアップロードの前に `scripts/guarded-release.js` が、**稼働中の本番 Worker** が返す完全なコミット ID と候補を突き合わせます（直前の同期コミットではありません）。自動 activate には次のすべてが必要です。
 
 - Production is healthy and reports a full Git commit ID and Worker version UUID; its commit is an ancestor of the candidate.
-- The actual `src/fonts/mplus2-variable.subset.woff2` has changed.
-- Every changed path is an existing file in the allowlist: that WOFF2, `src/fonts/subset-manifest.json`, `src/lib/category-canonical.json`, `data/category-translations.json`, or `data/akyo-data-{ja,en,ko}.{csv,json}`. Added/deleted files and all other paths are rejected. The translations file is on the list because it is only read from GitHub at runtime and never enters the bundle; `src/lib/category-colors.json`, which the admin writes in the same commit, is imported by `src/lib/akyo-data-helpers.ts` and therefore stays off it.
-- Font inventory verification and the production Workers build succeed. The built font must exactly match the generated WOFF2.
+- その action が差し替えるファイルが実際に変わっていること（`activate-fonts` なら `src/fonts/mplus2-variable.subset.woff2`、`activate-colors` なら `src/lib/category-colors.json`）。
+- Every changed path is an existing file in the allowlist: that WOFF2, `src/fonts/subset-manifest.json`, `src/lib/category-canonical.json`, `src/lib/category-colors.json`, `data/category-translations.json`, or `data/akyo-data-{ja,en,ko}.{csv,json}`. Added/deleted files and all other paths are rejected. 対訳表は実行時に GitHub から読むだけでバンドルに入らないため、色の対応表は書けるのが管理画面だけで内容が色コードに限られる（`category-operations.ts` が最上位カテゴリと登録済みの色しか通さない）ため、それぞれ許可しています。
+- Font inventory verification and the production Workers build succeed. The built font must exactly match the generated WOFF2. **フォント固有の 3 つの検証（収録状況・ビルド内 WOFF2 のバイト一致・本番の配信と CSS 参照）を回すかどうかは action 名ではなく、ゲートが検出した実差分で決まります。** `activate-colors` のゲートは WOFF2 が一緒に動いていても通すので、action 名で分岐すると未反映のフォント更新がある状態で色を変えたときに、従来必須だった検証なしでそのフォントまで公開されてしまいます（フォント起因の失敗を検出できないため巻き戻しも働きません）。
 - Production still has the same commit **and version** immediately before deployment.
+
+色替えがコード変更と同じ push に乗っていた場合、`Activate category colors` は失敗せずに理由を warning と job summary に残して終わります。その変更を activate するのはそのマージを見た人の判断だからです。
+
+本番ワークフローの concurrency は `queue: max`（`cancel-in-progress: false`）です。GitHub の既定は「同じグループの **pending** をキャンセルして新しいものが置き換わる」で、`cancel-in-progress: false` が守るのは実行中のものだけです。これがないと、待機中の activate 要求を後から来た候補アップロードが取り消してしまい、`Activate category colors` は dispatch 成功のまま本番は旧色のまま残ります（再要求する経路がありません）。`queue: max` は本番操作の直列化を保ったまま、最大 100 件を FIFO で待たせます。
 
 Pending application code, dependencies, scripts, configuration, or workflow changes stop the automatic action with an explicit error; they are never silently activated together with a font. Review those changes and use normal manual activation first. The existing locale-ID regression test remains unchanged; automatic font activation does not translate or repair missing EN/KO records.
 
