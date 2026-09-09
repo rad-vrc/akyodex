@@ -36,7 +36,6 @@ const LIVE_BASE_COLORS = [
   '#d84315', // 食べ物
   '#d63d43', // Booth
   '#00acc1', // グッズ / fallback0
-  '#5a8a1a', // 自然
   '#43a047', // fallback1
   '#607d8b', // fallback2
   '#1a73cc', // fallback4
@@ -208,11 +207,20 @@ test('renamed equipment and split machine categories preserve their established 
     assert.equal(getCategoryColor(category), '#1a73cc');
   }
   // 緑系は実描画で 124°/141°/178° の 3 色あり、赤系 2・青系 2 に対して 1 つ多かった。
-  // 141° の緑を 124° のオリーブに寄せて 2 色にする。オリーブを残す方が、使用弧の中の
-  // 色相の間隔が均される（ばらつき 20.5° 対 25.6°）（2026-09-09）
-  for (const category of ['機械', 'Machine', '기계', 'ギミック・特殊', 'レア', '設備', '自然']) {
-    assert.equal(getCategoryColor(category), '#5a8a1a');
+  // 一度は 141° の緑を 124° のオリーブ #5a8a1a に寄せたが、パレット全体で見ると
+  // ギミック・特殊が持っていた #4caf50 の方が良いというオーナー判断で逆向きに統合した。
+  // オリーブは 自然 単体には合っていたが、緑を共有する 8 カテゴリ全体には合わなかった
+  // （2026-09-09）
+  for (const category of ['機械', 'Machine', '기계', 'ギミック・特殊', '設備', '自然']) {
+    assert.equal(getCategoryColor(category), '#4caf50');
   }
+});
+
+test('Rare uses cyan because yellow is unavailable at the chip lightness', () => {
+  // レアの語感は本来は黄色だが、チップは補正後 L≈49 に固定されるので、その明度の
+  // 黄色帯（60〜105°）は上限彩度 55〜67 の茶／オリーブにしかならず黄色に見えない。
+  // 残る中ではシアンが一番素直だというオーナー判断（2026-09-09）
+  assert.equal(getCategoryColor('レア'), '#00acc1');
 });
 
 test('Nature and its translated hierarchies retain the established plant green', () => {
@@ -227,7 +235,7 @@ test('Nature and its translated hierarchies retain the established plant green',
   ];
 
   for (const category of natureCategories) {
-    assert.equal(getCategoryColor(category), '#5a8a1a');
+    assert.equal(getCategoryColor(category), '#4caf50');
   }
 });
 
