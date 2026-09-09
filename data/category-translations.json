@@ -1171,6 +1171,10 @@
     "en": "Color/Achromatic Colors",
     "ko": "색상/무채색 계열"
   },
+  "色/白色系": {
+    "en": "Color/White Tones",
+    "ko": "색상/흰색 계열"
+  },
   "色/紫色系": {
     "en": "Color/Purple",
     "ko": "색상/보라"
