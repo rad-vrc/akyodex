@@ -16,6 +16,7 @@ on:
           - configure-secrets
           - activate
           - activate-fonts
+          - activate-colors
           - rollback-worker
       version-id:
         description: 'Optional Worker version ID for rollback-worker'
@@ -44,12 +45,13 @@ jobs:
       (github.event_name == 'push' ||
       inputs.action == 'upload' ||
       inputs.action == 'activate' ||
-      inputs.action == 'activate-fonts')
+      inputs.action == 'activate-fonts' ||
+      inputs.action == 'activate-colors')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
-      font-base-tag: ${{ steps.font-gate.outputs.base-tag }}
-      font-base-version: ${{ steps.font-gate.outputs.base-version }}
+      release-base-tag: ${{ steps.release-gate.outputs.base-tag }}
+      release-base-version: ${{ steps.release-gate.outputs.base-version }}
       font-asset: ${{ steps.font-asset.outputs.font-asset }}
     env:
       GITHUB_SHA: ${{ github.sha }}
@@ -74,13 +76,15 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Verify only fonts and catalog data differ from production
-        id: font-gate
-        if: inputs.action == 'activate-fonts'
+      - name: Verify only auto-releasable files differ from production
+        id: release-gate
+        if: inputs.action == 'activate-fonts' || inputs.action == 'activate-colors'
+        env:
+          GUARDED_ACTION: ${{ inputs.action }}
         run: |
           set -euo pipefail
           git fetch --no-tags --unshallow origin main
-          node scripts/font-only-release.js gate
+          node scripts/guarded-release.js gate
 
       - name: Install dependencies
         run: npm ci
@@ -104,7 +108,7 @@ jobs:
       - name: Identify the generated font in the built assets
         id: font-asset
         if: inputs.action == 'activate-fonts'
-        run: node scripts/font-only-release.js asset
+        run: node scripts/guarded-release.js asset
 
       - name: Upload tagged production candidate without routing traffic
         run: |
@@ -120,7 +124,7 @@ jobs:
             echo ""
             echo "- Revision: ${GITHUB_SHA}"
             echo "- Worker: ${WORKERS_NAME}"
-            echo "- Traffic: 0% until a manual activate or guarded activate-fonts action"
+            echo "- Traffic: 0% until a manual activate or a guarded activate-fonts / activate-colors action"
             echo "- Current production Worker remains active"
           } >> "${GITHUB_STEP_SUMMARY}"
 
@@ -245,7 +249,7 @@ jobs:
     if: >-
       github.ref_name == 'main' &&
       github.event_name == 'workflow_dispatch' &&
-      (inputs.action == 'activate' || inputs.action == 'activate-fonts')
+      (inputs.action == 'activate' || inputs.action == 'activate-fonts' || inputs.action == 'activate-colors')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
@@ -254,10 +258,10 @@ jobs:
     env:
       GITHUB_SHA: ${{ github.sha }}
       REQUIRED_WORKER_SECRETS: ADMIN_PASSWORD_OWNER,ADMIN_PASSWORD_ADMIN,SESSION_SECRET,GITHUB_TOKEN,REVALIDATE_SECRET,SENTRY_DSN
-      FONT_BASE_TAG: ${{ needs.prepare-version.outputs.font-base-tag }}
-      FONT_BASE_VERSION: ${{ needs.prepare-version.outputs.font-base-version }}
+      RELEASE_BASE_TAG: ${{ needs.prepare-version.outputs.release-base-tag }}
+      RELEASE_BASE_VERSION: ${{ needs.prepare-version.outputs.release-base-version }}
       FONT_ASSET: ${{ needs.prepare-version.outputs.font-asset }}
-      AUTO_FONT_RELEASE: ${{ inputs.action == 'activate-fonts' }}
+      AUTO_RELEASE: ${{ inputs.action == 'activate-fonts' || inputs.action == 'activate-colors' }}
 
     steps:
       - name: Checkout main revision
@@ -307,9 +311,9 @@ jobs:
           SECRET_VERSION_PATH=/tmp/worker-candidate-version.json node -e 'const fs=require("node:fs");const version=JSON.parse(fs.readFileSync(process.env.SECRET_VERSION_PATH,"utf8"));const names=new Set((version.resources?.bindings??[]).filter(({type})=>type==="secret_text").map(({name})=>name));const missing=process.env.REQUIRED_WORKER_SECRETS.split(",").filter((name)=>!names.has(name));if(missing.length){console.error(`Missing production Worker secrets: ${missing.join(", ")}`);process.exit(1)}'
           echo "version-id=${candidate_version_id}" >> "${GITHUB_OUTPUT}"
 
-      - name: Recheck the font-only production baseline immediately before deployment
-        if: inputs.action == 'activate-fonts'
-        run: node scripts/font-only-release.js assert-base
+      - name: Recheck the guarded production baseline immediately before deployment
+        if: inputs.action == 'activate-fonts' || inputs.action == 'activate-colors'
+        run: node scripts/guarded-release.js assert-base
 
       - name: Deploy candidate version to 100 percent
         id: deploy-version
@@ -408,7 +412,7 @@ jobs:
 
       - name: Verify the exact generated font is served in production
         if: inputs.action == 'activate-fonts'
-        run: node scripts/font-only-release.js verify
+        run: node scripts/guarded-release.js verify
 
       - name: Roll back failed activation to the previous Worker
         id: rollback-worker
@@ -416,8 +420,8 @@ jobs:
         run: |
           set -euo pipefail
           rollback_args=()
-          if [ "${AUTO_FONT_RELEASE}" = "true" ]; then
-            rollback_args+=("${FONT_BASE_VERSION}")
+          if [ "${AUTO_RELEASE}" = "true" ]; then
+            rollback_args+=("${RELEASE_BASE_VERSION}")
           fi
           npx wrangler rollback "${rollback_args[@]}" --config "${WORKERS_CONFIG}" \
             --name "${WORKERS_NAME}" \

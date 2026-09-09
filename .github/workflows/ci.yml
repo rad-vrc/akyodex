@@ -166,7 +166,7 @@ jobs:
           test -f .open-next/worker.js
           test -d .open-next/assets
           grep -q "DOQueueHandler" .open-next/worker.js
-          node scripts/font-only-release.js asset
+          node scripts/guarded-release.js asset
           du -sh .open-next
 
       - name: Run production Wrangler version upload dry-run

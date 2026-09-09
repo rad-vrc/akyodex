@@ -1,0 +1,94 @@
+name: Activate category colors
+
+# =============================================================================
+# 管理画面の「色を変える」を反映させる
+# =============================================================================
+# 図鑑の原則は「管理画面の変更に手動 activate を要求しない」。Akyo の登録・編集は
+# CSV → KV/R2 配信なのでそのまま反映され、カテゴリの新規作成は文字が増えるので
+# sync-json-data.yml の activate-fonts に乗る。
+#
+# ところが色替え（category-operations.ts の recolorCategory）は CSV も対訳も動かさず、
+# 文字も増やさない。書くのは src/lib/category-colors.json 1 本だけで、これは
+# akyo-data-helpers.ts が import しているバンドル内のファイル。つまり
+#   - sync-json-data.yml は paths に入っていないので起動しない
+#   - フォントが変わらないので activate-fonts も飛ばない
+#   - push の本番デプロイは候補を上げるだけで activate しない
+# となり、色を変えても反映されないまま残る。さらに次のフォント自動追従も止める。
+#
+# そこでこのワークフローが、色だけが動いた push を拾って activate-colors を投げる。
+# 判定は guarded-release.js が本番タグと main を突き合わせて行い、許可リスト外の変更が
+# 混ざっていれば投げない（コード PR に色替えが同梱されているのは普通のことなので、
+# その場合はワークフローを失敗させず、理由だけ残す）。
+# =============================================================================
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/lib/category-colors.json'
+
+permissions:
+  contents: read
+  # 本番デプロイを workflow_dispatch で起動するために必要。
+  actions: write
+
+concurrency:
+  group: activate-category-colors
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Activate the new category colors
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main revision
+        uses: actions/checkout@v7
+        with:
+          # ゲートは本番タグから main までの差分を見るので、浅いクローンでは足りない
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Check whether these colors can be activated on their own
+        id: gate
+        env:
+          GUARDED_ACTION: activate-colors
+          GITHUB_SHA: ${{ github.sha }}
+        run: node scripts/guarded-release.js gate-report
+
+      - name: Request the guarded color activation
+        if: steps.gate.outputs.releasable == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run deploy-cloudflare-workers-production.yml \
+            --repo "${{ github.repository }}" \
+            --ref main \
+            -f "action=activate-colors"
+          echo "- Dispatched production action: activate-colors" >> "${GITHUB_STEP_SUMMARY}"
+
+      # 反映されないまま残っていることを黙って見逃さない。コード PR に同梱されていた
+      # だけなら、そのマージを activate する人が一緒に載せることになる
+      - name: Explain why the colors were not activated
+        if: steps.gate.outputs.releasable != 'true'
+        # 理由文にはコミットのファイル名が入る。`${{ }}` で run に直接埋めると
+        # そのファイル名がシェルとして走るので、env 経由で渡す
+        env:
+          REASON: ${{ steps.gate.outputs.reason }}
+        run: |
+          set -euo pipefail
+          echo "::warning::カテゴリ色の自動 activate を見送りました: ${REASON}"
+          {
+            echo "## カテゴリ色は自動 activate されていません"
+            echo ""
+            echo "理由: ${REASON}"
+            echo ""
+            echo "この変更は候補 Worker に入っていますが、本番には出ていません。"
+            echo "許可リスト外の変更を含む activate は人が判断します。"
+          } >> "${GITHUB_STEP_SUMMARY}"

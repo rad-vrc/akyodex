@@ -180,13 +180,13 @@ test('Workers rollback documentation warns about Durable Object lifecycle change
 test('font activation is guarded, verifies delivery and never changes routes', async () => {
   const workflow = await readFile(path.join(process.cwd(), '.github/workflows/deploy-cloudflare-workers-production.yml'), 'utf8');
   const ordered = [
-    'node scripts/font-only-release.js gate',
+    'node scripts/guarded-release.js gate',
     'node --test scripts/font-subset-coverage.test.js',
-    'node scripts/font-only-release.js asset',
+    'node scripts/guarded-release.js asset',
     'npx wrangler versions upload',
-    'node scripts/font-only-release.js assert-base',
+    'node scripts/guarded-release.js assert-base',
     'npx wrangler versions deploy',
-    'node scripts/font-only-release.js verify',
+    'node scripts/guarded-release.js verify',
     'npx wrangler rollback',
   ];
   let previous = -1;
@@ -195,15 +195,41 @@ test('font activation is guarded, verifies delivery and never changes routes', a
     assert.ok(index > previous, `${command} must exist and run in safety order`);
     previous = index;
   }
-  assert.match(workflow, /needs: prepare-version\s+if:[\s\S]*?github\.ref_name == 'main'[\s\S]*?github\.event_name == 'workflow_dispatch'[\s\S]*?\(inputs\.action == 'activate' \|\| inputs\.action == 'activate-fonts'\)/);
+  assert.match(workflow, /needs: prepare-version\s+if:[\s\S]*?github\.ref_name == 'main'[\s\S]*?github\.event_name == 'workflow_dispatch'[\s\S]*?\(inputs\.action == 'activate' \|\| inputs\.action == 'activate-fonts' \|\| inputs\.action == 'activate-colors'\)/);
   assert.match(workflow, /id: activate-route\s+if: inputs\.action == 'activate'\s+run: npx wrangler triggers deploy/);
-  assert.match(workflow, /rollback_args\+=\("\$\{FONT_BASE_VERSION\}"\)/);
+  assert.match(workflow, /rollback_args\+=\("\$\{RELEASE_BASE_VERSION\}"\)/);
 
   const sync = await readFile(path.join(process.cwd(), '.github/workflows/sync-json-data.yml'), 'utf8');
   assert.match(sync, /elif git diff --quiet -- src\/fonts\/mplus2-variable\.subset\.woff2/);
   assert.match(sync, /if: steps\.commit-json\.outputs\.pushed == 'true'/);
   assert.match(sync, /FONT_CHANGED: \$\{\{ steps\.font-subsets\.outputs\.changed \}\}/);
   assert.match(sync, /action=upload\s+if \[ "\$FONT_CHANGED" = "true" \]; then\s+action=activate-fonts/);
+});
+
+// 色替えは CSV も対訳も動かさず文字も増やさないので、カタログの自動反映にも
+// フォントの自動追従にも乗らない。この経路が消えると、管理画面で色を変えても
+// 反映されないまま残り、次のフォント自動追従もそこで止まる
+test('a category recolor reaches production without a manual activate', async () => {
+  const trigger = await readFile(path.join(process.cwd(), '.github/workflows/activate-category-colors.yml'), 'utf8');
+  assert.match(trigger, /on:\s+push:\s+branches:\s+- main\s+paths:\s+- 'src\/lib\/category-colors\.json'/);
+  assert.match(trigger, /actions: write/);
+  // ゲートは本番タグから main までを見るので、浅いクローンでは判定できない
+  assert.match(trigger, /fetch-depth: 0/);
+  assert.match(trigger, /GUARDED_ACTION: activate-colors\s+GITHUB_SHA: \$\{\{ github\.sha \}\}\s+run: node scripts\/guarded-release\.js gate-report/);
+  assert.match(trigger, /if: steps\.gate\.outputs\.releasable == 'true'[\s\S]*?-f "action=activate-colors"/);
+  // 通らなかった場合は赤くせず理由を残す。コード PR に同梱された色替えは人が activate する
+  assert.match(trigger, /if: steps\.gate\.outputs\.releasable != 'true'/);
+  // 理由文にはコミットのファイル名が入る。run に直接展開するとシェルとして走るので、
+  // 出てきてよいのは env に渡す 1 か所だけ
+  assert.match(trigger, /REASON: \$\{\{ steps\.gate\.outputs\.reason \}\}/);
+  assert.equal(trigger.match(/steps\.gate\.outputs\.reason/g)?.length, 1);
+
+  const workflow = await readFile(path.join(process.cwd(), '.github/workflows/deploy-cloudflare-workers-production.yml'), 'utf8');
+  assert.match(workflow, /- activate-colors/);
+  assert.match(workflow, /GUARDED_ACTION: \$\{\{ inputs\.action \}\}/);
+  assert.match(workflow, /if: inputs\.action == 'activate-fonts' \|\| inputs\.action == 'activate-colors'[\s\S]*?node scripts\/guarded-release\.js gate/);
+  // 色の activate でルートを張り替えてはいけない（既に張ってある）
+  assert.match(workflow, /id: activate-route\s+if: inputs\.action == 'activate'/);
 });
 
 test('Workers production workflow configures managed secrets without activating traffic', async () => {
@@ -238,7 +264,7 @@ test('CI builds and dry-runs the production Workers target on Linux', async () =
   );
 
   assert.match(workflow, /run: npm run build:workers:production/);
-  assert.match(workflow, /node scripts\/font-only-release\.js asset/);
+  assert.match(workflow, /node scripts\/guarded-release\.js asset/);
   assert.match(workflow, /run: npm run dry-run:workers:production/);
   assert.match(workflow, /run: npm run test:reference-images/);
   assert.match(workflow, /run: npm run typecheck:reference-images/);
