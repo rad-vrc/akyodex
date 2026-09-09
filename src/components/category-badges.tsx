@@ -79,7 +79,10 @@ export function CategoryBadges({ categories, className }: CategoryBadgesProps) {
 
   if (groups.length === 0) return null;
   return (
-    <div ref={rootRef} className={`flex flex-wrap gap-1${className ? ` ${className}` : ''}`}>
+    // items-start が要る。既定の align-items: stretch だと、同じ行に縦積みのグループが
+    // 1 つでもあると、隣の 1 行グループが行の高さ（36px）まで引き伸ばされ、中の親ピルも
+    // stretch で 36px になって 2 行分の高さのチップに見える（例: パロディ＋設備）
+    <div ref={rootRef} className={`flex flex-wrap items-start gap-1${className ? ` ${className}` : ''}`}>
       {groups.map(({ parent, children }, index) => {
         const color = getCategoryColor(parent);
         return (
