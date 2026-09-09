@@ -1123,6 +1123,10 @@
     "en": "Material・Raw Material/Plant/Wood",
     "ko": "소재・원재료/식물/나무"
   },
+  "素材・原材料/水": {
+    "en": "Material・Raw Material/Water",
+    "ko": "소재・원재료/물"
+  },
   "素材・原材料/氷": {
     "en": "Material・Raw Material/Ice",
     "ko": "소재・원재료/얼음"
