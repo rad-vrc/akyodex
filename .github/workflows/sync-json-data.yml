@@ -54,6 +54,7 @@ env:
 jobs:
   sync-json:
     name: Convert CSV to JSON and Upload to R2
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -73,138 +74,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Regenerate EN/KO CSV from the Japanese CSV
-        run: |
-          set -e
-          # JA CSV と data/category-translations.json を正として EN/KO CSV を作り直す。
-          # 管理画面は JA CSV しか書かないので、ここで回さないと EN/KO が置き去りになる。
-          # 対訳は任意なので、訳の無いカテゴリがあっても生成は止まらない（その階層は
-          # 日本語のまま出て、件数が警告に出る）。それ以外の理由で失敗した場合は
-          # 直前の EN/KO をそのまま残して警告だけ出し、JA の反映は止めない。
-          CSV_EN="data/akyo-data-en.csv"
-          CSV_KO="data/akyo-data-ko.csv"
-          JSON_KO="data/${{ env.JSON_FILE_KO }}"
-          if node scripts/sync-akyo-data-en-from-ja.js && node scripts/generate-ko-data.js; then
-            echo "✅ EN/KO CSV regenerated from JA"
-            git diff --stat -- "$CSV_EN" "$CSV_KO"
-          else
-            echo "::warning::EN/KO regeneration failed; keeping the previous EN/KO CSVs"
-            git checkout -- "$CSV_EN" "$CSV_KO" "$JSON_KO"
-          fi
-
-      - name: Convert CSV to JSON
-        run: |
-          set -e
-          echo "Converting CSV files to JSON..."
-          if ! npm run data:convert; then
-            echo "::error::CSV to JSON conversion failed"
-            exit 1
-          fi
-          echo "✅ CSV to JSON conversion completed successfully"
-
-      - name: Regenerate font subsets from catalog characters
-        id: font-subsets
-        run: |
-          set -e
-          # 新しい名前の文字を自己ホストの丸ゴシックサブセットへ反映する。
-          # 生成失敗はデータ同期を止めない（未収録文字はシステムFBで表示される）。
-          if ! npm run fonts:subset; then
-            echo "::warning::Font subset regeneration failed; keeping existing subsets"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet -- src/fonts/mplus2-variable.subset.woff2; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Regenerate category canonical map
-        run: |
-          set -e
-          # カテゴリ色の言語間一致に使うEN/KO→JA対訳辞書をデータから再生成する。
-          # 生成失敗はデータ同期を止めない（未登録カテゴリは従来のハッシュ色になるだけ）。
-          if ! npm run categories:canonical; then
-            echo "::warning::Category canonical map regeneration failed; keeping existing map"
-          fi
-
-      - name: Check for JSON changes
-        id: json-changes
-        run: |
-          set -e
-          JSON_JA="data/${{ env.JSON_FILE_JA }}"
-          JSON_EN="data/${{ env.JSON_FILE_EN }}"
-          JSON_KO="data/${{ env.JSON_FILE_KO }}"
-          if git diff --quiet -- "$JSON_JA" "$JSON_EN" "$JSON_KO" data/akyo-data-en.csv data/akyo-data-ko.csv src/fonts/ src/lib/category-canonical.json; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "No JSON changes detected"
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "JSON changes detected:"
-            git diff --stat -- "$JSON_JA" "$JSON_EN" "$JSON_KO" data/akyo-data-en.csv data/akyo-data-ko.csv
-          fi
-
-      - name: Commit JSON changes
-        id: commit-json
-        if: steps.json-changes.outputs.changed == 'true'
-        run: |
-          set -e
-          JSON_JA="data/${{ env.JSON_FILE_JA }}"
-          JSON_EN="data/${{ env.JSON_FILE_EN }}"
-          JSON_KO="data/${{ env.JSON_FILE_KO }}"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -- "$JSON_JA" "$JSON_EN" "$JSON_KO" data/akyo-data-en.csv data/akyo-data-ko.csv src/fonts/ src/lib/category-canonical.json
-
-          # Skip commit if nothing staged (idempotent for re-runs)
-          if git diff --cached --quiet; then
-            echo "ℹ️ No staged changes, skipping commit (likely a re-run)"
-            exit 0
-          fi
-
-          git commit -m "chore: auto-sync JSON data from CSV changes"
-
-          MAX_RETRIES=3
-          RETRY_COUNT=0
-          RETRY_DELAY=5
-          LAST_FAILURE=""
-          LAST_EXIT_CODE=0
-
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            set +e
-            git push
-            PUSH_EXIT_CODE=$?
-            set -e
-            if [ $PUSH_EXIT_CODE -eq 0 ]; then
-              echo "✅ Git push successful (attempt $RETRY_COUNT/$MAX_RETRIES)"
-              echo "pushed=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            LAST_FAILURE="push"
-            LAST_EXIT_CODE=$PUSH_EXIT_CODE
-            echo "::warning::git push failed (attempt $RETRY_COUNT/$MAX_RETRIES): exit code $PUSH_EXIT_CODE"
-            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "Retrying in ${RETRY_DELAY}s..."
-              sleep $RETRY_DELAY
-              RETRY_DELAY=$((RETRY_DELAY * 2))
-              set +e
-              git pull --rebase
-              REBASE_EXIT_CODE=$?
-              set -e
-              if [ $REBASE_EXIT_CODE -ne 0 ]; then
-                LAST_FAILURE="rebase"
-                LAST_EXIT_CODE=$REBASE_EXIT_CODE
-                echo "::warning::git pull --rebase failed (attempt $RETRY_COUNT/$MAX_RETRIES): exit code $REBASE_EXIT_CODE"
-                git rebase --abort 2>/dev/null || true
-              else
-                echo "✅ git pull --rebase successful (attempt $RETRY_COUNT/$MAX_RETRIES)"
-              fi
-            fi
-          done
-          echo "::error::Git sync failed after $MAX_RETRIES attempts. Last failure: git $LAST_FAILURE (exit code $LAST_EXIT_CODE)"
-          exit 1
+      # Every attempt starts from current main, including manual reruns.
+      - name: Regenerate and commit catalog data
+        id: sync-data
+        run: node scripts/sync-catalog-data.js
 
       - name: Upload JSON to Cloudflare R2
         env:
@@ -308,7 +181,7 @@ jobs:
           echo "### Cache Invalidation (Phase 5a + 5b)" >> $GITHUB_STEP_SUMMARY
             echo "- ISR revalidation triggered for instant page updates" >> $GITHUB_STEP_SUMMARY
             echo "- Legacy and CatalogPayloadV1 KV caches updated for edge-side data access" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.json-changes.outputs.changed }}" == "true" ]; then
+          if [ "${{ steps.sync-data.outputs.changed }}" == "true" ]; then
             echo "✅ JSON files updated and uploaded to R2" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Updated Files" >> $GITHUB_STEP_SUMMARY
@@ -333,10 +206,10 @@ jobs:
       # フォントのバイト列が変わった場合だけ、ガード付きの自動反映を要求する。
       # 本番との差分にアプリ変更が含まれる場合、production workflow側で停止する。
       - name: Trigger production font activation or candidate upload
-        if: steps.commit-json.outputs.pushed == 'true'
+        if: steps.sync-data.outputs.pushed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          FONT_CHANGED: ${{ steps.font-subsets.outputs.changed }}
+          FONT_CHANGED: ${{ steps.sync-data.outputs.fontChanged }}
         run: |
           set -e
           action=upload
@@ -361,7 +234,7 @@ jobs:
       # 配信が失敗しても検証されない木が残ってしまう。コードの検証は配信の成否から独立させる
       # （配信側の dispatch は据え置き。失敗した配信の続きを走らせる判断は別の話）
       - name: Trigger CI on the synced tree
-        if: ${{ !cancelled() && steps.commit-json.outputs.pushed == 'true' }}
+        if: ${{ !cancelled() && steps.sync-data.outputs.pushed == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
