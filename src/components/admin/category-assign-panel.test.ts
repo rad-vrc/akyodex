@@ -138,6 +138,20 @@ test('select, toggle, commit one batch; committed rows are handed up and the lis
     await h.click(h.cardToggle('0002').toggle);
     assert.equal(h.cardToggle('0002').article.dataset.selected, 'true');
     assert.equal(h.cardToggle('0002').article.dataset.pending, 'true');
+
+    // 既に全部持つカードは「付ける」では押せない。ここが緩むと、付ける作業の途中で
+    // 押し間違えたときに警告も無く外れる（2026-09-10、#0926 が対応機種/PC を失った）
+    assert.equal(h.cardToggle('0001').toggle.disabled, true, '付けるモードで既に持つカードは押せない');
+    assert.match(h.cardToggle('0001').article.textContent!, /変更なし/);
+
+    // 外すのはモードを切り替えたときだけ
+    await h.click(h.buttons('外す')[0]);
+    assert.equal(h.cardToggle('0001').toggle.disabled, false);
+    // 文言は「押すと何が起きるか」だけを言う。選択中かどうかはアイコン側の役目。
+    // 混ぜると、外すモードで部分一致のカード（選択表示は付かないが押すと外れる）が
+    // 「選択中（押すと外す）」になってハイライトと食い違う
+    assert.match(h.cardToggle('0001').article.textContent!, /押すと外す/);
+    assert.equal(h.cardToggle('0003').article.dataset.selected, 'false');
     await h.click(h.cardToggle('0001').toggle);
     assert.match(h.win.document.body.textContent!, /保留 2件/);
     assert.equal(h.batches.length, 0, 'nothing is written while holding');
@@ -182,11 +196,11 @@ test('cards are disabled with an empty selection and the result stays readable a
   const h = await setup();
   try {
     await h.click(h.listRowButton('動物', '選択'));
-    await h.click(h.cardToggle('0002').toggle);
+    await h.click(h.cardToggle('0003').toggle);
     // Deselecting keeps the hold but must not leave clickable cards that do nothing.
     await h.click(h.listRowButton('動物', '✓ 選択中'));
     assert.equal(h.panel().hidden, false, 'held changes keep the panel open with an empty set');
-    assert.equal(h.cardToggle('0002').toggle.disabled, false, 'a held card can still be reverted');
+    assert.equal(h.cardToggle('0003').toggle.disabled, false, 'a held card can still be reverted');
     assert.equal(h.cardToggle('0001').toggle.disabled, true, 'without a selection there is nothing to toggle');
     await h.click(h.buttons('カテゴリの変更を反映する')[0]);
     assert.equal(h.batches.length, 1);
@@ -217,6 +231,8 @@ test('rows held by the edit tab are refused, and a rejected commit keeps the hol
     assert.match(h.win.document.body.textContent!, /保留 0件/);
 
     h.failNextBatch('存在しないカテゴリが含まれています: 動物/うま。ページを再読み込みしてください');
+    // 0001 は既に動物/うまを持つので、外すモードでだけ押せる
+    await h.click(h.buttons('外す')[0]);
     await h.click(h.cardToggle('0001').toggle);
     await h.click(h.buttons('カテゴリの変更を反映する')[0]);
     assert.equal(h.batches.length, 1);
@@ -232,7 +248,7 @@ test('translations stay editable while assignments are held; renaming and deleti
   const h = await setup();
   try {
     await h.click(h.listRowButton('動物', '選択'));
-    await h.click(h.cardToggle('0002').toggle);
+    await h.click(h.cardToggle('0003').toggle);
     assert.match(h.win.document.body.textContent!, /保留 1件/);
     assert.equal(h.listRowButton('動物', '統合').disabled, true);
     assert.equal(h.listRowButton('動物', '削除').disabled, true);
@@ -251,6 +267,73 @@ test('translations stay editable while assignments are held; renaming and deleti
     assert.equal(submit.disabled, true);
     await act(async () => submit.click());
     assert.equal(h.categoryPosts.filter((post) => post.action === 'rename').length, 0);
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * カードの表示層はここでしか固定していない。文言・アイコン・aria-pressed のどれを壊しても
+ * 単体テスト 600 件が緑のままだった（2026-09-10 に変異で実測）。表示が嘘をつくと、
+ * 付ける作業の途中で押して外れる事故に戻るので、4 通りの action を表で押さえる。
+ *
+ * 文言は「押すと何が起きるか」だけ、アイコンと aria-pressed は「選択中か」だけを言う。
+ * この 2 つは別物で、外すモードで一部だけ持つカード（押すと外れるがハイライトは付かない）
+ * で実際に食い違う。
+ */
+test('カードの表示は「押すと何が起きるか」と「選択中か」を別々に言う', async () => {
+  const h = await setup();
+  try {
+    const face = (id: string) => {
+      const { article, toggle } = h.cardToggle(id);
+      return {
+        icon: toggle.querySelector('span[aria-hidden="true"]')!.textContent,
+        text: toggle.querySelector('span:not([aria-hidden])')!.textContent,
+        pressed: toggle.getAttribute('aria-pressed'),
+        disabled: toggle.disabled,
+        highlighted: article.dataset.selected,
+      };
+    };
+    const radio = (label: string) =>
+      [...h.win.document.querySelectorAll('[role="radio"]')].find((b) => b.textContent?.trim() === label)!;
+
+    await h.click(h.listRowButton('動物', '選択'));
+    await h.click(h.listRowButton('動物/うま', '選択'));
+
+    // 付けるモード。全部持つカードは押せず、ハイライトだけが付く
+    assert.equal(radio('付ける').getAttribute('aria-checked'), 'true');
+    assert.equal(radio('外す').getAttribute('aria-checked'), 'false');
+    assert.match(h.panel().textContent!, /すでに全部持つ Akyo は押せません/);
+    assert.deepEqual(face('0001'), {
+      icon: '✅', text: '選択中（変更なし）', pressed: 'true', disabled: true, highlighted: 'true',
+    });
+    assert.deepEqual(face('0003'), {
+      icon: '⬜', text: '押すと付ける', pressed: 'false', disabled: false, highlighted: 'false',
+    });
+
+    // 保留のカードは、取り消すために押せる。文言もアイコンも保留であることを言う
+    await h.click(h.cardToggle('0002').toggle);
+    assert.deepEqual(face('0002'), {
+      icon: '↩', text: '保留中（押すと取り消し）', pressed: 'true', disabled: false, highlighted: 'true',
+    });
+    assert.match(h.cardToggle('0002').toggle.getAttribute('aria-label')!, /（保留中（押すと取り消し））$/);
+    await h.click(h.cardToggle('0002').toggle);
+
+    // 外すモード。0002 は 動物 だけ持つので、ハイライトは付かないが押すと外れる。
+    // ここが「押すと何が起きるか」と「選択中か」がずれる唯一の組み合わせ
+    await h.click(h.buttons('外す')[0]);
+    assert.equal(radio('付ける').getAttribute('aria-checked'), 'false');
+    assert.equal(radio('外す').getAttribute('aria-checked'), 'true');
+    assert.match(h.panel().textContent!, /一部だけ持つ Akyo も押せて、その分だけ外れます/);
+    assert.deepEqual(face('0001'), {
+      icon: '✅', text: '押すと外す', pressed: 'true', disabled: false, highlighted: 'true',
+    });
+    assert.deepEqual(face('0002'), {
+      icon: '⬜', text: '押すと外す', pressed: 'false', disabled: false, highlighted: 'false',
+    });
+    assert.deepEqual(face('0003'), {
+      icon: '⬜', text: '対象外', pressed: 'false', disabled: true, highlighted: 'false',
+    });
   } finally {
     await h.cleanup();
   }
