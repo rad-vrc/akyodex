@@ -138,6 +138,15 @@ test('select, toggle, commit one batch; committed rows are handed up and the lis
     await h.click(h.cardToggle('0002').toggle);
     assert.equal(h.cardToggle('0002').article.dataset.selected, 'true');
     assert.equal(h.cardToggle('0002').article.dataset.pending, 'true');
+
+    // 既に全部持つカードは「付ける」では押せない。ここが緩むと、付ける作業の途中で
+    // 押し間違えたときに警告も無く外れる（2026-09-10、#0926 が対応機種/PC を失った）
+    assert.equal(h.cardToggle('0001').toggle.disabled, true, '付けるモードで既に持つカードは押せない');
+    assert.match(h.cardToggle('0001').article.textContent!, /変更なし/);
+
+    // 外すのはモードを切り替えたときだけ
+    await h.click(h.buttons('外す')[0]);
+    assert.equal(h.cardToggle('0001').toggle.disabled, false);
     await h.click(h.cardToggle('0001').toggle);
     assert.match(h.win.document.body.textContent!, /保留 2件/);
     assert.equal(h.batches.length, 0, 'nothing is written while holding');
@@ -182,11 +191,11 @@ test('cards are disabled with an empty selection and the result stays readable a
   const h = await setup();
   try {
     await h.click(h.listRowButton('動物', '選択'));
-    await h.click(h.cardToggle('0002').toggle);
+    await h.click(h.cardToggle('0003').toggle);
     // Deselecting keeps the hold but must not leave clickable cards that do nothing.
     await h.click(h.listRowButton('動物', '✓ 選択中'));
     assert.equal(h.panel().hidden, false, 'held changes keep the panel open with an empty set');
-    assert.equal(h.cardToggle('0002').toggle.disabled, false, 'a held card can still be reverted');
+    assert.equal(h.cardToggle('0003').toggle.disabled, false, 'a held card can still be reverted');
     assert.equal(h.cardToggle('0001').toggle.disabled, true, 'without a selection there is nothing to toggle');
     await h.click(h.buttons('カテゴリの変更を反映する')[0]);
     assert.equal(h.batches.length, 1);
@@ -217,6 +226,8 @@ test('rows held by the edit tab are refused, and a rejected commit keeps the hol
     assert.match(h.win.document.body.textContent!, /保留 0件/);
 
     h.failNextBatch('存在しないカテゴリが含まれています: 動物/うま。ページを再読み込みしてください');
+    // 0001 は既に動物/うまを持つので、外すモードでだけ押せる
+    await h.click(h.buttons('外す')[0]);
     await h.click(h.cardToggle('0001').toggle);
     await h.click(h.buttons('カテゴリの変更を反映する')[0]);
     assert.equal(h.batches.length, 1);
@@ -232,7 +243,7 @@ test('translations stay editable while assignments are held; renaming and deleti
   const h = await setup();
   try {
     await h.click(h.listRowButton('動物', '選択'));
-    await h.click(h.cardToggle('0002').toggle);
+    await h.click(h.cardToggle('0003').toggle);
     assert.match(h.win.document.body.textContent!, /保留 1件/);
     assert.equal(h.listRowButton('動物', '統合').disabled, true);
     assert.equal(h.listRowButton('動物', '削除').disabled, true);

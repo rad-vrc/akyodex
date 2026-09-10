@@ -45,7 +45,29 @@ interface AkyoCardProps {
   selectedForAssign?: boolean;
   assignDisabled?: boolean;
   assignPending?: boolean;
+  /**
+   * 押したときに何が起きるか。カードの選択状態からは決めない。付ける作業中に、既に持って
+   * いるカードを押して外れる事故を無くすため、向きは呼び出し側のモードで決まる
+   */
+  assignAction?: AssignAction;
   onAssignToggle?: (akyo: AkyoData) => void;
+}
+
+/** revert = 保留の取り消し、none = 押しても変わらない */
+export type AssignAction = "attach" | "detach" | "revert" | "none";
+
+function assignActionText(action: AssignAction, selected: boolean): string {
+  if (action === "revert") return "保留中（押すと取り消し）";
+  if (action === "attach") return "選択する（押すと付ける）";
+  if (action === "detach") return "選択中（押すと外す）";
+  return selected ? "選択中（変更なし）" : "対象外";
+}
+
+function assignActionIcon(action: AssignAction, selected: boolean): string {
+  if (action === "revert") return "↩";
+  if (action === "detach") return "✅";
+  if (action === "attach") return "⬜";
+  return selected ? "✅" : "⬜";
 }
 
 export function shouldBypassImageOptimization(
@@ -135,6 +157,7 @@ function AkyoCardComponent({
   selectedForAssign = false,
   assignDisabled = false,
   assignPending = false,
+  assignAction = "none",
   onAssignToggle,
 }: AkyoCardProps) {
   const cloudflareImagesEnabled =
@@ -383,10 +406,10 @@ function AkyoCardComponent({
             disabled={assignDisabled}
             className="detail-button relative z-20 mt-auto w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             aria-pressed={selectedForAssign}
-            aria-label={`${formatDisplayId(akyo)} ${displayName}${assignPending ? "（保留中。押すと取り消し）" : selectedForAssign ? "（選択中。押すと外す）" : "（押すと付ける）"}`}
+            aria-label={`${formatDisplayId(akyo)} ${displayName}（${assignActionText(assignAction, selectedForAssign)}）`}
           >
-            <span aria-hidden="true">{assignPending ? "↩" : selectedForAssign ? "✅" : "⬜"}</span>
-            <span>{assignPending ? "保留中（押すと取り消し）" : selectedForAssign ? "選択中（押すと外す）" : "選択する（押すと付ける）"}</span>
+            <span aria-hidden="true">{assignActionIcon(assignAction, selectedForAssign)}</span>
+            <span>{assignActionText(assignAction, selectedForAssign)}</span>
           </button>
         ) : (
           <button

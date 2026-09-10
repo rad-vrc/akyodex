@@ -1,10 +1,10 @@
 'use client';
 
-import { AkyoCard } from '@/components/akyo-card';
+import { AkyoCard, type AssignAction } from '@/components/akyo-card';
 import { IconSave } from '@/components/icons';
 import { SearchBar } from '@/components/search-bar';
 import { MAX_BATCH_UPDATES, applyAkyoEditFields, type AkyoEditFields, type PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
-import { categoriesOf, hasAllCategories, stageCategoryUpdate, toggleCategories } from '@/lib/category-assignment';
+import { applyCategories, categoriesOf, changesUnderMode, hasAllCategories, stageCategoryUpdate, type CategoryAssignMode } from '@/lib/category-assignment';
 import type { AkyoData } from '@/types/akyo';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
@@ -28,9 +28,10 @@ const RENDER_STEP = 60;
 
 /**
  * Bulk category assignment: every Akyo as a zukan card, the ones carrying every selected
- * category highlighted. Clicking a card toggles the whole set (with ancestors when adding,
- * with descendants when removing); clicking a card that already has a held change reverts
- * that change. The changes are committed together through the same batch API as the edit tab.
+ * category highlighted. **付ける／外すはモードで選ぶ。押したカードの状態では決めない。**
+ * 押しても何も変わらないカード（付けるモードで既に全部持つ、外すモードで持っていない）は
+ * 押せなくしてある。保留のあるカードだけは、取り消すために常に押せる。
+ * The changes are committed together through the same batch API as the edit tab.
  */
 export function CategoryAssignPanel({
   akyoData,
@@ -42,6 +43,7 @@ export function CategoryAssignPanel({
   onCommitted,
 }: CategoryAssignPanelProps) {
   const [pending, setPending] = useState<Record<string, PendingAkyoUpdate>>({});
+  const [mode, setMode] = useState<CategoryAssignMode>('attach');
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [message, setMessage] = useState('');
@@ -141,7 +143,7 @@ export function CategoryAssignPanel({
         setMessage(`保留は${MAX_BATCH_UPDATES}件までです。先に更新を反映してください。`);
         return;
       }
-      const staged = stageCategoryUpdate(base, undefined, toggleCategories(categoriesOf(akyo), selected));
+      const staged = stageCategoryUpdate(base, undefined, applyCategories(categoriesOf(akyo), selected, mode));
       if (!staged) return;
       setPending((previous) => ({ ...previous, [akyo.id]: staged }));
       setMessage('');
@@ -177,7 +179,14 @@ export function CategoryAssignPanel({
   };
 
   // Without a selection there is nothing to toggle, but a held card must stay revertible.
-  const cardDisabled = (id: string) => submitting || (selected.length === 0 && !pending[id]);
+  // 押したときに何が起きるかを、カードの選択状態ではなくモードから決める。保留のある
+  // カードは取り消すために常に押せる。それ以外で何も変わらないカードは押させない。
+  // 付ける作業中に、既に全部持つカードを押して外れることが構造的に起きなくなる
+  const assignAction = (akyo: AkyoData): AssignAction => {
+    if (pending[akyo.id]) return 'revert';
+    if (selected.length === 0) return 'none';
+    return changesUnderMode(categoriesOf(akyo), selected, mode) ? mode : 'none';
+  };
   const shown = filtered.slice(0, renderLimit);
 
   return (
@@ -205,8 +214,36 @@ export function CategoryAssignPanel({
           選択を解除
         </button>
       </div>
+      {/* 押したカードの状態で向きを決めない。付ける作業の途中で、既に持っているカードを
+          押して外れてしまう事故を構造的に無くす（#0926 で実際に起きた） */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-semibold text-green-900">カードを押したときの動作:</span>
+        <div role="radiogroup" aria-label="カードを押したときの動作" className="inline-flex overflow-hidden rounded-lg border border-green-300">
+          {([['attach', '付ける'], ['detach', '外す']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={mode === value}
+              disabled={submitting}
+              onClick={() => setMode(value)}
+              className={`px-4 py-1.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
+                mode === value
+                  ? value === 'detach'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-green-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <p className="mb-3 text-sm text-gray-700">
-        カードを押すと、選択中のカテゴリをまとめて付けます（親は自動で付きます）。すでに全部持つ Akyo を押すと、まとめて外します（親を外すと配下も外れます）。
+        {mode === 'attach'
+          ? 'カードを押すと、選択中のカテゴリをまとめて付けます（親は自動で付きます）。すでに全部持つ Akyo は押せません。'
+          : 'カードを押すと、選択中のカテゴリをまとめて外します（親を外すと配下も外れます）。持っていない Akyo は押せません。'}
         保留中のカードをもう一度押すと、その変更だけ取り消します。 該当 {matching.size} 件 / 全 {akyoData.length} 件
       </p>
       <fieldset disabled={submitting} className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -236,7 +273,8 @@ export function CategoryAssignPanel({
                 key={akyo.id}
                 akyo={akyo}
                 selectedForAssign={matching.has(akyo.id)}
-                assignDisabled={cardDisabled(akyo.id)}
+                assignAction={assignAction(akyo)}
+                assignDisabled={submitting || assignAction(akyo) === 'none'}
                 assignPending={Boolean(pending[akyo.id])}
                 onAssignToggle={handleToggle}
               />
