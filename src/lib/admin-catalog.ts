@@ -9,6 +9,11 @@
  *
  * Keeping the committed rows together with the field snapshots they replaced tells those
  * apart: a refresh that returns one of those snapshots is stale, anything else is news.
+ *
+ * その記録は、公開 JSON が追いついた後も捨てない。捨てると、次の再取得がまた古い応答を
+ * 返したときに前の版を「誰かの編集」として受け入れてしまい、付けたばかりのカテゴリが
+ * 画面から消える。代わりに引き受けるのは「他の人がちょうど自分の変更前と同じ状態へ
+ * 戻した場合、この session では反映されない」という取り違えで、こちらの方が起きにくい。
  */
 
 import { getAkyoEditFields, sameAkyoEditFields, type AkyoEditFields } from './akyo-edit-fields';
@@ -66,7 +71,14 @@ export function applyCatalogRefresh(
     const entry = committed.get(remote.id);
     if (!entry) return remote;
     const fields = getAkyoEditFields(remote);
-    if (sameAkyoEditFields(getAkyoEditFields(entry.data), fields)) return remote; // caught up
+    if (sameAkyoEditFields(getAkyoEditFields(entry.data), fields)) {
+      // 追いついた。ここで記録を捨てると、次の再取得が古い応答を返したときに、それを
+      // 「誰かの編集」と読んで自分が保存した内容を画面から消す。一度でも自分の版が
+      // 返ってきたなら、元は自分の保存以降に進んでいるので、その後に前の版が来たのは
+      // 取得側が遅れているだけだと判断できる。だから記録は持ち続ける
+      nextCommitted.set(remote.id, entry);
+      return remote;
+    }
     if (entry.before.some((before) => sameAkyoEditFields(before, fields))) {
       // The fetch is behind our own commit: keep what the server saved and stay watchful.
       nextCommitted.set(remote.id, entry);
