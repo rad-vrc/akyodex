@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyCatalogRefresh, applyCategoryRowChanges, recordCommittedRows } from './admin-catalog';
+import { applyAdminSnapshot, applyCategoryRowChanges, createAdminCatalogSync, recordCommittedRows } from './admin-catalog';
 import { getAkyoEditFields } from './akyo-edit-fields';
 import type { AkyoData } from '@/types/akyo';
 
@@ -26,63 +26,69 @@ test('recordCommittedRows merges saved rows into the catalog and stacks what the
   assert.deepEqual(second.committed.get('0001')?.before.map((fields) => fields.nickname), ['Akyo 0001', 'Akyo 0001']);
 });
 
-test('applyCatalogRefresh keeps a committed row when the fetch is behind, and yields to real changes', () => {
-  const before = akyo('0001');
-  const saved = akyo('0001', { category: '動物,乗り物', attribute: '動物,乗り物' });
-  const { catalog, committed } = recordCommittedRows([before, akyo('0002')], new Map(), [saved], [getAkyoEditFields(before)]);
+/*
+ * 「データを再取得」は /api/admin/catalog を読む。書き込み側が競合判定に使うのと同じ CSV
+ * スナップショットなので、内容を選び直す余地が無い。かつては公開カタログ（KV/R2）を読んで
+ * いて遅れるため、置き換えた版のスナップショットを持ち歩いて遅延を見分けていた。
+ */
+test('applyAdminSnapshot takes the saved CSV as it is and folds the commit record', () => {
+  const before = akyo('0001', { category: 'チョコミント類', attribute: 'チョコミント類' });
+  const saved = akyo('0001', { category: 'チョコミント類,生ける伝説', attribute: 'チョコミント類,生ける伝説' });
+  const committed = recordCommittedRows([before, akyo('0002')], new Map(), [saved], [getAkyoEditFields(before)]).committed;
+  assert.equal(committed.has('0001'), true);
 
-  // The public JSON has not caught up yet: our own commit must survive the refresh.
-  const stale = applyCatalogRefresh([before, akyo('0002')], committed);
-  assert.equal(stale.catalog[0].category, '動物,乗り物');
-  assert.equal(stale.committed.has('0001'), true, 'still watching for the sync');
-
-  // The fetch caught up: stop overriding, but keep watching. Dropping the record here let a
-  // later stale response read as somebody else's edit and undo the commit on screen.
-  const caughtUp = applyCatalogRefresh([saved, akyo('0002')], committed);
-  assert.equal(caughtUp.catalog[0].category, '動物,乗り物');
-  assert.equal(caughtUp.committed.has('0001'), true);
-
-  // Someone else edited the row afterwards: their version wins over ours.
-  const external = akyo('0001', { nickname: 'edited elsewhere', category: '次元', attribute: '次元' });
-  const outside = applyCatalogRefresh([external, akyo('0002')], committed);
-  assert.equal(outside.catalog[0].nickname, 'edited elsewhere');
-  assert.equal(outside.committed.has('0001'), false);
-
-  // A row deleted remotely simply disappears.
-  assert.deepEqual(applyCatalogRefresh([akyo('0002')], committed).catalog.map((row) => row.id), ['0002']);
-  assert.equal(catalog.length, 2);
+  const snapshot = applyAdminSnapshot([saved, akyo('0002')]);
+  assert.equal(snapshot.catalog[0].category, 'チョコミント類,生ける伝説');
+  assert.equal(snapshot.committed.size, 0, '遅延を見分けるための記録はもう要らない');
 });
 
-/*
- * 「データを再取得」は /api/catalog/ja を読む。これは公開カタログで、管理画面が書いた
- * CSV より遅れる（同期ワークフローが回るまで）。追いついた版が一度返ってきたあとでも、
- * 次の取得が古い応答を返すことはある（エッジやキャッシュ差）。
- *
- * 以前は追いついた時点で記録を捨てていたので、そのあと古い応答を掴むと「誰かが元に
- * 戻した」と読んで、付けたばかりのカテゴリが画面から消えていた（2026-09-10 報告）。
- */
-test('applyCatalogRefresh keeps protecting a commit after the fetch has already caught up once', () => {
+// 公開カタログ相手だと、これは「遅れた応答」と見分けが付かないので取り込めなかった。
+// 保存先そのものを読むなら、書いてある内容が答え
+test('applyAdminSnapshot reflects an external revert to the pre-change content', () => {
   const before = akyo('0001', { category: 'チョコミント類', attribute: 'チョコミント類' });
   const saved = akyo('0001', { category: 'チョコミント類,生ける伝説', attribute: 'チョコミント類,生ける伝説' });
   const committed = recordCommittedRows([before], new Map(), [saved], [getAkyoEditFields(before)]).committed;
 
-  const caughtUp = applyCatalogRefresh([saved], committed);
-  assert.equal(caughtUp.catalog[0].category, 'チョコミント類,生ける伝説');
+  const snapshot = applyAdminSnapshot([before]);
+  assert.equal(snapshot.catalog[0].category, 'チョコミント類', '他の人が戻したなら、それが現在の内容');
+  assert.equal(snapshot.committed.size, 0);
+  assert.equal(committed.size, 1, '渡した記録は変更しない');
+});
 
-  // 同じ session でもう一度「データを再取得」。今度は古い応答が返ってきた
-  const again = applyCatalogRefresh([before], caughtUp.committed);
-  assert.equal(again.catalog[0].category, 'チョコミント類,生ける伝説', '付けたカテゴリが消えている');
-  assert.equal(again.committed.has('0001'), true);
+test('applyAdminSnapshot drops a row the saved CSV no longer has, and takes rows it gained', () => {
+  const committed = recordCommittedRows([akyo('0001'), akyo('0002')], new Map(), [akyo('0002', { nickname: 'saved' })], []).committed;
+  // 0002 は本当に削除された。遅れない情報源なので「まだ同期されていない」ではない
+  const snapshot = applyAdminSnapshot([akyo('0001'), akyo('0953')]);
+  assert.deepEqual(snapshot.catalog.map((row) => row.id), ['0001', '0953']);
+  assert.equal(committed.has('0002'), true, '渡した記録は変更しない');
+});
 
-  // 何度繰り返しても同じ。ここが緩むと、押すたびに結果が変わる画面になる
-  const third = applyCatalogRefresh([before], again.committed);
-  assert.equal(third.catalog[0].category, 'チョコミント類,生ける伝説');
+/*
+ * 再取得はスナップショットの head 時点しか語れない。取得を始めたあとに保存が通っていれば、
+ * 正しい CSV でも画面が持っている保存結果より古い。遅れて届いた応答をそのまま採用すると、
+ * 保存したばかりの内容が巻き戻る。
+ */
+test('createAdminCatalogSync refuses a response that a save overtook while it was in flight', () => {
+  const applied: AkyoData[][] = [];
+  const sync = createAdminCatalogSync((rows: AkyoData[]) => {
+    applied.push(rows);
+  });
 
-  // 追いついた後でも、本物の別編集にはこれまでどおり譲る
-  const external = akyo('0001', { category: '次元', attribute: '次元', nickname: 'edited elsewhere' });
-  const outside = applyCatalogRefresh([external], again.committed);
-  assert.equal(outside.catalog[0].nickname, 'edited elsewhere');
-  assert.equal(outside.committed.has('0001'), false);
+  // 取得開始 → その間に保存が通る → 応答が届く
+  const token = sync.begin();
+  sync.noteCommit();
+  assert.equal(sync.apply([akyo('0001')], token), false, '保存が入ったあとの古い応答は使わない');
+  assert.equal(applied.length, 0, '巻き戻さない');
+
+  // 取り直せば通る
+  const retry = sync.begin();
+  assert.equal(sync.apply([akyo('0001', { nickname: 'fresh' })], retry), true);
+  assert.equal(applied.length, 1);
+  assert.equal(applied[0][0].nickname, 'fresh');
+
+  // 保存が無ければ何度でも通る
+  assert.equal(sync.apply([akyo('0002')], sync.begin()), true);
+  assert.equal(applied.length, 2);
 });
 
 test('applyCategoryRowChanges patches the catalog and the committed rows a rename rewrote', () => {
@@ -96,24 +102,17 @@ test('applyCategoryRowChanges patches the catalog and the committed rows a renam
   assert.equal(applyCategoryRowChanges(catalog, committed, []).catalog, catalog);
 });
 
-test('a rename is recorded like any other commit, so a lagging refresh cannot undo it', () => {
+test('a rename reaches the catalog without waiting for a refresh', () => {
   // A row this session never saved: the rename itself is the first committed version.
   const untouched = [akyo('0001'), akyo('0002')];
   const renamed = applyCategoryRowChanges(untouched, new Map(), [{ id: '0001', category: '生物' }]);
+  assert.equal(renamed.catalog[0].category, '生物');
   assert.equal(renamed.committed.get('0001')?.data.category, '生物');
   assert.deepEqual(renamed.committed.get('0001')?.before.map((fields) => fields.category), ['動物']);
-  const stale = applyCatalogRefresh(untouched, renamed.committed);
-  assert.equal(stale.catalog[0].category, '生物', 'the pre-rename JSON must not win');
 
   // A row saved first and renamed afterwards: both intermediate versions are known.
   const saved = recordCommittedRows(untouched, new Map(), [akyo('0001', { category: '動物,乗り物', attribute: '動物,乗り物' })], [getAkyoEditFields(untouched[0])]);
   const both = applyCategoryRowChanges(saved.catalog, saved.committed, [{ id: '0001', category: '生物,乗り物' }]);
+  assert.equal(both.catalog[0].category, '生物,乗り物');
   assert.deepEqual(both.committed.get('0001')?.before.map((fields) => fields.category), ['動物', '動物,乗り物']);
-  for (const lagging of ['動物', '動物,乗り物']) {
-    const refreshed = applyCatalogRefresh([akyo('0001', { category: lagging, attribute: lagging }), akyo('0002')], both.committed);
-    assert.equal(refreshed.catalog[0].category, '生物,乗り物', `JSON still at ${lagging}`);
-  }
-  // A genuine external edit still wins over the rename.
-  const external = applyCatalogRefresh([akyo('0001', { nickname: 'edited elsewhere', category: '次元', attribute: '次元' }), akyo('0002')], both.committed);
-  assert.equal(external.catalog[0].category, '次元');
 });

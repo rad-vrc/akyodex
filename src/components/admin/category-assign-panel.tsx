@@ -55,15 +55,18 @@ export function CategoryAssignPanel({
   const pendingIds = useMemo(() => (pendingKey ? pendingKey.split(',') : []), [pendingKey]);
   const pendingCount = pendingIds.length;
 
-  // A row that vanished from the catalog (deleted elsewhere) has no card to revert it with,
-  // so drop its hold instead of sending an update the server can only reject.
-  useEffect(() => {
-    setPending((previous) => {
-      const ids = new Set(akyoData.map((akyo) => akyo.id));
-      const kept = Object.entries(previous).filter(([id]) => ids.has(id));
-      return kept.length === Object.keys(previous).length ? previous : Object.fromEntries(kept);
-    });
-  }, [akyoData]);
+  // カタログから消えた行（他で削除された、あるいは再取得したスナップショットに無い）は
+  // カードが出ないので、押して取り消すことができない。だからといって黙って保留を捨てると
+  // 触ったつもりの変更が理由も分からず消えるので、保留は残したまま、どの ID がそうなったかを
+  // 知らせる。反映を押せばサーバが 409 で止めるので、そのまま壊れることはない。
+  //
+  // これは状態ではなく、いまの一覧と保留から出る導出値なので、そのまま描く。setMessage で
+  // 書き込むと (1) 行が戻ってきても保留を捨てても知らせが消えず、(2) 反映結果など別の
+  // 知らせを上書きしてしまう
+  const vanished = useMemo(() => {
+    const ids = new Set(akyoData.map((akyo) => akyo.id));
+    return Object.keys(pending).filter((id) => !ids.has(id));
+  }, [akyoData, pending]);
 
   const visibleData = useMemo(
     () => akyoData.map((akyo) => (pending[akyo.id] ? applyAkyoEditFields(akyo, pending[akyo.id].changes) : akyo)),
@@ -299,10 +302,17 @@ export function CategoryAssignPanel({
       )}
 
       <div className="sticky bottom-0 z-30 mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-white py-4">
-        <p role="status" className="min-w-0 flex-1 text-sm text-gray-700 break-words">
-          {message}
-          {commitUrl && <a className="ml-2 text-blue-700 underline" href={commitUrl} target="_blank" rel="noopener noreferrer">コミット</a>}
-        </p>
+        <div className="min-w-0 flex-1">
+          {vanished.length > 0 && (
+            <p role="status" className="text-sm text-amber-800 break-words">
+              #{vanished.join(' / #')} は一覧から消えました（他で削除された可能性）。保留は残してあります。取り消す場合は保留を破棄してください。
+            </p>
+          )}
+          <p role="status" className="text-sm text-gray-700 break-words">
+            {message}
+            {commitUrl && <a className="ml-2 text-blue-700 underline" href={commitUrl} target="_blank" rel="noopener noreferrer">コミット</a>}
+          </p>
+        </div>
         <span className="text-sm text-gray-700">保留 {pendingCount}件</span>
         <button type="button" disabled={submitting || !pendingCount} className="px-3 py-2 text-sm text-gray-600 disabled:opacity-50" onClick={() => {
           if (confirm('保留中の更新をすべて取り消しますか？')) setPending({});

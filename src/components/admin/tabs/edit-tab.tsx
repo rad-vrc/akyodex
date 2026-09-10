@@ -6,7 +6,8 @@ import { SortControls } from '@/components/sort-controls';
 import { SearchBar } from '@/components/search-bar';
 import { filterCatalog } from '@/lib/catalog-filter';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
-import { loadLatestAdminCatalog } from '@/app/zukan/catalog-data-loader';
+import { loadAdminCsvCatalog } from '@/app/zukan/catalog-data-loader';
+import type { AdminCatalogSync } from '@/lib/admin-catalog';
 import { MAX_BATCH_UPDATES, applyAkyoEditFields, getAkyoEditFields, sameAkyoEditFields, type AkyoEditFields, type PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
 import { getAkyoSourceUrl } from '@/lib/akyo-entry';
 import { generateBlurDataURL } from '@/lib/blur-data-url';
@@ -22,7 +23,8 @@ interface EditTabProps {
   attributes: string[];
   onDataChange: () => void;
   onPendingStateChange?: (pending: boolean, busy: boolean, pendingIds?: string[]) => void;
-  onCatalogRefresh?: (data: AkyoData[]) => void;
+  /** 共有カタログへ再取得結果を渡す口。採否は保存との前後で決まる */
+  catalogSync?: AdminCatalogSync;
   /** Rows the categories tab is holding; they must not be staged here as well. */
   blockedIds?: ReadonlySet<string>;
   /** Rows as the server saved them, with the snapshots they replaced, handed up to AdminTabs. */
@@ -37,9 +39,12 @@ interface SavedAkyoUpdate {
 }
 
 /**
- * Keep only the overlays whose row still reads as a known pre-save snapshot: the public JSON
- * lags behind the CSV. Matching the saved result (synced) or anything else (someone else's
- * edit, or a category assigned in the other tab) retires the overlay so the rows win.
+ * 共有カタログの行が「保存前のスナップショットのまま」に読める間だけ、保存結果の上書きを
+ * 残す。行が保存結果と一致した（同期が追いついた）ときも、それ以外（他人の編集、もう一方の
+ * タブで付けたカテゴリ）に変わったときも、上書きを退けて行の側を勝たせる。
+ *
+ * これは最初の描画で渡ってくる公開 JSON が CSV より遅れるためのもので、**再取得の経路とは
+ * 関係がない**。再取得は保存先の CSV を直接読むので、そこでは上書きを丸ごと捨てている。
  */
 function retireSyncedOverlays(
   saved: Record<string, SavedAkyoUpdate>,
@@ -58,7 +63,7 @@ function retireSyncedOverlays(
  * Edit Tab Component
  * 編集・削除タブ（完全再現）
  */
-export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, onCatalogRefresh, blockedIds, onRowsCommitted, onCategoriesChanged }: EditTabProps) {
+export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendingStateChange, catalogSync, blockedIds, onRowsCommitted, onCategoriesChanged }: EditTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAuthors, setSelectedAuthors] = useState<string[]>([]);
@@ -123,15 +128,24 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
     setRefreshing(true);
     setRefreshMessage('');
     try {
-      const next = await loadLatestAdminCatalog(controller.signal);
+      // 取得開始時点を控える。戻ってきたときに保存が入っていたら、正しいスナップショットでも
+      // こちらより古い可能性があるので使わない
+      const token = catalogSync?.begin() ?? 0;
+      const { rows: next } = await loadAdminCsvCatalog(controller.signal);
       if (controller.signal.aborted) return;
+      if (catalogSync && !catalogSync.apply(next, token)) {
+        setRefreshMessage('取得中に保存が入ったため、取得結果は使いませんでした。もう一度お試しください。');
+        return;
+      }
       // Keep pending rows even if they disappeared remotely; the server must
       // still reject their original snapshot rather than silently dropping them.
       const ids = new Set(next.map(item => item.id));
       const retained = catalogData.filter(item => pending[item.id] && !ids.has(item.id));
       setCatalogData([...next, ...retained]);
-      setSaved(previous => retireSyncedOverlays(previous, next));
-      onCatalogRefresh?.(next);
+      // 保存先そのものを読んだので、保存済みの上書き表示を残す理由が無い。公開カタログ
+      // 相手のときは「まだ同期されていない行を自分の保存で覆う」ために要ったが、遅れない
+      // 情報源ではそれが他の人の編集を覆い隠す側にしか働かない
+      setSaved({});
       setRefreshMessage('データを再取得しました。');
     } catch {
       if (!controller.signal.aborted) setRefreshMessage('再取得に失敗しました。現在のデータと保留内容は維持されています。');
