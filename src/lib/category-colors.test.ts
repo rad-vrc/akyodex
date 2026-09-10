@@ -42,8 +42,8 @@ const LIVE_BASE_COLORS = [...new Set([
   '#00acc1', // fallback0
   '#43a047', // fallback1
   '#607d8b', // fallback2
-  '#d63d43', // fallback3
-  '#1a73cc', // fallback4
+  '#cc3466', // fallback3
+  '#0379cc', // fallback4
 ])];
 
 /**
@@ -67,7 +67,7 @@ test('fallback category colors avoid purple and yellow hues', () => {
 
   assert.deepEqual(
     categoriesByPaletteIndex.map(getCategoryColor),
-    ['#00acc1', '#43a047', '#607d8b', '#d63d43', '#1a73cc'],
+    ['#00acc1', '#43a047', '#607d8b', '#cc3466', '#0379cc'],
   );
 });
 
@@ -133,19 +133,20 @@ test('chip colors meet WCAG 4.5:1 in their actual rendering contexts', () => {
 test('prototype property names as categories fall back to hash colors without throwing', () => {
   // 素の添字参照だとObject.prototype上の関数が返りincludesで例外になる回帰の防止。
   // カテゴリは管理画面から自由に追加できるため、この名前群でも描画を壊さないこと。
-  const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#d63d43', '#1a73cc'];
+  const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#cc3466', '#0379cc'];
   for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
     const color = getCategoryColor(name);
     assert.ok(DEFAULT_COLORS.includes(color), `${name} → ${color} はフォールバック色であるべき`);
   }
 });
 
-test('Booth uses the WCAG-safe semi-bright red without triggering darkening', () => {
+test('Booth uses the WCAG-safe pink-red without triggering darkening', () => {
   // 白文字4.5:1を最初から満たす色を登録し、コントラスト補正(彩度維持の暗色化で
-  // #ee0408級の信号赤になる)を発動させないことがこの色選定の要点。
-  assert.equal(getCategoryColor('Booth'), '#d63d43');
-  assert.equal(getCategoryColor('Booth/アバター'), '#d63d43');
-  assert.equal(ensureContrastForWhiteText(getCategoryColor('Booth')), '#d63d43');
+  // 信号赤になる)を発動させないことがこの色選定の要点。2026-09-10 に動物の赤橙と
+  // 見分けるため色相をピンク寄り（23°→6°）へ動かした。
+  assert.equal(getCategoryColor('Booth'), '#cc3466');
+  assert.equal(getCategoryColor('Booth/アバター'), '#cc3466');
+  assert.equal(ensureContrastForWhiteText(getCategoryColor('Booth')), '#cc3466');
 });
 
 // 元は動物が #d44335 単独だったが、実描画で食べ物の #d84315 と ΔE 14.5 しか離れておらず
