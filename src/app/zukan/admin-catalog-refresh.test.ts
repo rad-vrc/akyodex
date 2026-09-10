@@ -81,3 +81,20 @@ test('count と件数が食い違う応答、ID の無い行を含む応答は�
   t.mock.method(globalThis, 'fetch', async () => Response.json(payload([row, { ...row, id: '' }])));
   await assert.rejects(loadAdminCsvCatalog(), '1 行でも ID が無ければ受け取らない');
 });
+
+/*
+ * HTTP の失敗は、本文の形が正しくても失敗として扱う。既存の失敗ケースは本文が空で、
+ * `response.json()` がそこで throw するため、ok の検査を外しても偶然 reject していた
+ * （2026-09-10、変異で実測）。中間の 503 が正常な形の本文を返すのは普通にあり得る。
+ */
+test('HTTP が失敗なら、本文の形が正しくても受け取らない', async (t) => {
+  for (const status of [503, 502, 401]) {
+    let calls = 0;
+    t.mock.method(globalThis, 'fetch', async () => {
+      calls += 1;
+      return Response.json(payload(), { status });
+    });
+    await assert.rejects(loadAdminCsvCatalog(), `HTTP ${status} を成功として扱わない`);
+    assert.equal(calls, 1, '公開カタログへ問い合わせ直してはいけない');
+  }
+});
