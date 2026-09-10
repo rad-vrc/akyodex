@@ -41,7 +41,7 @@ const LIVE_BASE_COLORS = [...new Set([
   '#d32f2f', // ドラゴン（キーワード表）
   '#00acc1', // fallback0
   '#43a047', // fallback1
-  '#607d8b', // fallback2
+  '#6c6c6c', // fallback2
   '#cc3466', // fallback3
   '#0379cc', // fallback4
 ])];
@@ -67,7 +67,7 @@ test('fallback category colors avoid purple and yellow hues', () => {
 
   assert.deepEqual(
     categoriesByPaletteIndex.map(getCategoryColor),
-    ['#00acc1', '#43a047', '#607d8b', '#cc3466', '#0379cc'],
+    ['#00acc1', '#43a047', '#6c6c6c', '#cc3466', '#0379cc'],
   );
 });
 
@@ -133,7 +133,7 @@ test('chip colors meet WCAG 4.5:1 in their actual rendering contexts', () => {
 test('prototype property names as categories fall back to hash colors without throwing', () => {
   // 素の添字参照だとObject.prototype上の関数が返りincludesで例外になる回帰の防止。
   // カテゴリは管理画面から自由に追加できるため、この名前群でも描画を壊さないこと。
-  const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#cc3466', '#0379cc'];
+  const DEFAULT_COLORS = ['#00acc1', '#43a047', '#6c6c6c', '#cc3466', '#0379cc'];
   for (const name of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) {
     const color = getCategoryColor(name);
     assert.ok(DEFAULT_COLORS.includes(color), `${name} → ${color} はフォールバック色であるべき`);
@@ -158,7 +158,7 @@ test('the orange-red darkens only slightly for white text', () => {
 });
 
 test('formerly purple semantic colors use established non-purple colors', () => {
-  assert.equal(getCategoryColor('おばけ'), '#607d8b');
+  assert.equal(getCategoryColor('おばけ'), '#6c6c6c');
   assert.equal(getCategoryColor('ドラゴン'), '#d32f2f');
   assert.equal(getCategoryColor('ファンタジー'), '#00acc1');
 });

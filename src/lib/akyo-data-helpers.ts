@@ -210,12 +210,12 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   // 落ち着いた赤（彩度65%相当）を最初から登録する。
   動物: '#d44335',
   きつね: '#d84315',
-  おばけ: '#607d8b',
+  おばけ: '#6c6c6c',
   人類: '#2196f3',
   ギミック: '#4caf50',
   特殊: '#e91e63',
   ネコ: '#795548',
-  イヌ: '#607d8b',
+  イヌ: '#6c6c6c',
   うさぎ: '#ff4081',
   ドラゴン: '#d32f2f',
   ロボット: '#757575',
@@ -233,7 +233,7 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   Nature: '#4caf50',
   자연: '#4caf50',
   // 「芸術・アート」から階層化しても既存の青灰色を維持する。
-  芸術: '#607d8b',
+  芸術: '#6c6c6c',
   // 廃止した「電子」の落ち着いた赤を、後継の作風カテゴリへ引き継ぐ。
   '作風・スタイル': '#cc3466',
   // 既存カテゴリの改名・分離後も一覧で急に色が変わらないよう維持する。
@@ -262,7 +262,8 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
  * 経緯は CATEGORY_COLOR_MAP の Booth の注記）。配列の位置は変えていないので、
  * ハッシュで割り当て済みのカテゴリは同じ枠のまま色だけ変わる。
  */
-const DEFAULT_COLORS = ['#00acc1', '#43a047', '#607d8b', '#cc3466', '#0379cc'];
+// 2026-09-10 比較用プレビュー: 青灰 #607d8b（色相 230°、シアンと青の間）→ 中立灰 #6c6c6c。経緯は研究ノート「Akyoチップ配色の実測」
+const DEFAULT_COLORS = ['#00acc1', '#43a047', '#6c6c6c', '#cc3466', '#0379cc'];
 
 /**
  * Generates a deterministic hash value from a string (simple djb2 algorithm).
