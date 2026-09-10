@@ -1,16 +1,17 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-10T00:14:42.523Z",
+  "updatedAt": "2026-09-10T00:19:56.182Z",
   "count": 952,
   "data": [
     {
       "id": "0001",
       "entryType": "avatar",
+      "displaySerial": "0001",
       "nickname": "オリジンAkyo",
       "avatarName": "Akyo origin",
-      "category": "チョコミント類,対応機種,対応機種/PC,対応機種/Quest(Android)",
-      "comment": "すべてのはじまり",
+      "category": "チョコミント類,対応機種,対応機種/PC,対応機種/Quest(Android),始祖,色,色/無彩色系,生ける伝説",
+      "comment": "Akyoの道は、ここからはじまった。",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921"
@@ -18,10 +19,11 @@
     {
       "id": "0002",
       "entryType": "avatar",
+      "displaySerial": "0002",
       "nickname": "チョコミントAkyo",
       "avatarName": "Akyo alt",
-      "category": "チョコミント類,Booth,Booth/アバター,対応機種,対応機種/PC,対応機種/Quest(Android)",
-      "comment": "Quest対応〇",
+      "category": "チョコミント類,Booth,Booth/アバター,対応機種,対応機種/PC,対応機種/Quest(Android),生ける伝説",
+      "comment": "ugaiさんがこのAkyoをAkyoとして配布しているから、AkyoといえばチョコミントAkyoのことを言う場合が多い気がする！",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",

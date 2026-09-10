@@ -1,15 +1,16 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-10T00:14:42.583Z",
+  "updatedAt": "2026-09-10T00:19:56.333Z",
   "count": 952,
   "data": [
     {
       "id": "0001",
       "entryType": "avatar",
+      "displaySerial": "0001",
       "nickname": "Origin Akyo",
       "avatarName": "Akyo origin",
-      "category": "Mint Chocolate,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Mint Chocolate,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Progenitor,Color,Color/Achromatic Colors,Living Legend",
       "comment": "The Beginning of Everything",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_471f82ba-0c0b-4fe5-9f9c-3c7d88ab1921",
@@ -18,9 +19,10 @@
     {
       "id": "0002",
       "entryType": "avatar",
+      "displaySerial": "0002",
       "nickname": "Mint Chocolate Akyo",
       "avatarName": "Akyo alt",
-      "category": "Mint Chocolate,Booth,Booth/Avatar,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Mint Chocolate,Booth,Booth/Avatar,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Living Legend",
       "comment": "Compatible with Quest",
       "author": "ugai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8df233a7-c8fa-4188-81d8-a0b40274e003",
