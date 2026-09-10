@@ -105,6 +105,16 @@ test('スナップショットから消えた行の保留を、黙って捨て�
       /#0002 は一覧から消えました/,
       'どの ID がそうなったかを知らせる',
     );
+
+    // 行が戻ってきたら（他のタブの取り消し、もう一度の再取得）知らせも消える。
+    // 解消済みの警告が残ると、まだ何か壊れていると読めるし、反映結果の表示も潰す
+    await screen.render([akyo('0001'), akyo('0002')]);
+    assert.doesNotMatch(
+      screen.win.document.body.textContent ?? '',
+      /一覧から消えました/,
+      '解消したら知らせも消えること',
+    );
+    assert.ok(screen.cardFor('0002'), 'カードは戻っている');
   } finally {
     await screen.cleanup();
   }

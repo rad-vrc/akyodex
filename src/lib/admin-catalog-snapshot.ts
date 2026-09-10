@@ -40,6 +40,11 @@ export async function readAdminCatalogSnapshot(
   if (rows.length !== dataRecords.length) {
     throw new Error(`CSV の行数と解析結果が一致しません（${dataRecords.length} 行 → ${rows.length} 件）`);
   }
+  // parseCsvToAkyoData は ID の無い行も落とさずに返す。ID が空のまま渡すと、画面側の
+  // 保留・ブロック・ハイライトが全部 ID で引くので、無関係な行に紐づいて見える
+  if (rows.some((row) => !row.id)) {
+    throw new Error('保存先の CSV に ID の無い行があります');
+  }
   if (new Set(rows.map((row) => row.id)).size !== rows.length) {
     throw new Error('保存先の CSV に ID の重複があります');
   }

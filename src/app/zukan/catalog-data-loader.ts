@@ -267,12 +267,19 @@ export async function loadAdminCsvCatalog(
     typeof payload !== "object" || payload === null ||
     (payload as { success?: unknown }).success !== true ||
     typeof (payload as { head?: unknown }).head !== "string" ||
+    typeof (payload as { count?: unknown }).count !== "number" ||
     !Array.isArray((payload as { data?: unknown }).data)
   ) {
     throw new Error("Invalid administrative catalog");
   }
-  const { head, data } = payload as { head: string; data: AkyoData[] };
-  if (data.length === 0 || new Set(data.map((row) => row.id)).size !== data.length) {
+  const { head, count, data } = payload as { head: string; count: number; data: AkyoData[] };
+  // count は数えた件数。data と食い違うなら応答が途中で欠けているので、部分的な一覧を
+  // 完全なスナップショットとして扱わない。ID が空の行も同じ理由で拒む
+  if (
+    data.length === 0 || count !== data.length ||
+    data.some((row) => !row?.id) ||
+    new Set(data.map((row) => row.id)).size !== data.length
+  ) {
     throw new Error("Invalid administrative catalog");
   }
   return { head, rows: data };

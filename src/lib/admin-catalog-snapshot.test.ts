@@ -62,3 +62,15 @@ test('ID が重複していたら例外にする', async () => {
     /ID の重複/,
   );
 });
+
+/*
+ * parseCsvToAkyoData は ID の無い行も落とさずに返す（行数が合うので、行数の検査も
+ * 素通りする）。ID が空のまま画面へ渡すと、保留・ブロック・ハイライトが全部 ID で
+ * 引くので、無関係な行に紐づいて見える。
+ */
+test('ID の無い行があったら例外にする', async () => {
+  await assert.rejects(
+    readAdminCatalogSnapshot(async () => snapshot([record('0001'), record('')])),
+    /ID の無い行/,
+  );
+});

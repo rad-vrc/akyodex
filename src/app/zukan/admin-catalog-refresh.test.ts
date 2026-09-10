@@ -58,3 +58,26 @@ test('取り消しは中断として返る', async (t) => {
   controller.abort();
   await assert.rejects(loadAdminCsvCatalog(controller.signal), { name: 'AbortError' });
 });
+
+/*
+ * count は「サーバが数えた件数」。data と食い違うのは応答が途中で欠けたときで、
+ * そのまま受けると部分的な一覧を完全なスナップショットとして扱い、載っていない行が
+ * 削除されたように見える。ID が空の行も同じで、保留・ハイライトが全部 ID で引くので
+ * 無関係な行に紐づいて見える（parseCsvToAkyoData は ID の無い行も落とさずに返す）。
+ */
+test('count と件数が食い違う応答、ID の無い行を含む応答は受け取らない', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ ...payload([row]), count: 2 }));
+  await assert.rejects(loadAdminCsvCatalog(), 'count が多い応答は欠けている');
+
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ ...payload([row, { ...row, id: '0002' }]), count: 1 }));
+  await assert.rejects(loadAdminCsvCatalog(), 'count が少ない応答も食い違い');
+
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ success: true, head: 'a'.repeat(40), data: [row] }));
+  await assert.rejects(loadAdminCsvCatalog(), 'count の無い応答は受け取らない');
+
+  t.mock.method(globalThis, 'fetch', async () => Response.json(payload([{ ...row, id: '' }])));
+  await assert.rejects(loadAdminCsvCatalog(), 'ID の空いた行を混ぜない');
+
+  t.mock.method(globalThis, 'fetch', async () => Response.json(payload([row, { ...row, id: '' }])));
+  await assert.rejects(loadAdminCsvCatalog(), '1 行でも ID が無ければ受け取らない');
+});

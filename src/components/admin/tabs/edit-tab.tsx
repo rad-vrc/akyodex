@@ -39,9 +39,12 @@ interface SavedAkyoUpdate {
 }
 
 /**
- * Keep only the overlays whose row still reads as a known pre-save snapshot: the public JSON
- * lags behind the CSV. Matching the saved result (synced) or anything else (someone else's
- * edit, or a category assigned in the other tab) retires the overlay so the rows win.
+ * 共有カタログの行が「保存前のスナップショットのまま」に読める間だけ、保存結果の上書きを
+ * 残す。行が保存結果と一致した（同期が追いついた）ときも、それ以外（他人の編集、もう一方の
+ * タブで付けたカテゴリ）に変わったときも、上書きを退けて行の側を勝たせる。
+ *
+ * これは最初の描画で渡ってくる公開 JSON が CSV より遅れるためのもので、**再取得の経路とは
+ * 関係がない**。再取得は保存先の CSV を直接読むので、そこでは上書きを丸ごと捨てている。
  */
 function retireSyncedOverlays(
   saved: Record<string, SavedAkyoUpdate>,
