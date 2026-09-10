@@ -4,9 +4,11 @@ import { IconEdit, IconPlusCircle, IconTags, IconTools } from '@/components/icon
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
 import {
-  applyCatalogRefresh,
+  applyAdminSnapshot,
   applyCategoryRowChanges,
+  createAdminCatalogSync,
   recordCommittedRows,
+  type AdminCatalogSync,
   type CategoryRowChange,
   type CommittedRow,
 } from '@/lib/admin-catalog';
@@ -73,21 +75,30 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
     };
   }, []);
   // One catalog for both tabs, and one record of what this session committed. Every way the
-  // rows can move — a commit here, a commit there, a refresh from the lagging public JSON, a
-  // category rename rewriting cells — goes through src/lib/admin-catalog.ts.
+  // rows can move — a commit here, a commit there, an explicit refresh of the saved CSV
+  // snapshot, a category rename rewriting cells — goes through src/lib/admin-catalog.ts.
   const [catalogState, setCatalogState] = useState<{ catalog: AkyoData[]; committed: Map<string, CommittedRow> }>(
     () => ({ catalog: akyoData, committed: new Map() }),
   );
   const catalog = catalogState.catalog;
+  // 再取得が語れるのは、読んだスナップショットの head 時点まで。取得を始めたあとに保存が
+  // 通っていれば、正しい CSV でもこちらより古い。保存のたびに noteCommit で印を進めておき、
+  // 取得結果が戻ったときに変わっていたら捨てる
+  const applySnapshotRows = useCallback((rows: AkyoData[]) => {
+    setCatalogState(applyAdminSnapshot(rows));
+  }, []);
+  const catalogSync = useMemo<AdminCatalogSync>(
+    () => createAdminCatalogSync(applySnapshotRows),
+    [applySnapshotRows],
+  );
   const handleRowsCommitted = useCallback((rows: AkyoData[], originals: AkyoEditFields[]) => {
+    catalogSync.noteCommit();
     setCatalogState((previous) => recordCommittedRows(previous.catalog, previous.committed, rows, originals));
-  }, []);
-  const handleCatalogRefresh = useCallback((rows: AkyoData[]) => {
-    setCatalogState((previous) => applyCatalogRefresh(rows, previous.committed));
-  }, []);
+  }, [catalogSync]);
   const handleCategoryRowsChanged = useCallback((changes: CategoryRowChange[]) => {
+    catalogSync.noteCommit();
     setCatalogState((previous) => applyCategoryRowChanges(previous.catalog, previous.committed, changes));
-  }, []);
+  }, [catalogSync]);
   const currentAttributes = mergeCategoryLists(extractCategories(catalog), apiCategories);
   const currentCreators = extractAuthors(catalog);
   // The edit tab and the categories tab each hold their own unsaved changes; the header guard
@@ -204,7 +215,7 @@ export function AdminTabs({ userRole, attributes, creators, akyoData, onPendingE
             attributes={currentAttributes}
             onCategoriesChanged={() => void refreshCategories()}
             blockedIds={categoriesHeldIds}
-            onCatalogRefresh={handleCatalogRefresh}
+            catalogSync={catalogSync}
             onRowsCommitted={handleRowsCommitted}
             onDataChange={handleDataChange}
             onPendingStateChange={handlePendingState}

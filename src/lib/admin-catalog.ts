@@ -1,24 +1,20 @@
 /**
  * One place for "what the admin screen currently believes each Akyo row is".
  *
- * Three things fight over that answer:
- * - rows this session committed (the server's own reply, the freshest truth we have),
- * - a catalog refresh, which reads the public JSON and lags behind the CSV until the sync
- *   workflow runs, so it can hand back the pre-commit version of a row we just wrote,
- * - edits made elsewhere, which must be taken even though they overwrite our committed row.
+ * 動かすのは 2 つだけ:
+ * - この session が保存した行（サーバの返り値。ページを開いたときの初期データは KV/R2 経由で
+ *   遅れているので、保存した行はそこへ上書きしないと古いまま残る）
+ * - 明示的な再取得（/api/admin/catalog）。書き込み側が競合判定に使うのと同じ CSV
+ *   スナップショットなので、内容をそのまま採用してよく、保存済みの記録も畳める
  *
- * Keeping the committed rows together with the field snapshots they replaced tells those
- * apart: a refresh that returns one of those snapshots is stale, anything else is news.
+ * かつては再取得が公開カタログ（KV/R2）を読んでいて、そちらは CSV より遅れるため
+ * 「行が無い」が「まだ同期されていない」なのか「削除された」なのか区別できなかった。
+ * 置き換えた版のスナップショットを持ち歩いて遅延を見分ける仕組みがあったが、遅れない
+ * 情報源に切り替えたことで前提ごと不要になった。`CommittedRow.before` はその名残で、
+ * 現状どの判定にも使っていない（畳むのは別 PR）。
  *
- * その記録は、公開 JSON が追いついた後も捨てない。保存結果と一致する応答を一度取得しても、
- * その後の応答が新しいとは限らないからで、捨てると次の再取得が古い応答を返したときに前の版を
- * 「誰かの編集」として受け入れ、付けたばかりのカテゴリが画面から消える。
- *
- * 変更前と完全に同じ内容へ戻す外部更新は、この観測からは同期遅延と区別できない（自分が
- * B へ保存 → B を取得 → 他者が A へ戻す → A を取得、は遅れた A を掴んだ場合と同じ列になる）。
- * どちらか選ぶしかないので、記録が残っている間は自分の保存結果を優先する。取り違えたまま
- * 上書きへ進むことはない: サーバ側が送信された `original` を現在の CSV と照合し、食い違えば
- * 409 で止める。
+ * 再取得はスナップショットの head 時点しか語れない。取得を始めたあとに保存が通った場合は
+ * 古い可能性があるので、その判定は呼び出し側（admin-tabs）が取得開始時点との前後で行う。
  */
 
 import { getAkyoEditFields, sameAkyoEditFields, type AkyoEditFields } from './akyo-edit-fields';
@@ -37,6 +33,44 @@ export type CommittedRows = ReadonlyMap<string, CommittedRow>;
 export interface CategoryRowChange {
   id: string;
   category: string;
+}
+
+/**
+ * 再取得の結果を共有カタログへ渡す口。
+ *
+ * `begin()` で取得開始時点の印を取り、`apply()` がその間に保存が入っていないかを見て採否を
+ * 返す。false のときは取得結果が自分の保存より古い可能性があるので、呼び出し側は現在の
+ * 表示と保留をそのまま保つこと（黙って採用すると保存が巻き戻る）。
+ */
+export interface AdminCatalogSync {
+  /** 保存が通ったことを知らせる。実行中の取得より新しい状態になった、という印 */
+  noteCommit: () => void;
+  begin: () => number;
+  apply: (rows: AkyoData[], token: number) => boolean;
+}
+
+/**
+ * 取得開始から戻るまでに保存が入っていないかを見る口を作る。
+ *
+ * 数えている番号はこのクロージャの中だけにある。React の state に置くと更新が反映される
+ * 前の値を読むし、ref に置くと「描画中に ref を読んだ」ことになる。守りたいのは
+ * 「取得開始から応答までの間に保存が通ったか」だけなので、描画とは無関係でよい。
+ */
+export function createAdminCatalogSync(
+  applySnapshot: (rows: AkyoData[]) => void,
+): AdminCatalogSync {
+  let commits = 0;
+  return {
+    noteCommit: () => {
+      commits += 1;
+    },
+    begin: () => commits,
+    apply: (rows, token) => {
+      if (commits !== token) return false;
+      applySnapshot(rows);
+      return true;
+    },
+  };
 }
 
 /** Merge saved rows into the catalog and remember what they replaced. */
@@ -64,34 +98,20 @@ export function recordCommittedRows(
 }
 
 /**
- * Take a freshly fetched catalog, keeping rows this session committed whenever the fetch
- * returned a version they already replaced.
+ * 保存先の CSV スナップショット（/api/admin/catalog）を、そのまま採用する。
+ *
+ * 遅れる公開カタログと違い、これは書き込み側が競合判定に使うのと同じ内容なので、内容を
+ * 選び直す余地が無い。他の人が変更前とまったく同じ内容へ戻していれば、それも取り込む。
+ * 保存済みの記録は、この時点で残す理由が無くなるので畳む。
+ *
+ * ここで言えるのは「そのスナップショットの head 時点ではこうだった」まで。取得を始めた
+ * あとに自分の保存が通っている場合は古い可能性があるので、**そのときはこの関数を呼ばない**
+ * こと（呼び出し側が取得開始時点との前後を見て捨てる）。
  */
-export function applyCatalogRefresh(
-  incoming: AkyoData[],
-  committed: CommittedRows,
+export function applyAdminSnapshot(
+  rows: AkyoData[],
 ): { catalog: AkyoData[]; committed: Map<string, CommittedRow> } {
-  const nextCommitted = new Map<string, CommittedRow>();
-  const catalog = incoming.map((remote) => {
-    const entry = committed.get(remote.id);
-    if (!entry) return remote;
-    const fields = getAkyoEditFields(remote);
-    if (sameAkyoEditFields(getAkyoEditFields(entry.data), fields)) {
-      // 追いついた。ただし記録は持ち続ける。一致する応答を一度取得しても、その後の応答が
-      // 新しいとは限らず、捨てると次に古い応答を掴んだとき前の版を「誰かの編集」と読んで
-      // しまう。変更前と完全に同じ内容への外部更新はここでは遅延と区別できないので、
-      // 記録が残る間は自分の保存結果を優先する（詳細はファイル冒頭）
-      nextCommitted.set(remote.id, entry);
-      return remote;
-    }
-    if (entry.before.some((before) => sameAkyoEditFields(before, fields))) {
-      // The fetch is behind our own commit: keep what the server saved and stay watchful.
-      nextCommitted.set(remote.id, entry);
-      return entry.data;
-    }
-    return remote; // someone else changed the row; their version wins
-  });
-  return { catalog, committed: nextCommitted };
+  return { catalog: [...rows], committed: new Map() };
 }
 
 /**

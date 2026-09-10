@@ -53,15 +53,22 @@ export function CategoryAssignPanel({
   const pendingIds = useMemo(() => (pendingKey ? pendingKey.split(',') : []), [pendingKey]);
   const pendingCount = pendingIds.length;
 
-  // A row that vanished from the catalog (deleted elsewhere) has no card to revert it with,
-  // so drop its hold instead of sending an update the server can only reject.
+  // カタログから消えた行（他で削除された、あるいは再取得したスナップショットに無い）は
+  // カードが出ないので、押して取り消すことができない。だからといって黙って保留を捨てると
+  // 触ったつもりの変更が理由も分からず消えるので、保留は残したまま、どの ID がそうなったかを
+  // 知らせる。反映を押せばサーバが 409 で止めるので、そのまま壊れることはない
+  const vanished = useMemo(() => {
+    const ids = new Set(akyoData.map((akyo) => akyo.id));
+    return Object.keys(pending).filter((id) => !ids.has(id));
+  }, [akyoData, pending]);
+  const vanishedKey = vanished.join(',');
   useEffect(() => {
-    setPending((previous) => {
-      const ids = new Set(akyoData.map((akyo) => akyo.id));
-      const kept = Object.entries(previous).filter(([id]) => ids.has(id));
-      return kept.length === Object.keys(previous).length ? previous : Object.fromEntries(kept);
-    });
-  }, [akyoData]);
+    if (!vanishedKey) return;
+    setMessage(
+      `#${vanishedKey.split(',').join(' / #')} は一覧から消えました（他で削除された可能性）。` +
+        '保留は残してあります。取り消す場合は保留を破棄してください。',
+    );
+  }, [vanishedKey]);
 
   const visibleData = useMemo(
     () => akyoData.map((akyo) => (pending[akyo.id] ? applyAkyoEditFields(akyo, pending[akyo.id].changes) : akyo)),

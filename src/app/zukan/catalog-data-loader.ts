@@ -246,19 +246,36 @@ async function fetchCatalogSource(args: {
   }
 }
 
-// Administrative refresh must not silently fall back to an older snapshot.
-export async function loadLatestAdminCatalog(signal?: AbortSignal): Promise<AkyoData[]> {
-  const result = await fetchCatalogSource({
-    url: `/api/catalog/ja?refresh=${Date.now()}`,
+/**
+ * 管理画面の再取得は、遅れる公開カタログではなく保存先の CSV スナップショットを読む。
+ * 遅延と削除を区別できるようにするため（/api/admin/catalog）。
+ *
+ * 失敗は必ず例外にする。呼び出し側は現在の一覧と保留を保ったまま、失敗を表示すること。
+ * 公開カタログへ黙って落とさない。落とすと区別できない状態に戻る。
+ */
+export async function loadAdminCsvCatalog(
+  signal?: AbortSignal,
+): Promise<{ head: string; rows: AkyoData[] }> {
+  const response = await fetch(`/api/admin/catalog?refresh=${Date.now()}`, {
     signal,
-    fetchImpl: (url, options) => fetch(url, { ...options, cache: "no-store" }),
-    timeoutMs: DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
-    expectedLanguage: "ja",
+    cache: "no-store",
+    headers: { Accept: "application/json" },
   });
-  if (result.droppedCount || new Set(result.items.map(item => item.id)).size !== result.items.length) {
+  if (!response.ok) throw new Error(`Administrative catalog HTTP ${response.status}`);
+  const payload: unknown = await response.json();
+  if (
+    typeof payload !== "object" || payload === null ||
+    (payload as { success?: unknown }).success !== true ||
+    typeof (payload as { head?: unknown }).head !== "string" ||
+    !Array.isArray((payload as { data?: unknown }).data)
+  ) {
     throw new Error("Invalid administrative catalog");
   }
-  return result.items;
+  const { head, data } = payload as { head: string; data: AkyoData[] };
+  if (data.length === 0 || new Set(data.map((row) => row.id)).size !== data.length) {
+    throw new Error("Invalid administrative catalog");
+  }
+  return { head, rows: data };
 }
 
 export async function loadCompleteCatalogData(

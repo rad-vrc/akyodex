@@ -25,7 +25,7 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     getComputedStyle: win.getComputedStyle.bind(win),
     confirm: () => true, alert: () => {}, IS_REACT_ACT_ENVIRONMENT: true,
     fetch: async (url: string, init: RequestInit) => {
-      if (url.startsWith('/api/catalog/ja?refresh=')) {
+      if (url.startsWith('/api/admin/catalog?refresh=')) {
         refreshes++;
         assert.equal(init.cache, 'no-store');
         return refreshResponse!;
@@ -129,14 +129,14 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     await act(async () => resolveRequest(Response.json({ success: true, message: 'ok', data: [applyAkyoEditFields(saved[0], requests[2][0].changes)] })));
 
     const refreshWith = async (items: AkyoData[]) => {
-      refreshResponse = Response.json({ schemaVersion: 1, language: 'ja', revision: 'c'.repeat(64), count: items.length, data: items });
+      refreshResponse = Response.json({ success: true, head: 'c'.repeat(40), count: items.length, data: items });
       await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!.click());
     };
-    // Multiple local commits can precede the public JSON sync.
-    await refreshWith(data);
-    assert.match(rowFor(0).textContent!, /Third edit/, 'the initial unsynced snapshot must not undo local saves');
+    // 再取得は保存先の CSV（/api/admin/catalog）を読む。遅れないので、返ってきた内容が
+    // そのまま答えになる。公開カタログ相手だったころは、まだ同期されていない版を自分の
+    // 保存で覆う必要があったが、その前提はもう無い
     await refreshWith([saved[0], saved[1], data[2]]);
-    assert.match(rowFor(0).textContent!, /Third edit/, 'an intermediate unsynced save must not undo the latest save');
+    assert.match(rowFor(0).textContent!, /Second edit/, 'the saved CSV is what the screen shows');
 
     const external = { ...data[0], nickname: 'Newer remote edit' };
     await refreshWith([external, saved[1], data[2]]);
@@ -150,8 +150,8 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     assert.equal(requests[3][0].original.nickname, external.nickname, 'the next save must use the refreshed baseline');
     const afterExternal = applyAkyoEditFields(external, requests[3][0].changes);
     await act(async () => resolveRequest(Response.json({ success: true, message: 'ok', data: [afterExternal] })));
-    await refreshWith([external, saved[1], data[2]]);
-    assert.match(rowFor(0).textContent!, /Local after external/, 'sync-lag protection remains after accepting an external update');
+    await refreshWith([afterExternal, saved[1], data[2]]);
+    assert.match(rowFor(0).textContent!, /Local after external/, 'the saved CSV carries the save that followed the external edit');
 
     await edit(0, 'Pending over saved');
     const newerExternal = { ...external, nickname: 'Another external edit' };
@@ -230,7 +230,7 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     await act(async () => resolveRequest(Response.json({ success: false, error: 'fixture complete' }, { status: 409 })));
     const heldBefore = structuredClone(requests[0]);
     refreshResponse = Response.json({
-      schemaVersion: 1, language: 'ja', revision: 'a'.repeat(64), count: 3,
+      success: true, head: 'a'.repeat(40), count: 3,
       data: data.map(item => ({ ...item, nickname: 'Remote edit', category: 'Remote category' })),
     });
     await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!.click());
@@ -249,7 +249,7 @@ test('hold/re-edit/cancel, failed apply, retry and repeated apply preserve the b
     assert.match(win.document.body.textContent!, /再取得に失敗/);
     assert.match(win.document.body.textContent!, /保留 3件/);
     // A remotely removed pending record remains editable and cannot vanish from the batch.
-    refreshResponse = Response.json({ schemaVersion: 1, language: 'ja', revision: 'b'.repeat(64), count: 1, data: [data[0]] });
+    refreshResponse = Response.json({ success: true, head: 'b'.repeat(40), count: 1, data: [data[0]] });
     await act(async () => win.document.querySelector<HTMLButtonElement>('[aria-label="最新データを再取得"]')!.click());
     assert.ok(rowFor(2));
     await click('更新を反映する');
