@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-10T00:19:56.333Z",
+  "updatedAt": "2026-09-10T00:37:17.929Z",
   "count": 952,
   "data": [
     {
@@ -10566,7 +10566,7 @@
       "displaySerial": "0828",
       "nickname": "Water Jelly Akyo",
       "avatarName": "water jerry akyo",
-      "category": "Shape・Texture,Shape・Texture/Soft,Energy,Energy/Water,Food,Supported Platform,Supported Platform/PC",
+      "category": "Shape・Texture,Shape・Texture/Soft,Energy,Energy/Water,Food,Supported Platform",
       "comment": "It is all wobbly and squishy!",
       "author": "Fuganbya",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_019b0a86-3065-4454-aeed-b688c07359aa",
@@ -10854,7 +10854,7 @@
       "displaySerial": "0842",
       "nickname": "かぶりものヒューマノイドAkyo",
       "avatarName": "Humanoid Akyo HR test",
-      "category": "Fashion・Equipment,Fashion・Equipment/Hood,Animal,Animal/Human",
+      "category": "Fashion・Equipment,Fashion・Equipment/Hood,Animal,Animal/Human,Supported Platform,Supported Platform/PC",
       "comment": "Akyoをかぶって、生きていく。",
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ab5e706b-c76b-4a26-ba2a-ee461482a2f7",
@@ -10878,7 +10878,7 @@
       "displaySerial": "0844",
       "nickname": "ゼリー入りコップAkyo",
       "avatarName": "ゼリーいりコップあきょ",
-      "category": "Shape・Texture,Shape・Texture/Jiggly,Material・Raw Material,Material・Raw Material/Glass,Material・Raw Material/Water,Food,Food/Sweets",
+      "category": "Shape・Texture,Shape・Texture/Jiggly,Material・Raw Material,Material・Raw Material/Glass,Material・Raw Material/Water,Food,Food/Sweets,Supported Platform,Supported Platform/PC",
       "comment": "こぼさないように気をつけて！",
       "author": "ky_chan",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_83512e06-4eb2-4d08-b43a-1f9c750123ee",
