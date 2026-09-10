@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-10T10:50:02.807Z",
-  "count": 952,
+  "updatedAt": "2026-09-10T15:19:01.300Z",
+  "count": 953,
   "data": [
     {
       "id": "0001",
@@ -10883,6 +10883,18 @@
       "author": "ky_chan",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_83512e06-4eb2-4d08-b43a-1f9c750123ee",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_83512e06-4eb2-4d08-b43a-1f9c750123ee"
+    },
+    {
+      "id": "0953",
+      "entryType": "avatar",
+      "displaySerial": "0845",
+      "nickname": "ねこまめAkyo",
+      "avatarName": "akyo mameCat",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Bean,Bean Akyo,Animal,Animal/Cat,Body Part,Body Part/Tail,Body Part/Ear,Shape・Texture,Shape・Texture/Soft,Body Type,Body Type/Plump",
+      "comment": "もちもちしてるらしいよ！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_21d62b85-aada-4487-8616-7044e6384a43",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_21d62b85-aada-4487-8616-7044e6384a43"
     }
   ]
 }
