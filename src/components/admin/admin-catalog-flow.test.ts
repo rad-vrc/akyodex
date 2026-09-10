@@ -46,6 +46,7 @@ async function setup() {
   // 取得を握ったまま保存を通せるようにする。取得中に保存が入ったときの分岐は、応答が
   // 戻る前に保存が通らないと踏めない
   let holdRefresh = false;
+  let refreshFailure: (() => Error) | null = null;
   let release: (() => void) | null = null;
   for (const [key, value] of Object.entries({
     window: win, document: win.document, navigator: win.navigator,
@@ -58,6 +59,7 @@ async function setup() {
     fetch: async (url: string, init?: RequestInit) => {
       if (url.startsWith('/api/admin/catalog')) {
         refreshCalls += 1;
+        if (refreshFailure) throw refreshFailure();
         if (holdRefresh) await new Promise<void>((resolve) => { release = resolve; });
         return Response.json({ success: true, head: 'a'.repeat(40), count: refreshRows.length, data: refreshRows });
       }
@@ -120,6 +122,7 @@ async function setup() {
     setRenameResponse: (next: Record<string, unknown>) => { renameResponse = next; },
     setRefreshRows: (rows: AkyoData[]) => { refreshRows = rows; },
     holdRefresh: () => { holdRefresh = true; },
+    failRefresh: (make: (() => Error) | null) => { refreshFailure = make; },
     cleanup: async () => {
       await flush();
       await act(async () => root.unmount());
@@ -269,6 +272,54 @@ test('取得中に改名が通ったら、その取得結果は使わない', as
     await h.click(h.buttons('カテゴリ')[0]);
     await h.click(h.listRowButton('生物', '選択'));
     assert.equal(h.cardToggle('0001').article.dataset.selected, 'true', '改名が巻き戻らない');
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * 再取得が失敗したときに、画面が使える状態へ戻ること。取得が決着しないと EditTab は
+ * refreshing を握ったままで、それが AdminTabs の busy へ伝わって**全タブが無効**になる。
+ * 期限が無いとそこから抜ける手段が画面内に無くなる（期限そのものは
+ * `src/app/zukan/admin-catalog-refresh.test.ts` で押さえている）。
+ */
+test('再取得が失敗しても、保留は残り、タブも再取得も使えるまま', async () => {
+  const h = await setup();
+  try {
+    // カテゴリタブに保留を作る（保存はしない）
+    await h.click(h.buttons('カテゴリ')[0]);
+    await h.click(h.listRowButton('乗り物', '選択'));
+    await h.click(h.cardToggle('0002').toggle);
+    assert.match(h.win.document.body.textContent!, /保留 1件/);
+
+    await h.click(h.buttons('編集・削除')[0]);
+    h.failRefresh(() => {
+      const error = new Error('Catalog deadline exceeded after 15000ms');
+      error.name = 'CatalogDeadlineError';
+      return error;
+    });
+    await h.click(h.refreshButton());
+
+    assert.match(
+      h.win.document.body.textContent!,
+      /再取得に失敗しました。現在のデータと保留内容は維持されています/,
+      '失敗はそう言う。黙って待ち続けない',
+    );
+    assert.equal(h.refreshButton().disabled, false, 'やり直せること');
+    assert.equal(h.buttons('カテゴリ')[0].disabled, false, 'タブが無効のままにならない');
+    assert.equal(h.buttons('新規登録')[0].disabled, false);
+
+    // 保留はそのまま。戻って取り消せる
+    await h.click(h.buttons('カテゴリ')[0]);
+    assert.match(h.win.document.body.textContent!, /保留 1件/, '保留を失わない');
+    assert.equal(h.cardToggle('0002').article.dataset.pending, 'true');
+
+    // 次はつながる
+    h.failRefresh(null);
+    h.setRefreshRows(h.initial);
+    await h.click(h.buttons('編集・削除')[0]);
+    await h.click(h.refreshButton());
+    assert.match(h.win.document.body.textContent!, /データを再取得しました/, '失敗のあとも取得できる');
   } finally {
     await h.cleanup();
   }

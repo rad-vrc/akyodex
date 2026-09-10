@@ -98,3 +98,72 @@ test('HTTP が失敗なら、本文の形が正しくても受け取らない', 
     assert.equal(calls, 1, '公開カタログへ問い合わせ直してはいけない');
   }
 });
+
+/*
+ * 期限は本文の読み取りまで含める。**ヘッダーだけ届いて本文が来ない止まり方がある**ので、
+ * fetch の解決だけを見ていると永久に待つ。
+ *
+ * ここが返らないと EditTab は refreshing を握ったままになり、それが AdminTabs の busy へ
+ * 伝わって再取得ボタンも全タブも無効になる。失敗表示も出ず、画面内に取得を止める手段が
+ * 無い。旧 loadLatestAdminCatalog は fetchCatalogSource 越しに 15 秒の期限を持っていた。
+ *
+ * 期限そのものは実時間で短く与えて試す（node:test の mock.timers を有効にすると、
+ * ランナー自身が止まって結果が出ない）。既定値は setTimeout の引数で押さえる。
+ */
+const stallUntilAborted = (options: RequestInit) =>
+  new Promise<never>((_resolve, reject) => {
+    options.signal?.addEventListener(
+      'abort',
+      () => reject(new DOMException('aborted', 'AbortError')),
+      { once: true },
+    );
+  });
+
+test('応答ヘッダーが来ないまま止まったら、期限で失敗にする', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (_url: string, options: RequestInit) => stallUntilAborted(options));
+  await assert.rejects(loadAdminCsvCatalog(undefined, 20), (error: Error) => {
+    // 外から止めたのではないので AbortError にしてはいけない。AbortError だと呼び出し側が
+    // 「利用者が取り消した」と読んで、失敗表示を出さずに終わる
+    assert.equal(error.name, 'CatalogDeadlineError');
+    return true;
+  });
+});
+
+test('ヘッダーは来たのに本文が来ないまま止まっても、期限で失敗にする', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (_url: string, options: RequestInit) => ({
+    ok: true,
+    status: 200,
+    json: () => stallUntilAborted(options),
+  }) as unknown as Response);
+  await assert.rejects(loadAdminCsvCatalog(undefined, 20), { name: 'CatalogDeadlineError' });
+});
+
+test('期限切れのあとも、もう一度取得できる', async (t) => {
+  t.mock.method(globalThis, 'fetch', async (_url: string, options: RequestInit) => stallUntilAborted(options));
+  await assert.rejects(loadAdminCsvCatalog(undefined, 20), { name: 'CatalogDeadlineError' });
+
+  t.mock.method(globalThis, 'fetch', async () => Response.json(payload()));
+  const { rows } = await loadAdminCsvCatalog(undefined, 20);
+  assert.equal(rows.length, 1, '期限切れで壊れた状態が残らない');
+});
+
+test('既定の期限は 15 秒で、本文の読み取りまで 1 本で覆う', async (t) => {
+  const delays: number[] = [];
+  const realSetTimeout = globalThis.setTimeout;
+  t.mock.method(globalThis, 'setTimeout', ((handler: TimerHandler, ms?: number, ...rest: unknown[]) => {
+    if (typeof ms === 'number') delays.push(ms);
+    return (realSetTimeout as (...args: unknown[]) => unknown)(handler, ms, ...rest);
+  }) as typeof setTimeout);
+  let bodyRead = false;
+  t.mock.method(globalThis, 'fetch', async () => ({
+    ok: true,
+    status: 200,
+    json: async () => { bodyRead = true; return { success: true, head: 'a'.repeat(40), count: 1, data: [row] }; },
+  }) as unknown as Response);
+
+  const { rows } = await loadAdminCsvCatalog();
+  assert.equal(rows.length, 1);
+  assert.ok(bodyRead, '本文まで読んでいる');
+  assert.ok(delays.includes(15_000), `既定の期限が掛かっていない: ${delays.join(',')}`);
+  assert.equal(delays.filter((ms) => ms === 15_000).length, 1, '期限は 1 本。fetch と本文で分けない');
+});

@@ -192,6 +192,41 @@ class CatalogDeadlineError extends Error {
   }
 }
 
+/**
+ * 期限つきで取得を回す。**期限は本文の読み取りまで含む。** ヘッダーだけ届いて本文が
+ * 来ない止まり方があり、fetch の解決だけを見ていると永久に待つ。
+ *
+ * 呼び出し元の中断はそのまま通す（外から止めたのか期限切れかを区別して投げ分ける）。
+ * 止まったまま返らないと、管理画面は再取得中のまま全タブが操作不能になる。
+ */
+async function withCatalogDeadline<T>(
+  timeoutMs: number,
+  signal: AbortSignal | undefined,
+  run: (deadlineSignal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  if (signal?.aborted) throw createAbortError();
+
+  const controller = new AbortController();
+  let timedOut = false;
+  const abortFromParent = () => controller.abort();
+  signal?.addEventListener("abort", abortFromParent, { once: true });
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    return await run(controller.signal);
+  } catch (error) {
+    if (signal?.aborted) throw createAbortError();
+    if (timedOut) throw new CatalogDeadlineError(timeoutMs);
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    signal?.removeEventListener("abort", abortFromParent);
+  }
+}
+
 async function fetchCatalogSource(args: {
   url: string;
   signal?: AbortSignal;
@@ -208,20 +243,9 @@ async function fetchCatalogSource(args: {
     expectedLanguage,
     phaseRecorder,
   } = args;
-  if (signal?.aborted) throw createAbortError();
-
-  const requestController = new AbortController();
-  let timedOut = false;
-  const abortFromParent = () => requestController.abort();
-  signal?.addEventListener("abort", abortFromParent, { once: true });
-  const timeoutId = setTimeout(() => {
-    timedOut = true;
-    requestController.abort();
-  }, timeoutMs);
-
-  try {
+  return withCatalogDeadline(timeoutMs, signal, async (deadlineSignal) => {
     const response = await fetchImpl(url, {
-      signal: requestController.signal,
+      signal: deadlineSignal,
     });
     if (!response.ok) {
       throw new Error(`Catalog request failed with HTTP ${response.status}`);
@@ -234,16 +258,7 @@ async function fetchCatalogSource(args: {
     } finally {
       phaseRecorder?.endPhase("normalize");
     }
-  } catch (error) {
-    if (signal?.aborted) throw createAbortError();
-    if (timedOut) {
-      throw new CatalogDeadlineError(timeoutMs);
-    }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
-    signal?.removeEventListener("abort", abortFromParent);
-  }
+  });
 }
 
 /**
@@ -252,9 +267,22 @@ async function fetchCatalogSource(args: {
  *
  * 失敗は必ず例外にする。呼び出し側は現在の一覧と保留を保ったまま、失敗を表示すること。
  * 公開カタログへ黙って落とさない。落とすと区別できない状態に戻る。
+ *
+ * **期限は本文の読み取りまで含める。** ここが返らないと、呼び出し元（EditTab）は
+ * refreshing を握ったままになり、それが AdminTabs の busy へ伝わって全タブが操作不能に
+ * なる。失敗表示も出ず、画面内に取得を止める手段が無い。
  */
 export async function loadAdminCsvCatalog(
   signal?: AbortSignal,
+  timeoutMs: number = DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
+): Promise<{ head: string; rows: AkyoData[] }> {
+  return withCatalogDeadline(timeoutMs, signal, (deadlineSignal) =>
+    readAdminCsvCatalog(deadlineSignal),
+  );
+}
+
+async function readAdminCsvCatalog(
+  signal: AbortSignal,
 ): Promise<{ head: string; rows: AkyoData[] }> {
   const response = await fetch(`/api/admin/catalog?refresh=${Date.now()}`, {
     signal,
