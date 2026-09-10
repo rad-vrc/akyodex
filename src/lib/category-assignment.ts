@@ -13,7 +13,7 @@
  * 外れたことにも気づけなかった（2026-09-10、#0926 が対応機種/PC を失った）。
  */
 
-import { getAkyoEditFields, sameAkyoEditFields, type PendingAkyoUpdate } from './akyo-edit-fields';
+import { EDIT_FIELD_NAMES, getAkyoEditFields, sameAkyoEditFields, type AkyoEditFields, type PendingAkyoUpdate } from './akyo-edit-fields';
 import { isSelfOrDescendant, splitCategoryCell, withAncestors } from './category-operations';
 import type { AkyoData } from '@/types/akyo';
 
@@ -36,15 +36,30 @@ export function applyCategories(
   return withAncestors([...tokens, ...selected]);
 }
 
-/** そのモードで、この Akyo は実際に変わるか。変わらないカードは押させない */
+/**
+ * そのモードで、この Akyo は実際に変わるか。変わらないカードは押させない。
+ *
+ * 判定は `stageCategoryUpdate` と同じ基準（`sameAkyoEditFields`）で行う。トークン列の
+ * 単純比較にすると、祖先を補うだけの差（`動物/うま` に `動物` を足す等）で「変わる」と
+ * 答えてしまい、押せるのに `stageCategoryUpdate` が null を返して何も起きないカードが
+ * できる。押しても何も起きないカードを無くすのがこの関数の目的なので、基準を揃える。
+ */
 export function changesUnderMode(
   tokens: string[],
   selected: string[],
   mode: CategoryAssignMode,
 ): boolean {
   const next = applyCategories(tokens, selected, mode);
-  return next.length !== tokens.length || next.some((token, index) => token !== tokens[index]);
+  return !sameAkyoEditFields(
+    { ...EMPTY_EDIT_FIELDS, category: tokens.join(',') },
+    { ...EMPTY_EDIT_FIELDS, category: next.join(',') },
+  );
 }
+
+/** カテゴリだけを比べるための土台。他の項目は同じ値を入れて差を出さない */
+const EMPTY_EDIT_FIELDS = Object.fromEntries(
+  EDIT_FIELD_NAMES.map((name: string) => [name, '']),
+) as AkyoEditFields;
 
 export function categoriesOf(akyo: AkyoData): string[] {
   return splitCategoryCell(akyo.category || akyo.attribute || '');

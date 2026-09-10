@@ -56,17 +56,21 @@ interface AkyoCardProps {
 /** revert = 保留の取り消し、none = 押しても変わらない */
 export type AssignAction = "attach" | "detach" | "revert" | "none";
 
+/**
+ * 文言は「押すと何が起きるか」だけを言う。「選択中」かどうかは別の情報なので混ぜない。
+ * 混ぜると、外すモードで部分一致のカード（選択表示は付かないが押すと外れる）が
+ * 「選択中（押すと外す）」になり、ハイライトと食い違う。
+ */
 function assignActionText(action: AssignAction, selected: boolean): string {
   if (action === "revert") return "保留中（押すと取り消し）";
-  if (action === "attach") return "選択する（押すと付ける）";
-  if (action === "detach") return "選択中（押すと外す）";
+  if (action === "attach") return "押すと付ける";
+  if (action === "detach") return "押すと外す";
   return selected ? "選択中（変更なし）" : "対象外";
 }
 
+/** アイコンは「選択中か」を表す。押したときの向きは文言側 */
 function assignActionIcon(action: AssignAction, selected: boolean): string {
   if (action === "revert") return "↩";
-  if (action === "detach") return "✅";
-  if (action === "attach") return "⬜";
   return selected ? "✅" : "⬜";
 }
 

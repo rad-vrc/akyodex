@@ -181,13 +181,19 @@ export function CategoryAssignPanel({
   // Without a selection there is nothing to toggle, but a held card must stay revertible.
   // 押したときに何が起きるかを、カードの選択状態ではなくモードから決める。保留のある
   // カードは取り消すために常に押せる。それ以外で何も変わらないカードは押させない。
-  // 付ける作業中に、既に全部持つカードを押して外れることが構造的に起きなくなる
-  const assignAction = (akyo: AkyoData): AssignAction => {
-    if (pending[akyo.id]) return 'revert';
-    if (selected.length === 0) return 'none';
-    return changesUnderMode(categoriesOf(akyo), selected, mode) ? mode : 'none';
-  };
-  const shown = filtered.slice(0, renderLimit);
+  // 付ける作業中に、既に全部持つカードを押して外れることが構造的に起きなくなる。
+  // 表示するぶんだけ 1 回で求める（カードごとに 2 回呼ぶと categoriesOf と applyCategories
+  // が二重に走る）
+  const shown = useMemo(() => filtered.slice(0, renderLimit), [filtered, renderLimit]);
+  const cardAction = useMemo(() => {
+    const byId = new Map<string, AssignAction>();
+    for (const akyo of shown) {
+      if (pending[akyo.id]) byId.set(akyo.id, 'revert');
+      else if (selected.length === 0) byId.set(akyo.id, 'none');
+      else byId.set(akyo.id, changesUnderMode(categoriesOf(akyo), selected, mode) ? mode : 'none');
+    }
+    return byId;
+  }, [shown, pending, selected, mode]);
 
   return (
     <section
@@ -273,8 +279,8 @@ export function CategoryAssignPanel({
                 key={akyo.id}
                 akyo={akyo}
                 selectedForAssign={matching.has(akyo.id)}
-                assignAction={assignAction(akyo)}
-                assignDisabled={submitting || assignAction(akyo) === 'none'}
+                assignAction={cardAction.get(akyo.id) ?? 'none'}
+                assignDisabled={submitting || (cardAction.get(akyo.id) ?? 'none') === 'none'}
                 assignPending={Boolean(pending[akyo.id])}
                 onAssignToggle={handleToggle}
               />

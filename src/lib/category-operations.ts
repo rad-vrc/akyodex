@@ -160,7 +160,7 @@ export function selectCategoryPath(selected: string[], path: string): string[] {
 /**
  * Toggle one path in a selection, keeping the hierarchy consistent both ways:
  * selecting a child pulls in its ancestors, clearing a parent clears its descendants.
- * Mirrors what `toggleCategories` does for the bulk assignment panel.
+ * Mirrors what `applyCategories` does for the bulk assignment panel.
  */
 export function toggleCategoryPath(selected: string[], path: string): string[] {
   if (selected.includes(path)) {

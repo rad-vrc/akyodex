@@ -56,6 +56,23 @@ test('changesUnderMode: そのモードで変わらないカードを見分け�
   assert.equal(changesUnderMode(owns, [], 'detach'), false);
 });
 
+/*
+ * 判定は stageCategoryUpdate と同じ基準（sameAkyoEditFields）で行う。トークン列を単純に
+ * 比べると、祖先を補うだけの差で「変わる」と答えてしまい、押せるのに stageCategoryUpdate
+ * が null を返して何も起きないカードができる。押しても何も起きないカードを無くすのが
+ * この関数の目的なので、基準がずれていては意味がない。
+ */
+test('changesUnderMode: 祖先を補うだけの差を「変わる」と答えない', () => {
+  const tokens = ['動物/うま'];
+  // 適用すると 動物 が増えるが、CSV→JSON が祖先を入れるので保存内容としては同じ
+  assert.deepEqual(applyCategories(tokens, ['動物'], 'attach'), ['動物', '動物/うま']);
+  assert.equal(stageCategoryUpdate(akyo, undefined, ['動物', '動物/うま']), null, '前提: 保留は作られない');
+  assert.equal(changesUnderMode(tokens, ['動物'], 'attach'), false, '押せるのに何も起きないカードを作らない');
+
+  // 本当に増える場合はこれまでどおり true
+  assert.equal(changesUnderMode(tokens, ['次元'], 'attach'), true);
+});
+
 test('stageCategoryUpdate: keeps the first original, drops a change that returns to it', () => {
   const staged = stageCategoryUpdate(akyo, undefined, ['動物', '動物/うま', '次元']);
   assert.ok(staged);

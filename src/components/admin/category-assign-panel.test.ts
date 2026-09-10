@@ -147,6 +147,11 @@ test('select, toggle, commit one batch; committed rows are handed up and the lis
     // 外すのはモードを切り替えたときだけ
     await h.click(h.buttons('外す')[0]);
     assert.equal(h.cardToggle('0001').toggle.disabled, false);
+    // 文言は「押すと何が起きるか」だけを言う。選択中かどうかはアイコン側の役目。
+    // 混ぜると、外すモードで部分一致のカード（選択表示は付かないが押すと外れる）が
+    // 「選択中（押すと外す）」になってハイライトと食い違う
+    assert.match(h.cardToggle('0001').article.textContent!, /押すと外す/);
+    assert.equal(h.cardToggle('0003').article.dataset.selected, 'false');
     await h.click(h.cardToggle('0001').toggle);
     assert.match(h.win.document.body.textContent!, /保留 2件/);
     assert.equal(h.batches.length, 0, 'nothing is written while holding');
