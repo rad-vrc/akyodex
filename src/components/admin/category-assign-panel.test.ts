@@ -271,3 +271,70 @@ test('translations stay editable while assignments are held; renaming and deleti
     await h.cleanup();
   }
 });
+
+/*
+ * カードの表示層はここでしか固定していない。文言・アイコン・aria-pressed のどれを壊しても
+ * 単体テスト 600 件が緑のままだった（2026-09-10 に変異で実測）。表示が嘘をつくと、
+ * 付ける作業の途中で押して外れる事故に戻るので、4 通りの action を表で押さえる。
+ *
+ * 文言は「押すと何が起きるか」だけ、アイコンと aria-pressed は「選択中か」だけを言う。
+ * この 2 つは別物で、外すモードで一部だけ持つカード（押すと外れるがハイライトは付かない）
+ * で実際に食い違う。
+ */
+test('カードの表示は「押すと何が起きるか」と「選択中か」を別々に言う', async () => {
+  const h = await setup();
+  try {
+    const face = (id: string) => {
+      const { article, toggle } = h.cardToggle(id);
+      return {
+        icon: toggle.querySelector('span[aria-hidden="true"]')!.textContent,
+        text: toggle.querySelector('span:not([aria-hidden])')!.textContent,
+        pressed: toggle.getAttribute('aria-pressed'),
+        disabled: toggle.disabled,
+        highlighted: article.dataset.selected,
+      };
+    };
+    const radio = (label: string) =>
+      [...h.win.document.querySelectorAll('[role="radio"]')].find((b) => b.textContent?.trim() === label)!;
+
+    await h.click(h.listRowButton('動物', '選択'));
+    await h.click(h.listRowButton('動物/うま', '選択'));
+
+    // 付けるモード。全部持つカードは押せず、ハイライトだけが付く
+    assert.equal(radio('付ける').getAttribute('aria-checked'), 'true');
+    assert.equal(radio('外す').getAttribute('aria-checked'), 'false');
+    assert.match(h.panel().textContent!, /すでに全部持つ Akyo は押せません/);
+    assert.deepEqual(face('0001'), {
+      icon: '✅', text: '選択中（変更なし）', pressed: 'true', disabled: true, highlighted: 'true',
+    });
+    assert.deepEqual(face('0003'), {
+      icon: '⬜', text: '押すと付ける', pressed: 'false', disabled: false, highlighted: 'false',
+    });
+
+    // 保留のカードは、取り消すために押せる。文言もアイコンも保留であることを言う
+    await h.click(h.cardToggle('0002').toggle);
+    assert.deepEqual(face('0002'), {
+      icon: '↩', text: '保留中（押すと取り消し）', pressed: 'true', disabled: false, highlighted: 'true',
+    });
+    assert.match(h.cardToggle('0002').toggle.getAttribute('aria-label')!, /（保留中（押すと取り消し））$/);
+    await h.click(h.cardToggle('0002').toggle);
+
+    // 外すモード。0002 は 動物 だけ持つので、ハイライトは付かないが押すと外れる。
+    // ここが「押すと何が起きるか」と「選択中か」がずれる唯一の組み合わせ
+    await h.click(h.buttons('外す')[0]);
+    assert.equal(radio('付ける').getAttribute('aria-checked'), 'false');
+    assert.equal(radio('外す').getAttribute('aria-checked'), 'true');
+    assert.match(h.panel().textContent!, /一部だけ持つ Akyo も押せて、その分だけ外れます/);
+    assert.deepEqual(face('0001'), {
+      icon: '✅', text: '押すと外す', pressed: 'true', disabled: false, highlighted: 'true',
+    });
+    assert.deepEqual(face('0002'), {
+      icon: '⬜', text: '押すと外す', pressed: 'false', disabled: false, highlighted: 'false',
+    });
+    assert.deepEqual(face('0003'), {
+      icon: '⬜', text: '対象外', pressed: 'false', disabled: true, highlighted: 'false',
+    });
+  } finally {
+    await h.cleanup();
+  }
+});

@@ -249,7 +249,7 @@ export function CategoryAssignPanel({
       <p className="mb-3 text-sm text-gray-700">
         {mode === 'attach'
           ? 'カードを押すと、選択中のカテゴリをまとめて付けます（親は自動で付きます）。すでに全部持つ Akyo は押せません。'
-          : 'カードを押すと、選択中のカテゴリをまとめて外します（親を外すと配下も外れます）。持っていない Akyo は押せません。'}
+          : 'カードを押すと、選択中のカテゴリをまとめて外します（親を外すと配下も外れます）。一部だけ持つ Akyo も押せて、その分だけ外れます。一つも持たない Akyo は押せません。'}
         保留中のカードをもう一度押すと、その変更だけ取り消します。 該当 {matching.size} 件 / 全 {akyoData.length} 件
       </p>
       <fieldset disabled={submitting} className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
