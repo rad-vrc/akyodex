@@ -41,11 +41,23 @@ interface AddTabDraft {
   customCategories: string[];
 }
 
+/**
+ * 新規登録のカテゴリ欄に最初から入れておくもの。
+ *
+ * ほぼすべての Akyo が持つので、毎回手で選ばせる必要がない。ただし **入力欄の初期値**
+ * であって、保存内容の保証ではない。外して登録すればそのまま外れる（ワールドや
+ * PC 非対応のものが該当する）。送信時に足すことはしない。
+ *
+ * 親も一緒に並べるのは、`selectCategoryPath` が子を選んだときに作る形と揃えるため。
+ * 子だけ入れると、カテゴリ選択を開いて閉じただけで親が増えて見える。
+ */
+const NEW_ENTRY_DEFAULT_CATEGORIES = ['対応機種', '対応機種/PC'] as const;
+
 function createDefaultFormData() {
   return {
     nickname: '',
     avatarName: '',
-    categories: [] as string[],
+    categories: [...NEW_ENTRY_DEFAULT_CATEGORIES] as string[],
     author: '',
     sourceUrl: '',
     boothUrl: '',
