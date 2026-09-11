@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-11T08:22:49.346Z",
-  "count": 953,
+  "updatedAt": "2026-09-11T11:05:45.571Z",
+  "count": 954,
   "data": [
     {
       "id": "0001",
@@ -10895,6 +10895,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_21d62b85-aada-4487-8616-7044e6384a43",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_21d62b85-aada-4487-8616-7044e6384a43"
+    },
+    {
+      "id": "0954",
+      "entryType": "world",
+      "displaySerial": "0109",
+      "nickname": "パンAkyo食い競争",
+      "avatarName": "パンAkyo食い競争",
+      "category": "World,Supported Platform,Supported Platform/PC",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_85c6326e-5c90-47c8-9533-ec898dca5563",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_85c6326e-5c90-47c8-9533-ec898dca5563"
     }
   ]
 }
