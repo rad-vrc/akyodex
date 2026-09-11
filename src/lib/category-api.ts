@@ -79,6 +79,7 @@ export async function buildCategoryListResponse(deps?: CategoryStoreDeps): Promi
     return Response.json({
       success: true,
       head: snapshot.head,
+      revision: snapshot.revision,
       categories: summarizeCategories(snapshot.dataset),
       colors: snapshot.dataset.colors,
     });
@@ -104,17 +105,31 @@ export async function processCategoryRequest(
   if (OWNER_ONLY_CATEGORY_ACTIONS.has(action) && role !== 'owner') {
     return jsonError('カテゴリの改名・統合・削除はらど（上位管理者）のみ使用できます', 403);
   }
-  // The non-force ref update only guards the window inside this request. `head` is the
-  // commit the list was read from, so a rename decided on a stale screen cannot overwrite
-  // what someone else changed in between. `create` may omit it (the attribute modal has no
-  // list); it adds a key that a fresh snapshot already checks for duplicates.
-  if (action !== 'create' && typeof body.head !== 'string') {
-    return jsonError('一覧の版（head）がありません。一覧を再読み込みしてください', 400);
+  // The non-force ref update only guards the window inside this request. `revision` is the
+  // version of the category inputs the list was read from, so a rename decided on a stale
+  // screen cannot overwrite what someone else changed in between. `create` may omit it (the
+  // attribute modal has no list); it adds a key that a fresh snapshot already checks for
+  // duplicates.
+  //
+  // `head` は、デプロイをまたいで開いたままの古い画面のためだけに残す。古い JS は head を
+  // 送ってくるので、比べるのをやめると保護が消える。新しい画面は revision だけを送る。
+  const revision = typeof body.revision === 'string' ? body.revision : undefined;
+  const head = typeof body.head === 'string' ? body.head : undefined;
+  if (action !== 'create' && revision === undefined && head === undefined) {
+    return jsonError('一覧の版がありません。一覧を再読み込みしてください', 400);
   }
   try {
     const snapshot = await loadCategorySnapshot(deps);
-    if (typeof body.head === 'string' && body.head !== snapshot.head) {
-      return jsonError(STALE_LIST_MESSAGE, 409, { head: snapshot.head });
+    const stale = revision !== undefined
+      ? revision !== snapshot.revision
+      : head !== undefined && head !== snapshot.head;
+    if (stale) {
+      // code は画面が「古い一覧だった」と他の 409（同名が既にある等）から見分けるためのもの
+      return jsonError(STALE_LIST_MESSAGE, 409, {
+        code: 'stale_list',
+        head: snapshot.head,
+        revision: snapshot.revision,
+      });
     }
     const change = applyCategoryAction(action, snapshot.dataset, body);
     const commit = await commitCategoryChange(snapshot, change, deps);

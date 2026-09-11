@@ -70,6 +70,37 @@ test('loadCategorySnapshot reads every file at the branch head it fetched first'
   assert.equal(snapshot.original.colors, '{\n  "乗り物": "#222222",\n  "動物": "#111111"\n}\n');
 });
 
+test('loadCategorySnapshot: revision はカテゴリの材料 3 ファイルの版で、head だけが動いても変わらない', async () => {
+  const { deps: plain } = deps();
+  const snapshot = await loadCategorySnapshot(plain);
+  assert.equal(
+    snapshot.revision,
+    [CATEGORY_FILE_PATHS.csv, CATEGORY_FILE_PATHS.translations, CATEGORY_FILE_PATHS.colors]
+      .map((path) => `sha-${path}`)
+      .join(':'),
+  );
+
+  // bot の sync コミットは英語・韓国語の CSV と JSON だけを書き、材料の 3 ファイルに触れない。
+  // head が動いても版は同じでなければならない（2026-09-11、4e05d30 → 84d05be で 3 ファイルの
+  // blob SHA が変わっていないことを git で確認）
+  const synced = await loadCategorySnapshot(deps({ getBranchHead: async () => 'sync-sha' }).deps);
+  assert.notEqual(synced.head, snapshot.head);
+  assert.equal(synced.revision, snapshot.revision);
+
+  // 材料のどれか 1 つでも変われば版も変わる
+  for (const changed of Object.values(CATEGORY_FILE_PATHS)) {
+    const edited = await loadCategorySnapshot(
+      deps({
+        fetchFile: async (path, config, timeout, ref) => {
+          const file = await plain.fetchFile(path, config, timeout, ref);
+          return path === changed ? { ...file, sha: 'edited-sha' } : file;
+        },
+      }).deps,
+    );
+    assert.notEqual(edited.revision, snapshot.revision, `${changed} の変更で版が変わる`);
+  }
+});
+
 test('buildCategoryCommitFiles includes only the files an operation changed', async () => {
   const snapshot = await loadCategorySnapshot(deps().deps);
   const rename = renameCategory(snapshot.dataset, { from: '動物', to: '生き物', en: 'Creature', ko: '생물' });

@@ -65,7 +65,7 @@ async function setup() {
       }
       if (url === '/api/admin/next-id') return Response.json({ success: true, nextId: '0003' });
       if (url === '/api/categories' && (init?.method ?? 'GET') === 'GET') {
-        return new Response(JSON.stringify({ success: true, head: 'h', colors: {}, categories }), { status: 200 });
+        return new Response(JSON.stringify({ success: true, head: 'h', revision: 'r', colors: {}, categories }), { status: 200 });
       }
       if (url === '/api/categories') {
         return new Response(JSON.stringify(renameResponse ?? { success: true, message: 'changed', changedRows: 0 }), { status: 200 });
