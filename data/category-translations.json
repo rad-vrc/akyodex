@@ -1199,9 +1199,9 @@
     "en": "Color/Yellow",
     "ko": "색상/노랑"
   },
-  "色/黒": {
-    "en": "Color/Black",
-    "ko": "색상/검정"
+  "色/黒色系": {
+    "en": "Color/Black Tones",
+    "ko": "색상/검은색 계열"
   },
   "芸術": {
     "en": "Art",
