@@ -21,6 +21,9 @@ async function setup(role: 'owner' | 'admin') {
   const confirms: string[] = [];
   let confirmAnswer = true;
   let listRevision = 'r';
+  // 一覧の読み直しを握れるようにする。読み直しの途中の画面は、応答が戻る前でないと見られない
+  let holdList = false;
+  const listReleases: (() => void)[] = [];
   // API は enDisplay / koDisplay（実データに出る名前。未対訳なら日本語のまま）も返す
   let categories = [
     { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 3 },
@@ -52,6 +55,7 @@ async function setup(role: 'owner' | 'admin') {
       const method = init?.method ?? 'GET';
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (method === 'GET') {
+        if (holdList) await new Promise<void>((resolve) => { listReleases.push(resolve); });
         return new Response(JSON.stringify({ success: true, head: 'h', revision: listRevision, categories, colors: { '動物': '#607d8b', '乗り物': '#222222', '未翻訳': '#222222' } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -128,6 +132,17 @@ async function setup(role: 'owner' | 'admin') {
     },
     setRevision: (next: string) => {
       listRevision = next;
+    },
+    holdList: () => {
+      holdList = true;
+    },
+    releaseList: async () => {
+      holdList = false;
+      await act(async () => {
+        for (const release of listReleases.splice(0)) release();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      await flush();
     },
   };
 }
@@ -357,6 +372,103 @@ test('一覧から直接の削除が古い一覧だったら、一覧を読み�
       'new-rev',
       '読み直した版で送る',
     );
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * 断られたフォームは、対象の行の中に描かれる。読み直した一覧にその行が無いと（ほかで改名・
+ * 統合・削除された＝版が古くなる典型的な理由）フォームごと消え、断られた理由も見えず、
+ * 成功して閉じたのと見分けが付かなかった（2026-09-11 に実測: 表示 0 件）。
+ */
+test('断られたフォームの対象が読み直した一覧に無ければ、一覧の上で無くなったことと反映していないことを言う', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    // 開いている間に、ほかの管理者が 動物/うま を消した
+    h.setCategories(
+      [
+        { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 3 },
+        { path: '動物/Pony', en: 'Animal/Pony', ko: '동물/포니', enDisplay: 'Animal/Pony', koDisplay: '동물/포니', count: 0 },
+        { path: '乗り物', en: 'Vehicle', ko: '탈것', enDisplay: 'Vehicle', koDisplay: '탈것', count: 1 },
+        { path: '動物/とかげ', en: 'Animal/Lizard', ko: null, enDisplay: 'Animal/Lizard', koDisplay: '동물/とかげ', count: 0 },
+        { path: '未翻訳', en: null, ko: null, enDisplay: '未翻訳', koDisplay: '未翻訳', count: 1 },
+      ],
+      'new-rev',
+    );
+    h.setPostResponse(() => new Response(JSON.stringify({ success: false, code: 'stale_list', error: 'x', revision: 'new-rev' }), { status: 409 }));
+    await h.type('category-editor-rename-ja', '動物/ウマ');
+    await h.click(h.buttons('決定')[0]);
+
+    assert.equal(h.win.document.getElementById('category-editor-rename-ja'), null, '対象の行が無いのでフォームは描けない');
+    const alerts = [...h.win.document.querySelectorAll('[role="alert"]')].map((alert) => alert.textContent ?? '');
+    assert.equal(alerts.length, 1, '理由が 1 か所に出る');
+    assert.match(alerts[0], /「動物\/うま」は、ほかで改名・統合・削除されて一覧から無くなりました/);
+    assert.match(alerts[0], /変更は反映していません/);
+
+    // 別のフォームを開けば、その知らせは消える（古いフォームはもう無い）
+    await h.click(h.rowButton('乗り物', '子を追加'));
+    assert.equal(h.win.document.querySelectorAll('[role="alert"]').length, 0);
+    assert.equal(h.buttons('作成する')[0].disabled, false);
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * 断られたあとの読み直しが終わるまで、行のボタンは押せない。押せると、開き直したフォームも
+ * 押し直した削除も読み直し前の古い版を掴み、同じ理由でもう一度断られる（2026-09-11 に
+ * 実測: 開き直し・削除とも古い版を再送した）。
+ */
+test('断られたあとの読み直しが終わるまで行のボタンは押せず、終われば新しい版で送れる', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    h.setRevision('new-rev');
+    h.setPostResponse(() => new Response(JSON.stringify({ success: false, code: 'stale_list', error: 'x', revision: 'new-rev' }), { status: 409 }));
+    h.holdList();
+    await h.click(h.buttons('決定')[0]);
+
+    for (const label of ['子を追加', '改名・対訳', '色', '統合', '削除']) {
+      assert.equal(h.rowButton('乗り物', label).disabled, true, `読み直し中は「${label}」を押せない`);
+    }
+    await h.releaseList();
+    for (const label of ['子を追加', '改名・対訳', '色', '統合', '削除']) {
+      assert.equal(h.rowButton('乗り物', label).disabled, false, `読み直しが終われば「${label}」を押せる`);
+    }
+
+    h.setPostResponse(() => new Response(JSON.stringify({ success: true, message: 'ok', changedRows: 0 }), { status: 200 }));
+    await h.click(h.buttons('キャンセル')[0]);
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    await h.type('category-editor-rename-ja', '動物/ウマ');
+    await h.click(h.buttons('決定')[0]);
+    assert.equal(h.calls.filter((call) => call.method === 'POST').at(-1)?.body?.revision, 'new-rev', '読み直した版で送る');
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * 「断られた」はそのフォームだけの状態。閉じずに別の行のフォームを開いたら、新しいフォームは
+ * 押せて、読み直した版で送る。持ち越すと、別の行の操作まで押せなくなる（持ち越す変異を
+ * 入れても既存テストが全部通っていた。muse の指摘）。
+ */
+test('断られたフォームを閉じずに別の行のフォームを開くと、新しいフォームは押せて新しい版で送る', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    h.setRevision('new-rev');
+    h.setPostResponse(() => new Response(JSON.stringify({ success: false, code: 'stale_list', error: 'x', revision: 'new-rev' }), { status: 409 }));
+    await h.click(h.buttons('決定')[0]);
+    assert.equal(h.buttons('決定')[0].disabled, true, '前提: 断られたフォームは押せない');
+
+    await h.click(h.rowButton('乗り物', '子を追加'));
+    assert.equal(h.buttons('作成する')[0].disabled, false, '別の行のフォームは押せる');
+    await h.type('category-editor-create-ja', 'ふね');
+    h.setPostResponse(() => new Response(JSON.stringify({ success: true, message: 'ok', changedRows: 0 }), { status: 200 }));
+    await h.click(h.buttons('作成する')[0]);
+    assert.equal(h.calls.filter((call) => call.method === 'POST').at(-1)?.body?.revision, 'new-rev');
   } finally {
     await h.cleanup();
   }

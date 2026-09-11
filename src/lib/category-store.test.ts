@@ -11,6 +11,7 @@ import {
   parseCategoryTranslations,
   type CategoryStoreDeps,
 } from './category-store';
+import syncCatalog from '../../scripts/sync-catalog-data.js';
 
 const CSV = [
   'ID,Nickname,AvatarName,Category,Comment,Author,AvatarURL',
@@ -99,6 +100,21 @@ test('loadCategorySnapshot: revision はカテゴリの材料 3 ファイルの�
     );
     assert.notEqual(edited.revision, snapshot.revision, `${changed} の変更で版が変わる`);
   }
+});
+
+/*
+ * 版が sync の bot コミットで動かないのは、sync が許可リストに載ったファイルしかコミット
+ * しないから。材料をリストに足すと、カテゴリを変えるたびに約 40 秒後に版が動き、続けた
+ * 操作が材料は変わっていないのに 409 になる（2026-09-11 の不具合がそのまま戻る）。
+ */
+test('sync の許可リストに、カテゴリの材料 3 ファイルは入っていない', () => {
+  const inputs: readonly string[] = Object.values(CATEGORY_FILE_PATHS);
+  assert.ok(syncCatalog.generatedPaths.length > 0, '許可リストが読めていること');
+  assert.deepEqual(
+    syncCatalog.generatedPaths.filter((path: string) => inputs.includes(path)),
+    [],
+    'sync がコミットしてよいファイルに、版の材料を入れない',
+  );
 });
 
 test('buildCategoryCommitFiles includes only the files an operation changed', async () => {
