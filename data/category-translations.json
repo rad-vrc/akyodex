@@ -1191,6 +1191,10 @@
     "en": "Color/Purple",
     "ko": "색상/보라"
   },
+  "色/緑色系": {
+    "en": "Color/Green Tones",
+    "ko": "색상/초록색 계열"
+  },
   "色/虹色系": {
     "en": "Color/Rainbow",
     "ko": "색상/무지개"
