@@ -55,7 +55,7 @@ async function setup(options: { blockedIds?: Set<string>; categories?: Entry[] }
     fetch: async (url: string, init?: RequestInit) => {
       if (url === '/api/categories' && (init?.method ?? 'GET') === 'GET') {
         listLoads += 1;
-        return new Response(JSON.stringify({ success: true, head: `h${listLoads}`, colors: {}, categories }), { status: 200 });
+        return new Response(JSON.stringify({ success: true, head: `h${listLoads}`, revision: `r${listLoads}`, colors: {}, categories }), { status: 200 });
       }
       if (url === '/api/categories') {
         categoryPosts.push(JSON.parse(String(init?.body)));
@@ -258,7 +258,7 @@ test('translations stay editable while assignments are held; renaming and deleti
     await h.type('category-editor-rename-en', 'Untranslated');
     await h.type('category-editor-rename-ko', '미번역');
     await h.click(h.buttons('決定')[0]);
-    assert.deepEqual(h.categoryPosts.at(-1), { action: 'translate', path: '未翻訳', en: 'Untranslated', ko: '미번역', head: 'h1' });
+    assert.deepEqual(h.categoryPosts.at(-1), { action: 'translate', path: '未翻訳', en: 'Untranslated', ko: '미번역', revision: 'r1' });
 
     // Renaming the same category would rewrite tokens on the held rows: refused.
     await h.click(h.listRowButton('動物', '改名・対訳'));

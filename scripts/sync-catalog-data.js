@@ -2,6 +2,9 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const { appendFileSync } = require('node:fs');
 const { setTimeout: delay } = require('node:timers/promises');
 
+// カテゴリの材料（data/akyo-data-ja.csv / data/category-translations.json /
+// src/lib/category-colors.json）はここに入れない。カテゴリ編集の古い一覧判定は、この 3 ファイルが
+// sync で変わらないことを前提にしている（src/lib/category-store.ts の revision。テストで固定）
 const generatedPaths = [
   'data/akyo-data-ja.json', 'data/akyo-data-en.json', 'data/akyo-data-ko.json',
   'data/akyo-data-en.csv', 'data/akyo-data-ko.csv',
@@ -69,4 +72,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { syncCatalogData };
+module.exports = { syncCatalogData, generatedPaths };

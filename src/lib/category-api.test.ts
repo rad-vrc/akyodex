@@ -39,6 +39,7 @@ test('GET builds the list with counts, translations and colours', async () => {
   const { status, body } = await json(await buildCategoryListResponse(deps().deps));
   assert.equal(status, 200);
   assert.equal(body.head, 'head-sha');
+  assert.equal(body.revision, 'x:x:x', '一覧は材料の版も返す');
   assert.deepEqual(body.categories, [
     { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 1 },
     {
@@ -114,11 +115,13 @@ test('POST create accepts a category with no translation at all', async () => {
   assert.deepEqual(written['動物/ねこ'], { en: null, ko: null }, 'キーは作る（未登録扱いにしない）');
 });
 
-test('POST checks the head the list was read from before applying a change', async () => {
+// デプロイをまたいで開いたままの古い画面は revision を知らず head を送ってくる。そこで比べるのを
+// やめると保護が消えるので、revision が無いときだけ head をこれまでどおり比べる
+test('POST: revision を持たない古い画面の head も、これまでどおり比べる', async () => {
   const { deps: d, commits } = deps();
   const missing = await json(await processCategoryRequest({ action: 'delete', path: '動物/うま' }, 'owner', d));
   assert.equal(missing.status, 400);
-  assert.match(String(missing.body.error), /head/);
+  assert.match(String(missing.body.error), /版/);
   const stale = await json(await processCategoryRequest({ action: 'delete', path: '動物/うま', head: 'old-sha' }, 'owner', d));
   assert.equal(stale.status, 409);
   assert.equal(stale.body.head, 'head-sha');
@@ -129,6 +132,61 @@ test('POST checks the head the list was read from before applying a change', asy
   // create may omit head (the picker modal has no list); a wrong head is still refused.
   assert.equal((await processCategoryRequest({ action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이' }, 'admin', d)).status, 200);
   assert.equal((await processCategoryRequest({ action: 'create', path: '動物/いぬ', en: 'Dog', ko: '개', head: 'old-sha' }, 'admin', d)).status, 409);
+});
+
+/*
+ * 一覧の版（revision）で古い画面を止める。材料の 3 ファイルが変わっていなければ、main の
+ * head が動いていても通す（2026-09-11、色/黒 の改名の 43 秒後に入った bot の sync コミット
+ * だけで、同じ一覧からの 色/青色系 の作成が 409 になり続けた）。
+ */
+test('POST は revision で古い一覧を止め、head だけが動いた sync では止めない', async () => {
+  // 改名の直後に読んだ一覧
+  const atRename = deps();
+  atRename.deps.getBranchHead = async () => 'rename-sha';
+  const list = await json(await buildCategoryListResponse(atRename.deps));
+  assert.equal(list.body.head, 'rename-sha');
+
+  // そのあと sync が head だけを動かした。材料の 3 ファイルは同じ
+  const afterSync = deps();
+  afterSync.deps.getBranchHead = async () => 'sync-sha';
+  const renamed = await json(await processCategoryRequest(
+    { action: 'rename', from: '動物', to: '生き物', en: 'Creature', ko: '생물', revision: list.body.revision },
+    'owner',
+    afterSync.deps,
+  ));
+  assert.equal(renamed.status, 200, '材料が変わっていないなら古い一覧として扱わない');
+  const created = await json(await processCategoryRequest(
+    { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', revision: list.body.revision },
+    'admin',
+    afterSync.deps,
+  ));
+  assert.equal(created.status, 200);
+
+  // 材料が変わっていれば止める。画面が他の 409（同名が既にある等）と見分けられるように
+  // code を付け、新しい版も返す
+  const edited = deps();
+  const plainFetch = edited.deps.fetchFile;
+  edited.deps.fetchFile = async (path, config, timeout, ref) => {
+    const file = await plainFetch(path, config, timeout, ref);
+    return path === CATEGORY_FILE_PATHS.translations ? { ...file, sha: 'edited' } : file;
+  };
+  const stale = await json(await processCategoryRequest(
+    { action: 'create', path: '動物/いぬ', en: 'Dog', ko: '개', revision: list.body.revision },
+    'admin',
+    edited.deps,
+  ));
+  assert.equal(stale.status, 409);
+  assert.equal(stale.body.code, 'stale_list');
+  assert.equal(stale.body.revision, 'x:edited:x');
+  assert.equal(edited.commits.length, 0);
+
+  // revision があれば head は見ない。古い head が混ざっていても版で決める
+  const both = await json(await processCategoryRequest(
+    { action: 'delete', path: '動物/うま', revision: list.body.revision, head: 'rename-sha' },
+    'owner',
+    afterSync.deps,
+  ));
+  assert.equal(both.status, 200);
 });
 
 test('POST translate is open to admins while rename of the same category is not', async () => {

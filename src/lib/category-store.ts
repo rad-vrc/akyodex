@@ -36,6 +36,19 @@ export const CATEGORY_FILE_PATHS = {
 export interface CategorySnapshot {
   /** Commit every file was read from; the write goes on top of exactly this commit. */
   head: string;
+  /**
+   * 一覧が見ていたカテゴリの材料（日本語 CSV・対訳・色）の版。3 ファイルの blob SHA を並べる。
+   *
+   * 古い画面からの変更を止めるのに head は使わない。head は main のどのコミットでも動き、
+   * カテゴリを変えるたびに走る自動 sync の bot コミットでも 1 分以内に動く。head で比べると、
+   * 変更の直後に続けた操作が、材料は何も変わっていないのに 409 になる（2026-09-11、色/黒 の
+   * 改名の 43 秒後に sync が入り、同じ一覧から 色/青色系 を作れなくなった）。
+   *
+   * 版が sync で動かないのは、sync（scripts/sync-catalog-data.js）が許可リスト
+   * `generatedPaths` に載ったファイルしかコミットせず、リスト外が変わると止まるから。
+   * 材料の 3 ファイルはそのリストに無い（category-store.test.ts で固定）。
+   */
+  revision: string;
   dataset: CategoryDataset;
   /** Canonical serializations of what was read, to skip files an operation left unchanged. */
   original: { translations: string; colors: string };
@@ -138,6 +151,7 @@ export async function loadCategorySnapshot(deps: CategoryStoreDeps = defaultDeps
   };
   return {
     head,
+    revision: [csv.sha, translations.sha, colors.sha].join(':'),
     dataset,
     original: {
       translations: serializeCategoryTranslations(dataset.translations),

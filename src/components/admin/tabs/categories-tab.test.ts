@@ -20,7 +20,10 @@ async function setup(role: 'owner' | 'admin') {
   const calls: Call[] = [];
   const confirms: string[] = [];
   let confirmAnswer = true;
-  let listHead = 'h';
+  let listRevision = 'r';
+  // 一覧の読み直しを握れるようにする。読み直しの途中の画面は、応答が戻る前でないと見られない
+  let holdList = false;
+  const listReleases: (() => void)[] = [];
   // API は enDisplay / koDisplay（実データに出る名前。未対訳なら日本語のまま）も返す
   let categories = [
     { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 3 },
@@ -52,7 +55,8 @@ async function setup(role: 'owner' | 'admin') {
       const method = init?.method ?? 'GET';
       calls.push({ url, method, body: init?.body ? JSON.parse(String(init.body)) : undefined });
       if (method === 'GET') {
-        return new Response(JSON.stringify({ success: true, head: listHead, categories, colors: { '動物': '#607d8b', '乗り物': '#222222', '未翻訳': '#222222' } }), {
+        if (holdList) await new Promise<void>((resolve) => { listReleases.push(resolve); });
+        return new Response(JSON.stringify({ success: true, head: 'h', revision: listRevision, categories, colors: { '動物': '#607d8b', '乗り物': '#222222', '未翻訳': '#222222' } }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
         });
@@ -122,9 +126,23 @@ async function setup(role: 'owner' | 'admin') {
     setPostResponse: (factory: () => Response) => {
       postResponse = factory;
     },
-    setCategories: (next: typeof categories, nextHead?: string) => {
+    setCategories: (next: typeof categories, nextRevision?: string) => {
       categories = next;
-      if (nextHead) listHead = nextHead;
+      if (nextRevision) listRevision = nextRevision;
+    },
+    setRevision: (next: string) => {
+      listRevision = next;
+    },
+    holdList: () => {
+      holdList = true;
+    },
+    releaseList: async () => {
+      holdList = false;
+      await act(async () => {
+        for (const release of listReleases.splice(0)) release();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      await flush();
     },
   };
 }
@@ -154,7 +172,7 @@ test('lists categories from the API, then renames with leaf translations and rel
     await h.type('category-editor-rename-en', 'Horse');
     await h.click(h.buttons('決定')[0]);
     const post = h.calls.find((call) => call.method === 'POST');
-    assert.deepEqual(post?.body, { action: 'rename', from: '動物/うま', to: '動物/ウマ', en: 'Horse', ko: '말', head: 'h' }, 'the head the list was read from travels with the change');
+    assert.deepEqual(post?.body, { action: 'rename', from: '動物/うま', to: '動物/ウマ', en: 'Horse', ko: '말', revision: 'r' }, 'the revision the list was read from travels with the change');
     assert.equal(h.calls.filter((call) => call.method === 'GET').length, 2, 'the list is reloaded after a commit');
     assert.match(h.win.document.body.textContent!, /done/);
     assert.ok(h.win.document.querySelector('a[href="https://github.com/x/commit/1"]'));
@@ -172,7 +190,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
     await h.type('category-editor-create-en', 'Cat');
     await h.type('category-editor-create-ko', '고양이');
     await h.click(h.buttons('作成する')[0]);
-    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', ancestors: [], head: 'h' });
+    assert.deepEqual(h.calls.at(-2)?.body, { action: 'create', path: '動物/ねこ', en: 'Cat', ko: '고양이', ancestors: [], revision: 'r' });
 
     // 途中の階層が無い名前を打つと、その階層の対訳も一緒に訊いて 1 回で作る
     await h.click(h.rowButton('動物', '子を追加'));
@@ -189,7 +207,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
       en: 'Parakeet',
       ko: '잉꼬',
       ancestors: [{ path: '動物/とり', en: 'Bird', ko: '새' }],
-      head: 'h',
+      revision: 'r',
     });
 
     // 画面が見せた階層と、送るパスを一致させる。原文のままだと末尾が祖先の一覧からも
@@ -207,7 +225,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
       en: 'Sparrow',
       ko: '참새',
       ancestors: [{ path: '動物/とり', en: 'Bird', ko: '새' }],
-      head: 'h',
+      revision: 'r',
     });
 
     // 大文字小文字だけが違う階層は、並ぶと見分けが付かないので送らせない。
@@ -235,7 +253,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
     assert.equal(h.calls.filter((call) => call.body?.action === 'merge').length, 0, 'cancelling the confirm sends nothing');
     h.setConfirm(true);
     await h.click(h.buttons('統合する')[0]);
-    assert.deepEqual(h.calls.find((call) => call.body?.action === 'merge')?.body, { action: 'merge', from: '乗り物', into: '動物', head: 'h' });
+    assert.deepEqual(h.calls.find((call) => call.body?.action === 'merge')?.body, { action: 'merge', from: '乗り物', into: '動物', revision: 'r' });
 
     h.setConfirm(false);
     await h.click(h.rowButton('動物', '削除'));
@@ -243,7 +261,7 @@ test('create under a parent sends the full path; merge and delete confirm with t
     assert.equal(h.calls.filter((call) => call.body?.action === 'delete').length, 0);
     h.setConfirm(true);
     await h.click(h.rowButton('動物', '削除'));
-    assert.deepEqual(h.calls.find((call) => call.body?.action === 'delete')?.body, { action: 'delete', path: '動物', head: 'h' });
+    assert.deepEqual(h.calls.find((call) => call.body?.action === 'delete')?.body, { action: 'delete', path: '動物', revision: 'r' });
   } finally {
     await h.cleanup();
   }
@@ -275,13 +293,13 @@ test('shows the server error inside the editor and keeps it open; admins cannot 
     assert.equal(ja.disabled, true);
     await admin.type('category-editor-rename-en', 'Beast');
     await admin.click(admin.buttons('決定')[0]);
-    assert.deepEqual(admin.calls.find((call) => call.method === 'POST')?.body, { action: 'translate', path: '動物', en: 'Beast', ko: '동물', head: 'h' });
+    assert.deepEqual(admin.calls.find((call) => call.method === 'POST')?.body, { action: 'translate', path: '動物', en: 'Beast', ko: '동물', revision: 'r' });
   } finally {
     await admin.cleanup();
   }
 });
 
-test('a form keeps the head it was opened on: refreshing the list must not lend it a newer one', async () => {
+test('a form keeps the revision it was opened on: refreshing the list must not lend it a newer one', async () => {
   const h = await setup('owner');
   try {
     await h.click(h.rowButton('動物/うま', '改名・対訳'));
@@ -294,28 +312,163 @@ test('a form keeps the head it was opened on: refreshing the list must not lend 
         { path: '乗り物', en: 'Vehicle', ko: '탈것', enDisplay: 'Vehicle', koDisplay: '탈것', count: 1 },
         { path: '未翻訳', en: null, ko: null, enDisplay: '未翻訳', koDisplay: '未翻訳', count: 1 },
       ],
-      'new-head',
+      'new-rev',
     );
     await h.click(h.win.document.querySelector<HTMLButtonElement>('[aria-label="最新のカテゴリを再取得"]')!);
     assert.match(h.rowOf('動物/うま').textContent!, /Animal\/Equine/, 'the list shows the newer name');
     assert.ok(h.win.document.getElementById('category-editor-rename-ja'), 'the form is still open');
-    // What the server does with a stale head.
-    const staleResponse = () => new Response(JSON.stringify({ success: false, error: '一覧を表示してから他の更新が入りました', head: 'new-head' }), { status: 409 });
+    // What the server does with a stale revision.
+    const staleResponse = () => new Response(JSON.stringify({ success: false, code: 'stale_list', error: '一覧を表示してから他の更新が入りました', revision: 'new-rev' }), { status: 409 });
     const okResponse = () => new Response(JSON.stringify({ success: true, message: 'done', commitUrl: 'https://github.com/x/commit/2', changedRows: 2 }), { status: 200 });
     h.setPostResponse(staleResponse);
+    const getsBeforeStale = h.calls.filter((call) => call.method === 'GET').length;
     await h.click(h.buttons('決定')[0]);
     const post = h.calls.find((call) => call.method === 'POST');
-    assert.equal(post?.body?.head, 'h', 'the stale form still claims the head it was opened on, so the server rejects it');
+    assert.equal(post?.body?.revision, 'r', 'the stale form still claims the revision it was opened on, so the server rejects it');
+    assert.equal(post?.body?.head, undefined, 'head は送らない。main が動いただけで古い扱いになるため');
     assert.equal(post?.body?.en, 'Horse');
-    assert.match(h.win.document.querySelector('[role="alert"]')!.textContent!, /他の更新が入りました/);
-    // Reopening after the refresh picks up the newer head and the newer translation.
+    // 古いと断られたフォームは、何度押しても同じ理由で断られる。押せなくして一覧を読み直し、
+    // 開き直すよう言う。以前は「再読み込みしてやり直して」とだけ出て、再取得ボタンを押しても
+    // フォームの版は古いままなので、押すたびに同じ警告が出て何も変わらなかった（2026-09-11）
+    assert.match(h.win.document.querySelector('[role="alert"]')!.textContent!, /キャンセルしてから開き直してください/);
+    assert.equal(h.calls.filter((call) => call.method === 'GET').length, getsBeforeStale + 1, '断られたら一覧を読み直す');
+    assert.equal(h.buttons('決定')[0].disabled, true, '古いフォームは押せない');
+    const postsBefore = h.calls.filter((call) => call.method === 'POST').length;
+    await h.click(h.buttons('決定')[0]);
+    assert.equal(h.calls.filter((call) => call.method === 'POST').length, postsBefore, '押しても送らない');
+    // Reopening picks up the newer revision and the newer translation.
     h.setPostResponse(okResponse);
     await h.click(h.buttons('キャンセル')[0]);
     await h.click(h.rowButton('動物/うま', '改名・対訳'));
     assert.equal((h.win.document.getElementById('category-editor-rename-en') as HTMLInputElement).value, 'Equine');
     await h.type('category-editor-rename-ja', '動物/ウマ');
     await h.click(h.buttons('決定')[0]);
-    assert.equal(h.calls.filter((call) => call.method === 'POST').at(-1)?.body?.head, 'new-head');
+    assert.equal(h.calls.filter((call) => call.method === 'POST').at(-1)?.body?.revision, 'new-rev');
+  } finally {
+    await h.cleanup();
+  }
+});
+
+test('一覧から直接の削除が古い一覧だったら、一覧を読み直し、押し直せば新しい版で送る', async () => {
+  const h = await setup('owner');
+  try {
+    h.setPostResponse(() => new Response(JSON.stringify({
+      success: false,
+      code: 'stale_list',
+      revision: 'new-rev',
+      error: '一覧を表示してから他の更新が入りました。再読み込みして内容を確認してからやり直してください',
+    }), { status: 409 }));
+    h.setRevision('new-rev');
+    const getsBefore = h.calls.filter((call) => call.method === 'GET').length;
+    await h.click(h.rowButton('乗り物', '削除'));
+    assert.equal(h.calls.filter((call) => call.body?.action === 'delete').at(-1)?.body?.revision, 'r');
+    assert.match(h.win.document.body.textContent!, /内容を確認してからもう一度操作してください/);
+    assert.equal(h.calls.filter((call) => call.method === 'GET').length, getsBefore + 1, '断られたら一覧を読み直す');
+
+    h.setPostResponse(() => new Response(JSON.stringify({ success: true, message: 'deleted', changedRows: 1 }), { status: 200 }));
+    await h.click(h.rowButton('乗り物', '削除'));
+    assert.equal(
+      h.calls.filter((call) => call.body?.action === 'delete').at(-1)?.body?.revision,
+      'new-rev',
+      '読み直した版で送る',
+    );
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * 断られたフォームは、対象の行の中に描かれる。読み直した一覧にその行が無いと（ほかで改名・
+ * 統合・削除された＝版が古くなる典型的な理由）フォームごと消え、断られた理由も見えず、
+ * 成功して閉じたのと見分けが付かなかった（2026-09-11 に実測: 表示 0 件）。
+ */
+test('断られたフォームの対象が読み直した一覧に無ければ、一覧の上で無くなったことと反映していないことを言う', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    // 開いている間に、ほかの管理者が 動物/うま を消した
+    h.setCategories(
+      [
+        { path: '動物', en: 'Animal', ko: '동물', enDisplay: 'Animal', koDisplay: '동물', count: 3 },
+        { path: '動物/Pony', en: 'Animal/Pony', ko: '동물/포니', enDisplay: 'Animal/Pony', koDisplay: '동물/포니', count: 0 },
+        { path: '乗り物', en: 'Vehicle', ko: '탈것', enDisplay: 'Vehicle', koDisplay: '탈것', count: 1 },
+        { path: '動物/とかげ', en: 'Animal/Lizard', ko: null, enDisplay: 'Animal/Lizard', koDisplay: '동물/とかげ', count: 0 },
+        { path: '未翻訳', en: null, ko: null, enDisplay: '未翻訳', koDisplay: '未翻訳', count: 1 },
+      ],
+      'new-rev',
+    );
+    h.setPostResponse(() => new Response(JSON.stringify({ success: false, code: 'stale_list', error: 'x', revision: 'new-rev' }), { status: 409 }));
+    await h.type('category-editor-rename-ja', '動物/ウマ');
+    await h.click(h.buttons('決定')[0]);
+
+    assert.equal(h.win.document.getElementById('category-editor-rename-ja'), null, '対象の行が無いのでフォームは描けない');
+    const alerts = [...h.win.document.querySelectorAll('[role="alert"]')].map((alert) => alert.textContent ?? '');
+    assert.equal(alerts.length, 1, '理由が 1 か所に出る');
+    assert.match(alerts[0], /「動物\/うま」は、ほかで改名・統合・削除されて一覧から無くなりました/);
+    assert.match(alerts[0], /変更は反映していません/);
+
+    // 別のフォームを開けば、その知らせは消える（古いフォームはもう無い）
+    await h.click(h.rowButton('乗り物', '子を追加'));
+    assert.equal(h.win.document.querySelectorAll('[role="alert"]').length, 0);
+    assert.equal(h.buttons('作成する')[0].disabled, false);
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * 断られたあとの読み直しが終わるまで、行のボタンは押せない。押せると、開き直したフォームも
+ * 押し直した削除も読み直し前の古い版を掴み、同じ理由でもう一度断られる（2026-09-11 に
+ * 実測: 開き直し・削除とも古い版を再送した）。
+ */
+test('断られたあとの読み直しが終わるまで行のボタンは押せず、終われば新しい版で送れる', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    h.setRevision('new-rev');
+    h.setPostResponse(() => new Response(JSON.stringify({ success: false, code: 'stale_list', error: 'x', revision: 'new-rev' }), { status: 409 }));
+    h.holdList();
+    await h.click(h.buttons('決定')[0]);
+
+    for (const label of ['子を追加', '改名・対訳', '色', '統合', '削除']) {
+      assert.equal(h.rowButton('乗り物', label).disabled, true, `読み直し中は「${label}」を押せない`);
+    }
+    await h.releaseList();
+    for (const label of ['子を追加', '改名・対訳', '色', '統合', '削除']) {
+      assert.equal(h.rowButton('乗り物', label).disabled, false, `読み直しが終われば「${label}」を押せる`);
+    }
+
+    h.setPostResponse(() => new Response(JSON.stringify({ success: true, message: 'ok', changedRows: 0 }), { status: 200 }));
+    await h.click(h.buttons('キャンセル')[0]);
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    await h.type('category-editor-rename-ja', '動物/ウマ');
+    await h.click(h.buttons('決定')[0]);
+    assert.equal(h.calls.filter((call) => call.method === 'POST').at(-1)?.body?.revision, 'new-rev', '読み直した版で送る');
+  } finally {
+    await h.cleanup();
+  }
+});
+
+/*
+ * 「断られた」はそのフォームだけの状態。閉じずに別の行のフォームを開いたら、新しいフォームは
+ * 押せて、読み直した版で送る。持ち越すと、別の行の操作まで押せなくなる（持ち越す変異を
+ * 入れても既存テストが全部通っていた。muse の指摘）。
+ */
+test('断られたフォームを閉じずに別の行のフォームを開くと、新しいフォームは押せて新しい版で送る', async () => {
+  const h = await setup('owner');
+  try {
+    await h.click(h.rowButton('動物/うま', '改名・対訳'));
+    h.setRevision('new-rev');
+    h.setPostResponse(() => new Response(JSON.stringify({ success: false, code: 'stale_list', error: 'x', revision: 'new-rev' }), { status: 409 }));
+    await h.click(h.buttons('決定')[0]);
+    assert.equal(h.buttons('決定')[0].disabled, true, '前提: 断られたフォームは押せない');
+
+    await h.click(h.rowButton('乗り物', '子を追加'));
+    assert.equal(h.buttons('作成する')[0].disabled, false, '別の行のフォームは押せる');
+    await h.type('category-editor-create-ja', 'ふね');
+    h.setPostResponse(() => new Response(JSON.stringify({ success: true, message: 'ok', changedRows: 0 }), { status: 200 }));
+    await h.click(h.buttons('作成する')[0]);
+    assert.equal(h.calls.filter((call) => call.method === 'POST').at(-1)?.body?.revision, 'new-rev');
   } finally {
     await h.cleanup();
   }
@@ -328,7 +481,7 @@ test('owner: an unchanged Japanese name sends translate instead of rename', asyn
     await h.type('category-editor-rename-en', 'Untranslated');
     await h.type('category-editor-rename-ko', '미번역');
     await h.click(h.buttons('決定')[0]);
-    assert.deepEqual(h.calls.find((call) => call.method === 'POST')?.body, { action: 'translate', path: '未翻訳', en: 'Untranslated', ko: '미번역', head: 'h' });
+    assert.deepEqual(h.calls.find((call) => call.method === 'POST')?.body, { action: 'translate', path: '未翻訳', en: 'Untranslated', ko: '미번역', revision: 'r' });
   } finally {
     await h.cleanup();
   }
@@ -370,7 +523,7 @@ test("色の差し替えは最上位だけに出て、既存の色から選ん�
   await h.click(h.buttons("色を変える")[0]);
 
   const post = h.calls.find((call) => call.method === "POST");
-  assert.deepEqual(post?.body, { action: "recolor", path: "動物", color: "#222222", head: "h" });
+  assert.deepEqual(post?.body, { action: "recolor", path: "動物", color: "#222222", revision: "r" });
 });
 
 test("同じ色のまま送らない", async (t) => {

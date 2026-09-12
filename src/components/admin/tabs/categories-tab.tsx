@@ -41,7 +41,8 @@ interface CategoryEntry {
 interface CategoryListResponse {
   success: boolean;
   error?: string;
-  head?: string;
+  /** カテゴリの材料の版。変更を送るときに、どの一覧を見て決めたかとして添える */
+  revision?: string;
   categories?: CategoryEntry[];
   colors?: Record<string, string>;
 }
@@ -49,6 +50,8 @@ interface CategoryListResponse {
 interface CategoryMutationResponse {
   success: boolean;
   error?: string;
+  /** 'stale_list' は「一覧を開いたあとにカテゴリの材料が変わったので断った」 */
+  code?: string;
   message?: string;
   commitUrl?: string;
   changedRows?: number;
@@ -58,19 +61,32 @@ interface CategoryMutationResponse {
 }
 
 /**
- * `head` is the commit the list showed when the form was opened. It travels with the form,
- * not with the list: refreshing the list while a form is open must not lend the form a newer
- * head, or a stale translation typed before the refresh would pass the server's check.
+ * `revision` is the version of the category inputs the list showed when the form was opened.
+ * It travels with the form, not with the list: refreshing the list while a form is open must
+ * not lend the form a newer revision, or a stale translation typed before the refresh would
+ * pass the server's check.
+ *
+ * だから、古いと断られたフォームは何度押しても同じ理由で断られる。`stale` で押せなくして、
+ * 開き直すよう言う（以前は「再読み込みしてやり直して」とだけ出し、再取得してもフォームの
+ * 版は古いままなので、押すたびに同じ警告が出て何も変わらなかった）。
  */
 type EditorTarget =
   | { kind: 'create'; parent: string | null }
   | { kind: 'rename'; path: string }
   | { kind: 'recolor'; path: string }
   | { kind: 'merge'; path: string };
-type Editor = EditorTarget & { head: string };
+type Editor = EditorTarget & { revision: string; stale?: boolean };
 
 const OWNER_ONLY_TITLE = '改名・色・統合・削除はらど（上位管理者）のみ使用できます';
 const LOCKED_TITLE = '保留中のカテゴリ変更を反映または取り消してから操作してください';
+const STALE_FORM_MESSAGE =
+  'フォームを開いたあとに、ほかでカテゴリが変更されました。一覧を読み直したので、キャンセルしてから開き直してください（このフォームのままでは送れません）';
+const STALE_FORM_TITLE = '古い一覧から開いたフォームです。キャンセルしてから開き直してください';
+const STALE_DELETE_MESSAGE =
+  '一覧を表示したあとに、ほかでカテゴリが変更されました。一覧を読み直したので、内容を確認してからもう一度操作してください';
+/** 断られたフォームの対象が、読み直した一覧に無い（ほかで改名・統合・削除された）とき */
+const staleGoneMessage = (path: string) =>
+  `「${path}」は、ほかで改名・統合・削除されて一覧から無くなりました。変更は反映していません。一覧を確認してから操作し直してください`;
 const PROTECTED_TITLE = 'アプリが自動で付けるカテゴリなので、ここでは付け外しできません';
 const EMPTY_IDS: ReadonlySet<string> = new Set();
 
@@ -146,7 +162,7 @@ export function CategoriesTab({
     (rows: AkyoData[], originals: AkyoEditFields[]) => {
       onRowsCommitted?.(rows, originals);
       setAssignMessageShown(true);
-      // main moved: the list counts and `head` are now older than the branch.
+      // main moved: the list counts and `revision` are now older than the branch.
       void load();
     },
     // `load` is defined below with an empty dependency list, so this stays stable.
@@ -155,9 +171,9 @@ export function CategoriesTab({
   );
   const [entries, setEntries] = useState<CategoryEntry[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
-  // Commit the list was read from. Sent with every change so the server refuses an edit
-  // decided on a screen that no longer matches main (409 → reload).
-  const [head, setHead] = useState('');
+  // Version of the category inputs the list was read from. Sent with every change so the
+  // server refuses an edit decided on a screen whose categories have since changed (409).
+  const [revision, setRevision] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [query, setQuery] = useState('');
@@ -214,7 +230,7 @@ export function CategoriesTab({
       const categories = data.categories;
       setEntries(categories);
       setColors(data.colors ?? {});
-      setHead(data.head ?? '');
+      setRevision(data.revision ?? '');
       // The AND set follows the list: a renamed, merged or deleted category (by us or by
       // another admin) must not stay selectable, or a card click would write the old name back.
       setSelected((previous) => previous.filter((path) => categories.some((entry) => entry.path === path)));
@@ -226,8 +242,9 @@ export function CategoriesTab({
   }, []);
 
   // The tab stays mounted so held changes survive a tab switch, so it no longer refetches by
-  // remounting: reload whenever it becomes visible again. `head` and the list would otherwise
-  // be older than main after any commit made from another tab, and every edit would 409.
+  // remounting: reload whenever it becomes visible again. `revision` and the list would
+  // otherwise be older than the categories after a change made from another tab, and every
+  // edit would 409.
   const wasActive = useRef(false);
   useEffect(() => {
     if (active && !wasActive.current) void load();
@@ -235,6 +252,13 @@ export function CategoriesTab({
   }, [active, load]);
 
   const entriesByPath = useMemo(() => new Map(entries.map((entry) => [entry.path, entry])), [entries]);
+
+  // 断られたフォームは、対象の行の中に描かれる。読み直した一覧にその行が無い（ほかで改名・
+  // 統合・削除された＝版が古くなる典型的な理由）とフォームごと見えなくなり、断られた理由も
+  // 消えて、成功して閉じたのと見分けが付かない。そのときは一覧の上で、無くなったことと
+  // 反映していないことを言う。読み直しの途中はまだ古い一覧なので判定しない
+  const staleTarget = editor?.stale ? (editor.kind === 'create' ? editor.parent : editor.path) : null;
+  const staleTargetGone = staleTarget !== null && !loading && !entriesByPath.has(staleTarget) ? staleTarget : null;
 
   const visibleEntries = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -265,7 +289,7 @@ export function CategoriesTab({
   }, [colors]);
 
   const openEditor = (opened: EditorTarget) => {
-    const next: Editor = { ...opened, head };
+    const next: Editor = { ...opened, revision };
     setFormError('');
     setMessage('');
     setCommitUrl('');
@@ -292,7 +316,7 @@ export function CategoriesTab({
     setFormError('');
   };
 
-  const submit = async (body: Record<string, unknown>, baseHead: string) => {
+  const submit = async (body: Record<string, unknown>, baseRevision: string, source: 'form' | 'list') => {
     if (busyRef.current) return false;
     busyRef.current = true;
     setBusy(true);
@@ -303,9 +327,21 @@ export function CategoriesTab({
       const response = await fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, head: baseHead }),
+        body: JSON.stringify({ ...body, revision: baseRevision }),
       });
       const data = (await response.json()) as CategoryMutationResponse;
+      if (data.code === 'stale_list') {
+        // 一覧を読み直して、いま見えているものを最新にする。フォームの版は古いまま変えない
+        // （上の Editor の説明）ので、押せなくして開き直すよう言う。削除は一覧から直接
+        // 送るのでフォームが無く、確認し直してもう一度押せば新しい版で送られる。
+        // 読み直しが終わるまで行のボタンは押せない（押せると、開き直したフォームも押し直した
+        // 削除も読み直し前の古い版を掴み、同じ理由でもう一度断られる）
+        const fromForm = source === 'form';
+        if (fromForm) setEditor((previous) => (previous ? { ...previous, stale: true } : previous));
+        setFormError(fromForm ? STALE_FORM_MESSAGE : STALE_DELETE_MESSAGE);
+        void load();
+        return false;
+      }
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'カテゴリの更新に失敗しました');
       }
@@ -355,7 +391,8 @@ export function CategoriesTab({
           ko: form.ko.trim(),
           ancestors,
         },
-        editor.head,
+        editor.revision,
+        'form',
       );
       return;
     }
@@ -368,7 +405,7 @@ export function CategoriesTab({
         setFormError('今と同じ色です');
         return;
       }
-      await submit({ action: 'recolor', path: editor.path, color: form.color }, editor.head);
+      await submit({ action: 'recolor', path: editor.path, color: form.color }, editor.revision, 'form');
       return;
     }
     if (editor.kind === 'rename') {
@@ -378,9 +415,9 @@ export function CategoriesTab({
       // Unchanged Japanese name = translation only. That action is open to admins,
       // renaming is not, so the two must not share a request.
       if (to === editor.path) {
-        await submit({ action: 'translate', path: editor.path, en, ko }, editor.head);
+        await submit({ action: 'translate', path: editor.path, en, ko }, editor.revision, 'form');
       } else {
-        await submit({ action: 'rename', from: editor.path, to, en, ko }, editor.head);
+        await submit({ action: 'rename', from: editor.path, to, en, ko }, editor.revision, 'form');
       }
       return;
     }
@@ -397,7 +434,7 @@ export function CategoriesTab({
         'この操作は取り消せません。実行しますか？',
     );
     if (!confirmed) return;
-    await submit({ action: 'merge', from: editor.path, into }, editor.head);
+    await submit({ action: 'merge', from: editor.path, into }, editor.revision, 'form');
   };
 
   const handleDelete = async (entry: CategoryEntry) => {
@@ -414,8 +451,8 @@ export function CategoriesTab({
     );
     if (!confirmed) return;
     setEditor(null);
-    // No form here: the confirm text came from the list on screen, so its head is the base.
-    await submit({ action: 'delete', path: entry.path }, head);
+    // No form here: the confirm text came from the list on screen, so its revision is the base.
+    await submit({ action: 'delete', path: entry.path }, revision, 'list');
   };
 
   const mergeTargets = (path: string) =>
@@ -637,8 +674,8 @@ export function CategoriesTab({
           <button
             type="button"
             onClick={() => void handleSubmitEditor()}
-            disabled={busy || (locked && changesCategoryTokens(editor, form.ja))}
-            title={locked && changesCategoryTokens(editor, form.ja) ? LOCKED_TITLE : undefined}
+            disabled={busy || editor.stale || (locked && changesCategoryTokens(editor, form.ja))}
+            title={editor.stale ? STALE_FORM_TITLE : locked && changesCategoryTokens(editor, form.ja) ? LOCKED_TITLE : undefined}
             className="px-4 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
           >
             {busy ? '反映中…' : editor.kind === 'create' ? '作成する' : editor.kind === 'merge' ? '統合する' : editor.kind === 'recolor' ? '色を変える' : '決定'}
@@ -684,10 +721,16 @@ export function CategoriesTab({
           )}
         </p>
       )}
-      {formError && !editor && (
+      {staleTargetGone ? (
         <p role="alert" className="mb-4 text-sm text-red-600">
-          {formError}
+          {staleGoneMessage(staleTargetGone)}
         </p>
+      ) : (
+        formError && !editor && (
+          <p role="alert" className="mb-4 text-sm text-red-600">
+            {formError}
+          </p>
+        )
       )}
 
       {/* Always mounted: held changes and saved results must survive changing or clearing the selection. */}
@@ -815,10 +858,12 @@ export function CategoriesTab({
                           {selected.includes(entry.path) ? '✓ 選択中' : '選択'}
                         </button>
                       )}
+                      {/* 読み込み中は押せない。フォームは開いた時点の版を持ち続けるので、読み直しの
+                          途中に開くと古い版を掴み、送ると断られる（最上位の追加ボタンと同じ扱い） */}
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'create', parent: entry.path })}
-                        disabled={busy}
+                        disabled={busy || loading}
                         className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                       >
                         子を追加
@@ -826,7 +871,7 @@ export function CategoriesTab({
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'rename', path: entry.path })}
-                        disabled={busy}
+                        disabled={busy || loading}
                         className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                       >
                         {untranslated ? '対訳を登録' : isOwner ? '改名・対訳' : '対訳'}
@@ -836,7 +881,7 @@ export function CategoriesTab({
                         <button
                           type="button"
                           onClick={() => openEditor({ kind: 'recolor', path: entry.path })}
-                          disabled={busy || !isOwner}
+                          disabled={busy || loading || !isOwner}
                           title={!isOwner ? OWNER_ONLY_TITLE : undefined}
                           className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                         >
@@ -846,7 +891,7 @@ export function CategoriesTab({
                       <button
                         type="button"
                         onClick={() => openEditor({ kind: 'merge', path: entry.path })}
-                        disabled={busy || !isOwner || locked}
+                        disabled={busy || loading || !isOwner || locked}
                         title={!isOwner ? OWNER_ONLY_TITLE : locked ? LOCKED_TITLE : undefined}
                         className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
                       >
@@ -855,7 +900,7 @@ export function CategoriesTab({
                       <button
                         type="button"
                         onClick={() => void handleDelete(entry)}
-                        disabled={busy || !isOwner || locked}
+                        disabled={busy || loading || !isOwner || locked}
                         title={!isOwner ? OWNER_ONLY_TITLE : locked ? LOCKED_TITLE : undefined}
                         className="px-3 py-1.5 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50"
                       >
