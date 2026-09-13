@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-13T14:58:43.897Z",
-  "count": 955,
+  "updatedAt": "2026-09-13T15:02:32.793Z",
+  "count": 956,
   "data": [
     {
       "id": "0001",
@@ -10919,6 +10919,18 @@
       "author": "Akiaki／あきあき",
       "sourceUrl": "https://vrchat.com/home/world/wrld_83d0b827-ce14-4262-97bf-5ae77c999d4d",
       "avatarUrl": "https://vrchat.com/home/world/wrld_83d0b827-ce14-4262-97bf-5ae77c999d4d"
+    },
+    {
+      "id": "0956",
+      "entryType": "world",
+      "displaySerial": "0111",
+      "nickname": "nooktown アバター集",
+      "avatarName": "nooktown アバター集",
+      "category": "ワールド,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "comment": "ugaiさんのアバター集！\nAkyoやヒューマノイドAkyoがいるよ！",
+      "author": "uqai",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_d04ada09-06e8-4728-ac5d-796908ff6247",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_d04ada09-06e8-4728-ac5d-796908ff6247"
     }
   ]
 }
