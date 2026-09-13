@@ -2,6 +2,7 @@
 
 import { IconCheckCircle, IconCircle, IconClose, IconPlusCircle, IconSearch, IconTags } from '@/components/icons';
 import { isComposingKeyboardEvent, useModalDialog } from '@/hooks/use-modal-dialog';
+import { compareCategories } from '@/lib/akyo-data-helpers';
 import { findCreateBlocker, planCategoryCreateLevels } from '@/lib/category-create-levels';
 import { selectCategoryPath, toggleCategoryPath } from '@/lib/category-operations';
 import { useState, useEffect, useRef } from 'react';
@@ -42,6 +43,9 @@ export function AttributeModal({
   const [levelNames, setLevelNames] = useState<Record<string, { en: string; ko: string }>>({});
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  // 対応機種は登録で一番よく探すカテゴリなので、一覧の先頭に固定する。並びは図鑑の絞り込みと
+  // 同じ compareCategories（対応機種とその配下が先、残りは文字コード順）で、開いた直後・一覧の
+  // 取り直し・作成の直後のどれでも崩さない
   const [availableAttributes, setAvailableAttributes] = useState<string[]>(allAttributes);
   const dialogRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +73,7 @@ export function AttributeModal({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvailableAttributes(prev => {
       const merged = new Set([...allAttributes, ...prev]);
-      return Array.from(merged).sort();
+      return Array.from(merged).sort(compareCategories);
     });
   }, [allAttributes]);
 
@@ -173,7 +177,7 @@ export function AttributeModal({
       return;
     }
 
-    setAvailableAttributes((prev) => [...new Set([...prev, ...created])].sort());
+    setAvailableAttributes((prev) => [...new Set([...prev, ...created])].sort(compareCategories));
     // 作った末尾と、その親の階層まで選ぶ。親が既にあって作られなかった場合も同じで、
     // ここで足さないと作った直後だけ親の抜けた選択になる
     setSelectedAttributes((prev) => selectCategoryPath(prev, submittedPath));
