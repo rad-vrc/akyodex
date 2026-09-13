@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-13T15:02:32.855Z",
+  "updatedAt": "2026-09-13T15:07:46.282Z",
   "count": 956,
   "data": [
     {
@@ -8355,6 +8355,7 @@
     {
       "id": "0742",
       "entryType": "avatar",
+      "displaySerial": "0742",
       "nickname": "Colorful Spinning Akyo",
       "avatarName": "まわるAkyo",
       "category": "Gimmick・Special,Gimmick・Special/Dance,Mint Chocolate,Booth,Booth/Avatar,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS",

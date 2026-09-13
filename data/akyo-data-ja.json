@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-13T15:02:32.793Z",
+  "updatedAt": "2026-09-13T15:07:46.230Z",
   "count": 956,
   "data": [
     {
@@ -8355,7 +8355,8 @@
     {
       "id": "0742",
       "entryType": "avatar",
-      "nickname": "カラフル回転Akyo",
+      "displaySerial": "0742",
+      "nickname": "まわるAkyo",
       "avatarName": "まわるAkyo",
       "category": "ギミック・特殊,ギミック・特殊/ダンス,チョコミント類,Booth,Booth/アバター,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS",
       "comment": "なんて洗練された腰の動き！",
@@ -10828,7 +10829,7 @@
       "id": "0948",
       "entryType": "avatar",
       "displaySerial": "0840",
-      "nickname": "回転アニメAkyo",
+      "nickname": "まわるアニメAkyo",
       "avatarName": "Animated_Akyo_2026x4",
       "category": "チョコミント類,ギミック・特殊,ギミック・特殊/アニメーション,形状・触り心地,形状・触り心地/ぺらぺら,対応機種,対応機種/PC",
       "comment": "ゴールなんてないさ\n回り続けるのさ",
