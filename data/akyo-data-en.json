@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-13T15:07:46.282Z",
-  "count": 956,
+  "updatedAt": "2026-09-13T18:06:19.104Z",
+  "count": 957,
   "data": [
     {
       "id": "0001",
@@ -10932,6 +10932,18 @@
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/world/wrld_d04ada09-06e8-4728-ac5d-796908ff6247",
       "avatarUrl": "https://vrchat.com/home/world/wrld_d04ada09-06e8-4728-ac5d-796908ff6247"
+    },
+    {
+      "id": "0957",
+      "entryType": "avatar",
+      "displaySerial": "0846",
+      "nickname": "サンタ帽子のヒューマノイドAkyo",
+      "avatarName": "Humanoid Akyo（Santa hat）",
+      "category": "Supported Platform,Supported Platform/PC,Fashion・Equipment,Fashion・Equipment/Hat,Animal,Animal/Human,Season・Event,Season・Event/Winter,Season・Event/Christmas",
+      "comment": "プレゼントはAkyoだよ！",
+      "author": "uqai",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_392aea15-6d4b-42b8-8036-ddf38a5afd0c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_392aea15-6d4b-42b8-8036-ddf38a5afd0c"
     }
   ]
 }
