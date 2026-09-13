@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-13T14:48:02.973Z",
-  "count": 954,
+  "updatedAt": "2026-09-13T14:58:43.897Z",
+  "count": 955,
   "data": [
     {
       "id": "0001",
@@ -10907,6 +10907,18 @@
       "author": "yuwa1027",
       "sourceUrl": "https://vrchat.com/home/world/wrld_85c6326e-5c90-47c8-9533-ec898dca5563",
       "avatarUrl": "https://vrchat.com/home/world/wrld_85c6326e-5c90-47c8-9533-ec898dca5563"
+    },
+    {
+      "id": "0955",
+      "entryType": "world",
+      "displaySerial": "0110",
+      "nickname": "休憩処 キツネコタン 2026 Public Version",
+      "avatarName": "休憩処 キツネコタン 2026 Public Version",
+      "category": "ワールド,対応機種,対応機種/PC",
+      "comment": "キツネコタンっていうイベントで使われてるワールドのPublicバージョンが登場したよ！\nここにしかないオリジナルギミックがいっぱい！",
+      "author": "Akiaki／あきあき",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_83d0b827-ce14-4262-97bf-5ae77c999d4d",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_83d0b827-ce14-4262-97bf-5ae77c999d4d"
     }
   ]
 }
