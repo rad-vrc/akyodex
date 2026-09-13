@@ -129,3 +129,41 @@ test('AttributeModal: 作った直後は、既にある親も一緒に選ばれ�
     await teardown();
   }
 });
+
+/*
+ * 対応機種は、新しい Akyo を登録するときに一番よく探すカテゴリ。一覧の先頭に固定する。
+ * 並びは図鑑の絞り込みと同じ compareCategories（対応機種とその配下が先、残りは文字コード順）。
+ * 一覧を取り込んだとき（開く前のマウント時・親が一覧を取り直したとき）と、作った直後の
+ * 2 か所で並べ直すので、両方を押さえる。
+ */
+const optionLabels = (known: readonly string[]) =>
+  [...document.querySelectorAll('button')]
+    .map((b) => b.textContent?.trim() ?? '')
+    .filter((label) => known.includes(label));
+
+test('AttributeModal: 対応機種とその配下が一覧の先頭に来て、残りは文字コード順', async () => {
+  const given = ['動物', '乗り物', '対応機種/Quest(Android)', 'あお', '対応機種', '対応機種/PC', 'Booth'];
+  const { teardown } = await setup(given);
+  try {
+    assert.deepEqual(optionLabels(given), [
+      '対応機種', '対応機種/PC', '対応機種/Quest(Android)',
+      'Booth', 'あお', '乗り物', '動物',
+    ]);
+  } finally {
+    await teardown();
+  }
+});
+
+test('AttributeModal: カテゴリを作った直後も、対応機種が先頭のまま', async () => {
+  const given = ['動物', '対応機種/PC', 'あお', '対応機種'];
+  const { button, click, flush, type, teardown } = await setup(given);
+  try {
+    await click('新しいカテゴリを作成');
+    await type('attributeNewInput', 'あか');
+    await act(async () => button('追加する').click());
+    await flush();
+    assert.deepEqual(optionLabels([...given, 'あか']), ['対応機種', '対応機種/PC', 'あお', 'あか', '動物']);
+  } finally {
+    await teardown();
+  }
+});
