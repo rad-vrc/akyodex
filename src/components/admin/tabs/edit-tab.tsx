@@ -5,7 +5,7 @@ import { FilterPanel } from '@/components/filter-panel';
 import { SortControls } from '@/components/sort-controls';
 import { SearchBar } from '@/components/search-bar';
 import { filterCatalog } from '@/lib/catalog-filter';
-import { extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
+import { compareCategories, extractCategories, extractAuthors } from '@/lib/akyo-data-helpers';
 import { loadAdminCsvCatalog } from '@/app/zukan/catalog-data-loader';
 import type { AdminCatalogSync } from '@/lib/admin-catalog';
 import { MAX_BATCH_UPDATES, applyAkyoEditFields, getAkyoEditFields, sameAkyoEditFields, type AkyoEditFields, type PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
@@ -95,11 +95,15 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
     // Pending edits invalidate the public catalog's precomputed search fields.
     return { ...item, parsedCategory: undefined, parsedAuthor: undefined, _searchIndex: undefined };
   }), [catalogData, pending, saved]);
+  // 絞り込み一覧も、カテゴリ選択モーダルと同じく対応機種とその配下を先頭に固定する。共通の
+  // 一覧（attributes）のあとに、カタログや保留中の編集にしか無いカテゴリを継ぎ足しているので、
+  // 継ぎ足した後にここで並べる（共通の一覧だけ並べても、継ぎ足した分が末尾に残る）。
+  // 親の「対応機種」単体は図鑑の絞り込みと違って隠さない（categoriesForFilterPanel は使わない）
   const editAttributes = useMemo(() => [...new Set([
     ...attributes,
     ...extractCategories(catalogData),
     ...extractCategories(visibleData),
-  ])], [attributes, catalogData, visibleData]);
+  ])].sort(compareCategories), [attributes, catalogData, visibleData]);
   const editAuthors = useMemo(() => [...new Set([...extractAuthors(catalogData), ...extractAuthors(visibleData)])].sort(), [catalogData, visibleData]);
 
   useEffect(() => () => refreshController.current?.abort(), []);
