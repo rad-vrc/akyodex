@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-14T11:26:32.898Z",
-  "count": 958,
+  "updatedAt": "2026-09-14T11:27:26.127Z",
+  "count": 959,
   "data": [
     {
       "id": "0001",
@@ -11691,6 +11691,18 @@
       "author": "栬くん。",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e9d86ad1-170c-4bdb-814b-68288964c722",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e9d86ad1-170c-4bdb-814b-68288964c722"
+    },
+    {
+      "id": "0959",
+      "entryType": "avatar",
+      "displaySerial": "0848",
+      "nickname": "うなぎAkyo",
+      "avatarName": "akyo_うなぎ",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),레어,동물,동물/물고기,동물/해양생물,색상,색상/검은색 계열",
+      "comment": "【ささのきの手記】\n謎の魅力を持つ。よく人間に追われているが、捕まったという話は聞いたことが無い",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_956d8001-2d59-492e-9597-f1001f3347f3",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_956d8001-2d59-492e-9597-f1001f3347f3"
     }
   ]
 }
