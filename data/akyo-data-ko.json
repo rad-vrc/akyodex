@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-14T07:54:02.597Z",
-  "count": 957,
+  "updatedAt": "2026-09-14T07:54:59.191Z",
+  "count": 958,
   "data": [
     {
       "id": "0001",
@@ -11679,6 +11679,18 @@
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_392aea15-6d4b-42b8-8036-ddf38a5afd0c",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_392aea15-6d4b-42b8-8036-ddf38a5afd0c"
+    },
+    {
+      "id": "0958",
+      "entryType": "avatar",
+      "displaySerial": "0847",
+      "nickname": "爆散Akyo",
+      "avatarName": "爆散",
+      "category": "지원 기기,지원 기기/PC,쾌차를 빕니다,기믹・특수,초코민트류,기믹・특수/셰이더",
+      "comment": "爆破オチに使えそう！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e9d86ad1-170c-4bdb-814b-68288964c722",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e9d86ad1-170c-4bdb-814b-68288964c722"
     }
   ]
 }
