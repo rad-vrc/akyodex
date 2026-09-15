@@ -107,7 +107,9 @@ test('the same change made on both sides is not a conflict', async () => {
   assert.equal(f.commits.length, 1);
 });
 
-test('a category cell only reordered elsewhere does not conflict with a held category edit', async () => {
+// 比較が吸収するのは祖先の補完と重複だけ（親を子の後ろに書いた、など）。関係の無いカテゴリ同士の
+// 並び替えは、従来どおり変更として扱う
+test('a category cell that only lists a parent after its child does not conflict with a held category edit', async () => {
   const f = fixture(new Set(['動物/いぬ']));
   f.records[1][header.indexOf('Category')] = '動物/うま,動物';
   const [, second] = f.updates;
