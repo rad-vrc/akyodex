@@ -3,17 +3,18 @@
  *
  * Priority:
  * 1. R2 bucket (direct URL or binding)
- * 2. VRChat API (scrape) - using avtr ID from CSV if available
+ * 2. VRChat API (scrape) - using the avtr ID from the Akyo record (KV → R2 JSON → CSV)
  * 3. Non-cacheable error so the card can try its direct R2 fallback
  *
  * Features:
  * - Image caching (1 hour via Cache-Control headers)
  * - Size optimization (w parameter)
- * - Fallback chain with CSV lookup
+ * - Fallback chain with Akyo record lookup
  */
 
 import { connection } from 'next/server';
 import { jsonError } from '@/lib/api-helpers';
+import { getAkyoById } from '@/lib/akyo-data';
 import { VRCHAT_AVATAR_ID_PATTERN, extractVRChatAvatarIdFromUrl } from '@/lib/akyo-entry';
 import { fetchVrchatResource } from '@/lib/vrchat-resource-fetch';
 import {
@@ -33,48 +34,38 @@ function createNoStoreJsonError(message: string, status: number): Response {
 }
 
 /**
- * Fetch CSV data and find avtr ID for given Akyo ID
+ * Akyo ID から VRChat の avtr ID を引く。
+ *
+ * データは他の API ルートと同じ getAkyoById（KV → R2 JSON → CSV）から取る。
+ * 以前は R2 の `akyo-data/akyo-data-ja.csv` を直接読んでいたが、このファイルは R2 に
+ * 存在せず常に 404 だった（Sentry JAVASCRIPT-1D）。毎回 200 ms 前後を無駄にしたうえ
+ * avtr も取れず、VRChat へのフォールバックが一度も動いていなかった。
+ * ワールドのエントリは sourceUrl が avtr を含まないので null になり、従来どおり
+ * VRChat には行かない。
+ *
+ * getAkyoById の経路（KV → R2 JSON → CSV）には期限が無いので、ここで上限を設ける。
+ * 期限切れは「レコード無し」と同じ扱いにして、応答は必ず決着させる。
  */
-async function getAvtrIdFromCsv(akyoId: string): Promise<string | null> {
+const AKYO_LOOKUP_TIMEOUT_MS = 5000;
+const LOOKUP_TIMED_OUT = Symbol('akyo-lookup-timed-out');
+
+async function getAvtrIdForAkyo(akyoId: string): Promise<string | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<typeof LOOKUP_TIMED_OUT>((resolve) => {
+    timer = setTimeout(() => resolve(LOOKUP_TIMED_OUT), AKYO_LOOKUP_TIMEOUT_MS);
+  });
   try {
-    const r2BaseUrl = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
-    const csvUrl = `${r2BaseUrl}/akyo-data/akyo-data-ja.csv`;
-
-    const response = await fetch(csvUrl, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      console.log(`[avatar-image] CSV fetch failed: ${response.status}`);
+    const akyo = await Promise.race([getAkyoById(akyoId), deadline]);
+    if (akyo === LOOKUP_TIMED_OUT) {
+      console.warn(`[avatar-image] Akyo lookup for ${akyoId} exceeded ${AKYO_LOOKUP_TIMEOUT_MS} ms`);
       return null;
     }
-
-    const csvText = await response.text();
-    const lines = csvText.split('\n');
-
-    // Find the line with matching ID (CSV uses quoted cells "0001",...)
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-
-      const idMatch = trimmed.match(/^"?(\d{4})"?,/);
-      if (!idMatch) continue;
-
-      if (idMatch[1] === akyoId) {
-        // Extract avtr ID from the AvatarURL column anywhere in the line.
-        // The regex scans the full CSV line so it works regardless of column position.
-        const urlMatch = line.match(/https:\/\/vrchat\.com\/home\/avatar\/(avtr_[A-Za-z0-9-]{1,64})/);
-        if (urlMatch) {
-          return urlMatch[1];
-        }
-        return null;
-      }
-    }
-
-    return null;
+    return extractVRChatAvatarIdFromUrl(akyo?.sourceUrl || akyo?.avatarUrl);
   } catch (error) {
-    console.log(`[avatar-image] CSV lookup error for ${akyoId}:`, error);
+    console.log(`[avatar-image] Akyo lookup error for ${akyoId}:`, error);
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -121,14 +112,6 @@ export async function GET(request: Request) {
       return createNoStoreJsonError('Invalid id format: must be numeric (up to 4 digits)', 400);
     }
     normalizedId = id.padStart(4, '0');
-  }
-
-  // If id is provided but no avtr, try to get avtr from CSV
-  if (normalizedId && !avtr) {
-    avtr = await getAvtrIdFromCsv(normalizedId);
-    if (avtr) {
-      console.log(`[avatar-image] Found avtr ${avtr} for ID ${normalizedId} from CSV`);
-    }
   }
 
   let failureKind: AvatarImageFailureKind = 'not-found';
@@ -178,7 +161,16 @@ export async function GET(request: Request) {
       }
     }
 
-    // Step 2: Try VRChat API if avtr is available (from parameter or CSV lookup)
+    // Step 1.5: R2 に無かったときだけ、Akyo レコードから avtr を引く。
+    // R2 の前に置くと、カタログ側（KV / JSON / CSV）の遅延に正常な R2 画像まで巻き込まれる
+    if (normalizedId && !avtr) {
+      avtr = await getAvtrIdForAkyo(normalizedId);
+      if (avtr) {
+        console.log(`[avatar-image] Found avtr ${avtr} for ID ${normalizedId} from the Akyo record`);
+      }
+    }
+
+    // Step 2: Try VRChat API if avtr is available (from parameter or the Akyo record)
     if (avtr) {
       // Validate avtr format
       const cleanAvtr = extractVRChatAvatarIdFromUrl(avtr);
