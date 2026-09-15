@@ -18,6 +18,8 @@
  */
 import * as Sentry from '@sentry/react';
 
+import { resolveSentryEnvironment, telemetryOptionsFor } from './sentry-environment';
+
 export const INCOMPLETE_APP_ROUTER_TRANSACTION_NAME = 'incomplete-app-router-transaction';
 
 /** Next.js の内部チャンク。Next 用 SDK と同じ判定で in_app=false にする */
@@ -83,9 +85,12 @@ export function resolveBrowserSentryOptions(env: BrowserSentryEnv): Sentry.Brows
   if (!env.dsn) {
     return null;
   }
+  const environment = resolveSentryEnvironment(env);
   return {
     dsn: env.dsn,
-    environment: env.environment ?? env.nodeEnv ?? 'production',
+    environment,
+    // Lighthouse CI などの合成トラフィックでは SDK を本番どおり初期化したまま送信だけ捨てる
+    ...telemetryOptionsFor(environment),
     enableMetrics: true,
     tracesSampleRate: env.nodeEnv === 'development' ? 1.0 : 0.1,
     sendDefaultPii: false,

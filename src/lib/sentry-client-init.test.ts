@@ -83,4 +83,35 @@ test("resolveBrowserSentryOptions は従来の instrumentation-client と同じ�
   assert.equal(resolveBrowserSentryOptions({ dsn: "x", nodeEnv: "development" })?.environment, "development");
   assert.equal(resolveBrowserSentryOptions({ dsn: "x", nodeEnv: "development" })?.tracesSampleRate, 1.0);
   assert.equal(resolveBrowserSentryOptions({ dsn: "x" })?.environment, "production");
+
+  // 本番・プレビューでは送信フックを足さない（SDK 既定のまま送る）
+  assert.equal(production.beforeSend, undefined);
+  assert.equal(production.beforeSendTransaction, undefined);
+  assert.equal(production.beforeSendMetric, undefined);
+  assert.equal(production.beforeSendLog, undefined);
+  assert.equal(production.sendClientReports, undefined, "client_report は SDK 既定（送る）のまま");
+});
+
+test("lighthouse-ci では SDK を本番と同じに初期化したまま、全種類の送信を捨てる", () => {
+  const lighthouse = resolveBrowserSentryOptions({
+    dsn: "https://k@o1.ingest.sentry.io/1",
+    environment: "lighthouse-ci",
+    nodeEnv: "production",
+  });
+  assert.ok(lighthouse);
+  assert.equal(lighthouse.environment, "lighthouse-ci");
+  // 初期化条件は本番と同一（DSN を外して SDK ごと止めると CI の計測条件が本番からずれる）
+  assert.equal(lighthouse.enableMetrics, true);
+  assert.equal(lighthouse.tracesSampleRate, 0.1);
+  assert.equal(typeof lighthouse.integrations, "function");
+  // 送信段階で捨てる
+  const event = { type: undefined, event_id: "e" } as never;
+  const hint = {} as never;
+  assert.equal(lighthouse.beforeSend?.(event, hint), null);
+  assert.equal(lighthouse.beforeSendTransaction?.(event, hint), null);
+  assert.equal(lighthouse.beforeSendMetric?.({ name: "web_vitals.lcp" } as never), null);
+  assert.equal(lighthouse.beforeSendLog?.({ message: "x" } as never), null);
+  // 捨てた件数の報告（client_report envelope）も送らない。実 SDK での確認は
+  // sentry-synthetic-transport.test.ts
+  assert.equal(lighthouse.sendClientReports, false);
 });
