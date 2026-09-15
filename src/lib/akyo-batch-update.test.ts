@@ -137,6 +137,50 @@ test('a held change that cannot be saved together with the change made elsewhere
   assert.equal(f.commits.length, 0);
 });
 
+// 保留したあとに別の画面（別の管理者）でカテゴリが改名され、全行のセルが書き換わった。保留は
+// 旧名を持ったままだが、カテゴリには触っていないので、存在しない旧名として弾いてはいけない
+test('a category renamed elsewhere is kept for a held edit that did not touch categories', async () => {
+  const f = fixture();
+  for (const record of f.records) record[header.indexOf('Category')] = 'どうぶつ';
+  const response = await processAkyoBatchUpdate([f.updates[1]], f.dependencies);
+  assert.equal(response.status, 200, 'the registry check must look at the categories that will be written');
+  assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], 'どうぶつ');
+});
+
+// 送られてきたカテゴリが、正規化すれば保留したときと同じ（祖先を省いただけ）なら、触っていない扱い
+test('a held category that only leaves out its ancestors counts as untouched', async () => {
+  const f = fixture();
+  f.records[1][header.indexOf('Category')] = '動物,動物/うま,動物/いぬ';
+  const [, second] = f.updates;
+  second.original.category = '動物,動物/うま';
+  second.changes.category = '動物/うま';
+  const response = await processAkyoBatchUpdate([second], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], '動物,動物/うま,動物/いぬ');
+});
+
+test('both sides adding the same category spelled in a different order is not a conflict', async () => {
+  const f = fixture();
+  f.records[1][header.indexOf('Category')] = '動物/うま,動物';
+  const [, second] = f.updates;
+  second.changes.category = '動物,動物/うま';
+  const response = await processAkyoBatchUpdate([second], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits.length, 1);
+});
+
+test('a conflicting name is called what the edit form calls it for that entry type', async () => {
+  const f = fixture();
+  f.records[1] = createAkyoRecord({ id: '0002', nickname: 'World', avatarName: '', author: 'Author', category: 'ワールド',
+    comment: '', sourceUrl: worldUrl, entryType: 'world', displaySerial: '0001' }, header);
+  const original = getAkyoEditFields(parseCsvToAkyoData(stringify([header, ...f.records]))[1]);
+  f.records[1][header.indexOf('Nickname')] = 'Renamed elsewhere';
+  const response = await processAkyoBatchUpdate([{ original, changes: { ...original, nickname: 'Renamed here' } }], f.dependencies);
+  assert.equal(response.status, 409);
+  const { error } = await response.json();
+  assert.match(error, /#0002 のワールド名は、別の更新でも変更されています/);
+});
+
 test('JSON-normalized newlines and category ancestors do not create false conflicts', async () => {
   const f = fixture();
   f.records[0][3] = 'Parent/Child,Parent,Other';
