@@ -19,7 +19,11 @@ const source = readFileSync(new URL('../app/api/avatar-image/route.ts', import.m
 
 type AkyoLookup = (id: string) => Promise<AkyoData | null>;
 
-function loadRoute(fetchFn: typeof fetch, getAkyoById: AkyoLookup = async () => null) {
+function loadRoute(
+  fetchFn: typeof fetch,
+  getAkyoById: AkyoLookup = async () => null,
+  timers: { setTimeout?: typeof setTimeout } = {},
+) {
   const exports: { GET?: (request: Request) => Promise<Response> } = {};
   const dependencies: Record<string, unknown> = {
     'next/server': { connection: async () => {} },
@@ -44,7 +48,8 @@ function loadRoute(fetchFn: typeof fetch, getAkyoById: AkyoLookup = async () => 
   runInNewContext(ts.transpileModule(source, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText, {
-    exports, URL, Request, Response, AbortController, setTimeout, clearTimeout,
+    exports, URL, Request, Response, AbortController, clearTimeout,
+    setTimeout: timers.setTimeout ?? setTimeout,
     process: { env: { NODE_ENV: 'production' } },
     console: { log() {}, warn() {}, error() {} },
     fetch: fetchFn,
@@ -121,7 +126,7 @@ test('id-only requests take the avtr from the Akyo record, not from a CSV on the
   );
   const response = await GET(new Request('https://akyodex.com/api/avatar-image?id=3'));
   assert.deepEqual(lookedUp, ['0003'], 'the id is normalised to 4 digits before the lookup');
-  assert.ok(calls.every((url) => !url.includes('akyo-data-ja.csv')), 'must not fetch the CSV from the image host');
+  assert.ok(calls.every((url) => !isCsvOnImageHost(url)), 'must not fetch the CSV from the image host');
   assert.ok(calls.some((url) => url.startsWith('https://vrchat.com/home/avatar/avtr_from-record')));
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('X-Image-Source'), 'vrchat');
@@ -138,6 +143,60 @@ test('id-only requests without an avatar URL in the record skip VRChat entirely'
     async (id) => ({ id, sourceUrl: 'https://vrchat.com/home/world/wrld_x' } as AkyoData),
   );
   const response = await GET(new Request('https://akyodex.com/api/avatar-image?id=0003'));
-  assert.ok(calls.every((url) => !url.includes('vrchat.com') && !url.includes('akyo-data-ja.csv')));
+  assert.ok(calls.every((url) => !isVrchatHost(url) && !isCsvOnImageHost(url)));
   assert.equal(response.ok, false);
 });
+
+// R2 に画像があるときはレコードを引かない。引く順序を R2 の前に置くと、カタログ側
+// （KV / JSON / CSV）の遅延に正常な R2 画像まで巻き込まれる
+test('a successful R2 image is returned without consulting the Akyo record at all', async () => {
+  const calls: string[] = [];
+  let lookups = 0;
+  const GET = loadRoute(
+    async (url) => {
+      calls.push(String(url));
+      return new Response('r2-bytes', { headers: { 'Content-Type': 'image/webp' } });
+    },
+    async () => {
+      lookups += 1;
+      return new Promise(() => {}); // 解決しない = カタログ側が止まっている
+    },
+  );
+  const response = await GET(new Request('https://akyodex.com/api/avatar-image?id=0003'));
+  assert.equal(lookups, 0, 'R2 が成功したらレコード検索は 0 回');
+  assert.equal(calls.length, 1);
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), 'r2-bytes');
+});
+
+// レコード検索が終わらなくても期限で応答が決着する
+test('a hanging Akyo lookup is cut off by the deadline and the request still settles', async () => {
+  const calls: string[] = [];
+  const realSetTimeout = setTimeout;
+  const GET = loadRoute(
+    async (url) => {
+      calls.push(String(url));
+      return new Response(null, { status: 404 });
+    },
+    async () => new Promise(() => {}),
+    // ルート内の全タイマーを 20 ms に縮める（この経路では検索の期限しか使われない）
+    { setTimeout: ((cb: () => void, ms?: number) => realSetTimeout(cb, Math.min(ms ?? 0, 20))) as typeof setTimeout },
+  );
+  const started = Date.now();
+  const response = await GET(new Request('https://akyodex.com/api/avatar-image?id=0003'));
+  assert.ok(Date.now() - started < 2000, 'must not wait for the lookup to resolve');
+  assert.equal(calls.length, 1, 'only the R2 attempt');
+  assert.ok(calls.every((url) => !isVrchatHost(url)));
+  assert.equal(response.ok, false);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+});
+
+function isVrchatHost(url: string): boolean {
+  const { hostname } = new URL(url);
+  return hostname === 'vrchat.com' || hostname.endsWith('.vrchat.com') || hostname.endsWith('.vrchat.cloud');
+}
+
+function isCsvOnImageHost(url: string): boolean {
+  const { hostname, pathname } = new URL(url);
+  return hostname === 'images.akyodex.com' && pathname.endsWith('/akyo-data-ja.csv');
+}
