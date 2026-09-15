@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-15T10:26:44.882Z",
+  "updatedAt": "2026-09-15T13:35:04.487Z",
   "count": 959,
   "data": [
     {
@@ -32,10 +32,11 @@
     {
       "id": "0003",
       "entryType": "avatar",
+      "displaySerial": "0003",
       "nickname": "赤チョコミントAkyo",
       "avatarName": "Red basic Akyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "チョコミントAkyoの色違い",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/赤色系",
+      "comment": "情熱の赤いAkyo！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4906f0f8-9fcd-4602-8e10-98dd0dda9bab",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4906f0f8-9fcd-4602-8e10-98dd0dda9bab"
@@ -43,10 +44,11 @@
     {
       "id": "0004",
       "entryType": "avatar",
+      "displaySerial": "0004",
       "nickname": "緑チョコミントAkyo",
       "avatarName": "Green basic Akyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "チョコミントAkyoの色違い",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/緑色系",
+      "comment": "自然を感じる緑のAkyo！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_610d4cb5-fcdc-45cb-a375-ff4b9bc93a81",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_610d4cb5-fcdc-45cb-a375-ff4b9bc93a81"
@@ -54,10 +56,11 @@
     {
       "id": "0005",
       "entryType": "avatar",
+      "displaySerial": "0005",
       "nickname": "青チョコミントAkyo",
       "avatarName": "Blue basic Akyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "チョコミントAkyoの色違い",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/青色系",
+      "comment": "彗星のように現れた青いAkyo！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e62d5dca-495b-4601-a0fa-b2be5f25595b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e62d5dca-495b-4601-a0fa-b2be5f25595b"
@@ -65,10 +68,11 @@
     {
       "id": "0006",
       "entryType": "avatar",
+      "displaySerial": "0006",
       "nickname": "黄チョコミントAkyo",
       "avatarName": "Yellow basic Akyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "チョコミントAkyoの色違い",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/黄色系",
+      "comment": "幸福の黄色いAkyo！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_fcabb931-01fc-4448-99fd-7dfba9ea3419",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_fcabb931-01fc-4448-99fd-7dfba9ea3419"
@@ -76,10 +80,11 @@
     {
       "id": "0007",
       "entryType": "avatar",
+      "displaySerial": "0007",
       "nickname": "黒チョコミントAkyo",
       "avatarName": "Black basic Akyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "チョコミントAkyoの色違い",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/黒色系,色/無彩色系",
+      "comment": "理想の黒いAkyo！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8cd731b4-43b3-4241-a609-ce9dfcfed45d",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_8cd731b4-43b3-4241-a609-ce9dfcfed45d"
@@ -87,10 +92,11 @@
     {
       "id": "0008",
       "entryType": "avatar",
+      "displaySerial": "0008",
       "nickname": "白チョコミントAkyo",
       "avatarName": "White basic Akyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "チョコミントAkyoの色違い",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/白色系,色/無彩色系",
+      "comment": "真実の白いAkyo！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0346605b-98c9-4f0e-8b4a-656bb02a51b0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_0346605b-98c9-4f0e-8b4a-656bb02a51b0"
@@ -98,10 +104,11 @@
     {
       "id": "0009",
       "entryType": "avatar",
+      "displaySerial": "0009",
       "nickname": "灰チョコミントAkyo",
       "avatarName": "Gray basic Akyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "チョコミントAkyoの色違い",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/無彩色系",
+      "comment": "Akyoに白も黒もない！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_42c02723-21b9-419a-9562-4013de092636",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_42c02723-21b9-419a-9562-4013de092636"
@@ -109,10 +116,11 @@
     {
       "id": "0010",
       "entryType": "avatar",
+      "displaySerial": "0010",
       "nickname": "ミニチョコミントAkyo",
       "avatarName": "ミニミニAkyoAkyo",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "小さくなったチョコミントAkyo",
+      "category": "チョコミント類,対応機種,対応機種/PC,色,色/緑色系,色/青色系,形状・触り心地,形状・触り心地/小さい",
+      "comment": "小さくなってもAkyoはAkyo！",
       "author": "Holimond․jp",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4af80dc9-24b3-4d63-a819-d33debac5055",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4af80dc9-24b3-4d63-a819-d33debac5055"
