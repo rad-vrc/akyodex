@@ -3,17 +3,18 @@
  *
  * Priority:
  * 1. R2 bucket (direct URL or binding)
- * 2. VRChat API (scrape) - using avtr ID from CSV if available
+ * 2. VRChat API (scrape) - using the avtr ID from the Akyo record (KV → R2 JSON → CSV)
  * 3. Non-cacheable error so the card can try its direct R2 fallback
  *
  * Features:
  * - Image caching (1 hour via Cache-Control headers)
  * - Size optimization (w parameter)
- * - Fallback chain with CSV lookup
+ * - Fallback chain with Akyo record lookup
  */
 
 import { connection } from 'next/server';
 import { jsonError } from '@/lib/api-helpers';
+import { getAkyoById } from '@/lib/akyo-data';
 import { VRCHAT_AVATAR_ID_PATTERN, extractVRChatAvatarIdFromUrl } from '@/lib/akyo-entry';
 import { fetchVrchatResource } from '@/lib/vrchat-resource-fetch';
 import {
@@ -33,47 +34,21 @@ function createNoStoreJsonError(message: string, status: number): Response {
 }
 
 /**
- * Fetch CSV data and find avtr ID for given Akyo ID
+ * Akyo ID から VRChat の avtr ID を引く。
+ *
+ * データは他の API ルートと同じ getAkyoById（KV → R2 JSON → CSV）から取る。
+ * 以前は R2 の `akyo-data/akyo-data-ja.csv` を直接読んでいたが、このファイルは R2 に
+ * 存在せず常に 404 だった（Sentry JAVASCRIPT-1D）。毎回 200 ms 前後を無駄にしたうえ
+ * avtr も取れず、VRChat へのフォールバックが一度も動いていなかった。
+ * ワールドのエントリは sourceUrl が avtr を含まないので null になり、従来どおり
+ * VRChat には行かない。
  */
-async function getAvtrIdFromCsv(akyoId: string): Promise<string | null> {
+async function getAvtrIdForAkyo(akyoId: string): Promise<string | null> {
   try {
-    const r2BaseUrl = process.env.NEXT_PUBLIC_R2_BASE || 'https://images.akyodex.com';
-    const csvUrl = `${r2BaseUrl}/akyo-data/akyo-data-ja.csv`;
-
-    const response = await fetch(csvUrl, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      console.log(`[avatar-image] CSV fetch failed: ${response.status}`);
-      return null;
-    }
-
-    const csvText = await response.text();
-    const lines = csvText.split('\n');
-
-    // Find the line with matching ID (CSV uses quoted cells "0001",...)
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-
-      const idMatch = trimmed.match(/^"?(\d{4})"?,/);
-      if (!idMatch) continue;
-
-      if (idMatch[1] === akyoId) {
-        // Extract avtr ID from the AvatarURL column anywhere in the line.
-        // The regex scans the full CSV line so it works regardless of column position.
-        const urlMatch = line.match(/https:\/\/vrchat\.com\/home\/avatar\/(avtr_[A-Za-z0-9-]{1,64})/);
-        if (urlMatch) {
-          return urlMatch[1];
-        }
-        return null;
-      }
-    }
-
-    return null;
+    const akyo = await getAkyoById(akyoId);
+    return extractVRChatAvatarIdFromUrl(akyo?.sourceUrl || akyo?.avatarUrl);
   } catch (error) {
-    console.log(`[avatar-image] CSV lookup error for ${akyoId}:`, error);
+    console.log(`[avatar-image] Akyo lookup error for ${akyoId}:`, error);
     return null;
   }
 }
@@ -123,11 +98,11 @@ export async function GET(request: Request) {
     normalizedId = id.padStart(4, '0');
   }
 
-  // If id is provided but no avtr, try to get avtr from CSV
+  // If id is provided but no avtr, take the avtr from the Akyo record
   if (normalizedId && !avtr) {
-    avtr = await getAvtrIdFromCsv(normalizedId);
+    avtr = await getAvtrIdForAkyo(normalizedId);
     if (avtr) {
-      console.log(`[avatar-image] Found avtr ${avtr} for ID ${normalizedId} from CSV`);
+      console.log(`[avatar-image] Found avtr ${avtr} for ID ${normalizedId} from the Akyo record`);
     }
   }
 
