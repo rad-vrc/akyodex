@@ -1203,6 +1203,10 @@
     "en": "Color/Rainbow",
     "ko": "색상/무지개"
   },
+  "色/赤色系": {
+    "en": "Color/Red Tones",
+    "ko": "색상/빨간색 계열"
+  },
   "色/青色系": {
     "en": "Color/Blue Tones",
     "ko": "색상/파란색 계열"
