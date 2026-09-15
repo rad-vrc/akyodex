@@ -74,7 +74,65 @@ test('concurrent edits and missing records reject the whole batch before committ
     const response = await processAkyoBatchUpdate(f.updates, f.dependencies);
     assert.equal(response.status, 409);
     assert.equal(f.commits.length, 0);
+    // 取得し直すだけでは解けないので、取り消す行と、何が重なったかを名指しする
+    const { error } = await response.json();
+    assert.match(error, deleted ? /#0002 は削除されています/ : /#0002 のニックネームは、別の更新でも変更されています/);
+    assert.match(error, /#0002 の保留を取り消し/);
   }
+});
+
+// 保留したあとに、同じ行の別の項目が変わった（#572 のデータ PR が作者の表記を揃えた）。
+// 行ごとに比べていた頃は、その行を含む保留が、再取得しても二度と反映できなかった
+test('a field changed elsewhere is kept, and the held change to another field still applies', async () => {
+  const f = fixture(new Set(['対応機種']));
+  f.records[1][header.indexOf('Author')] = 'Author (renamed elsewhere)';
+  const [first, second] = f.updates;
+  second.changes.category = '動物,対応機種';
+  const response = await processAkyoBatchUpdate([first, second], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits.length, 1);
+  const row = f.commits[0].dataRecords[1];
+  assert.equal(row[header.indexOf('Author')], 'Author (renamed elsewhere)', 'the other update must not be rolled back');
+  assert.equal(row[header.indexOf('Category')], '動物,対応機種');
+  assert.equal(row[header.indexOf('Nickname')], 'Akyo 0002 edited');
+  const { data } = await response.json();
+  assert.equal(data[1].author, 'Author (renamed elsewhere)', 'the screen receives the row as saved');
+});
+
+test('the same change made on both sides is not a conflict', async () => {
+  const f = fixture();
+  f.records[1][header.indexOf('Nickname')] = f.updates[1].changes.nickname;
+  const response = await processAkyoBatchUpdate(f.updates, f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits.length, 1);
+});
+
+test('a category cell only reordered elsewhere does not conflict with a held category edit', async () => {
+  const f = fixture(new Set(['動物/いぬ']));
+  f.records[1][header.indexOf('Category')] = '動物/うま,動物';
+  const [, second] = f.updates;
+  second.original.category = '動物,動物/うま';
+  second.changes.category = '動物,動物/うま,動物/いぬ';
+  const response = await processAkyoBatchUpdate([second], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], '動物,動物/うま,動物/いぬ');
+});
+
+test('a held change that cannot be saved together with the change made elsewhere is refused', async () => {
+  const f = fixture();
+  // 保存先の #0002 は BOOTH URL を持たない（別の更新が外した）。保留したときの画面は持っていた
+  const [base] = parseCsvToAkyoData(stringify([header, createAkyoRecord({
+    id: '0002', nickname: 'Akyo 0002', avatarName: 'Akyo', category: '動物', author: 'Author', comment: 'original',
+    entryType: 'avatar', displaySerial: '0002', sourceUrl: url, boothUrl: 'https://booth.pm/ja/items/123',
+  }, header)]));
+  const original = getAkyoEditFields(base);
+  // こちらは VRChat URL を外して BOOTH 専用にした。片方ずつなら保存できるが、合わせると URL が残らない
+  const changes = { ...original, entryType: 'booth', sourceUrl: '', avatarName: '' };
+  const response = await processAkyoBatchUpdate([{ original, changes }], f.dependencies);
+  assert.equal(response.status, 409);
+  const { error } = await response.json();
+  assert.match(error, /#0002 は、別の更新と合わせると保存できない内容になります/);
+  assert.equal(f.commits.length, 0);
 });
 
 test('JSON-normalized newlines and category ancestors do not create false conflicts', async () => {

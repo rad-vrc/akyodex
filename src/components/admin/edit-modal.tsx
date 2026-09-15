@@ -20,7 +20,7 @@ import {
   resolveDisplaySerialForSourceUrlChange,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
-import { EDIT_FIELD_NAMES, type AkyoEditFields } from '@/lib/akyo-edit-fields';
+import { EDIT_FIELD_NAMES, NICKNAME_LABEL, type AkyoEditFields } from '@/lib/akyo-edit-fields';
 import { addCategoryOption } from '@/lib/category-create-levels';
 import { buildAvatarImageUrl } from '@/lib/vrchat-utils';
 import type { AkyoData, AkyoEntryType } from '@/types/akyo';
@@ -69,12 +69,6 @@ const ENTRY_TYPE_LABEL: Record<AkyoEntryType, string> = {
   avatar: 'アバター',
   world: 'ワールド',
   booth: 'BOOTH専用',
-};
-
-const NICKNAME_LABEL: Record<AkyoEntryType, string> = {
-  avatar: 'ニックネーム',
-  world: 'ワールド名',
-  booth: '名前',
 };
 
 const INPUT_CLASS =
