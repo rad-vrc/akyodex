@@ -18,7 +18,7 @@
  */
 import * as Sentry from '@sentry/react';
 
-import { resolveSentryEnvironment, telemetryHooksFor } from './sentry-environment';
+import { resolveSentryEnvironment, telemetryOptionsFor } from './sentry-environment';
 
 export const INCOMPLETE_APP_ROUTER_TRANSACTION_NAME = 'incomplete-app-router-transaction';
 
@@ -90,7 +90,7 @@ export function resolveBrowserSentryOptions(env: BrowserSentryEnv): Sentry.Brows
     dsn: env.dsn,
     environment,
     // Lighthouse CI などの合成トラフィックでは SDK を本番どおり初期化したまま送信だけ捨てる
-    ...telemetryHooksFor(environment),
+    ...telemetryOptionsFor(environment),
     enableMetrics: true,
     tracesSampleRate: env.nodeEnv === 'development' ? 1.0 : 0.1,
     sendDefaultPii: false,

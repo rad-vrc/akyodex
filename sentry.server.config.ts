@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/nextjs';
 
-import { resolveSentryEnvironment, telemetryHooksFor } from './src/lib/sentry-environment';
+import { resolveSentryEnvironment, telemetryOptionsFor } from './src/lib/sentry-environment';
 
 const dsn = process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN;
 // ブラウザ側と同じ環境名にする。Lighthouse CI は Node サーバーを NODE_ENV=production で
@@ -16,6 +16,6 @@ if (dsn) {
     tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
     sendDefaultPii: false,
     environment,
-    ...telemetryHooksFor(environment),
+    ...telemetryOptionsFor(environment),
   });
 }

@@ -88,6 +88,8 @@ test("resolveBrowserSentryOptions は従来の instrumentation-client と同じ�
   assert.equal(production.beforeSend, undefined);
   assert.equal(production.beforeSendTransaction, undefined);
   assert.equal(production.beforeSendMetric, undefined);
+  assert.equal(production.beforeSendLog, undefined);
+  assert.equal(production.sendClientReports, undefined, "client_report は SDK 既定（送る）のまま");
 });
 
 test("lighthouse-ci では SDK を本番と同じに初期化したまま、全種類の送信を捨てる", () => {
@@ -109,4 +111,7 @@ test("lighthouse-ci では SDK を本番と同じに初期化したまま、全�
   assert.equal(lighthouse.beforeSendTransaction?.(event, hint), null);
   assert.equal(lighthouse.beforeSendMetric?.({ name: "web_vitals.lcp" } as never), null);
   assert.equal(lighthouse.beforeSendLog?.({ message: "x" } as never), null);
+  // 捨てた件数の報告（client_report envelope）も送らない。実 SDK での確認は
+  // sentry-synthetic-transport.test.ts
+  assert.equal(lighthouse.sendClientReports, false);
 });
