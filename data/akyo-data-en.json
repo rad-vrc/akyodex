@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-16T06:46:44.351Z",
+  "updatedAt": "2026-09-16T06:49:34.388Z",
   "count": 960,
   "data": [
     {
@@ -128,9 +128,10 @@
     {
       "id": "0011",
       "entryType": "avatar",
+      "displaySerial": "0011",
       "nickname": "Super Versatile Akyo",
       "avatarName": "スーパー汎用Akyo",
-      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS",
+      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Gimmick・Special/Flying,Gimmick・Special/Color Change,Gimmick・Special/Pen",
       "comment": "Born from a desire to spread the default Akyo, this feature-packed Akyo offers a wide range of functions including expressions, pen tools, flight, sleep, and piggyback rides.",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e861e3c4-5227-4b65-8d1a-813d9f6fcffe",
