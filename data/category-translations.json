@@ -1199,6 +1199,10 @@
     "en": "Color/Green Tones",
     "ko": "색상/초록색 계열"
   },
+  "色/茶色系": {
+    "en": "Color/Brown Tones",
+    "ko": "색상/갈색 계열"
+  },
   "色/虹色系": {
     "en": "Color/Rainbow",
     "ko": "색상/무지개"
