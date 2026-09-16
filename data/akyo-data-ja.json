@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-16T13:31:22.796Z",
-  "count": 960,
+  "updatedAt": "2026-09-16T13:32:54.316Z",
+  "count": 961,
   "data": [
     {
       "id": "0001",
@@ -10989,6 +10989,18 @@
       "author": "ニグレド",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996"
+    },
+    {
+      "id": "0961",
+      "entryType": "avatar",
+      "displaySerial": "0850",
+      "nickname": "inAkyoヤギAkyo",
+      "avatarName": "inAkyoInsideヤギAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,エネルギー,ギミック・特殊,パロディ,パロディ/intel,作風・スタイル,作風・スタイル/サイバーチック,動物,動物/ヤギ,器官,器官/耳,器官/舌,色,色/青色系,ギミック・特殊/ペン,ギミック・特殊/ダンス,器官/腕,ギミック・特殊/飛行,ギミック・特殊/シェーダー,器官/角",
+      "comment": "ネコノミさんのAkyoは毎回iOS対応までしてくれてるみたい！",
+      "author": "nekononomicon",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_fbd78926-6af3-43b9-993e-b955fadfb7ab",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fbd78926-6af3-43b9-993e-b955fadfb7ab"
     }
   ]
 }

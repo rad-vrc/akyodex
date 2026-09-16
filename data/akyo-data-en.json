@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-16T13:31:22.829Z",
-  "count": 960,
+  "updatedAt": "2026-09-16T13:32:54.367Z",
+  "count": 961,
   "data": [
     {
       "id": "0001",
@@ -10989,6 +10989,18 @@
       "author": "ニグレド",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996"
+    },
+    {
+      "id": "0961",
+      "entryType": "avatar",
+      "displaySerial": "0850",
+      "nickname": "inAkyoヤギAkyo",
+      "avatarName": "inAkyoInsideヤギAkyo",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Energy,Gimmick・Special,Parody,Parody/intel,Style,Style/Cyber,Animal,Animal/Goat,Body Part,Body Part/Ear,Body Part/Tongue,Color,Color/Blue Tones,Gimmick・Special/Pen,Gimmick・Special/Dance,Body Part/Arm,Gimmick・Special/Flying,Gimmick・Special/Shader,Body Part/Horn",
+      "comment": "ネコノミさんのAkyoは毎回iOS対応までしてくれてるみたい！",
+      "author": "nekononomicon",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_fbd78926-6af3-43b9-993e-b955fadfb7ab",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fbd78926-6af3-43b9-993e-b955fadfb7ab"
     }
   ]
 }
