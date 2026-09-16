@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-16T14:46:32.183Z",
+  "updatedAt": "2026-09-16T15:25:12.486Z",
   "count": 961,
   "data": [
     {
@@ -140,10 +140,11 @@
     {
       "id": "0012",
       "entryType": "avatar",
+      "displaySerial": "0012",
       "nickname": "スーパースタッフAkyo",
       "avatarName": "スーパースタッフAkyo",
-      "category": "チョコミント類,ギミック・特殊,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS",
-      "comment": "Akyoイベントスタッフ用のAkyoで、セキュリティ上スタッフ機能は通常ロックされている。",
+      "category": "チョコミント類,ギミック・特殊,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,ギミック・特殊/ダンス,ギミック・特殊/色変え,ギミック・特殊/飛行,ギミック・特殊/運送,身分・役割,身分・役割/サービス業従事者,器官,器官/腕,ギミック・特殊/チャット,色,色/緑色系,色/青色系",
+      "comment": "Akyoイベントスタッフ用のAkyoで、セキュリティ上スタッフ機能は通常ロックされているよ！",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_83cb1a9e-9997-4f97-b737-83be2daa62c5",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_83cb1a9e-9997-4f97-b737-83be2daa62c5"
