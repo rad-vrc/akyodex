@@ -387,17 +387,85 @@
     "en": "Vehicle/Land",
     "ko": "탈것/육상"
   },
-  "体型": {
-    "en": "Body Type",
-    "ko": "체형"
+  "体格・形状・触り心地": {
+    "en": "Physique・Shape・Texture",
+    "ko": "체격・형태・촉감"
   },
-  "体型/豊満": {
-    "en": "Body Type/Plump",
-    "ko": "체형/풍만"
+  "体格・形状・触り心地/うろこ": {
+    "en": "Physique・Shape・Texture/Scales",
+    "ko": "체격・형태・촉감/비늘"
   },
-  "体型/高身長": {
-    "en": "Body Type/Tall",
-    "ko": "체형/장신"
+  "体格・形状・触り心地/さらさら": {
+    "en": "Physique・Shape・Texture/Fine",
+    "ko": "체격・형태・촉감/고운"
+  },
+  "体格・形状・触り心地/ぬるぬる": {
+    "en": "Physique・Shape・Texture/Slippery",
+    "ko": "체격・형태・촉감/미끈미끈"
+  },
+  "体格・形状・触り心地/ふわふわ": {
+    "en": "Physique・Shape・Texture/Fluffy",
+    "ko": "체격・형태・촉감/폭신폭신"
+  },
+  "体格・形状・触り心地/ぷるぷる": {
+    "en": "Physique・Shape・Texture/Jiggly",
+    "ko": "체격・형태・촉감/탱글탱글"
+  },
+  "体格・形状・触り心地/ぺらぺら": {
+    "en": "Physique・Shape・Texture/Paper-Thin",
+    "ko": "체격・형태・촉감/종잇장처럼 얇은"
+  },
+  "体格・形状・触り心地/トゲトゲ": {
+    "en": "Physique・Shape・Texture/Spiky",
+    "ko": "체격・형태・촉감/가시투성이"
+  },
+  "体格・形状・触り心地/ムキムキ": {
+    "en": "Physique・Shape・Texture/Muscular",
+    "ko": "체격・형태・촉감/근육질"
+  },
+  "体格・形状・触り心地/モサモサ": {
+    "en": "Physique・Shape・Texture/Shaggy",
+    "ko": "체격・형태・촉감/복슬복슬"
+  },
+  "体格・形状・触り心地/丸い": {
+    "en": "Physique・Shape・Texture/Round",
+    "ko": "체격・형태・촉감/둥근"
+  },
+  "体格・形状・触り心地/冷たい": {
+    "en": "Physique・Shape・Texture/Cold",
+    "ko": "체격・형태・촉감/차가운"
+  },
+  "体格・形状・触り心地/四角い": {
+    "en": "Physique・Shape・Texture/Square",
+    "ko": "체격・형태・촉감/네모"
+  },
+  "体格・形状・触り心地/小さい": {
+    "en": "Physique・Shape・Texture/Small",
+    "ko": "체격・형태・촉감/작은"
+  },
+  "体格・形状・触り心地/柔らかい": {
+    "en": "Physique・Shape・Texture/Soft",
+    "ko": "체격・형태・촉감/부드러운"
+  },
+  "体格・形状・触り心地/硬い": {
+    "en": "Physique・Shape・Texture/Hard",
+    "ko": "체격・형태・촉감/단단한"
+  },
+  "体格・形状・触り心地/粘着質": {
+    "en": "Physique・Shape・Texture/Sticky",
+    "ko": "체격・형태・촉감/끈적끈적"
+  },
+  "体格・形状・触り心地/薄い": {
+    "en": "Physique・Shape・Texture/Thin",
+    "ko": "체격・형태・촉감/얇은"
+  },
+  "体格・形状・触り心地/豊満": {
+    "en": "Physique・Shape・Texture/Plump",
+    "ko": "체격・형태・촉감/풍만"
+  },
+  "体格・形状・触り心地/高身長": {
+    "en": "Physique・Shape・Texture/Tall",
+    "ko": "체격・형태・촉감/장신"
   },
   "作風・スタイル": {
     "en": "Style",
@@ -846,78 +914,6 @@
   "建物": {
     "en": "Building",
     "ko": "건물"
-  },
-  "形状・触り心地": {
-    "en": "Shape・Texture",
-    "ko": "형태・촉감"
-  },
-  "形状・触り心地/うろこ": {
-    "en": "Shape・Texture/Scales",
-    "ko": "형태・촉감/비늘"
-  },
-  "形状・触り心地/さらさら": {
-    "en": "Shape・Texture/Fine",
-    "ko": "형태・촉감/고운"
-  },
-  "形状・触り心地/ぬるぬる": {
-    "en": "Shape・Texture/Slippery",
-    "ko": "형태・촉감/미끈미끈"
-  },
-  "形状・触り心地/ふわふわ": {
-    "en": "Shape・Texture/Fluffy",
-    "ko": "형태・촉감/폭신폭신"
-  },
-  "形状・触り心地/ぷるぷる": {
-    "en": "Shape・Texture/Jiggly",
-    "ko": "형태・촉감/탱글탱글"
-  },
-  "形状・触り心地/ぺらぺら": {
-    "en": "Shape・Texture/Paper-Thin",
-    "ko": "형태・촉감/종잇장처럼 얇은"
-  },
-  "形状・触り心地/トゲトゲ": {
-    "en": "Shape・Texture/Spiky",
-    "ko": "형태・촉감/가시투성이"
-  },
-  "形状・触り心地/ムキムキ": {
-    "en": "Shape・Texture/Muscular",
-    "ko": "형태・촉감/근육질"
-  },
-  "形状・触り心地/モサモサ": {
-    "en": "Shape・Texture/Shaggy",
-    "ko": "형태・촉감/복슬복슬"
-  },
-  "形状・触り心地/丸い": {
-    "en": "Shape・Texture/Round",
-    "ko": "형태・촉감/둥근"
-  },
-  "形状・触り心地/冷たい": {
-    "en": "Shape・Texture/Cold",
-    "ko": "형태・촉감/차가운"
-  },
-  "形状・触り心地/四角い": {
-    "en": "Shape・Texture/Square",
-    "ko": "형태・촉감/네모"
-  },
-  "形状・触り心地/小さい": {
-    "en": "Shape・Texture/Small",
-    "ko": "형태・촉감/작은"
-  },
-  "形状・触り心地/柔らかい": {
-    "en": "Shape・Texture/Soft",
-    "ko": "형태・촉감/부드러운"
-  },
-  "形状・触り心地/硬い": {
-    "en": "Shape・Texture/Hard",
-    "ko": "형태・촉감/단단한"
-  },
-  "形状・触り心地/粘着質": {
-    "en": "Shape・Texture/Sticky",
-    "ko": "형태・촉감/끈적끈적"
-  },
-  "形状・触り心地/薄い": {
-    "en": "Shape・Texture/Thin",
-    "ko": "형태・촉감/얇은"
   },
   "性格・趣向": {
     "en": "Personality・Preference",
