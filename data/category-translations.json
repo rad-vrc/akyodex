@@ -795,6 +795,10 @@
     "en": "Body Part/Arm",
     "ko": "기관/팔"
   },
+  "器官/舌": {
+    "en": "Body Part/Tongue",
+    "ko": "기관/혀"
+  },
   "器官/骨": {
     "en": "Body Part/Bone",
     "ko": "기관/뼈"
