@@ -129,9 +129,9 @@ const adoptedHierarchyMigrations = [
   {
     ids: ['0900'],
     vectorizeIds: [],
-    ja: ['高身長', '体型/高身長'],
-    en: ['Tall', 'Body Type/Tall'],
-    ko: ['장신', '체형/장신'],
+    ja: ['高身長', '体格・形状・触り心地/高身長'],
+    en: ['Tall', 'Physique・Shape・Texture/Tall'],
+    ko: ['장신', '체격・형태・촉감/장신'],
   },
   {
     ids: ['0485', '0501', '0502', '0624', '0740'],
@@ -288,4 +288,17 @@ test('automatic category processors emit the complete Nature plant hierarchy', (
     ),
     ['Nature', 'Nature/Plant'],
   );
+});
+
+test('automatic body category classification uses the merged parent', () => {
+  const { createCategoryProcessor } = require('./update-categories-common');
+  for (const [language, nickname, parent] of [
+    ['ja', '筋肉Akyo', '体格・形状・触り心地'],
+    ['en', 'Muscle Akyo', 'Physique・Shape・Texture'],
+  ]) {
+    const process = createCategoryProcessor(require(`./category-definitions-${language}`));
+    const categories = splitCategories(process('', nickname));
+    assert.ok(categories.includes(parent));
+    assert.ok(!categories.includes('体型') && !categories.includes('Body Type'));
+  }
 });

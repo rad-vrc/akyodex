@@ -396,7 +396,7 @@ jobs:
               verify_response "/api/catalog/ja" "application/json" "application/json" /tmp/catalog-headers /tmp/catalog-body && \
               verify_response "/api/avatar-image?id=0001&w=768" "image/avif,image/webp,image/*,*/*" "image/avif" /tmp/avatar-headers /tmp/avatar-body && \
               awk 'tolower($0) ~ /^x-image-transformed:[[:space:]]*true\r?$/ { found=1 } END { exit found ? 0 : 1 }' /tmp/avatar-headers; then
-              if CATALOG_PATH=/tmp/catalog-body node -e 'const fs=require("node:fs");const catalog=JSON.parse(fs.readFileSync(process.env.CATALOG_PATH,"utf8"));if(catalog.schemaVersion!==1||catalog.count!==catalog.data.length||catalog.count===0)throw new Error("Production catalog schema or count is invalid");const categories=new Set(catalog.data.flatMap(({category})=>String(category||"").split(",")));for(const expected of ["自然/岩石","形状・触り心地/小さい","グッズ"]){if(!categories.has(expected))throw new Error(`Missing category: ${expected}`)}'
+              if CATALOG_PATH=/tmp/catalog-body node -e 'const fs=require("node:fs");const catalog=JSON.parse(fs.readFileSync(process.env.CATALOG_PATH,"utf8"));if(catalog.schemaVersion!==1||catalog.count!==catalog.data.length||catalog.count===0)throw new Error("Production catalog schema or count is invalid");const categories=new Set(catalog.data.flatMap(({category})=>String(category||"").split(",")));for(const expected of ["自然/岩石","体格・形状・触り心地/小さい","グッズ"]){if(!categories.has(expected))throw new Error(`Missing category: ${expected}`)}'
               then
                 en_html="$(curl --silent --show-error \
                   --connect-timeout 10 \

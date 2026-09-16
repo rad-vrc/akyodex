@@ -110,7 +110,7 @@ module.exports = {
     schoolCategory: '学校',
     natureCategory: '環境・天候',
     historyCategory: '歴史',
-    bodyCategory: '体型',
+    bodyCategory: '体格・形状・触り心地',
     artCategory: '芸術',
     realKeyword: 'リアル',
     styleParentCategory: '作風・スタイル',
