@@ -18,7 +18,7 @@ const retired = new Set(['体型', '形状・触り心地', 'Body Type', 'Shape�
 
 test('the merged category retains both sets of children and removes retired definitions', () => {
   assert.deepEqual(translations[names.ja], { en: names.en, ko: names.ko });
-  const leaves = ['うろこ', 'さらさら', 'ぬるぬる', 'ふわふわ', 'ぷるぷる', 'ぺらぺら', 'トゲトゲ', 'ムキムキ', 'モサモサ', '丸い', '冷たい', '四角い', '小さい', '柔らかい', '硬い', '粘着質', '薄い', '豊満', '高身長'];
+  const leaves = ['うろこ', 'さらさら', 'ぬるぬる', 'ふわふわ', 'ぷるぷる', 'ぺらぺら', 'トゲトゲ', 'ムキムキ', 'モサモサ', '丸い', '冷たい', '四角い', '小さい', '柔らかい', '硬い', '粘着質', '豊満', '高身長'];
   for (const leaf of leaves) {
     const entry = translations[`${names.ja}/${leaf}`];
     assert.ok(entry, leaf);
@@ -26,6 +26,33 @@ test('the merged category retains both sets of children and removes retired defi
   }
   for (const key of [...Object.keys(translations), ...Object.keys(colors)]) assert.ok(!retired.has(key.split('/')[0]), key);
   for (const name of Object.values(names)) assert.equal(getCategoryColor(name), colors[names.ja]);
+});
+
+test('thin is merged into paper-thin in all catalogs, filters, and admin definitions', () => {
+  const removed = { ja: `${names.ja}/薄い`, en: `${names.en}/Thin`, ko: `${names.ko}/얇은` };
+  const kept = { ja: `${names.ja}/ぺらぺら`, en: `${names.en}/Paper-Thin`, ko: `${names.ko}/종잇장처럼 얇은` };
+  assert.equal(translations[removed.ja], undefined);
+  assert.deepEqual(translations[kept.ja], { en: kept.en, ko: kept.ko });
+
+  for (const lang of ['ja', 'en', 'ko'] as const) {
+    const rows = parse<Record<string, string>>(read(`data/akyo-data-${lang}.csv`), { columns: true, skip_empty_lines: true });
+    const catalog: AkyoData[] = JSON.parse(read(`data/akyo-data-${lang}.json`)).data;
+    for (const category of [...rows.map(row => row.Category), ...catalog.map(row => row.category)]) {
+      assert.ok(!category.split(',').includes(removed[lang]), lang);
+    }
+    const options = categoriesForFilterPanel(extractCategories(catalog));
+    assert.ok(!options.includes(removed[lang]), lang);
+    assert.ok(options.includes(kept[lang]), lang);
+    const filtered = filterCatalog(catalog, { categories: [kept[lang]] });
+    for (const id of ['0027', '0682', '0947', '0948']) {
+      assert.ok(filtered.some(row => row.id === id), `${lang} ${id}`);
+    }
+  }
+
+  const [header, ...records]: string[][] = parse(read('data/akyo-data-ja.csv'), { skip_empty_lines: true });
+  const summaries = summarizeCategories({ header, records, translations, colors });
+  assert.ok(!summaries.some(row => row.path === removed.ja));
+  assert.ok(summaries.some(row => row.path === kept.ja && row.count >= 4));
 });
 
 test('shared public and admin filter and badge grouping helpers use the merged category in every locale', () => {

@@ -463,10 +463,6 @@
     "en": "Physique・Shape・Texture/Sticky",
     "ko": "체격・형태・촉감/끈적끈적"
   },
-  "体格・形状・触り心地/薄い": {
-    "en": "Physique・Shape・Texture/Thin",
-    "ko": "체격・형태・촉감/얇은"
-  },
   "体格・形状・触り心地/豊満": {
     "en": "Physique・Shape・Texture/Plump",
     "ko": "체격・형태・촉감/풍만"
