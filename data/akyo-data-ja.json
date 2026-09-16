@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-16T05:04:13.927Z",
-  "count": 959,
+  "updatedAt": "2026-09-16T05:06:19.484Z",
+  "count": 960,
   "data": [
     {
       "id": "0001",
@@ -10976,6 +10976,18 @@
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_956d8001-2d59-492e-9597-f1001f3347f3",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_956d8001-2d59-492e-9597-f1001f3347f3"
+    },
+    {
+      "id": "0960",
+      "entryType": "avatar",
+      "displaySerial": "0849",
+      "nickname": "ニグレド式フランスパンAkyo",
+      "avatarName": "フランスパンAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),形状・触り心地,形状・触り心地/硬い,食べ物,食べ物/パン,色,色/茶色系",
+      "comment": "アリクイAkyoの舌でなめ続けたら一生味わえそう！",
+      "author": "ニグレド",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996"
     }
   ]
 }
