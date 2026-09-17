@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-16T17:26:27.380Z",
+  "updatedAt": "2026-09-17T10:27:48.034Z",
   "count": 962,
   "data": [
     {
@@ -152,9 +152,10 @@
     {
       "id": "0013",
       "entryType": "avatar",
+      "displaySerial": "0013",
       "nickname": "Super Warp Akyo",
       "avatarName": "スーパーワープAkyo",
-      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC",
+      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC,Gimmick・Special/Transport,Gimmick・Special/Color Change,Gimmick・Special/Pen,Body Part,Body Part/Arm,Color,Color/Green Tones,Color/Blue Tones,Gimmick・Special/Dance,Gimmick・Special/Flying,Role・Status,Role・Status/Service Worker",
       "comment": "Akyo learned warp. In Quest, she can warp by having a PC user carry her.",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0f22cd8e-2cb8-408c-8308-8d5fa2d11dcb",

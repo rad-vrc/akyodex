@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-16T17:26:27.335Z",
+  "updatedAt": "2026-09-17T10:27:47.992Z",
   "count": 962,
   "data": [
     {
@@ -152,10 +152,11 @@
     {
       "id": "0013",
       "entryType": "avatar",
+      "displaySerial": "0013",
       "nickname": "スーパーワープAkyo",
       "avatarName": "スーパーワープAkyo",
-      "category": "チョコミント類,ギミック・特殊,対応機種,対応機種/PC",
-      "comment": "ワープを覚えたAkyo。Questの場合はPCユーザーにおんぶしてもらうとワープできる",
+      "category": "チョコミント類,ギミック・特殊,対応機種,対応機種/PC,ギミック・特殊/運送,ギミック・特殊/色変え,ギミック・特殊/ペン,器官,器官/腕,色,色/緑色系,色/青色系,ギミック・特殊/ダンス,ギミック・特殊/飛行,身分・役割,身分・役割/サービス業従事者",
+      "comment": "ワープを覚えたAkyo！PCじゃない人もPCユーザーにおんぶしてもらうとワープできるよ！",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0f22cd8e-2cb8-408c-8308-8d5fa2d11dcb",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_0f22cd8e-2cb8-408c-8308-8d5fa2d11dcb"
