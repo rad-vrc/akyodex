@@ -63,13 +63,13 @@
     "en": "Gimmick・Special/Dance",
     "ko": "기믹・특수/댄스"
   },
-  "ギミック・特殊/チャット": {
-    "en": "Gimmick・Special/Chat",
-    "ko": "기믹・특수/채팅"
-  },
   "ギミック・特殊/ペン": {
     "en": "Gimmick・Special/Pen",
     "ko": "기믹・특수/펜"
+  },
+  "ギミック・特殊/メッセージ": {
+    "en": "Gimmick・Special/Message",
+    "ko": "기믹・특수/메시지"
   },
   "ギミック・特殊/ライト": {
     "en": "Gimmick・Special/Light",
