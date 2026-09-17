@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-17T14:25:18.296Z",
+  "updatedAt": "2026-09-17T15:46:59.478Z",
   "count": 963,
   "data": [
     {
@@ -10986,11 +10986,12 @@
       "displaySerial": "0849",
       "nickname": "ニグレド式フランスパンAkyo",
       "avatarName": "フランスパンAkyo",
-      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),体格・形状・触り心地,体格・形状・触り心地/硬い,食べ物,食べ物/パン,色,色/茶色系",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),体格・形状・触り心地,体格・形状・触り心地/硬い,食べ物,食べ物/パン,色,色/茶色系,Booth,Booth/アバター",
       "comment": "アリクイAkyoの舌でなめ続けたら一生味わえそう！",
       "author": "ニグレド",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e832fc69-957c-452c-9710-ca5862270996",
+      "boothUrl": "https://nigredou.booth.pm/items/8863296"
     },
     {
       "id": "0961",
