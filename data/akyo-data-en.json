@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-18T01:50:50.365Z",
+  "updatedAt": "2026-09-18T07:12:58.279Z",
   "count": 963,
   "data": [
     {
@@ -6260,12 +6260,13 @@
       "entryType": "avatar",
       "displaySerial": "0552",
       "nickname": "Shuttle Akyo",
-      "avatarName": "Akyo シャトル",
-      "category": "Vehicle,Vehicle/Aviation,Environment・Weather,Environment・Weather/Outer Space,Skill・Trait,Skill・Trait/Zero-G Resistance,Skill・Trait/Hypoxia Resistance,Those Beyond,Skill・Trait/Flying",
-      "comment": "",
+      "avatarName": "Shuttle Akyo",
+      "category": "Vehicle,Vehicle/Aviation,Environment・Weather,Environment・Weather/Outer Space,Skill・Trait,Skill・Trait/Zero-G Resistance,Skill・Trait/Hypoxia Resistance,Skill・Trait/Flying,Condition,Condition/Revival,Color,Color/Achromatic Colors,Color/White Tones,Color/Black Tones",
+      "comment": "シャトルAkyoが宇宙から帰ってきた！！",
       "author": "katsuya 9366",
-      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857"
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_bcecf9db-5c8b-4093-8715-1526ad9cefa1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_bcecf9db-5c8b-4093-8715-1526ad9cefa1",
+      "urlUpdatedAt": "2026-09-18T07:12:58.174Z"
     },
     {
       "id": "0553",

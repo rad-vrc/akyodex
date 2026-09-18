@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-18T01:50:50.312Z",
+  "updatedAt": "2026-09-18T07:12:58.231Z",
   "count": 963,
   "data": [
     {
@@ -6259,13 +6259,14 @@
       "id": "0552",
       "entryType": "avatar",
       "displaySerial": "0552",
-      "nickname": "シャトルAkyo",
-      "avatarName": "Akyo シャトル",
-      "category": "乗り物,乗り物/航空,環境・天候,環境・天候/外宇宙,技能・特性,技能・特性/無重力耐性,技能・特性/酸素欠乏耐性,向こう側の存在,技能・特性/ひこう",
-      "comment": "",
+      "nickname": "帰ってきたシャトルAkyo",
+      "avatarName": "Shuttle Akyo",
+      "category": "乗り物,乗り物/航空,環境・天候,環境・天候/外宇宙,技能・特性,技能・特性/無重力耐性,技能・特性/酸素欠乏耐性,技能・特性/ひこう,状態,状態/復活,色,色/無彩色系,色/白色系,色/黒色系",
+      "comment": "シャトルAkyoが宇宙から帰ってきた！！",
       "author": "katsuya 9366",
-      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857"
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_bcecf9db-5c8b-4093-8715-1526ad9cefa1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_bcecf9db-5c8b-4093-8715-1526ad9cefa1",
+      "urlUpdatedAt": "2026-09-18T07:12:58.174Z"
     },
     {
       "id": "0553",

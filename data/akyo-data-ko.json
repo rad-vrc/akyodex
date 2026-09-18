@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-18T01:50:50.417Z",
+  "updatedAt": "2026-09-18T07:12:58.332Z",
   "count": 963,
   "data": [
     {
@@ -6791,13 +6791,14 @@
       "id": "0552",
       "entryType": "avatar",
       "displaySerial": "0552",
-      "nickname": "셔틀 Akyo",
-      "avatarName": "Akyo シャトル",
-      "category": "탈것,탈것/항공,환경・날씨,환경・날씨/우주,기능・특성,기능・특성/무중력 내성,기능・특성/산소결핍 내성,저편의 존재,기능・특성/비행",
-      "comment": "",
+      "nickname": "帰ってきたシャトルAkyo",
+      "avatarName": "Shuttle Akyo",
+      "category": "탈것,탈것/항공,환경・날씨,환경・날씨/우주,기능・특성,기능・특성/무중력 내성,기능・특성/산소결핍 내성,기능・특성/비행,상태,상태/부활,색상,색상/무채색 계열,색상/흰색 계열,색상/검은색 계열",
+      "comment": "シャトルAkyoが宇宙から帰ってきた！！",
       "author": "katsuya 9366",
-      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6f5dff5a-82ee-4d4b-8b17-b57f8c6fe857"
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_bcecf9db-5c8b-4093-8715-1526ad9cefa1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_bcecf9db-5c8b-4093-8715-1526ad9cefa1",
+      "urlUpdatedAt": "2026-09-18T07:12:58.174Z"
     },
     {
       "id": "0553",
