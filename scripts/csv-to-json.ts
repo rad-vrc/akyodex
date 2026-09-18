@@ -10,6 +10,7 @@
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { normalizeVrchatSourceUrl } from '../src/lib/akyo-entry';
 import { ensureBoothCategories, validateBoothUrl } from '../src/lib/booth-url';
 
 interface AkyoData {
@@ -165,13 +166,23 @@ interface PreviousUrlState {
   urlUpdatedAt?: string;
 }
 
-function getEntryUrl(entry: Pick<AkyoData, 'sourceUrl' | 'avatarUrl'>): string {
-  return (entry.sourceUrl || entry.avatarUrl || '').trim();
+/**
+ * 「元URL」として比べる値。元URLが無い Booth 専用エントリは BoothURL で比べる。
+ * VRChat の URL は表記ゆれ（大文字、/info などのタブ）を正規化してから比べ、
+ * 見た目だけの違いを「差し替え」にしない。
+ */
+function getEntryUrl(entry: Pick<AkyoData, 'sourceUrl' | 'avatarUrl' | 'boothUrl'>): string {
+  const sourceUrl = normalizeVrchatSourceUrl(entry.sourceUrl || entry.avatarUrl || '');
+  return sourceUrl || (entry.boothUrl || '').trim();
 }
 
 /**
  * 前回コミットされた日本語 JSON から、ID → { URL, urlUpdatedAt } を読む。
- * 無い・読めないときは null（刻印を始めない。全件が「最新」になるのを防ぐ）。
+ *
+ * - ファイルが無い（初回）→ null。刻印を始めない（全件が「最新」になるのを防ぐ）
+ * - 行が 0 件 → null。空の JSON を「前回」にすると全件が新規登録扱いになる
+ * - 読めない・形が違う → 例外。刻印なしの JSON を書いてしまうと、次回はそれが
+ *   「前回」になって既存の刻印が全部消える。書かずに止める（fail-closed）
  */
 async function loadPreviousUrlState(
   jsonPath: string,
@@ -187,32 +198,41 @@ async function loadPreviousUrlState(
     }
     throw error;
   }
+  let parsed: { data?: unknown };
   try {
-    const parsed = JSON.parse(text) as { data?: unknown };
-    if (!Array.isArray(parsed.data)) {
-      throw new Error('previous JSON has no data array');
-    }
-    const byId = new Map<string, PreviousUrlState>();
-    for (const item of parsed.data as Array<Record<string, unknown>>) {
-      const id = String(item.id ?? '');
-      if (!id) continue;
-      byId.set(id, {
-        url: getEntryUrl({
-          sourceUrl: typeof item.sourceUrl === 'string' ? item.sourceUrl : undefined,
-          avatarUrl: typeof item.avatarUrl === 'string' ? item.avatarUrl : '',
-        }),
-        urlUpdatedAt:
-          typeof item.urlUpdatedAt === 'string' && item.urlUpdatedAt.trim()
-            ? item.urlUpdatedAt.trim()
-            : undefined,
-      });
-    }
-    return byId;
+    parsed = JSON.parse(text) as { data?: unknown };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(`   ⚠️ Previous JSON at ${jsonPath} is unusable (${message}); urlUpdatedAt will not be stamped this run`);
+    throw new Error(
+      `Previous JSON at ${jsonPath} cannot be parsed (${message}). Refusing to write JSON without urlUpdatedAt history; restore the file from git and rerun.`,
+    );
+  }
+  if (!Array.isArray(parsed.data)) {
+    throw new Error(
+      `Previous JSON at ${jsonPath} has no data array. Refusing to write JSON without urlUpdatedAt history; restore the file from git and rerun.`,
+    );
+  }
+  if (parsed.data.length === 0) {
+    console.warn(`   ⚠️ Previous JSON at ${jsonPath} has 0 rows; urlUpdatedAt will not be stamped this run`);
     return null;
   }
+  const byId = new Map<string, PreviousUrlState>();
+  for (const item of parsed.data as Array<Record<string, unknown>>) {
+    const id = String(item.id ?? '');
+    if (!id) continue;
+    byId.set(id, {
+      url: getEntryUrl({
+        sourceUrl: typeof item.sourceUrl === 'string' ? item.sourceUrl : undefined,
+        avatarUrl: typeof item.avatarUrl === 'string' ? item.avatarUrl : '',
+        boothUrl: typeof item.boothUrl === 'string' ? item.boothUrl : undefined,
+      }),
+      urlUpdatedAt:
+        typeof item.urlUpdatedAt === 'string' && item.urlUpdatedAt.trim()
+          ? item.urlUpdatedAt.trim()
+          : undefined,
+    });
+  }
+  return byId;
 }
 
 /**
@@ -225,7 +245,7 @@ async function loadPreviousUrlState(
  * 刻印が無い行より新しい」が成り立つ（図鑑側の並べ方が前提にしている）。
  */
 function resolveUrlUpdatedAt(
-  current: Pick<AkyoData, 'sourceUrl' | 'avatarUrl'>,
+  current: Pick<AkyoData, 'sourceUrl' | 'avatarUrl' | 'boothUrl'>,
   previous: PreviousUrlState | undefined,
   now: string,
 ): string | undefined {

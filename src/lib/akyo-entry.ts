@@ -82,7 +82,9 @@ export function getUrlUpdatedTime(
   akyo: Pick<AkyoData, "urlUpdatedAt">,
 ): number | null {
   const raw = akyo.urlUpdatedAt?.trim();
-  if (!raw) {
+  // 完全な ISO 8601（日付＋時刻）だけを認める。Date.parse は "2026" や数値文字列も
+  // 通してしまい、手編集で混入した値が「最古の刻印」として最優先に居座る
+  if (!raw || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw)) {
     return null;
   }
   const time = Date.parse(raw);

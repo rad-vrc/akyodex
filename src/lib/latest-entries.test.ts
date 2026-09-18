@@ -92,6 +92,36 @@ test("getUrlUpdatedTime は ISO 8601 をミリ秒にし、無効・未設定は 
   assert.equal(getUrlUpdatedTime({ urlUpdatedAt: "" }), null);
   assert.equal(getUrlUpdatedTime({ urlUpdatedAt: "not a date" }), null);
   assert.equal(getUrlUpdatedTime({}), null);
+  // Date.parse が通してしまう年だけ・数値文字列は認めない（手編集の混入が最古の刻印になるのを防ぐ）
+  assert.equal(getUrlUpdatedTime({ urlUpdatedAt: "2026" }), null);
+  assert.equal(getUrlUpdatedTime({ urlUpdatedAt: "1726617600000" }), null);
+  assert.equal(getUrlUpdatedTime({ urlUpdatedAt: "2026-09-18" }), null);
+});
+
+// 比較関数が非対称だと、入力順によっては刻印の無い行が刻印のある行より前に出る
+test("compareByLatest は反対称で、どの 2 行を入れ替えても符号が反転する", () => {
+  const entries = [
+    { id: "0010" },
+    { id: "0500" },
+    { id: "0020", urlUpdatedAt: "2026-09-10T00:00:00.000Z" },
+    { id: "0030", urlUpdatedAt: "2026-09-18T00:00:00.000Z" },
+    { id: "0400", urlUpdatedAt: "2026-09-18T00:00:00.000Z" },
+    { id: "0001", urlUpdatedAt: "garbage" },
+  ];
+  for (const a of entries) {
+    for (const b of entries) {
+      const forward = Math.sign(compareByLatest(a, b));
+      const backward = Math.sign(compareByLatest(b, a));
+      // 0 と -0 を同一視するため和で見る
+      assert.equal(forward + backward, 0, `${a.id} vs ${b.id}`);
+      if (a === b) assert.equal(forward, 0);
+    }
+  }
+  // 入力順を裏返しても同じ結果になる（順序が入力順に依存しない）
+  const sorted = [...entries].sort(compareByLatest).map((entry) => entry.id);
+  const reversed = [...entries].reverse().sort(compareByLatest).map((entry) => entry.id);
+  assert.deepEqual(sorted, reversed);
+  assert.deepEqual(sorted, ["0400", "0030", "0020", "0500", "0010", "0001"]);
 });
 
 // URL を差し替えた（アバターを上げ直した）エントリは、番号を変えずに最新扱いにする
