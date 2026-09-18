@@ -24,6 +24,11 @@ interface AkyoData {
   sourceUrl?: string;
   avatarUrl: string;
   boothUrl?: string;
+  /**
+   * 元URLが最後に変わった（または新規登録された）時刻。CSV には無く、前回の JSON と
+   * 比べてここで刻む。図鑑の「最新N件」がこれを内部IDより優先して見る
+   */
+  urlUpdatedAt?: string;
 }
 
 interface AkyoJsonOutput {
@@ -154,10 +159,119 @@ function parseCsvToAkyoData(csvText: string): AkyoData[] {
   return data;
 }
 
+/** 前回の JSON から引き継ぐ、行ごとの URL と刻印 */
+interface PreviousUrlState {
+  url: string;
+  urlUpdatedAt?: string;
+}
+
+function getEntryUrl(entry: Pick<AkyoData, 'sourceUrl' | 'avatarUrl'>): string {
+  return (entry.sourceUrl || entry.avatarUrl || '').trim();
+}
+
+/**
+ * 前回コミットされた日本語 JSON から、ID → { URL, urlUpdatedAt } を読む。
+ * 無い・読めないときは null（刻印を始めない。全件が「最新」になるのを防ぐ）。
+ */
+async function loadPreviousUrlState(
+  jsonPath: string,
+): Promise<Map<string, PreviousUrlState> | null> {
+  let text: string;
+  try {
+    text = await fs.readFile(jsonPath, 'utf-8');
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === 'ENOENT') {
+      console.warn(`   ⚠️ No previous JSON at ${jsonPath}; urlUpdatedAt will not be stamped this run`);
+      return null;
+    }
+    throw error;
+  }
+  try {
+    const parsed = JSON.parse(text) as { data?: unknown };
+    if (!Array.isArray(parsed.data)) {
+      throw new Error('previous JSON has no data array');
+    }
+    const byId = new Map<string, PreviousUrlState>();
+    for (const item of parsed.data as Array<Record<string, unknown>>) {
+      const id = String(item.id ?? '');
+      if (!id) continue;
+      byId.set(id, {
+        url: getEntryUrl({
+          sourceUrl: typeof item.sourceUrl === 'string' ? item.sourceUrl : undefined,
+          avatarUrl: typeof item.avatarUrl === 'string' ? item.avatarUrl : '',
+        }),
+        urlUpdatedAt:
+          typeof item.urlUpdatedAt === 'string' && item.urlUpdatedAt.trim()
+            ? item.urlUpdatedAt.trim()
+            : undefined,
+      });
+    }
+    return byId;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`   ⚠️ Previous JSON at ${jsonPath} is unusable (${message}); urlUpdatedAt will not be stamped this run`);
+    return null;
+  }
+}
+
+/**
+ * 1 行ぶんの urlUpdatedAt を決める。
+ * - 前回に無い ID（新規登録）→ now
+ * - URL が前回と違う → now
+ * - 同じ → 前回の刻印を引き継ぐ（無ければ付けない）
+ *
+ * 導入前から URL が変わっていない行には何も付かないので、「刻印がある行はどれも
+ * 刻印が無い行より新しい」が成り立つ（図鑑側の並べ方が前提にしている）。
+ */
+function resolveUrlUpdatedAt(
+  current: Pick<AkyoData, 'sourceUrl' | 'avatarUrl'>,
+  previous: PreviousUrlState | undefined,
+  now: string,
+): string | undefined {
+  if (!previous) return now;
+  return getEntryUrl(current) !== previous.url ? now : previous.urlUpdatedAt;
+}
+
+/** 日本語の行に刻印し、ID → 刻印 の対応を返す（EN/KO は同じ ID に同じ値を写す） */
+function stampUrlUpdatedAt(
+  rows: AkyoData[],
+  previousById: Map<string, PreviousUrlState>,
+  now: string,
+): Map<string, string> {
+  const stamps = new Map<string, string>();
+  for (const row of rows) {
+    const stamp = resolveUrlUpdatedAt(row, previousById.get(row.id), now);
+    if (stamp) {
+      row.urlUpdatedAt = stamp;
+      stamps.set(row.id, stamp);
+    } else {
+      delete row.urlUpdatedAt;
+    }
+  }
+  return stamps;
+}
+
+function applyUrlUpdatedAt(rows: AkyoData[], stamps: Map<string, string>): void {
+  for (const row of rows) {
+    const stamp = stamps.get(row.id);
+    if (stamp) {
+      row.urlUpdatedAt = stamp;
+    } else {
+      delete row.urlUpdatedAt;
+    }
+  }
+}
+
 async function convertCsvToJson() {
   const dataDir = path.join(process.cwd(), 'data');
 
   console.log('🔄 Starting CSV to JSON conversion...\n');
+
+  // urlUpdatedAt は日本語の前回 JSON を基準に決め、EN/KO には同じ ID に写す
+  const now = new Date().toISOString();
+  const previousById = await loadPreviousUrlState(path.join(dataDir, 'akyo-data-ja.json'));
+  let stampsById: Map<string, string> | null = null;
 
   // Language definitions
   const languages = [
@@ -184,6 +298,16 @@ async function convertCsvToJson() {
     try {
       const csv = await fs.readFile(csvPath, 'utf-8');
       const data = parseCsvToAkyoData(csv);
+
+      if (code === 'ja') {
+        if (previousById) {
+          stampsById = stampUrlUpdatedAt(data, previousById, now);
+          const changed = data.filter((row) => row.urlUpdatedAt === now).length;
+          console.log(`   🕒 urlUpdatedAt: ${changed} row(s) stamped ${now}`);
+        }
+      } else if (stampsById) {
+        applyUrlUpdatedAt(data, stampsById);
+      }
 
       const akyoJsonOutput: AkyoJsonOutput = {
         version: '1.0',

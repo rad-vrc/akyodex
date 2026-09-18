@@ -72,16 +72,54 @@ export function getInternalIdNumber(akyo: Pick<AkyoData, "id">): number {
 }
 
 /**
- * 内部IDの新しい順に count 件を選び、その範囲内で表示順を適用する。入力は変更しない。
+ * 「最新」の判定に使う時刻（ミリ秒）。無効・未設定なら null。
+ *
+ * urlUpdatedAt は scripts/csv-to-json.ts が JSON 生成時に刻む「元URLが最後に変わった
+ * （または新規登録された）時刻」。アバターを上げ直して URL を差し替えたエントリを、
+ * 番号を変えずに最新扱いにするためのもの。
  */
-export function selectLatestEntries<T extends Pick<AkyoData, "id">>(
+export function getUrlUpdatedTime(
+  akyo: Pick<AkyoData, "urlUpdatedAt">,
+): number | null {
+  const raw = akyo.urlUpdatedAt?.trim();
+  if (!raw) {
+    return null;
+  }
+  const time = Date.parse(raw);
+  return Number.isNaN(time) ? null : time;
+}
+
+/**
+ * 最新順の比較（新しいものが先）。
+ *
+ * urlUpdatedAt を持つ行を時刻の新しい順に先に置き、持たない行は内部IDの降順。
+ * urlUpdatedAt は導入後に URL が変わった行と新規登録された行にしか付かないので、
+ * 「付いている行はどれも、付いていない行より新しい」が成り立ち、2 系列を混ぜても
+ * 順序が壊れない。時刻が同じなら内部IDの降順で決める。
+ */
+export function compareByLatest(
+  a: Pick<AkyoData, "id" | "urlUpdatedAt">,
+  b: Pick<AkyoData, "id" | "urlUpdatedAt">,
+): number {
+  const timeA = getUrlUpdatedTime(a);
+  const timeB = getUrlUpdatedTime(b);
+  if (timeA !== null || timeB !== null) {
+    if (timeA === null) return 1;
+    if (timeB === null) return -1;
+    if (timeA !== timeB) return timeB - timeA;
+  }
+  return getInternalIdNumber(b) - getInternalIdNumber(a);
+}
+
+/**
+ * 最新順（compareByLatest）に count 件を選び、その範囲内で表示順を適用する。入力は変更しない。
+ */
+export function selectLatestEntries<T extends Pick<AkyoData, "id" | "urlUpdatedAt">>(
   entries: T[],
   count: number,
   sortAscending = false,
 ): T[] {
-  const latest = [...entries]
-    .sort((a, b) => getInternalIdNumber(b) - getInternalIdNumber(a))
-    .slice(0, count);
+  const latest = [...entries].sort(compareByLatest).slice(0, count);
   return sortAscending ? latest.reverse() : latest;
 }
 

@@ -61,6 +61,20 @@ test("createCatalogPayload preserves canonical UI fields and removes duplicate a
   assert.equal("avatarUrl" in payload.data[0], false);
 });
 
+test("createCatalogPayload carries urlUpdatedAt through and omits it when blank", async () => {
+  const stamped = createAkyo();
+  stamped.urlUpdatedAt = "2026-09-18T01:02:03.000Z";
+  const blank = createAkyo();
+  blank.id = "0002";
+  blank.urlUpdatedAt = "   ";
+
+  const payload = await createCatalogPayload("ja", [stamped, blank, createAkyo()]);
+
+  assert.equal(payload.data[0]?.urlUpdatedAt, "2026-09-18T01:02:03.000Z");
+  assert.equal("urlUpdatedAt" in payload.data[1]!, false);
+  assert.equal("urlUpdatedAt" in payload.data[2]!, false);
+});
+
 test("createCatalogPayload keeps only non-default display serials", async () => {
   const akyo = createAkyo();
   akyo.id = "0817";
