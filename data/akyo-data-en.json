@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-17T15:46:59.531Z",
+  "updatedAt": "2026-09-18T01:50:50.365Z",
   "count": 963,
   "data": [
     {
@@ -164,9 +164,10 @@
     {
       "id": "0014",
       "entryType": "avatar",
+      "displaySerial": "0014",
       "nickname": "Super Flying Delivery Akyo",
       "avatarName": "スーパーフライング運送Akyo",
-      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS",
+      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Gimmick・Special/Pen,Gimmick・Special/Dance,Gimmick・Special/Transport,Gimmick・Special/Color Change,Gimmick・Special/Flying,Body Part,Body Part/Arm,Role・Status,Role・Status/Service Worker,Color,Color/Green Tones,Color/Blue Tones",
       "comment": "Akyo has mastered flying delivery. The box lid can be opened and closed. Super Delivery Akyo is also said to exist.",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a4a98039-e32b-4915-8663-a1d73c17f3fa",
