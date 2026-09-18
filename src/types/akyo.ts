@@ -13,6 +13,13 @@ export interface AkyoData {
   avatarName: string; // アバター名
   sourceUrl?: string; // エントリの元URL（avatar/world共通、未指定時は avatarUrl を使用）
   boothUrl?: string; // BOOTH販売ページURL（任意）
+  /**
+   * 元URLが最後に変わった（または新規登録された）時刻。ISO 8601。
+   * CSV には無く、scripts/csv-to-json.ts が前回の JSON と URL を比べて刻む。
+   * 「最新N件」はこれを内部IDより優先して見るので、アバターを上げ直して URL を
+   * 差し替えたエントリは番号を変えずに最新扱いになる。導入前の行には付かない。
+   */
+  urlUpdatedAt?: string;
 
   // 新スキーマ
   category: string; // 属性（旧 attribute）
@@ -45,7 +52,7 @@ export interface AkyoFilterOptions {
   author?: string; // 新フィールド
   authors?: string[]; // 複数作者（将来互換）
   randomCount?: number;
-  latestCount?: number; // 内部ID降順で上位N件だけを表示（最新N件モード）
+  latestCount?: number; // 最新N件だけを表示（urlUpdatedAt の新しい順 → 内部ID降順）
   favoritesOnly?: boolean;
   entryTypeFilter?: AkyoEntryType; // アバター/ワールド種別フィルタ
 

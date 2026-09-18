@@ -10,6 +10,7 @@
 import { parse } from 'csv-parse/sync';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { normalizeVrchatSourceUrl } from '../src/lib/akyo-entry';
 import { ensureBoothCategories, validateBoothUrl } from '../src/lib/booth-url';
 
 interface AkyoData {
@@ -24,6 +25,11 @@ interface AkyoData {
   sourceUrl?: string;
   avatarUrl: string;
   boothUrl?: string;
+  /**
+   * 元URLが最後に変わった（または新規登録された）時刻。CSV には無く、前回の JSON と
+   * 比べてここで刻む。図鑑の「最新N件」がこれを内部IDより優先して見る
+   */
+  urlUpdatedAt?: string;
 }
 
 interface AkyoJsonOutput {
@@ -154,10 +160,138 @@ function parseCsvToAkyoData(csvText: string): AkyoData[] {
   return data;
 }
 
+/** 前回の JSON から引き継ぐ、行ごとの URL と刻印 */
+interface PreviousUrlState {
+  url: string;
+  urlUpdatedAt?: string;
+}
+
+/**
+ * 「元URL」として比べる値。元URLが無い Booth 専用エントリは BoothURL で比べる。
+ * VRChat の URL は表記ゆれ（大文字、/info などのタブ）を正規化してから比べ、
+ * 見た目だけの違いを「差し替え」にしない。
+ */
+function getEntryUrl(entry: Pick<AkyoData, 'sourceUrl' | 'avatarUrl' | 'boothUrl'>): string {
+  const sourceUrl = normalizeVrchatSourceUrl(entry.sourceUrl || entry.avatarUrl || '');
+  return sourceUrl || (entry.boothUrl || '').trim();
+}
+
+/**
+ * 前回コミットされた日本語 JSON から、ID → { URL, urlUpdatedAt } を読む。
+ *
+ * - ファイルが無い（初回）→ null。刻印を始めない（全件が「最新」になるのを防ぐ）
+ * - 行が 0 件 → null。空の JSON を「前回」にすると全件が新規登録扱いになる
+ * - 読めない・形が違う → 例外。刻印なしの JSON を書いてしまうと、次回はそれが
+ *   「前回」になって既存の刻印が全部消える。書かずに止める（fail-closed）
+ */
+async function loadPreviousUrlState(
+  jsonPath: string,
+): Promise<Map<string, PreviousUrlState> | null> {
+  let text: string;
+  try {
+    text = await fs.readFile(jsonPath, 'utf-8');
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+    if (nodeError.code === 'ENOENT') {
+      console.warn(`   ⚠️ No previous JSON at ${jsonPath}; urlUpdatedAt will not be stamped this run`);
+      return null;
+    }
+    throw error;
+  }
+  let parsed: { data?: unknown };
+  try {
+    parsed = JSON.parse(text) as { data?: unknown };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Previous JSON at ${jsonPath} cannot be parsed (${message}). Refusing to write JSON without urlUpdatedAt history; restore the file from git and rerun.`,
+    );
+  }
+  if (!Array.isArray(parsed.data)) {
+    throw new Error(
+      `Previous JSON at ${jsonPath} has no data array. Refusing to write JSON without urlUpdatedAt history; restore the file from git and rerun.`,
+    );
+  }
+  if (parsed.data.length === 0) {
+    console.warn(`   ⚠️ Previous JSON at ${jsonPath} has 0 rows; urlUpdatedAt will not be stamped this run`);
+    return null;
+  }
+  const byId = new Map<string, PreviousUrlState>();
+  for (const item of parsed.data as Array<Record<string, unknown>>) {
+    const id = String(item.id ?? '');
+    if (!id) continue;
+    byId.set(id, {
+      url: getEntryUrl({
+        sourceUrl: typeof item.sourceUrl === 'string' ? item.sourceUrl : undefined,
+        avatarUrl: typeof item.avatarUrl === 'string' ? item.avatarUrl : '',
+        boothUrl: typeof item.boothUrl === 'string' ? item.boothUrl : undefined,
+      }),
+      urlUpdatedAt:
+        typeof item.urlUpdatedAt === 'string' && item.urlUpdatedAt.trim()
+          ? item.urlUpdatedAt.trim()
+          : undefined,
+    });
+  }
+  return byId;
+}
+
+/**
+ * 1 行ぶんの urlUpdatedAt を決める。
+ * - 前回に無い ID（新規登録）→ now
+ * - URL が前回と違う → now
+ * - 同じ → 前回の刻印を引き継ぐ（無ければ付けない）
+ *
+ * 導入前から URL が変わっていない行には何も付かないので、「刻印がある行はどれも
+ * 刻印が無い行より新しい」が成り立つ（図鑑側の並べ方が前提にしている）。
+ */
+function resolveUrlUpdatedAt(
+  current: Pick<AkyoData, 'sourceUrl' | 'avatarUrl' | 'boothUrl'>,
+  previous: PreviousUrlState | undefined,
+  now: string,
+): string | undefined {
+  if (!previous) return now;
+  return getEntryUrl(current) !== previous.url ? now : previous.urlUpdatedAt;
+}
+
+/** 日本語の行に刻印し、ID → 刻印 の対応を返す（EN/KO は同じ ID に同じ値を写す） */
+function stampUrlUpdatedAt(
+  rows: AkyoData[],
+  previousById: Map<string, PreviousUrlState>,
+  now: string,
+): Map<string, string> {
+  const stamps = new Map<string, string>();
+  for (const row of rows) {
+    const stamp = resolveUrlUpdatedAt(row, previousById.get(row.id), now);
+    if (stamp) {
+      row.urlUpdatedAt = stamp;
+      stamps.set(row.id, stamp);
+    } else {
+      delete row.urlUpdatedAt;
+    }
+  }
+  return stamps;
+}
+
+function applyUrlUpdatedAt(rows: AkyoData[], stamps: Map<string, string>): void {
+  for (const row of rows) {
+    const stamp = stamps.get(row.id);
+    if (stamp) {
+      row.urlUpdatedAt = stamp;
+    } else {
+      delete row.urlUpdatedAt;
+    }
+  }
+}
+
 async function convertCsvToJson() {
   const dataDir = path.join(process.cwd(), 'data');
 
   console.log('🔄 Starting CSV to JSON conversion...\n');
+
+  // urlUpdatedAt は日本語の前回 JSON を基準に決め、EN/KO には同じ ID に写す
+  const now = new Date().toISOString();
+  const previousById = await loadPreviousUrlState(path.join(dataDir, 'akyo-data-ja.json'));
+  let stampsById: Map<string, string> | null = null;
 
   // Language definitions
   const languages = [
@@ -184,6 +318,16 @@ async function convertCsvToJson() {
     try {
       const csv = await fs.readFile(csvPath, 'utf-8');
       const data = parseCsvToAkyoData(csv);
+
+      if (code === 'ja') {
+        if (previousById) {
+          stampsById = stampUrlUpdatedAt(data, previousById, now);
+          const changed = data.filter((row) => row.urlUpdatedAt === now).length;
+          console.log(`   🕒 urlUpdatedAt: ${changed} row(s) stamped ${now}`);
+        }
+      } else if (stampsById) {
+        applyUrlUpdatedAt(data, stampsById);
+      }
 
       const akyoJsonOutput: AkyoJsonOutput = {
         version: '1.0',

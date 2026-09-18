@@ -127,6 +127,10 @@ function normalizeCatalogItem(item: unknown): AkyoData | undefined {
       typeof raw.avatarUrl === "string" && raw.avatarUrl.trim()
         ? raw.avatarUrl.trim()
         : sourceUrl,
+    urlUpdatedAt:
+      typeof raw.urlUpdatedAt === "string" && raw.urlUpdatedAt.trim()
+        ? raw.urlUpdatedAt.trim()
+        : undefined,
     isFavorite:
       typeof raw.isFavorite === "boolean" ? raw.isFavorite : undefined,
     parsedCategory:

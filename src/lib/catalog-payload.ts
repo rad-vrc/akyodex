@@ -18,6 +18,8 @@ export interface CatalogRecordV1 {
   sourceUrl?: string;
   avatarUrl?: string;
   boothUrl?: string;
+  /** 元URLが最後に変わった時刻（ISO 8601）。最新N件の順序に使う。無い行もある */
+  urlUpdatedAt?: string;
 }
 
 export interface CatalogPayloadV1 {
@@ -81,6 +83,9 @@ function toCatalogRecord(item: AkyoData): CatalogRecordV1 | undefined {
     ...(avatarUrl ? { avatarUrl } : {}),
     ...(optionalString(item.boothUrl)
       ? { boothUrl: optionalString(item.boothUrl) }
+      : {}),
+    ...(optionalString(item.urlUpdatedAt)
+      ? { urlUpdatedAt: optionalString(item.urlUpdatedAt) }
       : {}),
   };
 }

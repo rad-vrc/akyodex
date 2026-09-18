@@ -232,6 +232,10 @@ function normalizeAkyoItem(item: unknown): AkyoData {
     sourceUrl: String(raw.sourceUrl || raw.avatarUrl || ""),
     avatarUrl: String(raw.avatarUrl || raw.sourceUrl || ""),
     boothUrl,
+    urlUpdatedAt:
+      typeof raw.urlUpdatedAt === "string" && raw.urlUpdatedAt.trim()
+        ? raw.urlUpdatedAt.trim()
+        : undefined,
   };
 }
 

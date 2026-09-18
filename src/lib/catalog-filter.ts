@@ -93,7 +93,7 @@ export function filterCatalog(data: readonly AkyoData[], options: AkyoFilterOpti
       .map(({ value }) => value)
       .slice(0, options.randomCount);
   } else if (options.latestCount) {
-    // Select the newest internal IDs first, then apply the requested direction.
+    // Select the newest entries first (urlUpdatedAt, then internal ID) and apply the requested direction.
     // The regular sort below keys on displaySerial, which worlds and
     // avatars number independently, so it interleaves two unrelated
     // sequences and can never answer "what was added most recently".

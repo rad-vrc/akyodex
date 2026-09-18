@@ -61,6 +61,25 @@ test("loadCompleteCatalogData uses the API result without requesting R2", async 
   assert.deepEqual(phases, ["start:normalize", "end:normalize"]);
 });
 
+test("loadCompleteCatalogData keeps urlUpdatedAt from the API payload and drops blanks", async () => {
+  const stamped = { ...createAkyo("0001"), urlUpdatedAt: "2026-09-18T01:02:03.000Z" };
+  const payload = await createCatalogPayload("ja", [stamped, createAkyo("0002"), createAkyo("0003")]);
+  // 空白はペイロード生成側でも落ちるので、ローダー単体の境界を見るために生データへ直接仕込む
+  payload.data[1] = { ...payload.data[1]!, urlUpdatedAt: "  " };
+  const fetchImpl: typeof fetch = async () => jsonResponse(payload);
+
+  const result = await loadCompleteCatalogData({
+    lang: "ja",
+    catalogUrl: "/api/catalog/ja",
+    r2BaseUrl: "https://images.example.com",
+    fetchImpl,
+  });
+
+  assert.equal(result.items[0]?.urlUpdatedAt, "2026-09-18T01:02:03.000Z");
+  assert.equal(result.items[1]?.urlUpdatedAt, undefined);
+  assert.equal(result.items[2]?.urlUpdatedAt, undefined);
+});
+
 test("loadCompleteCatalogData falls back to R2 after an API HTTP error", async () => {
   const requestedUrls: string[] = [];
   const fetchImpl: typeof fetch = async (input) => {
