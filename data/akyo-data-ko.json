@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-19T03:03:26.613Z",
-  "count": 962,
+  "updatedAt": "2026-09-19T09:54:24.643Z",
+  "count": 963,
   "data": [
     {
       "id": "0001",
@@ -11742,6 +11742,19 @@
       "author": "roma38（ろま38）",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5ff63304-9e3a-4aa4-b84f-612cc1db5a1a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_5ff63304-9e3a-4aa4-b84f-612cc1db5a1a"
+    },
+    {
+      "id": "0964",
+      "entryType": "world",
+      "displaySerial": "0112",
+      "nickname": "強制ミュート喫茶雨音 COFFEE SHOP AMANE",
+      "avatarName": "強制ミュート喫茶雨音 COFFEE SHOP AMANE",
+      "category": "월드,지원 기기,지원 기기/PC",
+      "comment": "このワールドの作者さんもAkyoと縁が深いみたい！",
+      "author": "雨音さかな",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_7f057f79-0c1e-4f97-aeee-79eb176ed77c",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_7f057f79-0c1e-4f97-aeee-79eb176ed77c",
+      "urlUpdatedAt": "2026-09-19T09:54:24.494Z"
     }
   ]
 }
