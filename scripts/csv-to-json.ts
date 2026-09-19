@@ -129,7 +129,6 @@ function parseCsvToAkyoData(csvText: string): AkyoData[] {
     const category = ensureBoothCategories(
       normalizeHierarchicalCategories(rawRow['Category'] ?? ''),
       boothUrl,
-      entryType,
     );
 
     data.push({
