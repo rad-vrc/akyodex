@@ -186,3 +186,10 @@ test('lists every ancestor of a hierarchical category in every language', () => 
     }
   }
 });
+
+test('does not carry the retired Booth child category (removed 2026-09-19)', () => {
+  // Booth のアバターは全員が子を持っていたので、フィルターでは Booth と同じ集合が並ぶだけだった。
+  // 対訳に戻すと EN/KO 生成が再びその子を訳し始める（Muse の変異 M13）
+  const boothChildren = Object.keys(translations).filter((token) => token.startsWith('Booth/'));
+  assert.deepEqual(boothChildren, []);
+});

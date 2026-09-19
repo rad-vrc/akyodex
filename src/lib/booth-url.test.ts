@@ -1,7 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ensureBoothCategories, validateBoothUrl } from "./booth-url";
+import { ensureBoothCategories, stripLegacyBoothChildren, validateBoothUrl } from "./booth-url";
+
+test("stripLegacyBoothChildren は boothUrl に関係なく廃止した子階層だけを取り除く", () => {
+  assert.equal(stripLegacyBoothChildren("動物,Booth,Booth/アバター"), "動物,Booth");
+  assert.equal(stripLegacyBoothChildren("Animal,Booth/Avatar,Booth"), "Animal,Booth");
+  assert.equal(stripLegacyBoothChildren("동물,Booth/아바타"), "동물");
+  assert.equal(stripLegacyBoothChildren("Booth/アバター"), "");
+  // 取り除くものが無ければ入力をそのまま返す（整形もしない）
+  const untouched = "動物 , Booth,対応機種/PC";
+  assert.equal(stripLegacyBoothChildren(untouched), untouched);
+  assert.equal(stripLegacyBoothChildren(""), "");
+  // Booth/ で始まる別の（将来の）子は対象外
+  assert.equal(stripLegacyBoothChildren("Booth,Booth/ワールド"), "Booth,Booth/ワールド");
+});
 
 const BOOTH = "https://booth.pm/ja/items/123";
 

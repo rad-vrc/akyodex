@@ -1,5 +1,7 @@
 import type { AkyoData, AkyoEntryType } from "@/types/akyo";
 
+import { stripLegacyBoothChildren } from "./booth-url";
+
 export const WORLD_CATEGORY_MARKERS = new Set(["ワールド", "world", "월드"]);
 export const DEFAULT_WORLD_CATEGORY = "ワールド";
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
@@ -281,11 +283,16 @@ export function hydrateAkyoDataset(entries: AkyoData[]): AkyoData[] {
     const entryType = resolveEntryType(entry);
     const sourceUrl = getAkyoSourceUrl(entry);
     const rawDisplaySerial = entry.displaySerial?.trim() || "";
+    // KV の生データは ensureBoothCategories を通らないので、廃止した Booth の子階層は
+    // ここで落とす（旧コードの本番 Worker が KV を書き直した直後でも表示に出さない）
+    const category = stripLegacyBoothChildren(entry.category || "");
 
     return {
       ...entry,
       entryType,
       sourceUrl,
+      category,
+      attribute: stripLegacyBoothChildren(entry.attribute || category),
       displaySerial: (() => {
         if (rawDisplaySerial.startsWith(BOOTH_DISPLAY_SERIAL_PREFIX)) {
           return rawDisplaySerial;

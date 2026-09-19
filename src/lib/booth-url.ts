@@ -10,9 +10,30 @@
 
 /**
  * 以前 boothUrl を持つアバターに自動で付けていた子階層。2026-09-19 に廃止し、
- * データからも消した。古い KV や手編集で残っていても、ここで落とす。
+ * データからも消した。古い KV や手編集で残っていても、読む側と書く側の両方で落とす。
  */
 const LEGACY_BOOTH_CHILD_CATEGORIES = new Set(["Booth/アバター", "Booth/Avatar", "Booth/아바타"]);
+
+function splitCategories(category: string): string[] {
+  return category
+    ? category.split(",").map((c) => c.trim()).filter(Boolean)
+    : [];
+}
+
+/**
+ * 廃止した Booth の子階層をカテゴリ文字列から取り除く。boothUrl の有無に関係なく使える。
+ * 何も取り除くものが無ければ入力をそのまま返す（区切りの整形もしない）。
+ *
+ * 旧コードの本番 Worker が KV を書き直すと子階層が復活するので（sync → revalidate の
+ * 経路は本番のコードで動く）、KV から読む側（hydrateAkyoDataset）とクライアントの
+ * 正規化でも通す。
+ */
+export function stripLegacyBoothChildren(category: string): string {
+  if (!category || !category.includes("Booth/")) return category;
+  const cats = splitCategories(category);
+  const kept = cats.filter((c) => !LEGACY_BOOTH_CHILD_CATEGORIES.has(c));
+  return kept.length === cats.length ? category : kept.join(",");
+}
 
 /**
  * Ensure the "Booth" category is present when boothUrl exists.
@@ -28,10 +49,9 @@ export function ensureBoothCategories(
 ): string {
   if (!boothUrl) return category;
 
-  const cats = (category
-    ? category.split(",").map((c) => c.trim()).filter(Boolean)
-    : []
-  ).filter((c) => !LEGACY_BOOTH_CHILD_CATEGORIES.has(c));
+  const cats = splitCategories(category).filter(
+    (c) => !LEGACY_BOOTH_CHILD_CATEGORIES.has(c),
+  );
 
   if (!cats.includes("Booth")) {
     cats.push("Booth");

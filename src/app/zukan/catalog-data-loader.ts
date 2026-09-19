@@ -1,4 +1,5 @@
 import { detectVrcEntryTypeFromUrl } from "@/lib/akyo-entry";
+import { stripLegacyBoothChildren } from "@/lib/booth-url";
 import type { SupportedLanguage } from "@/lib/i18n";
 import { CATALOG_SCHEMA_VERSION } from "@/lib/catalog-payload";
 import type { AkyoData, AkyoEntryType } from "@/types/akyo";
@@ -49,12 +50,14 @@ function normalizeCatalogItem(item: unknown): AkyoData | undefined {
   const avatarName =
     typeof raw.avatarName === "string" ? raw.avatarName.trim() : "";
   const nickname = typeof raw.nickname === "string" ? raw.nickname.trim() : "";
-  const category =
+  // 廃止した Booth の子階層は、KV に残った古いカタログ本文から届いても表示に出さない
+  const category = stripLegacyBoothChildren(
     typeof raw.category === "string"
       ? raw.category
       : typeof raw.attribute === "string"
         ? raw.attribute
-        : "";
+        : "",
+  );
   const comment =
     typeof raw.comment === "string"
       ? raw.comment
