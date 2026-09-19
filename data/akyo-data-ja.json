@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-19T13:32:22.391Z",
+  "updatedAt": "2026-09-19T14:57:07.384Z",
   "count": 963,
   "data": [
     {
@@ -9426,11 +9426,12 @@
       "displaySerial": "0759",
       "nickname": "焼きそばパンAkyo",
       "avatarName": "akyo_焼きそばパン",
-      "category": "食べ物,食べ物/パン,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "category": "食べ物,食べ物/パン,対応機種,対応機種/PC,対応機種/Quest(Android),Booth",
       "comment": "（ささのきの手記）\n濃いソースの香りが食欲をそそる。 炭水化物と炭水化物でお腹も大満足",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870277"
     },
     {
       "id": "0831",

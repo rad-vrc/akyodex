@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-19T13:32:22.442Z",
+  "updatedAt": "2026-09-19T14:57:07.435Z",
   "count": 963,
   "data": [
     {
@@ -9426,11 +9426,12 @@
       "displaySerial": "0759",
       "nickname": "Yakisoba Bread Akyo",
       "avatarName": "akyo_焼きそばパン",
-      "category": "Food,Food/Bread,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Food,Food/Bread,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Booth",
       "comment": "(Sasanoki's notes)\nThe rich aroma of sauce whets the appetite. Carbs on carbs make for a very satisfying meal.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870277"
     },
     {
       "id": "0831",

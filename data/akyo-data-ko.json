@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-19T13:32:22.493Z",
+  "updatedAt": "2026-09-19T14:57:07.483Z",
   "count": 963,
   "data": [
     {
@@ -10149,11 +10149,12 @@
       "displaySerial": "0759",
       "nickname": "야키소바빵 Akyo",
       "avatarName": "akyo_焼きそばパン",
-      "category": "음식,음식/빵,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "category": "음식,음식/빵,지원 기기,지원 기기/PC,지원 기기/Quest(Android),Booth",
       "comment": "(사사노키의 수기)\n진한 소스 향이 식욕을 자극한다. 탄수화물과 탄수화물의 조합으로 배도 든든하다.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b2c1b8e-3599-409d-8a5f-b22ff2ec7d26",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870277"
     },
     {
       "id": "0831",
