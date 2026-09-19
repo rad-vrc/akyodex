@@ -159,10 +159,15 @@ function parseCsvToAkyoData(csvText: string): AkyoData[] {
   return data;
 }
 
-/** 前回の JSON から引き継ぐ、行ごとの URL と刻印 */
+/** 前回の JSON から引き継ぐ、行ごとの URL・BoothURL と刻印 */
 interface PreviousUrlState {
   url: string;
+  boothUrl: string;
   urlUpdatedAt?: string;
+}
+
+function getBoothUrl(entry: Pick<AkyoData, 'boothUrl'>): string {
+  return (entry.boothUrl || '').trim();
 }
 
 /**
@@ -219,12 +224,14 @@ async function loadPreviousUrlState(
   for (const item of parsed.data as Array<Record<string, unknown>>) {
     const id = String(item.id ?? '');
     if (!id) continue;
+    const boothUrl = typeof item.boothUrl === 'string' ? item.boothUrl : undefined;
     byId.set(id, {
       url: getEntryUrl({
         sourceUrl: typeof item.sourceUrl === 'string' ? item.sourceUrl : undefined,
         avatarUrl: typeof item.avatarUrl === 'string' ? item.avatarUrl : '',
-        boothUrl: typeof item.boothUrl === 'string' ? item.boothUrl : undefined,
+        boothUrl,
       }),
+      boothUrl: getBoothUrl({ boothUrl }),
       urlUpdatedAt:
         typeof item.urlUpdatedAt === 'string' && item.urlUpdatedAt.trim()
           ? item.urlUpdatedAt.trim()
@@ -238,7 +245,10 @@ async function loadPreviousUrlState(
  * 1 行ぶんの urlUpdatedAt を決める。
  * - 前回に無い ID（新規登録）→ now
  * - URL が前回と違う → now
- * - 同じ → 前回の刻印を引き継ぐ（無ければ付けない）
+ * - BoothURL が前回は空で今回は入っている（後から Booth に出た）→ now。
+ *   すでにある BoothURL の差し替えや削除は対象外（元URLの無い Booth 専用エントリの
+ *   差し替えだけは getEntryUrl 経由で拾う）
+ * - それ以外 → 前回の刻印を引き継ぐ（無ければ付けない）
  *
  * 導入前から URL が変わっていない行には何も付かないので、「刻印がある行はどれも
  * 刻印が無い行より新しい」が成り立つ（図鑑側の並べ方が前提にしている）。
@@ -249,7 +259,9 @@ function resolveUrlUpdatedAt(
   now: string,
 ): string | undefined {
   if (!previous) return now;
-  return getEntryUrl(current) !== previous.url ? now : previous.urlUpdatedAt;
+  if (getEntryUrl(current) !== previous.url) return now;
+  if (!previous.boothUrl && getBoothUrl(current)) return now;
+  return previous.urlUpdatedAt;
 }
 
 /** 日本語の行に刻印し、ID → 刻印 の対応を返す（EN/KO は同じ ID に同じ値を写す） */

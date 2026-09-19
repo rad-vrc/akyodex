@@ -27,12 +27,19 @@ const HEADER = [
   "SourceURL",
   "EntryType",
   "DisplaySerial",
+  "BoothURL",
 ];
 
 interface UrlFields {
   sourceUrl?: string;
   avatarUrl: string;
   boothUrl?: string;
+}
+
+interface PreviousState {
+  url: string;
+  boothUrl: string;
+  urlUpdatedAt?: string;
 }
 
 interface TestableModule {
@@ -44,14 +51,10 @@ interface TestableModule {
     urlUpdatedAt?: string;
   }>;
   getEntryUrl: (entry: UrlFields) => string;
-  resolveUrlUpdatedAt: (
-    current: UrlFields,
-    previous: { url: string; urlUpdatedAt?: string } | undefined,
-    now: string,
-  ) => string | undefined;
+  resolveUrlUpdatedAt: (current: UrlFields, previous: PreviousState | undefined, now: string) => string | undefined;
   stampUrlUpdatedAt: (
     rows: Array<{ id: string; urlUpdatedAt?: string } & UrlFields>,
-    previousById: Map<string, { url: string; urlUpdatedAt?: string }>,
+    previousById: Map<string, PreviousState>,
     now: string,
   ) => Map<string, string>;
 }
@@ -91,6 +94,7 @@ test("parseCsvToAkyoData normalizes EntryType before validating it", async () =>
         "https://vrchat.com/home/world/wrld_example",
         " World ",
         "0067",
+        "",
       ],
       [
         "0813",
@@ -102,6 +106,7 @@ test("parseCsvToAkyoData normalizes EntryType before validating it", async () =>
         "https://vrchat.com/home/avatar/avtr_example",
         "",
         "Avatar",
+        "",
         "",
       ],
     ]);
@@ -125,29 +130,42 @@ test("getEntryUrl は VRChat の表記ゆれを正規化し、元URLが無い Bo
   });
 });
 
-test("resolveUrlUpdatedAt は新規登録と URL 変更だけを now にし、それ以外は前回の刻印を引き継ぐ", async () => {
+test("resolveUrlUpdatedAt は新規登録・URL 変更・後から付いた BoothURL を now にし、それ以外は前回の刻印を引き継ぐ", async () => {
   await withTestableModule((mod) => {
     const now = "2026-09-18T00:00:00.000Z";
     const before = "2026-09-01T00:00:00.000Z";
     const url = "https://vrchat.com/home/avatar/avtr_a";
+    const booth = "https://x.booth.pm/items/1";
     // 新規登録
     assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url }, undefined, now), now);
     // URL が変わった
     assert.equal(
-      mod.resolveUrlUpdatedAt({ avatarUrl: "https://vrchat.com/home/avatar/avtr_b" }, { url, urlUpdatedAt: before }, now),
+      mod.resolveUrlUpdatedAt({ avatarUrl: "https://vrchat.com/home/avatar/avtr_b" }, { url, boothUrl: "", urlUpdatedAt: before }, now),
       now,
     );
     // 変わっていない → 前回の刻印
-    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url }, { url, urlUpdatedAt: before }, now), before);
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url }, { url, boothUrl: "", urlUpdatedAt: before }, now), before);
     // 変わっていない・前回も刻印なし（導入前からの行）→ 付けない
-    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url }, { url }, now), undefined);
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url }, { url, boothUrl: "" }, now), undefined);
     // sourceUrl があればそちらで比べる。前後の空白や /info は差とみなさない
-    assert.equal(mod.resolveUrlUpdatedAt({ sourceUrl: ` ${url}/info `, avatarUrl: "" }, { url }, now), undefined);
+    assert.equal(mod.resolveUrlUpdatedAt({ sourceUrl: ` ${url}/info `, avatarUrl: "" }, { url, boothUrl: "" }, now), undefined);
     // Booth 専用エントリは BoothURL の差し替えで最新になる
     assert.equal(
-      mod.resolveUrlUpdatedAt({ avatarUrl: "", boothUrl: "https://x.booth.pm/items/2" }, { url: "https://x.booth.pm/items/1", urlUpdatedAt: before }, now),
+      mod.resolveUrlUpdatedAt({ avatarUrl: "", boothUrl: "https://x.booth.pm/items/2" }, { url: booth, boothUrl: booth, urlUpdatedAt: before }, now),
       now,
     );
+
+    // 後から BoothURL が付いた（Booth に出た）→ 最新
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url, boothUrl: booth }, { url, boothUrl: "" }, now), now);
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url, boothUrl: ` ${booth} ` }, { url, boothUrl: "", urlUpdatedAt: before }, now), now);
+    // 最初から付いていて変わらない → 引き継ぐ
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url, boothUrl: booth }, { url, boothUrl: booth, urlUpdatedAt: before }, now), before);
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url, boothUrl: booth }, { url, boothUrl: booth }, now), undefined);
+    // 元URLのある行で BoothURL を差し替えただけ・外しただけ → 対象外
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url, boothUrl: "https://x.booth.pm/items/2" }, { url, boothUrl: booth, urlUpdatedAt: before }, now), before);
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url, boothUrl: "" }, { url, boothUrl: booth, urlUpdatedAt: before }, now), before);
+    // 空白だけの BoothURL は「付いた」とみなさない
+    assert.equal(mod.resolveUrlUpdatedAt({ avatarUrl: url, boothUrl: "   " }, { url, boothUrl: "" }, now), undefined);
   });
 });
 
@@ -160,18 +178,22 @@ test("stampUrlUpdatedAt は日本語の行に刻印し、ID → 刻印の対応�
       { id: "0003", avatarUrl: "https://vrchat.com/home/avatar/avtr_added" },
       // URL は変わっていないのに、上流から紛れ込んだ刻印を持っている行
       { id: "0004", avatarUrl: "https://vrchat.com/home/avatar/avtr_quiet", urlUpdatedAt: "stale-garbage" },
+      // 後から BoothURL が付いた行
+      { id: "0005", avatarUrl: "https://vrchat.com/home/avatar/avtr_booth", boothUrl: "https://x.booth.pm/items/5" },
     ];
-    const previous = new Map([
-      ["0001", { url: "https://vrchat.com/home/avatar/avtr_same" }],
-      ["0002", { url: "https://vrchat.com/home/avatar/avtr_old-version", urlUpdatedAt: "2026-09-01T00:00:00.000Z" }],
-      ["0004", { url: "https://vrchat.com/home/avatar/avtr_quiet" }],
+    const previous = new Map<string, PreviousState>([
+      ["0001", { url: "https://vrchat.com/home/avatar/avtr_same", boothUrl: "" }],
+      ["0002", { url: "https://vrchat.com/home/avatar/avtr_old-version", boothUrl: "", urlUpdatedAt: "2026-09-01T00:00:00.000Z" }],
+      ["0004", { url: "https://vrchat.com/home/avatar/avtr_quiet", boothUrl: "" }],
+      ["0005", { url: "https://vrchat.com/home/avatar/avtr_booth", boothUrl: "" }],
     ]);
     const stamps = mod.stampUrlUpdatedAt(rows, previous, now);
-    assert.deepEqual([...stamps.entries()], [["0002", now], ["0003", now]]);
+    assert.deepEqual([...stamps.entries()], [["0002", now], ["0003", now], ["0005", now]]);
     assert.equal("urlUpdatedAt" in rows[0]!, false, "変更の無い導入前の行には付けない");
     assert.equal(rows[1]!.urlUpdatedAt, now, "CSV 側に紛れ込んだ値ではなく判定結果で上書きする");
     assert.equal(rows[2]!.urlUpdatedAt, now);
     assert.equal("urlUpdatedAt" in rows[3]!, false, "前回に刻印が無い行の紛れ込んだ値は消す");
+    assert.equal(rows[4]!.urlUpdatedAt, now, "後から Booth に出た行");
   });
 });
 
@@ -182,12 +204,12 @@ test("csv-to-json stamps urlUpdatedAt from the previous JA JSON and copies it to
   await mkdir(dataDir);
   try {
     const LANGS = ["ja", "en", "ko"] as const;
-    const rows = (lang: string, url0002: string) =>
+    const rows = (lang: string, url0002: string, booth0003 = "") =>
       buildCsv([
         HEADER,
-        ["0001", `nick-${lang}`, "Avatar One", "動物", "", "Author", "https://vrchat.com/home/avatar/avtr_one", "", "Avatar", ""],
-        ["0002", `nick-${lang}`, "Avatar Two", "動物", "", "Author", url0002, "", "Avatar", ""],
-        ["0003", `nick-${lang}`, "Avatar Three", "動物", "", "Author", "https://vrchat.com/home/avatar/avtr_three", "", "Avatar", ""],
+        ["0001", `nick-${lang}`, "Avatar One", "動物", "", "Author", "https://vrchat.com/home/avatar/avtr_one", "", "Avatar", "", ""],
+        ["0002", `nick-${lang}`, "Avatar Two", "動物", "", "Author", url0002, "", "Avatar", "", ""],
+        ["0003", `nick-${lang}`, "Avatar Three", "動物", "", "Author", "https://vrchat.com/home/avatar/avtr_three", "", "Avatar", "", booth0003],
       ]);
     const writeCsvs = async (make: (lang: string) => string) => {
       for (const lang of LANGS) {
@@ -221,7 +243,7 @@ test("csv-to-json stamps urlUpdatedAt from the previous JA JSON and copies it to
     const withChanges = (lang: string) =>
       rows(lang, "https://vrchat.com/home/avatar/avtr_two-v2").replace(
         /\n$/,
-        `\n${buildCsv([["0004", `nick-${lang}`, "Avatar Four", "動物", "", "Author", "https://vrchat.com/home/avatar/avtr_four", "", "Avatar", ""]])}`,
+        `\n${buildCsv([["0004", `nick-${lang}`, "Avatar Four", "動物", "", "Author", "https://vrchat.com/home/avatar/avtr_four", "", "Avatar", "", ""]])}`,
       );
     await writeCsvs(withChanges);
     const thirdLog = run();
@@ -239,26 +261,46 @@ test("csv-to-json stamps urlUpdatedAt from the previous JA JSON and copies it to
     assert.deepEqual(await stampsOf("ja"), ja);
     assert.deepEqual(await stampsOf("ko"), ja);
 
-    // 5 回目: 前回 JSON が壊れている → 書かずに止まる（刻印の履歴を消さない）
+    // 5 回目: 0003 に BoothURL が後から付いた → 0003 だけ新しく刻まれる（他は引き継ぎ）
+    const withBooth = (lang: string) =>
+      withChanges(lang).replace(
+        `"https://vrchat.com/home/avatar/avtr_three","","Avatar","",""`,
+        `"https://vrchat.com/home/avatar/avtr_three","","Avatar","","https://x.booth.pm/items/3"`,
+      );
+    await writeCsvs(withBooth);
+    const fifthLog = run();
+    assert.match(fifthLog, /urlUpdatedAt: 1 row\(s\) stamped/);
+    const afterBooth = await stampsOf("ja");
+    assert.ok(afterBooth["0003"], "Booth に出た行が刻まれる");
+    assert.notEqual(afterBooth["0003"], stamp);
+    assert.equal(afterBooth["0002"], stamp, "他の行は引き継ぎ");
+    assert.equal(afterBooth["0001"], undefined);
+    assert.deepEqual(await stampsOf("en"), afterBooth);
+
+    // 6 回目: 同じ BoothURL のまま → 引き継ぐ
+    run();
+    assert.deepEqual(await stampsOf("ja"), afterBooth);
+
+    // 7 回目: 前回 JSON が壊れている → 書かずに止まる（刻印の履歴を消さない）
     const jaJsonPath = path.join(dataDir, "akyo-data-ja.json");
     const goodJaJson = await readFile(jaJsonPath, "utf8");
     const enJsonBefore = await readFile(path.join(dataDir, "akyo-data-en.json"), "utf8");
     await writeFile(jaJsonPath, '{"data":"oops"}');
-    const fifthLog = run(1);
-    assert.match(fifthLog, /Refusing to write JSON without urlUpdatedAt history/);
+    const seventhLog = run(1);
+    assert.match(seventhLog, /Refusing to write JSON without urlUpdatedAt history/);
     assert.equal(await readFile(jaJsonPath, "utf8"), '{"data":"oops"}', "壊れた前回 JSON は上書きしない");
     assert.equal(await readFile(path.join(dataDir, "akyo-data-en.json"), "utf8"), enJsonBefore, "他言語も書かない");
 
-    // 6 回目: 前回 JSON が空（0 行）→ 全件を新規登録扱いにせず、刻まない
+    // 8 回目: 前回 JSON が空（0 行）→ 全件を新規登録扱いにせず、刻まない
     await writeFile(jaJsonPath, '{"data":[]}');
-    const sixthLog = run();
-    assert.match(sixthLog, /has 0 rows/);
+    const eighthLog = run();
+    assert.match(eighthLog, /has 0 rows/);
     assert.deepEqual(await stampsOf("ja"), { "0001": undefined, "0002": undefined, "0003": undefined, "0004": undefined });
 
     // 復旧: 正しい前回 JSON に戻せば刻印は引き継がれる
     await writeFile(jaJsonPath, goodJaJson);
     run();
-    assert.deepEqual(await stampsOf("ja"), ja);
+    assert.deepEqual(await stampsOf("ja"), afterBooth);
   } finally {
     await rm(cwd, { recursive: true, force: true });
   }
