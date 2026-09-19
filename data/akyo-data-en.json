@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-19T14:57:07.435Z",
+  "updatedAt": "2026-09-19T15:01:32.520Z",
   "count": 963,
   "data": [
     {
@@ -4414,13 +4414,15 @@
     {
       "id": "0388",
       "entryType": "avatar",
+      "displaySerial": "0388",
       "nickname": "Melon Bread Akyo",
       "avatarName": "akyo_メロンパン",
-      "category": "Food,Food/Fruit,Food/Sweets,Food/Dish,Supported Platform,Supported Platform/PC",
+      "category": "Food,Food/Fruit,Food/Sweets,Food/Dish,Supported Platform,Supported Platform/PC,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870332"
     },
     {
       "id": "0389",
@@ -6526,24 +6528,28 @@
     {
       "id": "0576",
       "entryType": "avatar",
+      "displaySerial": "0576",
       "nickname": "Melon Bread Turtle Akyo",
       "avatarName": "akyp かめメロンパン",
-      "category": "Food,Animal,Food/Fruit,Food/Sweets,Food/Dish,Animal/Turtle,Food/Bread,Supported Platform,Supported Platform/PC",
+      "category": "Food,Animal,Food/Fruit,Food/Sweets,Food/Dish,Animal/Turtle,Food/Bread,Supported Platform,Supported Platform/PC,Booth",
       "comment": "Akyo, spreading a sweet fragrance. No added juice.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870295"
     },
     {
       "id": "0577",
       "entryType": "avatar",
+      "displaySerial": "0577",
       "nickname": "French Bread Akyo",
       "avatarName": "akyo フランスパン",
-      "category": "Food,Food/Dish,Food/Bread,Supported Platform,Supported Platform/PC",
+      "category": "Food,Food/Dish,Food/Bread,Supported Platform,Supported Platform/PC,Booth",
       "comment": "exuding a fragrant aroma",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870313"
     },
     {
       "id": "0578",
@@ -10246,11 +10252,12 @@
       "displaySerial": "0809",
       "nickname": "Surprised Akyo",
       "avatarName": "akyo_びっくり",
-      "category": "Parody,Parody/Rubber Chicken,Animal,Animal/Bird,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Parody,Parody/Rubber Chicken,Animal,Animal/Bird,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Booth",
       "comment": "(Sasanoki's notes)\nA startled Akyo. It looks about to let out a scream.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870323"
     },
     {
       "id": "0899",

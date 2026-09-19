@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-19T14:57:07.483Z",
+  "updatedAt": "2026-09-19T15:01:32.575Z",
   "count": 963,
   "data": [
     {
@@ -4785,11 +4785,12 @@
       "displaySerial": "0388",
       "nickname": "멜론빵 Akyo",
       "avatarName": "akyo_メロンパン",
-      "category": "음식,음식/과일,음식/디저트,음식/요리,지원 기기,지원 기기/PC",
+      "category": "음식,음식/과일,음식/디저트,음식/요리,지원 기기,지원 기기/PC,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870332"
     },
     {
       "id": "0389",
@@ -7084,11 +7085,12 @@
       "displaySerial": "0576",
       "nickname": "멜론빵 거북이 Akyo",
       "avatarName": "akyp かめメロンパン",
-      "category": "음식,동물,음식/과일,음식/디저트,음식/요리,동물/거북이,음식/빵,지원 기기,지원 기기/PC",
+      "category": "음식,동물,음식/과일,음식/디저트,음식/요리,동물/거북이,음식/빵,지원 기기,지원 기기/PC,Booth",
       "comment": "달콤한 향기를 뿌리는 Akyo. 무과즙",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870295"
     },
     {
       "id": "0577",
@@ -7096,11 +7098,12 @@
       "displaySerial": "0577",
       "nickname": "바게트 Akyo",
       "avatarName": "akyo フランスパン",
-      "category": "음식,음식/요리,음식/빵,지원 기기,지원 기기/PC",
+      "category": "음식,음식/요리,음식/빵,지원 기기,지원 기기/PC,Booth",
       "comment": "고소한 향기를 풍기고 있다",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870313"
     },
     {
       "id": "0578",
@@ -10969,11 +10972,12 @@
       "displaySerial": "0809",
       "nickname": "놀란 Akyo",
       "avatarName": "akyo_びっくり",
-      "category": "패러디,패러디/닭삑삑이,동물,동물/새,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "category": "패러디,패러디/닭삑삑이,동물,동물/새,지원 기기,지원 기기/PC,지원 기기/Quest(Android),Booth",
       "comment": "(사사노키의 수기)\n놀라 있는 Akyo. 비명을 지를 것 같다",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870323"
     },
     {
       "id": "0899",

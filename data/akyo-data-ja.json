@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-19T14:57:07.384Z",
+  "updatedAt": "2026-09-19T15:01:32.467Z",
   "count": 963,
   "data": [
     {
@@ -4414,13 +4414,15 @@
     {
       "id": "0388",
       "entryType": "avatar",
+      "displaySerial": "0388",
       "nickname": "メロンパンAkyo",
       "avatarName": "akyo_メロンパン",
-      "category": "食べ物,食べ物/フルーツ,食べ物/スイーツ,食べ物/料理,対応機種,対応機種/PC",
+      "category": "食べ物,食べ物/フルーツ,食べ物/スイーツ,食べ物/料理,対応機種,対応機種/PC,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_198d8a7d-fa52-47e7-951f-f2b9df5d2a4f",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870332"
     },
     {
       "id": "0389",
@@ -6526,24 +6528,28 @@
     {
       "id": "0576",
       "entryType": "avatar",
+      "displaySerial": "0576",
       "nickname": "メロンパンかめAkyo",
       "avatarName": "akyp かめメロンパン",
-      "category": "食べ物,動物,食べ物/フルーツ,食べ物/スイーツ,食べ物/料理,動物/かめ,食べ物/パン,対応機種,対応機種/PC",
+      "category": "食べ物,動物,食べ物/フルーツ,食べ物/スイーツ,食べ物/料理,動物/かめ,食べ物/パン,対応機種,対応機種/PC,Booth",
       "comment": "甘い香りを振りまくakyo。無果汁",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b3f30bdf-9c8b-43e4-b29a-7b5a652c6c88",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870295"
     },
     {
       "id": "0577",
       "entryType": "avatar",
+      "displaySerial": "0577",
       "nickname": "フランスパンAkyo",
       "avatarName": "akyo フランスパン",
-      "category": "食べ物,食べ物/料理,食べ物/パン,対応機種,対応機種/PC",
+      "category": "食べ物,食べ物/料理,食べ物/パン,対応機種,対応機種/PC,Booth",
       "comment": "香ばしい香りを漂わせる",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_66e939c1-4176-4b05-aac0-e44c2c7e7e4a",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870313"
     },
     {
       "id": "0578",
@@ -10246,11 +10252,12 @@
       "displaySerial": "0809",
       "nickname": "びっくりAkyo",
       "avatarName": "akyo_びっくり",
-      "category": "パロディ,パロディ/びっくりチキン,動物,動物/鳥,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "category": "パロディ,パロディ/びっくりチキン,動物,動物/鳥,対応機種,対応機種/PC,対応機種/Quest(Android),Booth",
       "comment": "【ささのきの手記】\nびっくりしているakyo。叫び声を上げそうだ",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2a663dbd-c225-4667-be36-d66913df0ac1",
+      "boothUrl": "https://sasanoki.booth.pm/items/8870323"
     },
     {
       "id": "0899",
