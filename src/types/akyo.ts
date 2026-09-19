@@ -14,10 +14,11 @@ export interface AkyoData {
   sourceUrl?: string; // エントリの元URL（avatar/world共通、未指定時は avatarUrl を使用）
   boothUrl?: string; // BOOTH販売ページURL（任意）
   /**
-   * 元URLが最後に変わった（または新規登録された）時刻。ISO 8601。
+   * 元URLが最後に変わった（新規登録された、または後から BoothURL が付いた）時刻。ISO 8601。
    * CSV には無く、scripts/csv-to-json.ts が前回の JSON と URL を比べて刻む。
    * 「最新N件」はこれを内部IDより優先して見るので、アバターを上げ直して URL を
-   * 差し替えたエントリは番号を変えずに最新扱いになる。導入前の行には付かない。
+   * 差し替えたエントリや、後から Booth に出たエントリは番号を変えずに最新扱いになる。
+   * 導入前の行には付かない。
    */
   urlUpdatedAt?: string;
 
