@@ -7,36 +7,34 @@
  *
  * Returns the canonicalized URL string on success, or undefined on failure.
  */
-// All localized forms of the Booth/avatar sub-category
-const BOOTH_AVATAR_VARIANTS = ["Booth/アバター", "Booth/Avatar", "Booth/아바타"];
 
 /**
- * Ensure Booth categories are present when boothUrl exists.
- * - "Booth" is added to all entries with a boothUrl
- * - A Booth/avatar sub-category is added only when entryType is "avatar"
- *   and none of the localized variants already exist.
- * Categories are not duplicated if already present.
+ * 以前 boothUrl を持つアバターに自動で付けていた子階層。2026-09-19 に廃止し、
+ * データからも消した。古い KV や手編集で残っていても、ここで落とす。
+ */
+const LEGACY_BOOTH_CHILD_CATEGORIES = new Set(["Booth/アバター", "Booth/Avatar", "Booth/아바타"]);
+
+/**
+ * Ensure the "Booth" category is present when boothUrl exists.
+ * - "Booth" is added to every entry with a boothUrl (no sub-category; the former
+ *   "Booth/アバター" child was retired because every Booth avatar carried it,
+ *   so it only duplicated "Booth" in the filter)
+ * - Retired Booth children are removed
+ * - Categories are not duplicated if already present
  */
 export function ensureBoothCategories(
   category: string,
   boothUrl: string | undefined,
-  entryType: string | undefined,
 ): string {
   if (!boothUrl) return category;
 
-  const cats = category
+  const cats = (category
     ? category.split(",").map((c) => c.trim()).filter(Boolean)
-    : [];
+    : []
+  ).filter((c) => !LEGACY_BOOTH_CHILD_CATEGORIES.has(c));
 
   if (!cats.includes("Booth")) {
     cats.push("Booth");
-  }
-
-  if (
-    entryType === "avatar" &&
-    !cats.some((c) => BOOTH_AVATAR_VARIANTS.includes(c))
-  ) {
-    cats.push("Booth/アバター");
   }
 
   return cats.join(",");

@@ -223,7 +223,7 @@ export function parseCsvToAkyoData(csvText: string): AkyoData[] {
       normalizedEntryType === 'avatar' || normalizedEntryType === 'world'
         ? normalizedEntryType
         : undefined;
-    const category = ensureBoothCategories(attribute, boothUrl, entryType);
+    const category = ensureBoothCategories(attribute, boothUrl);
 
     data.push({
       id: rawRow['ID'] ?? '',

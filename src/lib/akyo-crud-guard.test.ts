@@ -79,7 +79,7 @@ test('a child submitted without its parent is written with the ancestors filled 
 
 test('markers the server adds itself are never rejected, and deleting checks no category', async () => {
   const booth = fixture();
-  // 'Booth' and 'Booth/アバター' are appended by the server, not submitted by the client.
+  // 'Booth' is appended by the server, not submitted by the client.
   const response = await processAkyoCRUD('add', form({
     id: '0004', category: '動物', sourceUrl: '', avatarUrl: '', boothUrl: 'https://booth.pm/ja/items/123',
   }), booth.dependencies);

@@ -114,7 +114,7 @@ export function prepareAkyoUpdate(
     const recordData: RecordData = {
         ...form,
         entryType,
-        category: ensureBoothCategories(category, form.boothUrl, entryType),
+        category: ensureBoothCategories(category, form.boothUrl),
         avatarUrl: form.sourceUrl || form.avatarUrl,
     };
     const id = form.id;
@@ -235,11 +235,7 @@ export async function processAkyoCRUD(
             )
             : submittedCategory;
 
-        const categoryWithBooth = ensureBoothCategories(
-            normalizedCategory,
-            boothUrl,
-            isBoothOnly ? undefined : normalizedEntryType || undefined,
-        );
+        const categoryWithBooth = ensureBoothCategories(normalizedCategory, boothUrl);
 
         // A form opened before another admin renamed or deleted a category would otherwise
         // write a token with no translation, which stops the EN/KO regeneration. Check what
