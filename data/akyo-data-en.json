@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-20T07:28:55.237Z",
-  "count": 965,
+  "updatedAt": "2026-09-20T10:11:10.407Z",
+  "count": 966,
   "data": [
     {
       "id": "0001",
@@ -11074,6 +11074,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a1d9cf72-2202-4cca-b46f-da7ce403d312",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a1d9cf72-2202-4cca-b46f-da7ce403d312",
       "urlUpdatedAt": "2026-09-20T07:28:55.167Z"
+    },
+    {
+      "id": "0967",
+      "entryType": "avatar",
+      "displaySerial": "0854",
+      "nickname": "GPT-6 アストラAkyo",
+      "avatarName": "akyo_GPT-6 Astra",
+      "category": "Supported Platform,Supported Platform/PC,Mint Chocolate,Color,Color/Green Tones,Color/Blue Tones,AI",
+      "comment": "アキョツーの逆襲が近い‥‥‥",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_cacc2fcf-85c7-4c8b-9bd6-eabbf56264d4",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_cacc2fcf-85c7-4c8b-9bd6-eabbf56264d4",
+      "urlUpdatedAt": "2026-09-20T10:11:10.303Z"
     }
   ]
 }
