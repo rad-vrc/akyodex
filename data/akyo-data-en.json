@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-20T10:11:10.407Z",
+  "updatedAt": "2026-09-20T10:46:24.026Z",
   "count": 966,
   "data": [
     {
@@ -176,10 +176,11 @@
     {
       "id": "0015",
       "entryType": "avatar",
+      "displaySerial": "0015",
       "nickname": "Run Akyo",
       "avatarName": "Akyo Run",
-      "category": "Mint Chocolate,Supported Platform,Supported Platform/PC",
-      "comment": "",
+      "category": "Supported Platform,Supported Platform/PC,Color,Color/Blue Tones,Mint Chocolate",
+      "comment": "走る～走る～♪\nAkyoたち～♪",
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3b1ca729-b513-4fb6-9beb-127763696f53",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b1ca729-b513-4fb6-9beb-127763696f53"

@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-20T10:11:10.356Z",
+  "updatedAt": "2026-09-20T10:46:23.978Z",
   "count": 966,
   "data": [
     {
@@ -168,7 +168,7 @@
       "nickname": "スーパーフライング運送Akyo",
       "avatarName": "スーパーフライング運送Akyo",
       "category": "チョコミント類,ギミック・特殊,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,ギミック・特殊/ペン,ギミック・特殊/ダンス,ギミック・特殊/運送,ギミック・特殊/色変え,ギミック・特殊/飛行,器官,器官/腕,身分・役割,身分・役割/サービス業従事者,色,色/緑色系,色/青色系",
-      "comment": "フライング運送を覚えたAkyo！箱のふたは開け閉めできる！\nスーパー運送Akyoもいるらしい？",
+      "comment": "フライング運送を覚えたAkyo！箱のふたは開け閉めできるよ！\nスーパー運送Akyoもいるらしい？",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a4a98039-e32b-4915-8663-a1d73c17f3fa",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a4a98039-e32b-4915-8663-a1d73c17f3fa"
@@ -176,10 +176,11 @@
     {
       "id": "0015",
       "entryType": "avatar",
+      "displaySerial": "0015",
       "nickname": "ランAkyo",
       "avatarName": "Akyo Run",
-      "category": "チョコミント類,対応機種,対応機種/PC",
-      "comment": "",
+      "category": "対応機種,対応機種/PC,色,色/青色系,チョコミント類",
+      "comment": "走る～走る～♪\nAkyoたち～♪",
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3b1ca729-b513-4fb6-9beb-127763696f53",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b1ca729-b513-4fb6-9beb-127763696f53"
