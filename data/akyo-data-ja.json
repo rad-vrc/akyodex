@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-20T00:30:03.086Z",
-  "count": 964,
+  "updatedAt": "2026-09-20T07:28:55.203Z",
+  "count": 965,
   "data": [
     {
       "id": "0001",
@@ -11061,6 +11061,19 @@
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d0a5f844-7c89-4d13-9574-203b92e0fd73",
       "boothUrl": "https://nigredou.booth.pm/items/8872147",
       "urlUpdatedAt": "2026-09-20T00:30:03.033Z"
+    },
+    {
+      "id": "0966",
+      "entryType": "avatar",
+      "displaySerial": "0853",
+      "nickname": "ゆずAkyo",
+      "avatarName": "yuzuakyo",
+      "category": "対応機種,対応機種/PC,色,色/黄色系,食べ物,食べ物/フルーツ,歴史",
+      "comment": "レモンじゃなくてゆずだった！",
+      "author": "higashikata890",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a1d9cf72-2202-4cca-b46f-da7ce403d312",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a1d9cf72-2202-4cca-b46f-da7ce403d312",
+      "urlUpdatedAt": "2026-09-20T07:28:55.167Z"
     }
   ]
 }
