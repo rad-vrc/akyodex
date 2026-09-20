@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-19T15:25:42.556Z",
-  "count": 963,
+  "updatedAt": "2026-09-20T00:30:03.086Z",
+  "count": 964,
   "data": [
     {
       "id": "0001",
@@ -11047,6 +11047,20 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_7f057f79-0c1e-4f97-aeee-79eb176ed77c",
       "avatarUrl": "https://vrchat.com/home/world/wrld_7f057f79-0c1e-4f97-aeee-79eb176ed77c",
       "urlUpdatedAt": "2026-09-19T09:54:24.494Z"
+    },
+    {
+      "id": "0965",
+      "entryType": "avatar",
+      "displaySerial": "0852",
+      "nickname": "みたらしもちAkyo",
+      "avatarName": "みたらしもちAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,体格・形状・触り心地,体格・形状・触り心地/柔らかい,色,色/白色系,食べ物,食べ物/スイーツ,調味料,Booth",
+      "comment": "緑茶Akyoと仲が良いみたい！",
+      "author": "ニグレド",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d0a5f844-7c89-4d13-9574-203b92e0fd73",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d0a5f844-7c89-4d13-9574-203b92e0fd73",
+      "boothUrl": "https://nigredou.booth.pm/items/8872147",
+      "urlUpdatedAt": "2026-09-20T00:30:03.033Z"
     }
   ]
 }
