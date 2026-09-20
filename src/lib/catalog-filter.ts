@@ -38,6 +38,15 @@ export function filterCatalog(data: readonly AkyoData[], options: AkyoFilterOpti
     );
   }
 
+  // Latest mode: pick the newest N first, then let the other filters narrow that set.
+  // (The reverse — newest N of the filtered set — would turn "latest 100" into a
+  // different 100 for every filter, and the count would never shrink.)
+  // The selection is newest-first (urlUpdatedAt, then internal ID); the requested
+  // direction is applied at the end so the members never change with the direction.
+  if (options.latestCount && !options.randomCount) {
+    filtered = selectLatestEntries(filtered, options.latestCount, false);
+  }
+
   // Filter by categories (supports both single and multi-select)
   if (selectedCategories.length > 0) {
     filtered = filtered.filter((akyo) => {
@@ -93,11 +102,13 @@ export function filterCatalog(data: readonly AkyoData[], options: AkyoFilterOpti
       .map(({ value }) => value)
       .slice(0, options.randomCount);
   } else if (options.latestCount) {
-    // Select the newest entries first (urlUpdatedAt, then internal ID) and apply the requested direction.
+    // Already selected and ordered newest-first above; only the direction is left.
     // The regular sort below keys on displaySerial, which worlds and
     // avatars number independently, so it interleaves two unrelated
     // sequences and can never answer "what was added most recently".
-    filtered = selectLatestEntries(filtered, options.latestCount, sortAsc);
+    if (sortAsc) {
+      filtered.reverse();
+    }
   } else {
     // Sort by display serial for worlds, by ID for avatars
     filtered.sort((a, b) => {
