@@ -700,21 +700,12 @@ export function ZukanClient({
       );
       return;
     }
-    if (latestMode) {
-      // 最新100件もランダムと同じくエントリ種別フィルターのみ反映する
-      filterData(
-        {
-          searchQuery: "",
-          latestCount: LATEST_ENTRY_COUNT,
-          entryTypeFilter,
-        },
-        sortAscending,
-      );
-      return;
-    }
+    // 最新100件は「先に最新100件を選び、その中を他の条件で絞る」。
+    // 絞り込み条件はそのまま渡し、latestCount を足すだけ（順序は filterCatalog 側）
     filterData(
       {
         searchQuery,
+        ...(latestMode ? { latestCount: LATEST_ENTRY_COUNT } : {}),
         categories:
           selectedAttributes.length > 0 ? selectedAttributes : undefined,
         authors: selectedCreators.length > 0 ? selectedCreators : undefined,
@@ -755,21 +746,9 @@ export function ZukanClient({
       setLatestMode(false);
     } else {
       setLatestMode(true);
-      // ランダムとは排他。エントリ種別フィルターは維持し、他はリセット
+      // ランダムとは排他。検索・カテゴリ・作者・お気に入りの条件はそのまま残し、
+      // 最新100件の中をその条件で絞る（適用はフィルター適用の effect が行う）
       setRandomMode(false);
-      setSearchQuery("");
-      setSelectedAttributes([]);
-      setCategoryMatchMode("or");
-      setSelectedCreators([]);
-      setFavoritesOnly(false);
-      filterData(
-        {
-          searchQuery: "",
-          latestCount: LATEST_ENTRY_COUNT,
-          entryTypeFilter,
-        },
-        sortAscending,
-      );
     }
   };
 
