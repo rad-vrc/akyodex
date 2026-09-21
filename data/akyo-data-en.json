@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-21T04:52:08.962Z",
-  "count": 966,
+  "updatedAt": "2026-09-21T13:51:07.579Z",
+  "count": 967,
   "data": [
     {
       "id": "0001",
@@ -11089,6 +11089,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_cacc2fcf-85c7-4c8b-9bd6-eabbf56264d4",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_cacc2fcf-85c7-4c8b-9bd6-eabbf56264d4",
       "urlUpdatedAt": "2026-09-20T10:11:10.303Z"
+    },
+    {
+      "id": "0968",
+      "entryType": "avatar",
+      "displaySerial": "0855",
+      "nickname": "鱗Akyo",
+      "avatarName": "鱗Akyo",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Physique・Shape・Texture,Physique・Shape・Texture/Scales,Physique・Shape・Texture/Hard,Color,Color/Brown Tones",
+      "comment": "Akyoの硬さで差をつけろ！",
+      "author": "ふらっと（flat）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_788d3979-3269-4570-935e-8827b8b870f3",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_788d3979-3269-4570-935e-8827b8b870f3",
+      "urlUpdatedAt": "2026-09-21T13:51:07.477Z"
     }
   ]
 }
