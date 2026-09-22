@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T10:29:53.993Z",
-  "count": 970,
+  "updatedAt": "2026-09-22T10:30:52.593Z",
+  "count": 971,
   "data": [
     {
       "id": "0001",
@@ -11148,6 +11148,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4df8916b-8bdb-41d6-9cbc-cad46823cd25",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4df8916b-8bdb-41d6-9cbc-cad46823cd25",
       "urlUpdatedAt": "2026-09-22T10:22:37.604Z"
+    },
+    {
+      "id": "0972",
+      "entryType": "avatar",
+      "displaySerial": "0859",
+      "nickname": "ドットAkyo",
+      "avatarName": "ドットアキョ",
+      "category": "Supported Platform,Supported Platform/PC,Gimmick・Special,Gimmick・Special/Shader,Style,Style/Retro",
+      "comment": "VRChatでAkyoの世界が広がります。",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a13b1841-45ac-447d-8bea-f62e81064acb",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a13b1841-45ac-447d-8bea-f62e81064acb",
+      "urlUpdatedAt": "2026-09-22T10:30:52.513Z"
     }
   ]
 }
