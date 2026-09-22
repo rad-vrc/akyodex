@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T22:20:24.447Z",
+  "updatedAt": "2026-09-22T22:25:10.301Z",
   "count": 983,
   "data": [
     {
@@ -1473,11 +1473,13 @@
       "displaySerial": "0122",
       "nickname": "후광이 뭔가 대단한 Akyo",
       "avatarName": "後光がなんかすごいAkyo",
-      "category": "가상의 존재,가상의 존재/천사・신,지원 기기,지원 기기/PC",
+      "category": "가상의 존재,가상의 존재/천사・신,지원 기기,지원 기기/PC,Booth",
       "comment": "",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0123",
@@ -8495,11 +8497,13 @@
       "displaySerial": "0692",
       "nickname": "갓 콩 Akyo/후광이 뭔가 대단한 콩 Akyo",
       "avatarName": "GODまめAkyo",
-      "category": "마메,마메Akyo,가상의 존재,가상의 존재/천사・신,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "category": "마메,마메Akyo,가상의 존재,가상의 존재/천사・신,지원 기기,지원 기기/PC,지원 기기/Quest(Android),Booth",
       "comment": "",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0693",
@@ -8507,11 +8511,13 @@
       "displaySerial": "0693",
       "nickname": "후광이 뭔가 심상찮은 Akyo ULTIMATE 익스트림 에디션",
       "avatarName": "後光がなんかヤバいAkyoULTIMATEエクストリームエディション",
-      "category": "가상의 존재,가상의 존재/천사・신,동물,동물/해양생물,동물/물고기,지원 기기,지원 기기/PC",
+      "category": "가상의 존재,가상의 존재/천사・신,동물,동물/해양생물,동물/물고기,지원 기기,지원 기기/PC,Booth",
       "comment": "신위의 힘, 후광 앞에 모든 Akyo와 Gyoto가 모인다. 소원을 들어줄지도 모르고, 흘려들을지도 모른다…",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0694",

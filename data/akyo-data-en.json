@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T22:20:24.398Z",
+  "updatedAt": "2026-09-22T22:25:10.245Z",
   "count": 983,
   "data": [
     {
@@ -1369,13 +1369,16 @@
     {
       "id": "0122",
       "entryType": "avatar",
+      "displaySerial": "0122",
       "nickname": "Amazing Halo Akyo",
       "avatarName": "後光がなんかすごいAkyo",
-      "category": "Fictional Being,Fictional Being/God,Supported Platform,Supported Platform/PC",
+      "category": "Fictional Being,Fictional Being/God,Supported Platform,Supported Platform/PC,Booth",
       "comment": "",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0123",
@@ -7835,24 +7838,30 @@
     {
       "id": "0692",
       "entryType": "avatar",
+      "displaySerial": "0692",
       "nickname": "God Bean Akyo / Bean Akyo with an Amazing Halo",
       "avatarName": "GODまめAkyo",
-      "category": "Bean,Bean Akyo,Fictional Being,Fictional Being/God,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Bean,Bean Akyo,Fictional Being,Fictional Being/God,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Booth",
       "comment": "",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0693",
       "entryType": "avatar",
+      "displaySerial": "0693",
       "nickname": "The Halo Is Kinda Insane Akyo ULTIMATE Extreme Edition",
       "avatarName": "後光がなんかヤバいAkyoULTIMATEエクストリームエディション",
-      "category": "Fictional Being,Fictional Being/God,Animal,Animal/Marine Life,Animal/Fish,Supported Platform,Supported Platform/PC",
+      "category": "Fictional Being,Fictional Being/God,Animal,Animal/Marine Life,Animal/Fish,Supported Platform,Supported Platform/PC,Booth",
       "comment": "By divine power, all Akyo and Gyoto gather before its halo. It might listen to your wishes, or it might let them pass...",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0694",

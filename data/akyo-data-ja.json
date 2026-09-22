@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T22:20:24.343Z",
+  "updatedAt": "2026-09-22T22:25:10.194Z",
   "count": 983,
   "data": [
     {
@@ -1369,13 +1369,16 @@
     {
       "id": "0122",
       "entryType": "avatar",
+      "displaySerial": "0122",
       "nickname": "後光がなんかすごいAkyo",
       "avatarName": "後光がなんかすごいAkyo",
-      "category": "架空の存在,架空の存在/天使・神,対応機種,対応機種/PC",
+      "category": "架空の存在,架空の存在/天使・神,対応機種,対応機種/PC,Booth",
       "comment": "",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6505171c-e680-4ef8-8845-b7a7ac342d68",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0123",
@@ -7835,24 +7838,30 @@
     {
       "id": "0692",
       "entryType": "avatar",
+      "displaySerial": "0692",
       "nickname": "ゴッドまめAkyo/後光がなんかすごいまめAkyo",
       "avatarName": "GODまめAkyo",
-      "category": "まめ,まめAkyo,架空の存在,架空の存在/天使・神,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "category": "まめ,まめAkyo,架空の存在,架空の存在/天使・神,対応機種,対応機種/PC,対応機種/Quest(Android),Booth",
       "comment": "",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c7968ca2-e527-4107-a1e8-89435a7cae70",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0693",
       "entryType": "avatar",
+      "displaySerial": "0693",
       "nickname": "後光がなんかヤバいAkyoULTIMATEエクストリームエディション",
       "avatarName": "後光がなんかヤバいAkyoULTIMATEエクストリームエディション",
-      "category": "架空の存在,架空の存在/天使・神,動物,動物/海の生き物,動物/魚,対応機種,対応機種/PC",
+      "category": "架空の存在,架空の存在/天使・神,動物,動物/海の生き物,動物/魚,対応機種,対応機種/PC,Booth",
       "comment": "神威の力、後光の前にすべてのAkyoとGyotoが集う。願い事を聞いてくれるかもしれないし、聞き流されるかもしれない・・・",
       "author": "zhoney666",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5e2d9f94-d726-440f-89d4-9730d89d7641",
+      "boothUrl": "https://booth.pm/ja/items/8706807",
+      "urlUpdatedAt": "2026-09-22T22:25:10.132Z"
     },
     {
       "id": "0694",
