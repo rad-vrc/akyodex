@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T17:59:17.823Z",
+  "updatedAt": "2026-09-22T18:00:20.658Z",
   "count": 983,
   "data": [
     {
@@ -3648,10 +3648,11 @@
     {
       "id": "0321",
       "entryType": "avatar",
+      "displaySerial": "0321",
       "nickname": "ねぎAkyo",
       "avatarName": "akyo_ねぎ",
-      "category": "食べ物,食べ物/野菜,Booth,対応機種,対応機種/PC,対応機種/Quest(Android)",
-      "comment": "",
+      "category": "食べ物,食べ物/野菜,Booth,対応機種,対応機種/PC,対応機種/Quest(Android),色,色/緑色系",
+      "comment": "ニラAkyoの親戚なんだよ！",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7d7aac06-8096-44c7-adf5-aa94746cac26",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_7d7aac06-8096-44c7-adf5-aa94746cac26",

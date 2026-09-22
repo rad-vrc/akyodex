@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T17:59:17.874Z",
+  "updatedAt": "2026-09-22T18:00:20.692Z",
   "count": 983,
   "data": [
     {
@@ -3648,10 +3648,11 @@
     {
       "id": "0321",
       "entryType": "avatar",
+      "displaySerial": "0321",
       "nickname": "Green Onion Akyo",
       "avatarName": "akyo_ねぎ",
-      "category": "Food,Food/Vegetable,Booth,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
-      "comment": "",
+      "category": "Food,Food/Vegetable,Booth,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Color,Color/Green Tones",
+      "comment": "ニラAkyoの親戚なんだよ！",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7d7aac06-8096-44c7-adf5-aa94746cac26",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_7d7aac06-8096-44c7-adf5-aa94746cac26",
