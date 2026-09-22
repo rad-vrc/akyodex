@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T10:17:29.160Z",
-  "count": 969,
+  "updatedAt": "2026-09-22T10:22:37.649Z",
+  "count": 970,
   "data": [
     {
       "id": "0001",
@@ -11135,6 +11135,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ac79b7ee-3ff9-432e-b046-d4322d27211e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ac79b7ee-3ff9-432e-b046-d4322d27211e",
       "urlUpdatedAt": "2026-09-22T10:17:29.127Z"
+    },
+    {
+      "id": "0971",
+      "entryType": "avatar",
+      "displaySerial": "0858",
+      "nickname": "Akyoボウマン",
+      "avatarName": "Akyoボウマン",
+      "category": "対応機種,対応機種/PC,ギミック・特殊,ギミック・特殊/シェーダー,チョコミント類,動物,動物/フィッシュヘッド,技能・特性,技能・特性/合体・変身,集団・組織,集団・組織/魚頭族",
+      "comment": "何の変哲もないAkyoだと思って変身してみたら・・・",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4df8916b-8bdb-41d6-9cbc-cad46823cd25",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4df8916b-8bdb-41d6-9cbc-cad46823cd25",
+      "urlUpdatedAt": "2026-09-22T10:22:37.604Z"
     }
   ]
 }
