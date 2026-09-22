@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T10:43:38.605Z",
-  "count": 973,
+  "updatedAt": "2026-09-22T10:50:21.237Z",
+  "count": 974,
   "data": [
     {
       "id": "0001",
@@ -11901,6 +11901,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
       "urlUpdatedAt": "2026-09-22T10:43:38.486Z"
+    },
+    {
+      "id": "0975",
+      "entryType": "avatar",
+      "displaySerial": "0862",
+      "nickname": "コミックシェーダーAkyo",
+      "avatarName": "コミックシェーダーアキョ",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/셰이더,초코민트류,색상,색상/파란색 계열,색상/초록색 계열,스타일,스타일/만화",
+      "comment": "トーンがかかってるように見える！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_b1e9a1ad-442c-44e0-baa9-25d92adebe6c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b1e9a1ad-442c-44e0-baa9-25d92adebe6c",
+      "urlUpdatedAt": "2026-09-22T10:50:21.071Z"
     }
   ]
 }

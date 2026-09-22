@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T10:43:38.565Z",
-  "count": 973,
+  "updatedAt": "2026-09-22T10:50:21.181Z",
+  "count": 974,
   "data": [
     {
       "id": "0001",
@@ -11187,6 +11187,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
       "urlUpdatedAt": "2026-09-22T10:43:38.486Z"
+    },
+    {
+      "id": "0975",
+      "entryType": "avatar",
+      "displaySerial": "0862",
+      "nickname": "コミックシェーダーAkyo",
+      "avatarName": "コミックシェーダーアキョ",
+      "category": "Supported Platform,Supported Platform/PC,Gimmick・Special,Gimmick・Special/Shader,Mint Chocolate,Color,Color/Blue Tones,Color/Green Tones,Style,Style/Comic",
+      "comment": "トーンがかかってるように見える！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_b1e9a1ad-442c-44e0-baa9-25d92adebe6c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b1e9a1ad-442c-44e0-baa9-25d92adebe6c",
+      "urlUpdatedAt": "2026-09-22T10:50:21.071Z"
     }
   ]
 }
