@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T17:55:30.525Z",
-  "count": 982,
+  "updatedAt": "2026-09-22T17:59:17.874Z",
+  "count": 983,
   "data": [
     {
       "id": "0001",
@@ -11306,6 +11306,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_55d17244-7a53-4ee3-bd35-e2335125d688",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_55d17244-7a53-4ee3-bd35-e2335125d688",
       "urlUpdatedAt": "2026-09-22T17:49:56.491Z"
+    },
+    {
+      "id": "0984",
+      "entryType": "avatar",
+      "displaySerial": "0871",
+      "nickname": "ニラAkyo",
+      "avatarName": "akyo_ニラ",
+      "category": "Supported Platform,Supported Platform/PC,Relationship,Relationship/Blood Relation,Food,Food/Vegetable,Color,Color/Green Tones",
+      "comment": "【ささのきの手記】\nとっても元気。栄養豊富という話もある。ネギakyoの親戚でもある",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_57bc5f02-7c81-4ce6-a91d-dc7623395e56",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_57bc5f02-7c81-4ce6-a91d-dc7623395e56",
+      "urlUpdatedAt": "2026-09-22T17:59:17.765Z"
     }
   ]
 }
