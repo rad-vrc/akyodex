@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T19:21:22.804Z",
+  "updatedAt": "2026-09-22T19:23:12.687Z",
   "count": 983,
   "data": [
     {
@@ -212,10 +212,11 @@
     {
       "id": "0018",
       "entryType": "avatar",
+      "displaySerial": "0018",
       "nickname": "ヒューマノイドAkyo",
       "avatarName": "Humanoid Akyo v1․71 Multi Clothes",
-      "category": "動物,動物/人間・人類,Booth,対応機種,対応機種/PC",
-      "comment": "",
+      "category": "動物,動物/人間・人類,Booth,対応機種,対応機種/PC,器官,器官/腕,ギミック・特殊,ギミック・特殊/お着替え",
+      "comment": "Akyoは何にでもなれるんだよ！",
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4ddbe005-72e1-478d-848a-25bf5e4972c0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4ddbe005-72e1-478d-848a-25bf5e4972c0",
