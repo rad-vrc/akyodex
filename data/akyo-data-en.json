@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T17:49:56.613Z",
+  "updatedAt": "2026-09-22T17:50:43.599Z",
   "count": 982,
   "data": [
     {
@@ -4539,10 +4539,11 @@
     {
       "id": "0398",
       "entryType": "avatar",
+      "displaySerial": "0398",
       "nickname": "Cherry Blossom Akyo",
       "avatarName": "akyo_sakura",
-      "category": "Nature,Nature/Plant,Booth,Supported Platform,Supported Platform/PC",
-      "comment": "",
+      "category": "Nature,Nature/Plant,Booth,Supported Platform,Supported Platform/PC,Relationship,Relationship/Blood Relation,Season・Event,Season・Event/Spring",
+      "comment": "メープルAkyoの親戚なんだって！",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_396b75f1-6f21-4718-ad07-3a34892e23f1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_396b75f1-6f21-4718-ad07-3a34892e23f1",
