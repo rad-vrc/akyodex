@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T02:04:15.494Z",
-  "count": 967,
+  "updatedAt": "2026-09-22T09:39:38.557Z",
+  "count": 968,
   "data": [
     {
       "id": "0001",
@@ -11103,6 +11103,20 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_788d3979-3269-4570-935e-8827b8b870f3",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_788d3979-3269-4570-935e-8827b8b870f3",
       "urlUpdatedAt": "2026-09-21T13:51:07.477Z"
+    },
+    {
+      "id": "0969",
+      "entryType": "avatar",
+      "displaySerial": "0856",
+      "nickname": "Akyo焼き",
+      "avatarName": "Akyo焼き",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,体格・形状・触り心地,体格・形状・触り心地/柔らかい,色,色/茶色系,食べ物,食べ物/スイーツ,Booth",
+      "comment": "Akyoの香りが漂ってる！！",
+      "author": "ニグレド",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_0613b931-6eb4-43df-b59e-64adc0778eca",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0613b931-6eb4-43df-b59e-64adc0778eca",
+      "boothUrl": "https://nigredou.booth.pm/items/8883951",
+      "urlUpdatedAt": "2026-09-22T09:39:38.506Z"
     }
   ]
 }
