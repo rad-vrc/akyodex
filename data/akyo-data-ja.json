@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T15:50:45.750Z",
+  "updatedAt": "2026-09-22T15:52:46.537Z",
   "count": 978,
   "data": [
     {
@@ -4457,10 +4457,11 @@
     {
       "id": "0391",
       "entryType": "avatar",
+      "displaySerial": "0391",
       "nickname": "アーキョおじさん/おじAkyo",
       "avatarName": "akyo_ozi",
-      "category": "身分・役割,身分・役割/農家,年齢層,年齢層/お年寄り,ファッション・装備,ファッション・装備/ひげ,Booth,対応機種,対応機種/PC,対応機種/Quest(Android)",
-      "comment": "",
+      "category": "身分・役割,身分・役割/農家,年齢層,年齢層/お年寄り,ファッション・装備,ファッション・装備/ひげ,Booth,対応機種,対応機種/PC,対応機種/Quest(Android),年齢層/大人",
+      "comment": "やさいせいかつ アーキョおじさん♪",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e21d1394-394f-4bc3-a68a-55462ec730b6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e21d1394-394f-4bc3-a68a-55462ec730b6",

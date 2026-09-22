@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T15:50:45.787Z",
+  "updatedAt": "2026-09-22T15:52:46.572Z",
   "count": 978,
   "data": [
     {
@@ -4457,10 +4457,11 @@
     {
       "id": "0391",
       "entryType": "avatar",
+      "displaySerial": "0391",
       "nickname": "Uncle Akyo/Akyo Oji",
       "avatarName": "akyo_ozi",
-      "category": "Role・Status,Role・Status/Farmer,Age Group,Age Group/Elderly,Fashion・Equipment,Fashion・Equipment/Beard,Booth,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
-      "comment": "",
+      "category": "Role・Status,Role・Status/Farmer,Age Group,Age Group/Elderly,Fashion・Equipment,Fashion・Equipment/Beard,Booth,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Age Group/Adult",
+      "comment": "やさいせいかつ アーキョおじさん♪",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e21d1394-394f-4bc3-a68a-55462ec730b6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e21d1394-394f-4bc3-a68a-55462ec730b6",
