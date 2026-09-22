@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T16:16:51.837Z",
-  "count": 979,
+  "updatedAt": "2026-09-22T16:27:29.723Z",
+  "count": 980,
   "data": [
     {
       "id": "0001",
@@ -11979,6 +11979,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_9b5d693a-e08c-4120-84e7-448c19a14efe",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_9b5d693a-e08c-4120-84e7-448c19a14efe",
       "urlUpdatedAt": "2026-09-22T16:16:51.685Z"
+    },
+    {
+      "id": "0981",
+      "entryType": "avatar",
+      "displaySerial": "0868",
+      "nickname": "こなきじいまめAkyo",
+      "avatarName": "こなきじいあきょ",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS,마메Akyo,마메,가상의 존재,가상의 존재/요괴・유령,패션・장비,패션・장비/수염,체격・형태・촉감,체격・형태・촉감/둥근,체격・형태・촉감/풍만,연령층,연령층/어른,연령층/노인",
+      "comment": "泣いてもいいのさ。\n涙の数だけAkyoになれるのさ。",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ff19732e-5488-4801-9d37-75db7bec3f9b",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ff19732e-5488-4801-9d37-75db7bec3f9b",
+      "urlUpdatedAt": "2026-09-22T16:27:29.619Z"
     }
   ]
 }

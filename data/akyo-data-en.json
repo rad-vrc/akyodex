@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T16:16:51.787Z",
-  "count": 979,
+  "updatedAt": "2026-09-22T16:27:29.688Z",
+  "count": 980,
   "data": [
     {
       "id": "0001",
@@ -11266,6 +11266,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_9b5d693a-e08c-4120-84e7-448c19a14efe",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_9b5d693a-e08c-4120-84e7-448c19a14efe",
       "urlUpdatedAt": "2026-09-22T16:16:51.685Z"
+    },
+    {
+      "id": "0981",
+      "entryType": "avatar",
+      "displaySerial": "0868",
+      "nickname": "こなきじいまめAkyo",
+      "avatarName": "こなきじいあきょ",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Bean Akyo,Bean,Fictional Being,Fictional Being/Yokai・Ghost,Fashion・Equipment,Fashion・Equipment/Beard,Physique・Shape・Texture,Physique・Shape・Texture/Round,Physique・Shape・Texture/Plump,Age Group,Age Group/Adult,Age Group/Elderly",
+      "comment": "泣いてもいいのさ。\n涙の数だけAkyoになれるのさ。",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ff19732e-5488-4801-9d37-75db7bec3f9b",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ff19732e-5488-4801-9d37-75db7bec3f9b",
+      "urlUpdatedAt": "2026-09-22T16:27:29.619Z"
     }
   ]
 }
