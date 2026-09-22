@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T16:29:24.615Z",
-  "count": 980,
+  "updatedAt": "2026-09-22T16:36:29.945Z",
+  "count": 981,
   "data": [
     {
       "id": "0001",
@@ -11992,6 +11992,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ff19732e-5488-4801-9d37-75db7bec3f9b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ff19732e-5488-4801-9d37-75db7bec3f9b",
       "urlUpdatedAt": "2026-09-22T16:27:29.619Z"
+    },
+    {
+      "id": "0982",
+      "entryType": "avatar",
+      "displaySerial": "0869",
+      "nickname": "メロンまめAkyo",
+      "avatarName": "まめろんあきょ",
+      "category": "지원 기기,지원 기기/PC,마메Akyo,마메,색상,색상/초록색 계열,체격・형태・촉감,체격・형태・촉감/둥근,체격・형태・촉감/풍만,음식,음식/과일",
+      "comment": "【くろのひとこと】\n小さくてもジューシー",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_52812dbd-b67e-48a9-9176-eb4509bb24cd",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_52812dbd-b67e-48a9-9176-eb4509bb24cd",
+      "urlUpdatedAt": "2026-09-22T16:36:29.785Z"
     }
   ]
 }
