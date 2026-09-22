@@ -939,6 +939,10 @@
     "en": "Age Group/Elderly",
     "ko": "연령층/노인"
   },
+  "年齢層/大人": {
+    "en": "Age Group/Adult",
+    "ko": "연령층/어른"
+  },
   "年齢層/子ども": {
     "en": "Age Group/Child",
     "ko": "연령층/어린이"
