@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T10:37:43.310Z",
-  "count": 972,
+  "updatedAt": "2026-09-22T10:43:38.605Z",
+  "count": 973,
   "data": [
     {
       "id": "0001",
@@ -11888,6 +11888,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
       "urlUpdatedAt": "2026-09-22T10:36:41.754Z"
+    },
+    {
+      "id": "0974",
+      "entryType": "avatar",
+      "displaySerial": "0861",
+      "nickname": "絵画Akyo",
+      "avatarName": "絵画あきょ",
+      "category": "지원 기기,지원 기기/PC,예술,예술/회화・일러스트,초코민트류,기믹・특수,기믹・특수/셰이더,색상,색상/초록색 계열,색상/파란색 계열,저편의 존재",
+      "comment": "Akyo、そこにいるの？\n手を伸ばしても決して届くことのない、向こう側のAkyo・・・",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
+      "urlUpdatedAt": "2026-09-22T10:43:38.486Z"
     }
   ]
 }

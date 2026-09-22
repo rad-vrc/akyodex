@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T10:37:43.274Z",
-  "count": 972,
+  "updatedAt": "2026-09-22T10:43:38.565Z",
+  "count": 973,
   "data": [
     {
       "id": "0001",
@@ -11174,6 +11174,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
       "urlUpdatedAt": "2026-09-22T10:36:41.754Z"
+    },
+    {
+      "id": "0974",
+      "entryType": "avatar",
+      "displaySerial": "0861",
+      "nickname": "絵画Akyo",
+      "avatarName": "絵画あきょ",
+      "category": "Supported Platform,Supported Platform/PC,Art,Art/Painting・Illustration,Mint Chocolate,Gimmick・Special,Gimmick・Special/Shader,Color,Color/Green Tones,Color/Blue Tones,Those Beyond",
+      "comment": "Akyo、そこにいるの？\n手を伸ばしても決して届くことのない、向こう側のAkyo・・・",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4e9f4cdf-530d-4c1a-9a41-c30248494751",
+      "urlUpdatedAt": "2026-09-22T10:43:38.486Z"
     }
   ]
 }
