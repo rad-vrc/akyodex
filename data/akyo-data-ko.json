@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T15:48:53.584Z",
-  "count": 977,
+  "updatedAt": "2026-09-22T15:50:45.830Z",
+  "count": 978,
   "data": [
     {
       "id": "0001",
@@ -11953,6 +11953,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
       "urlUpdatedAt": "2026-09-22T15:38:58.107Z"
+    },
+    {
+      "id": "0979",
+      "entryType": "avatar",
+      "displaySerial": "0866",
+      "nickname": "あきょンちAkyo",
+      "avatarName": "あきょンち",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS,패러디,패러디/아따맘마,동물,동물/인간,연령층,연령층/어른,신분・역할,신분・역할/부모",
+      "comment": "【くろのひとこと】\nじょ～ねつ～の～ 赤い～バラァ～",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
+      "urlUpdatedAt": "2026-09-22T15:50:45.709Z"
     }
   ]
 }

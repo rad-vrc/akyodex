@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T15:48:53.535Z",
-  "count": 977,
+  "updatedAt": "2026-09-22T15:50:45.787Z",
+  "count": 978,
   "data": [
     {
       "id": "0001",
@@ -11239,6 +11239,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
       "urlUpdatedAt": "2026-09-22T15:38:58.107Z"
+    },
+    {
+      "id": "0979",
+      "entryType": "avatar",
+      "displaySerial": "0866",
+      "nickname": "あきょンちAkyo",
+      "avatarName": "あきょンち",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Parody,Parody/Atashin'chi,Animal,Animal/Human,Age Group,Age Group/Adult,Role・Status,Role・Status/Parent",
+      "comment": "【くろのひとこと】\nじょ～ねつ～の～ 赤い～バラァ～",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
+      "urlUpdatedAt": "2026-09-22T15:50:45.709Z"
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T15:48:53.489Z",
-  "count": 977,
+  "updatedAt": "2026-09-22T15:50:45.750Z",
+  "count": 978,
   "data": [
     {
       "id": "0001",
@@ -11239,6 +11239,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
       "urlUpdatedAt": "2026-09-22T15:38:58.107Z"
+    },
+    {
+      "id": "0979",
+      "entryType": "avatar",
+      "displaySerial": "0866",
+      "nickname": "あきょンちAkyo",
+      "avatarName": "あきょンち",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,パロディ,パロディ/あたしンち,動物,動物/人間・人類,年齢層,年齢層/大人,身分・役割,身分・役割/親",
+      "comment": "【くろのひとこと】\nじょ～ねつ～の～ 赤い～バラァ～",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
+      "urlUpdatedAt": "2026-09-22T15:50:45.709Z"
     }
   ]
 }
