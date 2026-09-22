@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T19:23:12.738Z",
+  "updatedAt": "2026-09-22T22:20:24.398Z",
   "count": 983,
   "data": [
     {
@@ -8323,13 +8323,16 @@
     {
       "id": "0736",
       "entryType": "avatar",
+      "displaySerial": "0736",
       "nickname": "Bread Bean Akyo",
       "avatarName": "ぱんあきょ",
-      "category": "Bean,Bean Akyo,Style,Style/Deformed,Physique・Shape・Texture,Physique・Shape・Texture/Plump,Food,Food/Bread,Material・Raw Material,Physique・Shape・Texture/Soft,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS",
+      "category": "Bean,Bean Akyo,Style,Style/Deformed,Physique・Shape・Texture,Physique・Shape・Texture/Plump,Food,Food/Bread,Material・Raw Material,Physique・Shape・Texture/Soft,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Booth",
       "comment": "Bean Akyo paradise keeps growing!",
       "author": "もぐやねん",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_41a51483-9cd9-478a-abb2-b7396c54be23",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_41a51483-9cd9-478a-abb2-b7396c54be23"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_41a51483-9cd9-478a-abb2-b7396c54be23",
+      "boothUrl": "https://booth.pm/ja/items/7793064",
+      "urlUpdatedAt": "2026-09-22T22:20:24.288Z"
     },
     {
       "id": "0737",

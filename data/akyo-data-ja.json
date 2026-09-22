@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T19:23:12.687Z",
+  "updatedAt": "2026-09-22T22:20:24.343Z",
   "count": 983,
   "data": [
     {
@@ -8323,13 +8323,16 @@
     {
       "id": "0736",
       "entryType": "avatar",
+      "displaySerial": "0736",
       "nickname": "パンまめAkyo",
       "avatarName": "ぱんあきょ",
-      "category": "まめ,まめAkyo,作風・スタイル,作風・スタイル/デフォルメ,体格・形状・触り心地,体格・形状・触り心地/豊満,食べ物,食べ物/パン,素材・原材料,体格・形状・触り心地/柔らかい,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS",
+      "category": "まめ,まめAkyo,作風・スタイル,作風・スタイル/デフォルメ,体格・形状・触り心地,体格・形状・触り心地/豊満,食べ物,食べ物/パン,素材・原材料,体格・形状・触り心地/柔らかい,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,Booth",
       "comment": "まだまだ増える、まめAkyoパラダイス！",
       "author": "もぐやねん",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_41a51483-9cd9-478a-abb2-b7396c54be23",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_41a51483-9cd9-478a-abb2-b7396c54be23"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_41a51483-9cd9-478a-abb2-b7396c54be23",
+      "boothUrl": "https://booth.pm/ja/items/7793064",
+      "urlUpdatedAt": "2026-09-22T22:20:24.288Z"
     },
     {
       "id": "0737",
