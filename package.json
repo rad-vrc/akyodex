@@ -27,6 +27,7 @@
     "social:compress": "node scripts/compress-social-images.js",
     "test": "playwright test",
     "test:playwright": "playwright test",
+    "test:catalog-diagnostics": "playwright test --config playwright.catalog-diagnostics.config.ts",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:lighthouse:summary": "node scripts/lighthouse-summary.js",

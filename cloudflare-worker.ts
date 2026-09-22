@@ -1,6 +1,7 @@
 import { withSentry } from '@sentry/cloudflare';
 import openNextWorker from './.open-next/worker.js';
 import { withWorkerResponseHeaders } from './src/lib/worker-version-headers';
+import { withCatalogWorkerTiming } from './src/lib/catalog-diagnostics';
 
 export { DOQueueHandler } from './.open-next/worker.js';
 
@@ -18,7 +19,9 @@ interface CloudflareWorkerHandler<Env> {
 
 const handler = {
   async fetch(request, env, ctx) {
-    const response = await openNextWorker.fetch(request, env, ctx);
+    const response = await withCatalogWorkerTiming(request, () =>
+      openNextWorker.fetch(request, env, ctx)
+    );
     return withWorkerResponseHeaders(
       response,
       env.CF_VERSION_METADATA,

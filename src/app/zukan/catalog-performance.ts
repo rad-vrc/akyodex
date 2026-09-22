@@ -5,6 +5,7 @@ import {
 } from "@/lib/sentry-browser";
 import type { CatalogResumeTrigger } from "./catalog-resume";
 import { startInactiveSpan } from "@sentry/nextjs";
+import type { CatalogRequestTiming } from "@/lib/catalog-diagnostics";
 
 export type CatalogLoadSource = "api" | "r2" | "snapshot" | "none";
 
@@ -31,6 +32,9 @@ export interface CatalogLoadTelemetryEvent {
   startedAtEpochMs: number;
   endedAtEpochMs: number;
   phaseDurationsMs: CatalogPhaseDurations;
+  requests: CatalogRequestTiming[];
+  visibilityAtStart: string;
+  visibilityAtEnd: string;
 }
 
 const PHASE_NAMES: Record<
@@ -89,6 +93,8 @@ export class CatalogLoadPerformance {
   private readonly startedAt: number;
   private source: CatalogLoadSource = "none";
   private ended = false;
+  private readonly requests: CatalogRequestTiming[] = [];
+  private readonly visibilityAtStart = typeof document === "undefined" ? "unknown" : document.visibilityState;
   private readonly phaseStartedAt = new Map<CatalogLoadPhase, number>();
   private readonly phaseDurations: CatalogPhaseDurations = {
     normalize: 0,
@@ -108,6 +114,10 @@ export class CatalogLoadPerformance {
     if (this.ended) return;
     this.source = source;
     this.clock.mark("catalog-response");
+  }
+
+  recordRequest(timing: CatalogRequestTiming): void {
+    if (!this.ended && this.requests.length < 3) this.requests.push(timing);
   }
 
   startPhase(phase: CatalogLoadPhase): void {
@@ -151,6 +161,9 @@ export class CatalogLoadPerformance {
       failureReason,
       startedAtEpochMs: this.clock.timeOrigin + this.startedAt,
       endedAtEpochMs: this.clock.timeOrigin + endedAt,
+      requests: [...this.requests],
+      visibilityAtStart: this.visibilityAtStart,
+      visibilityAtEnd: typeof document === "undefined" ? "unknown" : document.visibilityState,
       phaseDurationsMs: {
         normalize: Math.round(this.phaseDurations.normalize),
         searchIndex: Math.round(this.phaseDurations.searchIndex),
@@ -158,6 +171,19 @@ export class CatalogLoadPerformance {
       },
     };
   }
+}
+
+function requestDetails(requests: CatalogRequestTiming[]) {
+  // Keep timings within Sentry's default normalization depth.
+  return requests.map(({ server, ...request }) => ({
+    ...request,
+    ...server?.durationsMs,
+    serverSource: server?.source,
+    generatedAt: server?.generatedAt,
+    workerGeneratedAt: server?.workerGeneratedAt,
+    responseId: server?.responseId,
+    ageSeconds: server?.ageSeconds,
+  }));
 }
 
 /**
@@ -187,6 +213,7 @@ export function captureCatalogFailure(
     extra: {
       source: context.telemetry?.source ?? "none",
       durationMs: context.telemetry?.durationMs,
+      requests: context.telemetry ? requestDetails(context.telemetry.requests) : undefined,
       cause: describeCatalogFailureCause(error),
     },
   });
@@ -217,6 +244,31 @@ export function buildCatalogResumeMessage(
 
 /** このページ表示で自動復帰した回数 */
 let catalogResumeCount = 0;
+
+let slowCatalogReportCount = 0;
+
+/** One slow success per mounted catalog view, independent of tracing's sampling rate. */
+export function createCatalogSlowLoadReporter(
+  capture: typeof captureMessageSafely = captureMessageSafely,
+): (event: CatalogLoadTelemetryEvent) => void {
+  let reported = false;
+  return (event) => {
+    if (reported || event.failureReason || event.durationMs < 3000) return;
+    reported = true;
+    slowCatalogReportCount += 1;
+    try {
+      // A varying message avoids SDK Dedupe; the fingerprint keeps a single issue.
+      capture(`Slow catalog load completed (#${slowCatalogReportCount})`, {
+        level: "warning",
+        fingerprint: ["catalog-slow-load"],
+        tags: { area: "catalog", language: event.language, catalog_source: event.source },
+        extra: { ...event, requests: requestDetails(event.requests) },
+      });
+    } catch {
+      // Telemetry must never affect catalog availability.
+    }
+  };
+}
 
 /**
  * 止まった取得を自動で取り直したことを記録する。
@@ -269,6 +321,9 @@ export async function reportCatalogLoadToSentry(
         "catalog.normalize_ms": event.phaseDurationsMs.normalize,
         "catalog.search_index_ms": event.phaseDurationsMs.searchIndex,
         "catalog.state_apply_ms": event.phaseDurationsMs.stateApply,
+        "catalog.requests": JSON.stringify(event.requests),
+        "catalog.visibility_start": event.visibilityAtStart,
+        "catalog.visibility_end": event.visibilityAtEnd,
       },
     });
     span.setStatus({ code: event.failureReason ? 2 : 1 });

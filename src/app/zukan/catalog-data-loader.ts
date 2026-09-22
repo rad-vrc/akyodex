@@ -4,6 +4,7 @@ import type { SupportedLanguage } from "@/lib/i18n";
 import { CATALOG_SCHEMA_VERSION } from "@/lib/catalog-payload";
 import type { AkyoData, AkyoEntryType } from "@/types/akyo";
 import type { CatalogLoadPhase } from "./catalog-performance";
+import { readCatalogServerTiming, type CatalogRequestTiming } from "@/lib/catalog-diagnostics";
 
 const DEFAULT_CATALOG_FETCH_TIMEOUT_MS = 15_000;
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
@@ -26,9 +27,11 @@ interface LoadCompleteCatalogDataOptions {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  now?: () => number;
   phaseRecorder?: {
     startPhase(phase: CatalogLoadPhase): void;
     endPhase(phase: CatalogLoadPhase): void;
+    recordRequest?(timing: CatalogRequestTiming): void;
   };
 }
 
@@ -236,6 +239,8 @@ async function withCatalogDeadline<T>(
 
 async function fetchCatalogSource(args: {
   url: string;
+  source: CompleteCatalogResult["source"];
+  now: () => number;
   signal?: AbortSignal;
   fetchImpl: typeof fetch;
   timeoutMs: number;
@@ -249,23 +254,53 @@ async function fetchCatalogSource(args: {
     timeoutMs,
     expectedLanguage,
     phaseRecorder,
+    source,
+    now,
   } = args;
-  return withCatalogDeadline(timeoutMs, signal, async (deadlineSignal) => {
-    const response = await fetchImpl(url, {
-      signal: deadlineSignal,
+  const started = now();
+  let response: Response | undefined;
+  const timing: CatalogRequestTiming = {
+    source, status: null, outcome: "error", headersWaitMs: null,
+    bodyAndParseMs: null, totalMs: 0, server: null,
+  };
+  try {
+    return await withCatalogDeadline(timeoutMs, signal, async (deadlineSignal) => {
+      response = await fetchImpl(url, { signal: deadlineSignal });
+      timing.headersWaitMs = Math.max(0, Math.round(now() - started));
+      timing.status = response.status;
+      if (!response.ok) {
+        throw new Error(`Catalog request failed with HTTP ${response.status}`);
+      }
+      const bodyStarted = now();
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } finally {
+        timing.bodyAndParseMs = Math.max(0, Math.round(now() - bodyStarted));
+      }
+      phaseRecorder?.startPhase("normalize");
+      try {
+        validateVersionedCatalogPayload(payload, expectedLanguage);
+        const parsed = parseCatalogPayload(payload);
+        timing.outcome = "success";
+        return parsed;
+      } finally {
+        phaseRecorder?.endPhase("normalize");
+      }
     });
-    if (!response.ok) {
-      throw new Error(`Catalog request failed with HTTP ${response.status}`);
-    }
-    const payload: unknown = await response.json();
-    phaseRecorder?.startPhase("normalize");
+  } catch (error) {
+    if (error instanceof CatalogDeadlineError) timing.outcome = "timeout";
+    else if (signal?.aborted) timing.outcome = "aborted";
+    throw error;
+  } finally {
     try {
-      validateVersionedCatalogPayload(payload, expectedLanguage);
-      return parseCatalogPayload(payload);
-    } finally {
-      phaseRecorder?.endPhase("normalize");
+      timing.totalMs = Math.max(0, Math.round(now() - started));
+      if (source === "api" && response) timing.server = readCatalogServerTiming(response.headers);
+      phaseRecorder?.recordRequest?.(timing);
+    } catch {
+      // Diagnostics must not turn a successful request into a fallback.
     }
-  });
+  }
 }
 
 /**
@@ -331,6 +366,7 @@ export async function loadCompleteCatalogData(
     fetchImpl = fetch,
     timeoutMs = DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
     phaseRecorder,
+    now = () => performance.now(),
   } = options;
   const normalizedR2BaseUrl = r2BaseUrl.replace(/\/$/, "");
   const r2Url = `${normalizedR2BaseUrl}/data/akyo-data-${lang}.json`;
@@ -351,6 +387,8 @@ export async function loadCompleteCatalogData(
     try {
       const parsed = await fetchCatalogSource({
         url: source.url,
+        source: source.source,
+        now,
         signal,
         fetchImpl,
         timeoutMs: remainingMs,
