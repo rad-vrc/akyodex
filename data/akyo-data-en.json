@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T10:30:52.593Z",
-  "count": 971,
+  "updatedAt": "2026-09-22T10:36:41.860Z",
+  "count": 972,
   "data": [
     {
       "id": "0001",
@@ -11161,6 +11161,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a13b1841-45ac-447d-8bea-f62e81064acb",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a13b1841-45ac-447d-8bea-f62e81064acb",
       "urlUpdatedAt": "2026-09-22T10:30:52.513Z"
+    },
+    {
+      "id": "0973",
+      "entryType": "avatar",
+      "displaySerial": "0860",
+      "nickname": "栬くん式ボクセルAkyo",
+      "avatarName": "ボクセルアキョ",
+      "category": "Supported Platform,Supported Platform/PC,Style,Gimmick・Special,Gimmick・Special/Shader,Style/Retro,Color,Color/Blue Tones,Color/Green Tones,Mint Chocolate",
+      "comment": "実はAkyoじゃなかったらどうしよう・・・",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
+      "urlUpdatedAt": "2026-09-22T10:36:41.754Z"
     }
   ]
 }

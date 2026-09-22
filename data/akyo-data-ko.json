@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T10:30:52.634Z",
-  "count": 971,
+  "updatedAt": "2026-09-22T10:36:41.914Z",
+  "count": 972,
   "data": [
     {
       "id": "0001",
@@ -11875,6 +11875,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a13b1841-45ac-447d-8bea-f62e81064acb",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a13b1841-45ac-447d-8bea-f62e81064acb",
       "urlUpdatedAt": "2026-09-22T10:30:52.513Z"
+    },
+    {
+      "id": "0973",
+      "entryType": "avatar",
+      "displaySerial": "0860",
+      "nickname": "栬くん式ボクセルAkyo",
+      "avatarName": "ボクセルアキョ",
+      "category": "지원 기기,지원 기기/PC,스타일,기믹・특수,기믹・특수/셰이더,스타일/레트로,색상,색상/파란색 계열,색상/초록색 계열,초코민트류",
+      "comment": "実はAkyoじゃなかったらどうしよう・・・",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_69d0f549-145e-4b26-ae85-beecc62dafe0",
+      "urlUpdatedAt": "2026-09-22T10:36:41.754Z"
     }
   ]
 }
