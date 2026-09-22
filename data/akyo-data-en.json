@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T10:01:25.922Z",
-  "count": 968,
+  "updatedAt": "2026-09-22T10:17:29.190Z",
+  "count": 969,
   "data": [
     {
       "id": "0001",
@@ -11122,6 +11122,19 @@
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_0613b931-6eb4-43df-b59e-64adc0778eca",
       "boothUrl": "https://nigredou.booth.pm/items/8883951",
       "urlUpdatedAt": "2026-09-22T09:39:38.506Z"
+    },
+    {
+      "id": "0970",
+      "entryType": "avatar",
+      "displaySerial": "0857",
+      "nickname": "ステンドグラスAkyo",
+      "avatarName": "ステンドグラスakyo",
+      "category": "Supported Platform,Supported Platform/PC,Gimmick・Special,Gimmick・Special/Light,Gimmick・Special/Shader,Art,Art/Craft,Material・Raw Material,Material・Raw Material/Glass",
+      "comment": "Akyoの美術館で見てみたい！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ac79b7ee-3ff9-432e-b046-d4322d27211e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ac79b7ee-3ff9-432e-b046-d4322d27211e",
+      "urlUpdatedAt": "2026-09-22T10:17:29.127Z"
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T10:01:25.971Z",
-  "count": 968,
+  "updatedAt": "2026-09-22T10:17:29.221Z",
+  "count": 969,
   "data": [
     {
       "id": "0001",
@@ -11836,6 +11836,19 @@
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_0613b931-6eb4-43df-b59e-64adc0778eca",
       "boothUrl": "https://nigredou.booth.pm/items/8883951",
       "urlUpdatedAt": "2026-09-22T09:39:38.506Z"
+    },
+    {
+      "id": "0970",
+      "entryType": "avatar",
+      "displaySerial": "0857",
+      "nickname": "스테인드글라스 Akyo",
+      "avatarName": "ステンドグラスakyo",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/라이트,기믹・특수/셰이더,예술,예술/공예품,소재・원재료,소재・원재료/유리",
+      "comment": "Akyoの美術館で見てみたい！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ac79b7ee-3ff9-432e-b046-d4322d27211e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ac79b7ee-3ff9-432e-b046-d4322d27211e",
+      "urlUpdatedAt": "2026-09-22T10:17:29.127Z"
     }
   ]
 }
