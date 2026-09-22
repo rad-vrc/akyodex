@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-21T13:51:07.529Z",
+  "updatedAt": "2026-09-22T02:01:33.402Z",
   "count": 967,
   "data": [
     {
@@ -200,10 +200,11 @@
     {
       "id": "0017",
       "entryType": "avatar",
+      "displaySerial": "0017",
       "nickname": "N/A",
       "avatarName": "Akyo",
-      "category": "チョコミント類,ギミック・特殊,対応機種,対応機種/PC",
-      "comment": "謎のAkyo",
+      "category": "チョコミント類,ギミック・特殊,対応機種,対応機種/PC,謎多き存在,色,色/緑色系,色/青色系",
+      "comment": "Akyoのようで、Akyoなのだ。",
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_19cb8afc-cda5-416f-a590-726a33f634b4",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_19cb8afc-cda5-416f-a590-726a33f634b4"

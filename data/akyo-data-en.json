@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-21T13:51:07.579Z",
+  "updatedAt": "2026-09-22T02:01:33.450Z",
   "count": 967,
   "data": [
     {
@@ -200,9 +200,10 @@
     {
       "id": "0017",
       "entryType": "avatar",
+      "displaySerial": "0017",
       "nickname": "N/A",
       "avatarName": "Akyo",
-      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC",
+      "category": "Mint Chocolate,Gimmick・Special,Supported Platform,Supported Platform/PC,Mysterious Being,Color,Color/Green Tones,Color/Blue Tones",
       "comment": "Mysterious Akyo",
       "author": "uqai",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_19cb8afc-cda5-416f-a590-726a33f634b4",
