@@ -1335,6 +1335,10 @@
     "en": "Role・Status/Convict",
     "ko": "신분・역할/수형자"
   },
+  "身分・役割/学生": {
+    "en": "Role・Status/Stundent",
+    "ko": "신분・역할/스포티"
+  },
   "身分・役割/王族": {
     "en": "Role・Status/Royalty",
     "ko": "신분・역할/왕족"
