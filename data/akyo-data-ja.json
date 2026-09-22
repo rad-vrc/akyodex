@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T10:53:05.951Z",
-  "count": 975,
+  "updatedAt": "2026-09-22T10:57:51.619Z",
+  "count": 976,
   "data": [
     {
       "id": "0001",
@@ -11213,6 +11213,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_db4b19a6-e985-48f8-a3be-19c7e4457b39",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_db4b19a6-e985-48f8-a3be-19c7e4457b39",
       "urlUpdatedAt": "2026-09-22T10:53:05.899Z"
+    },
+    {
+      "id": "0977",
+      "entryType": "avatar",
+      "displaySerial": "0864",
+      "nickname": "アクスタAkyo",
+      "avatarName": "アクスタakyo",
+      "category": "対応機種,対応機種/PC,体格・形状・触り心地,体格・形状・触り心地/ぺらぺら,グッズ,色,色/青色系,色/緑色系,チョコミント類",
+      "comment": "5000兆Akyo欲しい！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d357e61e-ac95-4e0c-bc98-16eaba82d937",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d357e61e-ac95-4e0c-bc98-16eaba82d937",
+      "urlUpdatedAt": "2026-09-22T10:57:51.573Z"
     }
   ]
 }
