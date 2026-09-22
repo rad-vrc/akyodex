@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T16:36:29.945Z",
-  "count": 981,
+  "updatedAt": "2026-09-22T17:49:56.660Z",
+  "count": 982,
   "data": [
     {
       "id": "0001",
@@ -12005,6 +12005,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_52812dbd-b67e-48a9-9176-eb4509bb24cd",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_52812dbd-b67e-48a9-9176-eb4509bb24cd",
       "urlUpdatedAt": "2026-09-22T16:36:29.785Z"
+    },
+    {
+      "id": "0983",
+      "entryType": "avatar",
+      "displaySerial": "0870",
+      "nickname": "メープルAkyo",
+      "avatarName": "akyo_メープル",
+      "category": "지원 기기,지원 기기/PC,계절・행사,계절・행사/가을,자연,자연/식물,기믹・특수,기믹・특수/파티클",
+      "comment": "【ささのきの手記】\n秋になると木々の葉が鮮やかに色づき、様々な生き物を魅了するakyo。さくらakyoの親戚でもある",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_55d17244-7a53-4ee3-bd35-e2335125d688",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_55d17244-7a53-4ee3-bd35-e2335125d688",
+      "urlUpdatedAt": "2026-09-22T17:49:56.491Z"
     }
   ]
 }
