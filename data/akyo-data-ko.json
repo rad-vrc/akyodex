@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T10:57:51.784Z",
-  "count": 976,
+  "updatedAt": "2026-09-22T15:38:58.265Z",
+  "count": 977,
   "data": [
     {
       "id": "0001",
@@ -11940,6 +11940,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d357e61e-ac95-4e0c-bc98-16eaba82d937",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d357e61e-ac95-4e0c-bc98-16eaba82d937",
       "urlUpdatedAt": "2026-09-22T10:57:51.573Z"
+    },
+    {
+      "id": "0978",
+      "entryType": "avatar",
+      "displaySerial": "0865",
+      "nickname": "NewフェイトラAkyo",
+      "avatarName": "NewFTあきょ",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/페이스 트래킹,색상,색상/초록색 계열,색상/파란색 계열",
+      "comment": "表情筋を手に入れたみたい！",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b826fc21-d833-4260-a088-eedd875e0d7b",
+      "urlUpdatedAt": "2026-09-22T15:38:58.107Z"
     }
   ]
 }
