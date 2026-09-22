@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T09:46:47.163Z",
+  "updatedAt": "2026-09-22T09:48:14.112Z",
   "count": 968,
   "data": [
     {
@@ -2705,10 +2705,11 @@
     {
       "id": "0240",
       "entryType": "avatar",
+      "displaySerial": "0240",
       "nickname": "Baked Sweet Potato Akyo",
       "avatarName": "akyo_yakiimo",
-      "category": "Food,Food/Dish,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
-      "comment": "",
+      "category": "Food,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Food/Sweets",
+      "comment": "あきょや～きいも～～～～♪",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8af73583-7ef5-418f-b283-2f904168be1d",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_8af73583-7ef5-418f-b283-2f904168be1d"

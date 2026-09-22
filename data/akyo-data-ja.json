@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-22T09:46:47.121Z",
+  "updatedAt": "2026-09-22T09:48:14.059Z",
   "count": 968,
   "data": [
     {
@@ -2705,10 +2705,11 @@
     {
       "id": "0240",
       "entryType": "avatar",
+      "displaySerial": "0240",
       "nickname": "焼き芋Akyo",
       "avatarName": "akyo_yakiimo",
-      "category": "食べ物,食べ物/料理,対応機種,対応機種/PC,対応機種/Quest(Android)",
-      "comment": "",
+      "category": "食べ物,対応機種,対応機種/PC,対応機種/Quest(Android),食べ物/スイーツ",
+      "comment": "あきょや～きいも～～～～♪",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_8af73583-7ef5-418f-b283-2f904168be1d",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_8af73583-7ef5-418f-b283-2f904168be1d"
