@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T10:50:21.181Z",
-  "count": 974,
+  "updatedAt": "2026-09-22T10:53:05.997Z",
+  "count": 975,
   "data": [
     {
       "id": "0001",
@@ -11200,6 +11200,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b1e9a1ad-442c-44e0-baa9-25d92adebe6c",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b1e9a1ad-442c-44e0-baa9-25d92adebe6c",
       "urlUpdatedAt": "2026-09-22T10:50:21.071Z"
+    },
+    {
+      "id": "0976",
+      "entryType": "avatar",
+      "displaySerial": "0863",
+      "nickname": "フェイトラAkyo",
+      "avatarName": "FTあきょ",
+      "category": "Supported Platform,Supported Platform/PC,Gimmick・Special,Gimmick・Special/Face Tracking,Mint Chocolate,Color,Color/Blue Tones,Color/Green Tones",
+      "comment": "まさかのフェイストラッキング！？",
+      "author": "栬くん。",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_db4b19a6-e985-48f8-a3be-19c7e4457b39",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_db4b19a6-e985-48f8-a3be-19c7e4457b39",
+      "urlUpdatedAt": "2026-09-22T10:53:05.899Z"
     }
   ]
 }
