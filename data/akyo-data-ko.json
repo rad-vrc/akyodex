@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-22T09:48:14.165Z",
+  "updatedAt": "2026-09-22T09:50:35.301Z",
   "count": 968,
   "data": [
     {
@@ -2852,11 +2852,13 @@
       "displaySerial": "0234",
       "nickname": "배추 Akyo",
       "avatarName": "akyo_hakusai 1․03",
-      "category": "음식,음식/채소,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "category": "음식,음식/채소,지원 기기,지원 기기/PC,지원 기기/Quest(Android),Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c293ac43-7343-4c37-a7a2-f36a6e3c3c9e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c293ac43-7343-4c37-a7a2-f36a6e3c3c9e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c293ac43-7343-4c37-a7a2-f36a6e3c3c9e",
+      "boothUrl": "https://booth.pm/ja/items/4135265",
+      "urlUpdatedAt": "2026-09-22T09:50:35.143Z"
     },
     {
       "id": "0235",

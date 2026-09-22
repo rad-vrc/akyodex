@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T09:48:14.112Z",
+  "updatedAt": "2026-09-22T09:50:35.248Z",
   "count": 968,
   "data": [
     {
@@ -2636,13 +2636,16 @@
     {
       "id": "0234",
       "entryType": "avatar",
+      "displaySerial": "0234",
       "nickname": "Chinese Cabbage Akyo",
       "avatarName": "akyo_hakusai 1․03",
-      "category": "Food,Food/Vegetable,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Food,Food/Vegetable,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c293ac43-7343-4c37-a7a2-f36a6e3c3c9e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c293ac43-7343-4c37-a7a2-f36a6e3c3c9e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c293ac43-7343-4c37-a7a2-f36a6e3c3c9e",
+      "boothUrl": "https://booth.pm/ja/items/4135265",
+      "urlUpdatedAt": "2026-09-22T09:50:35.143Z"
     },
     {
       "id": "0235",
