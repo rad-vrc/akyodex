@@ -6,6 +6,7 @@ import path from "node:path";
 import type { AkyoData } from "@/types/akyo";
 import { createCatalogPayload } from "@/lib/catalog-payload";
 import { prepareCatalogItemsInChunks } from "@/lib/catalog-preparation";
+import type { CatalogRequestTiming } from "@/lib/catalog-diagnostics";
 import {
   CATALOG_STALL_AFTER_MS,
   CatalogRequestCoordinator,
@@ -35,6 +36,69 @@ function jsonResponse(body: unknown, status = 200): Response {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+test("records header wait and body parsing separately, including failed fallback attempts", async () => {
+  let time = 0;
+  const requests: CatalogRequestTiming[] = [];
+  const result = await loadCompleteCatalogData({
+    lang: "ja", catalogUrl: "/api/catalog/ja", r2BaseUrl: "https://images.example.com",
+    now: () => time,
+    phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => requests.push(value) },
+    fetchImpl: async (url, init) => {
+      assert.deepEqual(Object.keys(init ?? {}), ["signal"], "preload request options must not change");
+      time += 4000;
+      if (String(url).startsWith("/api/")) return jsonResponse({}, 503);
+      const response = jsonResponse({ data: [createAkyo("0001")] });
+      const json = response.json.bind(response);
+      response.json = async () => { time += 200; return json(); };
+      return response;
+    },
+  });
+  assert.equal(result.source, "r2");
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests[0], {
+    source: "api", status: 503, outcome: "error", headersWaitMs: 4000,
+    bodyAndParseMs: null, totalMs: 4000, server: { durationsMs: {} },
+  });
+  assert.deepEqual(requests[1], {
+    source: "r2", status: 200, outcome: "success", headersWaitMs: 4000,
+    bodyAndParseMs: 200, totalMs: 4200, server: null,
+  });
+});
+
+test("a broken diagnostic observer cannot trigger fallback or lose a successful catalog", async () => {
+  let calls = 0;
+  const result = await loadCompleteCatalogData({
+    lang: "ja", catalogUrl: "/api/catalog/ja", r2BaseUrl: "https://images.example.com",
+    phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest() { throw new Error("observer"); } },
+    fetchImpl: async () => { calls++; return jsonResponse({ data: [createAkyo("0001")] }); },
+  });
+  assert.equal(result.source, "api");
+  assert.equal(calls, 1);
+});
+
+test("a body timeout keeps the response status and never starts a second source", { timeout: 2000 }, async () => {
+  const requests: CatalogRequestTiming[] = [];
+  let calls = 0;
+  await assert.rejects(loadCompleteCatalogData({
+    lang: "ja", catalogUrl: "/api/catalog/ja", r2BaseUrl: "https://images.example.com", timeoutMs: 20,
+    phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => requests.push(value) },
+    fetchImpl: async (_url, init) => {
+      calls++;
+      const response = jsonResponse({});
+      response.json = () => new Promise((_resolve, reject) => {
+        init!.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+      });
+      return response;
+    },
+  }), { name: "CatalogDeadlineError" });
+  assert.equal(calls, 1);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].status, 200);
+  assert.equal(requests[0].outcome, "timeout");
+  assert.notEqual(requests[0].headersWaitMs, null);
+  assert.notEqual(requests[0].bodyAndParseMs, null);
+});
 
 test("loadCompleteCatalogData uses the API result without requesting R2", async () => {
   const requestedUrls: string[] = [];

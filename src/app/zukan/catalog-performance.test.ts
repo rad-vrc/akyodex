@@ -8,6 +8,7 @@ import {
   CatalogLoadPerformance,
   buildCatalogResumeMessage,
   captureCatalogResume,
+  createCatalogSlowLoadReporter,
   describeCatalogFailureCause,
   getCatalogFailureReason,
 } from "./catalog-performance";
@@ -57,6 +58,9 @@ test("CatalogLoadPerformance records fetch, response, and ready timing", () => {
     failureReason: null,
     startedAtEpochMs: 1_000,
     endedAtEpochMs: 1_125,
+    requests: [],
+    visibilityAtStart: "unknown",
+    visibilityAtEnd: "unknown",
     phaseDurationsMs: {
       normalize: 0,
       searchIndex: 0,
@@ -64,6 +68,31 @@ test("CatalogLoadPerformance records fetch, response, and ready timing", () => {
     },
   });
   assert.equal(measurement.markReady(), null);
+});
+
+test("slow success reporting is bounded per view, not consumed by fast loads or failures", () => {
+  const clock = new FakePerformanceClock();
+  const measurement = new CatalogLoadPerformance("ja", clock);
+  clock.currentTime = 3000;
+  const event = measurement.markReady()!;
+  const captured: Event[] = [];
+  const capture = (message: string, context?: unknown) => captured.push({ message, ...context as Event });
+  const report = createCatalogSlowLoadReporter(capture);
+  report({ ...event, durationMs: 2999 });
+  report({ ...event, failureReason: "Error" });
+  assert.equal(captured.length, 0);
+  report(event);
+  report(event);
+  assert.equal(captured.length, 1);
+  createCatalogSlowLoadReporter(capture)(event);
+  assert.equal(captured.length, 2, "a new view gets one report");
+  const dedupe = dedupeIntegration();
+  for (const sent of captured) {
+    assert.deepEqual(sent.fingerprint, ["catalog-slow-load"]);
+    assert.equal(sent.level, "warning");
+    assert.notEqual(dedupe.processEvent?.(sent, {}, {} as SentryClient), null);
+  }
+  assert.doesNotThrow(() => createCatalogSlowLoadReporter(() => { throw new Error("SDK"); })(event));
 });
 
 test("CatalogLoadPerformance measures normalization, search indexing, and state application separately", () => {

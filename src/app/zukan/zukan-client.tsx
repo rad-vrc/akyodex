@@ -41,6 +41,7 @@ import {
   CatalogLoadPerformance,
   captureCatalogFailure,
   captureCatalogResume,
+  createCatalogSlowLoadReporter,
   reportCatalogLoadToSentry,
 } from "./catalog-performance";
 import { categoriesForFilterPanel, compareCategories } from "@/lib/akyo-data-helpers";
@@ -288,6 +289,7 @@ export function ZukanClient({
   const isCompactViewport = useCompactViewport();
   const [droppedCatalogEntryCount, setDroppedCatalogEntryCount] = useState(0);
   const [retryNonce, setRetryNonce] = useState(0);
+  const [reportSlowCatalogLoad] = useState(createCatalogSlowLoadReporter);
 
   const languageDatasetCacheRef = useRef<
     Map<SupportedLanguage, LanguageDatasetCacheEntry>
@@ -564,8 +566,11 @@ export function ZukanClient({
     catalogPerformance.endPhase("state-apply");
     const telemetry = catalogPerformance.markReady();
     catalogPerformanceRef.current = null;
-    if (telemetry) void reportCatalogLoadToSentry(telemetry);
-  }, [isCurrentDatasetComplete]);
+    if (telemetry) {
+      void reportCatalogLoadToSentry(telemetry);
+      reportSlowCatalogLoad(telemetry);
+    }
+  }, [isCurrentDatasetComplete, reportSlowCatalogLoad]);
 
   // Initial mount optimizations: responsive render limit and defer heavy bg
   useEffect(() => {
