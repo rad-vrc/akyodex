@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T16:15:36.573Z",
-  "count": 978,
+  "updatedAt": "2026-09-22T16:16:51.787Z",
+  "count": 979,
   "data": [
     {
       "id": "0001",
@@ -11253,6 +11253,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
       "urlUpdatedAt": "2026-09-22T15:50:45.709Z"
+    },
+    {
+      "id": "0980",
+      "entryType": "avatar",
+      "displaySerial": "0867",
+      "nickname": "体操服Akyo",
+      "avatarName": "たいそうふくあきょ",
+      "category": "Supported Platform,Supported Platform/PC,Fashion・Equipment,Physical,Physical/Athletic,Fashion・Equipment/Sporty,Body Part,Body Part/Arm,School,Age Group,Age Group/Child,Role・Status,Role・Status/Stundent,Color,Color/White Tones,Fashion・Equipment/Headband",
+      "comment": "健康で優良なAkyoだね！見習わなくっちゃ！！",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_9b5d693a-e08c-4120-84e7-448c19a14efe",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_9b5d693a-e08c-4120-84e7-448c19a14efe",
+      "urlUpdatedAt": "2026-09-22T16:16:51.685Z"
     }
   ]
 }
