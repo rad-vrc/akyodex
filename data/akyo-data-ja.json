@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-23T14:45:03.689Z",
-  "count": 990,
+  "updatedAt": "2026-09-23T14:49:03.770Z",
+  "count": 991,
   "data": [
     {
       "id": "0001",
@@ -11424,6 +11424,20 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_c0464464-aad3-4aa4-92a7-ff5b50ce0bff",
       "avatarUrl": "https://vrchat.com/home/world/wrld_c0464464-aad3-4aa4-92a7-ff5b50ce0bff",
       "urlUpdatedAt": "2026-09-23T14:45:03.635Z"
+    },
+    {
+      "id": "0993",
+      "entryType": "avatar",
+      "displaySerial": "0876",
+      "nickname": "ニグレド式骨Akyo",
+      "avatarName": "骨Akyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,器官,器官/骨,謎多き存在,色,色/白色系,色/無彩色系,Booth",
+      "comment": "【ニグレドの手記】\n一説によると「Akyo」と呼ばれる生物のものとされているが、その真偽は定かではない。 そもそも、Akyoに骨が存在するのかすら明らかになっていない。 とりあえず、骨格標本として展示することにしたが、稀に動いているらしい。",
+      "author": "ニグレド",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_79e25db1-478b-4319-9f71-6383602597b2",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_79e25db1-478b-4319-9f71-6383602597b2",
+      "boothUrl": "https://nigredou.booth.pm/items/8890364",
+      "urlUpdatedAt": "2026-09-23T14:49:03.712Z"
     }
   ]
 }
