@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-23T14:10:49.141Z",
-  "count": 986,
+  "updatedAt": "2026-09-23T14:20:16.528Z",
+  "count": 987,
   "data": [
     {
       "id": "0001",
@@ -11372,6 +11372,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_fffaff32-549a-49a9-afd5-958e31779219",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_fffaff32-549a-49a9-afd5-958e31779219",
       "urlUpdatedAt": "2026-09-23T14:10:49.089Z"
+    },
+    {
+      "id": "0989",
+      "entryType": "avatar",
+      "displaySerial": "0874",
+      "nickname": "豆の木Akyo",
+      "avatarName": "豆の木Akyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),まめAkyo,まめ,自然,自然/植物,ギミック・特殊,ギミック・特殊/連れ歩き",
+      "comment": "AkyoとまめAkyoの木！かわいいまめAkyoがついてくるよ！",
+      "author": "ふらっと（flat）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_2197a07a-78e9-4d88-948d-c303e75c989f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2197a07a-78e9-4d88-948d-c303e75c989f",
+      "urlUpdatedAt": "2026-09-23T14:20:16.468Z"
     }
   ]
 }
