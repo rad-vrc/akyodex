@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-23T13:36:40.457Z",
-  "count": 985,
+  "updatedAt": "2026-09-23T14:10:49.141Z",
+  "count": 986,
   "data": [
     {
       "id": "0001",
@@ -11359,6 +11359,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_7db031fa-a763-4655-acd4-af8ee76cd0c0",
       "avatarUrl": "https://vrchat.com/home/world/wrld_7db031fa-a763-4655-acd4-af8ee76cd0c0",
       "urlUpdatedAt": "2026-09-23T13:36:40.407Z"
+    },
+    {
+      "id": "0988",
+      "entryType": "avatar",
+      "displaySerial": "0873",
+      "nickname": "放置されたAkyo",
+      "avatarName": "放置されたAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),色,色/緑色系,謎多き存在,歴史,状態,状態/経年劣化",
+      "comment": "そのAkyoは、静かに佇んでいた。",
+      "author": "ふらっと（flat）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_fffaff32-549a-49a9-afd5-958e31779219",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_fffaff32-549a-49a9-afd5-958e31779219",
+      "urlUpdatedAt": "2026-09-23T14:10:49.089Z"
     }
   ]
 }
