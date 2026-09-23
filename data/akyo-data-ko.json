@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-23T14:21:07.179Z",
-  "count": 987,
+  "updatedAt": "2026-09-23T14:22:54.177Z",
+  "count": 988,
   "data": [
     {
       "id": "0001",
@@ -12091,6 +12091,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2197a07a-78e9-4d88-948d-c303e75c989f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_2197a07a-78e9-4d88-948d-c303e75c989f",
       "urlUpdatedAt": "2026-09-23T14:20:16.468Z"
+    },
+    {
+      "id": "0990",
+      "entryType": "avatar",
+      "displaySerial": "0875",
+      "nickname": "深海Akyo",
+      "avatarName": "DeepseaAkyo",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),환경・날씨,환경・날씨/수역,색상,색상/파란색 계열,謎多き存在",
+      "comment": "深い深い海の底に、誰も見たことのないAkyoがいた。",
+      "author": "ふらっと（flat）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_04b817c1-5687-458c-af88-e4749cedb2a7",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_04b817c1-5687-458c-af88-e4749cedb2a7",
+      "urlUpdatedAt": "2026-09-23T14:22:54.013Z"
     }
   ]
 }
