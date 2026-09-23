@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-23T11:19:06.832Z",
-  "count": 985,
+  "updatedAt": "2026-09-23T11:23:33.235Z",
+  "count": 984,
   "data": [
     {
       "id": "0001",
@@ -12052,19 +12052,6 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d296f1d1-f643-49e0-89b6-743f74c0c471",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d296f1d1-f643-49e0-89b6-743f74c0c471",
       "urlUpdatedAt": "2026-09-23T11:17:54.160Z"
-    },
-    {
-      "id": "0986",
-      "entryType": "avatar",
-      "displaySerial": "0873",
-      "nickname": "あきょンち",
-      "avatarName": "あきょンち",
-      "category": "지원 기기,지원 기기/PC",
-      "comment": "",
-      "author": "kuro5963",
-      "sourceUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_79b1dc17-7578-4f17-93d1-6a23c6175064",
-      "urlUpdatedAt": "2026-09-23T11:19:06.683Z"
     }
   ]
 }
