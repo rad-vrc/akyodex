@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-22T22:25:10.245Z",
-  "count": 983,
+  "updatedAt": "2026-09-23T11:17:54.249Z",
+  "count": 984,
   "data": [
     {
       "id": "0001",
@@ -11333,6 +11333,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_57bc5f02-7c81-4ce6-a91d-dc7623395e56",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_57bc5f02-7c81-4ce6-a91d-dc7623395e56",
       "urlUpdatedAt": "2026-09-22T17:59:17.765Z"
+    },
+    {
+      "id": "0985",
+      "entryType": "avatar",
+      "displaySerial": "0872",
+      "nickname": "アキョシュー",
+      "avatarName": "アキョシュー",
+      "category": "Supported Platform,Supported Platform/PC,Bean Akyo,Physique・Shape・Texture,Physique・Shape・Texture/Round,Food,Food/Sweets",
+      "comment": "",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d296f1d1-f643-49e0-89b6-743f74c0c471",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d296f1d1-f643-49e0-89b6-743f74c0c471",
+      "urlUpdatedAt": "2026-09-23T11:17:54.160Z"
     }
   ]
 }
