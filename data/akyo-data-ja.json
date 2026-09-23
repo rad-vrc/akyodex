@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-23T14:22:54.069Z",
-  "count": 988,
+  "updatedAt": "2026-09-23T14:43:11.007Z",
+  "count": 989,
   "data": [
     {
       "id": "0001",
@@ -11398,6 +11398,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_04b817c1-5687-458c-af88-e4749cedb2a7",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_04b817c1-5687-458c-af88-e4749cedb2a7",
       "urlUpdatedAt": "2026-09-23T14:22:54.013Z"
+    },
+    {
+      "id": "0991",
+      "entryType": "world",
+      "displaySerial": "0114",
+      "nickname": "第四回右近弐式集会 会場Archive ⁄ Fourth Ukon second type meetup",
+      "avatarName": "第四回右近弐式集会 会場Archive ⁄ Fourth Ukon second type meetup",
+      "category": "ワールド,対応機種,対応機種/PC",
+      "comment": "",
+      "author": "arancioneVRC",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_f0b6ee81-f2be-4eb7-ae0e-4850efe409f5",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_f0b6ee81-f2be-4eb7-ae0e-4850efe409f5",
+      "urlUpdatedAt": "2026-09-23T14:43:10.951Z"
     }
   ]
 }
