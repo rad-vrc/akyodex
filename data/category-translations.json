@@ -1107,9 +1107,9 @@
     "en": "Condition/Captive",
     "ko": "상태/갇힌 몸"
   },
-  "状態/復活": {
-    "en": "Condition/Revival",
-    "ko": "상태/부활"
+  "状態/復活・生まれ変わり": {
+    "en": "Condition/Revival・Reincarnation",
+    "ko": "상태/부활・환생"
   },
   "状態/死": {
     "en": "Condition/Death",
