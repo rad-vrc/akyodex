@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-24T06:43:12.460Z",
-  "count": 992,
+  "updatedAt": "2026-09-24T07:41:59.190Z",
+  "count": 993,
   "data": [
     {
       "id": "0001",
@@ -11451,6 +11451,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_067ad613-123b-419f-aed6-435dae179bff",
       "avatarUrl": "https://vrchat.com/home/world/wrld_067ad613-123b-419f-aed6-435dae179bff",
       "urlUpdatedAt": "2026-09-24T06:43:12.423Z"
+    },
+    {
+      "id": "0995",
+      "entryType": "avatar",
+      "displaySerial": "0877",
+      "nickname": "ほねまめAkyo",
+      "avatarName": "ほねまめAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),まめAkyo,まめ,器官,器官/骨,色,色/白色系",
+      "comment": "【こがねの解説】\nほねのまめAkyo、それは既存の「まめAkyo」の愛らしさを、骨という普遍の構造体（永続性と構造という概念の付与）によって封印し、永遠化した存在。 生命の輝きを失うことではなく、その輝きを最も効率的かつ永続的に保存するための、究極の保存技術。 その本質は「死」ではない。彼らは朽ちることのない、永遠に成長し続ける「まめ」の雛形である。",
+      "author": "でんでんこがね",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_cb166001-23cb-4d8d-8849-24d1db418c09",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_cb166001-23cb-4d8d-8849-24d1db418c09",
+      "urlUpdatedAt": "2026-09-24T07:41:59.134Z"
     }
   ]
 }
