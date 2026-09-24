@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-24T07:41:59.190Z",
-  "count": 993,
+  "updatedAt": "2026-09-24T09:17:16.177Z",
+  "count": 994,
   "data": [
     {
       "id": "0001",
@@ -11464,6 +11464,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_cb166001-23cb-4d8d-8849-24d1db418c09",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_cb166001-23cb-4d8d-8849-24d1db418c09",
       "urlUpdatedAt": "2026-09-24T07:41:59.134Z"
+    },
+    {
+      "id": "0996",
+      "entryType": "avatar",
+      "displaySerial": "0878",
+      "nickname": "ランAkyo2026",
+      "avatarName": "Akyo Run 2026",
+      "category": "対応機種,対応機種/PC,色,色/青色系,状態,状態/復活,チョコミント類",
+      "comment": "新生ランAkyo登場！",
+      "author": "uqai",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_714971c6-9591-4eb5-91dc-bf81f621a2c5",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_714971c6-9591-4eb5-91dc-bf81f621a2c5",
+      "urlUpdatedAt": "2026-09-24T09:17:16.123Z"
     }
   ]
 }
