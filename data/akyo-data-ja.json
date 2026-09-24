@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-23T14:49:03.770Z",
-  "count": 991,
+  "updatedAt": "2026-09-24T06:43:12.460Z",
+  "count": 992,
   "data": [
     {
       "id": "0001",
@@ -11438,6 +11438,19 @@
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_79e25db1-478b-4319-9f71-6383602597b2",
       "boothUrl": "https://nigredou.booth.pm/items/8890364",
       "urlUpdatedAt": "2026-09-23T14:49:03.712Z"
+    },
+    {
+      "id": "0994",
+      "entryType": "world",
+      "displaySerial": "0116",
+      "nickname": "ToyBox",
+      "avatarName": "ToyBox",
+      "category": "ワールド,対応機種,対応機種/PC",
+      "comment": "",
+      "author": "ひさお_hisao",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_067ad613-123b-419f-aed6-435dae179bff",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_067ad613-123b-419f-aed6-435dae179bff",
+      "urlUpdatedAt": "2026-09-24T06:43:12.423Z"
     }
   ]
 }
