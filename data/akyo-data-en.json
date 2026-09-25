@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-25T15:13:34.012Z",
-  "count": 996,
+  "updatedAt": "2026-09-25T15:19:42.694Z",
+  "count": 997,
   "data": [
     {
       "id": "0001",
@@ -11503,6 +11503,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_eff9c88c-4d34-46a5-9551-90cce0c89a6f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_eff9c88c-4d34-46a5-9551-90cce0c89a6f",
       "urlUpdatedAt": "2026-09-25T15:13:33.933Z"
+    },
+    {
+      "id": "0999",
+      "entryType": "avatar",
+      "displaySerial": "0880",
+      "nickname": "断罪バニーAkyo",
+      "avatarName": "danzaiAkyo",
+      "category": "Supported Platform,Supported Platform/PC,Parody,Parody/VRChat,Fashion・Equipment,Fashion・Equipment/Roleplay,Color,Color/Purple,Color/Pink Tones,Style,Style/Pretty",
+      "comment": "うっふ～ん♡Akyoよ～ん♡",
+      "author": "ソラリア928",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4eb48d0a-107c-4798-ab25-437b7dc6b983",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4eb48d0a-107c-4798-ab25-437b7dc6b983",
+      "urlUpdatedAt": "2026-09-25T15:19:42.586Z"
     }
   ]
 }
