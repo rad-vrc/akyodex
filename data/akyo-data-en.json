@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-25T15:20:18.451Z",
-  "count": 997,
+  "updatedAt": "2026-09-25T15:25:29.442Z",
+  "count": 998,
   "data": [
     {
       "id": "0001",
@@ -11516,6 +11516,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4eb48d0a-107c-4798-ab25-437b7dc6b983",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4eb48d0a-107c-4798-ab25-437b7dc6b983",
       "urlUpdatedAt": "2026-09-25T15:19:42.586Z"
+    },
+    {
+      "id": "1000",
+      "entryType": "avatar",
+      "displaySerial": "0881",
+      "nickname": "さいまん式分身Akyo",
+      "avatarName": "Akyo分身",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Gimmick・Special,Mint Chocolate,Color,Color/Green Tones,Color/Blue Tones,Gimmick・Special/Clone",
+      "comment": "多重あきょ分身の術！！",
+      "author": "さいまん",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4f274b25-d5f5-401d-a8bf-55e7702d983f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4f274b25-d5f5-401d-a8bf-55e7702d983f",
+      "urlUpdatedAt": "2026-09-25T15:25:29.363Z"
     }
   ]
 }
