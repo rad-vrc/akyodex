@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-25T15:26:26.086Z",
-  "count": 998,
+  "updatedAt": "2026-09-25T15:33:39.314Z",
+  "count": 999,
   "data": [
     {
       "id": "0001",
@@ -11529,6 +11529,20 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4f274b25-d5f5-401d-a8bf-55e7702d983f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4f274b25-d5f5-401d-a8bf-55e7702d983f",
       "urlUpdatedAt": "2026-09-25T15:25:29.363Z"
+    },
+    {
+      "id": "1001",
+      "entryType": "avatar",
+      "displaySerial": "0882",
+      "nickname": "ニグレド式骨Akyo DX復元プラン",
+      "avatarName": "骨Akyo_DX復元プラン",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),器官,器官/骨,謎多き存在,チョコミント類,色,色/緑色系,色/青色系,Booth",
+      "comment": "【ニグレドの手記】\n本標本は、通称「Akyo」と呼ばれる生物の骨格であると推測されている。 しかし、既知の動物とは異なる骨格構造を有しており、その分類については現在も議論が続いている。 なお、本標本の入手経路については記録が残されていない。",
+      "author": "ニグレド",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_7a20e2dc-13d9-4c6d-a3b8-17f00609494f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7a20e2dc-13d9-4c6d-a3b8-17f00609494f",
+      "boothUrl": "https://nigredou.booth.pm/items/8890364",
+      "urlUpdatedAt": "2026-09-25T15:33:39.266Z"
     }
   ]
 }
