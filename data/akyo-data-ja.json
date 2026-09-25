@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-25T15:07:07.922Z",
-  "count": 995,
+  "updatedAt": "2026-09-25T15:13:33.970Z",
+  "count": 996,
   "data": [
     {
       "id": "0001",
@@ -11490,6 +11490,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_3748c1d7-263e-472a-ba20-3d7c559ac15c",
       "avatarUrl": "https://vrchat.com/home/world/wrld_3748c1d7-263e-472a-ba20-3d7c559ac15c",
       "urlUpdatedAt": "2026-09-25T11:19:35.222Z"
+    },
+    {
+      "id": "0998",
+      "entryType": "avatar",
+      "displaySerial": "0879",
+      "nickname": "美食Akyo",
+      "avatarName": "美食akyo",
+      "category": "対応機種,対応機種/PC,パロディ,パロディ/美味しんぼ,作風・スタイル,作風・スタイル/和風,身分・役割,身分・役割/職人,年齢層,年齢層/大人,色,色/紫色系",
+      "comment": "Akyoを呼んでくれ！",
+      "author": "ソラリア928",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_eff9c88c-4d34-46a5-9551-90cce0c89a6f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_eff9c88c-4d34-46a5-9551-90cce0c89a6f",
+      "urlUpdatedAt": "2026-09-25T15:13:33.933Z"
     }
   ]
 }
