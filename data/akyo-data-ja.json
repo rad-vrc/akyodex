@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-25T15:33:39.314Z",
-  "count": 999,
+  "updatedAt": "2026-09-26T14:36:12.308Z",
+  "count": 1000,
   "data": [
     {
       "id": "0001",
@@ -11543,6 +11543,20 @@
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_7a20e2dc-13d9-4c6d-a3b8-17f00609494f",
       "boothUrl": "https://nigredou.booth.pm/items/8890364",
       "urlUpdatedAt": "2026-09-25T15:33:39.266Z"
+    },
+    {
+      "id": "1002",
+      "entryType": "avatar",
+      "displaySerial": "0883",
+      "nickname": "ニグレド式ローストAkyo",
+      "avatarName": "ローストAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),食べ物,食べ物/料理,色,色/茶色系,Booth",
+      "comment": "これもAkyoのにおいがする！！",
+      "author": "ニグレド",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ccd2ba6d-541e-4fe0-835f-2e1b3da76f0f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ccd2ba6d-541e-4fe0-835f-2e1b3da76f0f",
+      "boothUrl": "https://nigredou.booth.pm/items/8904170",
+      "urlUpdatedAt": "2026-09-26T14:36:12.251Z"
     }
   ]
 }
