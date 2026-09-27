@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-27T04:16:53.126Z",
-  "count": 1001,
+  "updatedAt": "2026-09-27T10:37:50.104Z",
+  "count": 1002,
   "data": [
     {
       "id": "0001",
@@ -11570,6 +11570,20 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4b059952-cced-44e2-af0b-830568c3ce8f",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b059952-cced-44e2-af0b-830568c3ce8f",
       "urlUpdatedAt": "2026-09-27T04:16:53.066Z"
+    },
+    {
+      "id": "1004",
+      "entryType": "avatar",
+      "displaySerial": "0885",
+      "nickname": "揚げパンAkyo",
+      "avatarName": "揚げパンAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS,食べ物,食べ物/料理,食べ物/料理/揚げ物,食べ物/パン,色,色/茶色系,歴史,調味料,Booth",
+      "comment": "【ニグレドの手記】\n1952年、給食で残って固くなったAkyoを美味しく食べてもらうため、油で揚げ砂糖をまぶすことが考案された。当時は「砂糖付フライAkyoぱん」と呼ばれていたと判明している。",
+      "author": "ニグレド",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_05578636-ac91-4bfc-b4f1-6161ff465e26",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_05578636-ac91-4bfc-b4f1-6161ff465e26",
+      "boothUrl": "https://nigredou.booth.pm/items/8907701",
+      "urlUpdatedAt": "2026-09-27T10:37:50.054Z"
     }
   ]
 }
