@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-26T14:36:12.402Z",
-  "count": 1000,
+  "updatedAt": "2026-09-27T04:16:53.218Z",
+  "count": 1001,
   "data": [
     {
       "id": "0001",
@@ -12263,6 +12263,19 @@
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ccd2ba6d-541e-4fe0-835f-2e1b3da76f0f",
       "boothUrl": "https://nigredou.booth.pm/items/8904170",
       "urlUpdatedAt": "2026-09-26T14:36:12.251Z"
+    },
+    {
+      "id": "1003",
+      "entryType": "avatar",
+      "displaySerial": "0884",
+      "nickname": "フライまめAkyo",
+      "avatarName": "akyo mameフライ",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),마메Akyo,마메,음식,음식/요리,음식/요리/튀김,색상,색상/갈색 계열,체격・형태・촉감,체격・형태・촉감/풍만,기관,기관/꼬리",
+      "comment": "サクサクしてるのかな？",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4b059952-cced-44e2-af0b-830568c3ce8f",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4b059952-cced-44e2-af0b-830568c3ce8f",
+      "urlUpdatedAt": "2026-09-27T04:16:53.066Z"
     }
   ]
 }
