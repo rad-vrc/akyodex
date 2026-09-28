@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-28T10:09:57.868Z",
+  "updatedAt": "2026-09-28T11:25:07.188Z",
   "count": 1003,
   "data": [
     {
@@ -11217,11 +11217,13 @@
       "displaySerial": "0820",
       "nickname": "게이밍 Akyo",
       "avatarName": "GamingAkyo",
-      "category": "색상,색상/무지개,레어,기믹・특수,기믹・특수/발광,지원 기기,지원 기기/PC",
+      "category": "색상,색상/무지개,레어,기믹・특수,기믹・특수/발광,지원 기기,지원 기기/PC,Booth",
       "comment": "2027년 여름 Vket에 놓여 있던 레어 Akyo야!",
       "author": "Saila_E",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8",
+      "boothUrl": "https://booth.pm/ja/items/8486799",
+      "urlUpdatedAt": "2026-09-28T11:25:07.075Z"
     },
     {
       "id": "0918",

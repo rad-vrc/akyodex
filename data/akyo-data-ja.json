@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-28T10:09:57.813Z",
+  "updatedAt": "2026-09-28T11:25:07.116Z",
   "count": 1003,
   "data": [
     {
@@ -10511,11 +10511,13 @@
       "displaySerial": "0820",
       "nickname": "ゲーミングAkyo",
       "avatarName": "GamingAkyo",
-      "category": "色,色/虹色系,レア,ギミック・特殊,ギミック・特殊/発光,対応機種,対応機種/PC",
+      "category": "色,色/虹色系,レア,ギミック・特殊,ギミック・特殊/発光,対応機種,対応機種/PC,Booth",
       "comment": "2027年夏のVketで置かれていたレアなAkyoだよ！",
       "author": "Saila_E",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8",
+      "boothUrl": "https://booth.pm/ja/items/8486799",
+      "urlUpdatedAt": "2026-09-28T11:25:07.075Z"
     },
     {
       "id": "0918",

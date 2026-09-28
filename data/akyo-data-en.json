@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-28T10:09:57.845Z",
+  "updatedAt": "2026-09-28T11:25:07.156Z",
   "count": 1003,
   "data": [
     {
@@ -10511,11 +10511,13 @@
       "displaySerial": "0820",
       "nickname": "Gaming Akyo",
       "avatarName": "GamingAkyo",
-      "category": "Color,Color/Rainbow,Rare,Gimmick・Special,Gimmick・Special/Glow,Supported Platform,Supported Platform/PC",
+      "category": "Color,Color/Rainbow,Rare,Gimmick・Special,Gimmick・Special/Glow,Supported Platform,Supported Platform/PC,Booth",
       "comment": "A rare Akyo that was on display at Vket Summer 2027!",
       "author": "Saila_E",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_09fd8457-0181-4125-a5a3-8682620d50c8",
+      "boothUrl": "https://booth.pm/ja/items/8486799",
+      "urlUpdatedAt": "2026-09-28T11:25:07.075Z"
     },
     {
       "id": "0918",
