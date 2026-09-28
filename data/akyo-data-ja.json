@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-27T10:37:50.104Z",
-  "count": 1002,
+  "updatedAt": "2026-09-28T10:09:57.813Z",
+  "count": 1003,
   "data": [
     {
       "id": "0001",
@@ -11584,6 +11584,19 @@
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_05578636-ac91-4bfc-b4f1-6161ff465e26",
       "boothUrl": "https://nigredou.booth.pm/items/8907701",
       "urlUpdatedAt": "2026-09-27T10:37:50.054Z"
+    },
+    {
+      "id": "1953",
+      "entryType": "world",
+      "displaySerial": "0118",
+      "nickname": "居酒屋 宵月",
+      "avatarName": "居酒屋 宵月",
+      "category": "ワールド,対応機種,対応機種/PC",
+      "comment": "",
+      "author": "RyuRyu0913",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_542699bc-8bb6-402f-91ec-f03c30c7a1cd",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_542699bc-8bb6-402f-91ec-f03c30c7a1cd",
+      "urlUpdatedAt": "2026-09-28T10:09:57.781Z"
     }
   ]
 }
