@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-28T11:25:07.156Z",
+  "updatedAt": "2026-09-29T13:47:00.133Z",
   "count": 1003,
   "data": [
     {
@@ -7037,13 +7037,16 @@
     {
       "id": "0620",
       "entryType": "avatar",
+      "displaySerial": "0620",
       "nickname": "Bean Akyo (Goat)",
       "avatarName": "まめAkyo（ヤギ）",
-      "category": "Bean,Bean Akyo,Animal,Animal/Goat,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS",
+      "category": "Bean,Bean Akyo,Animal,Animal/Goat,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,Booth",
       "comment": "A goat Akyo modification of the adorably cute [Free] Bean Akyo [VRC-compatible avatar] (https://booth.pm/ja/items/7385278)by Bosabosa-sama . I kinda feel like its durability has gone up.",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d5c02dcd-84d7-434e-a252-93525e918ca2",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5c02dcd-84d7-434e-a252-93525e918ca2"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5c02dcd-84d7-434e-a252-93525e918ca2",
+      "boothUrl": "https://nekonomi-honpo.booth.pm/items/6420432",
+      "urlUpdatedAt": "2026-09-29T13:47:00.065Z"
     },
     {
       "id": "0621",

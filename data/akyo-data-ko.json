@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-28T11:25:07.188Z",
+  "updatedAt": "2026-09-29T13:47:00.176Z",
   "count": 1003,
   "data": [
     {
@@ -7625,11 +7625,13 @@
       "displaySerial": "0620",
       "nickname": "콩 Akyo（염소）",
       "avatarName": "まめAkyo（ヤギ）",
-      "category": "마메,마메Akyo,동물,동물/염소,지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS",
+      "category": "마메,마메Akyo,동물,동물/염소,지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS,Booth",
       "comment": "보사보사님의 사랑스러운 【무료】 마메 Akyo (Bean Akyo)【VRC용 아바타】의 염소 Akyo 개변. 왠지 내구력이 올라간 기분.",
       "author": "nekononomicon",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d5c02dcd-84d7-434e-a252-93525e918ca2",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5c02dcd-84d7-434e-a252-93525e918ca2"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5c02dcd-84d7-434e-a252-93525e918ca2",
+      "boothUrl": "https://nekonomi-honpo.booth.pm/items/6420432",
+      "urlUpdatedAt": "2026-09-29T13:47:00.065Z"
     },
     {
       "id": "0621",
