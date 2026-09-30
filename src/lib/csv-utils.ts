@@ -139,6 +139,25 @@ export function parseLoadedAkyoCsvContent(csvText: string): {
   return normalizeAkyoCsvShape(header, dataRecords);
 }
 
+export function computeNextIdFromCsv(csvContent: string): number {
+  const { header, dataRecords } = parseLoadedAkyoCsvContent(csvContent.replace(/^\uFEFF/, ''));
+  const idIndex = header.indexOf('ID');
+  if (idIndex < 0) {
+    throw new Error('CSV is missing the ID column');
+  }
+
+  let maxId = 0;
+  for (const record of dataRecords) {
+    const rawId = record[idIndex].trim();
+    const id = Number(rawId);
+    if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(id) || id < 1 || id >= Number.MAX_SAFE_INTEGER) {
+      throw new Error('CSV contains an invalid ID');
+    }
+    maxId = Math.max(maxId, id);
+  }
+  return maxId + 1;
+}
+
 /** CSV text in the same shape the admin API commits (every field quoted, LF). */
 export function stringifyAkyoCsv(header: string[], dataRecords: string[][]): string {
   return stringifyCSV([header, ...dataRecords]);

@@ -9,6 +9,7 @@
 import { connection } from 'next/server';
 import { jsonError, validateSession } from '@/lib/api-helpers';
 import { fetchCSVFromGitHub } from '@/lib/github-utils';
+import { computeNextIdFromCsv } from '@/lib/csv-utils';
 import { formatAkyoId, parseAkyoIdNumber, pickLatestAkyoId, readNextIdHint } from '@/lib/next-id-state';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import fs from 'fs/promises';
@@ -72,23 +73,6 @@ function setCachedCsvNextId(idNum: number): void {
     value: idNum,
     expiresAt: Date.now() + NEXT_ID_CACHE_TTL_MS,
   };
-}
-
-function computeNextIdFromCsv(csvContent: string): number {
-  const lines = csvContent.split('\n').filter((line) => line.trim());
-  const dataLines = lines.slice(1);
-  let maxId = 0;
-
-  for (const line of dataLines) {
-    const match = line.match(/^"?(\d+)"?/);
-    if (!match) continue;
-    const id = Number.parseInt(match[1], 10);
-    if (!Number.isNaN(id) && id > maxId) {
-      maxId = id;
-    }
-  }
-
-  return maxId + 1;
 }
 
 async function withTimeout<T>(
