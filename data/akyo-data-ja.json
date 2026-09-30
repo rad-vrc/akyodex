@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-30T19:03:36.441Z",
-  "count": 1005,
+  "updatedAt": "2026-09-30T19:26:00.386Z",
+  "count": 1006,
   "data": [
     {
       "id": "0001",
@@ -11631,6 +11631,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3ba40dfb-4364-4136-bac4-a79ace1f3646",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3ba40dfb-4364-4136-bac4-a79ace1f3646",
       "urlUpdatedAt": "2026-09-30T18:57:21.083Z"
+    },
+    {
+      "id": "2022",
+      "entryType": "avatar",
+      "displaySerial": "0888",
+      "nickname": "ラインヒューマノイドAkyo",
+      "avatarName": "Akyo Lines",
+      "category": "対応機種,対応機種/PC,色,色/青色系,芸術,芸術/絵画・イラスト,動物,動物/人間・人類",
+      "comment": "ペンで描かれたヒューマノイドAkyo！？",
+      "author": "LiteBlue",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_102b4687-b47d-4ee7-ba04-7b8284f97a6a",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_102b4687-b47d-4ee7-ba04-7b8284f97a6a",
+      "urlUpdatedAt": "2026-09-30T19:26:00.347Z"
     }
   ]
 }
