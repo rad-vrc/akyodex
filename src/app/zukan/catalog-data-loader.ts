@@ -8,6 +8,7 @@ import { readCatalogServerTiming, type CatalogRequestTiming } from "@/lib/catalo
 
 const DEFAULT_CATALOG_FETCH_TIMEOUT_MS = 15_000;
 const DEFAULT_CATALOG_HEDGE_DELAY_MS = 2_000;
+const DEFAULT_CATALOG_BODY_HEDGE_DELAY_MS = 6_000;
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 
 export interface CompleteCatalogResult {
@@ -29,6 +30,7 @@ interface LoadCompleteCatalogDataOptions {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   hedgeDelayMs?: number;
+  bodyHedgeDelayMs?: number;
   now?: () => number;
   phaseRecorder?: {
     startPhase(phase: CatalogLoadPhase): void;
@@ -241,6 +243,7 @@ async function withCatalogDeadline<T>(
 
 interface CatalogAttempt {
   result: Promise<ParsedCatalogPayload>;
+  hasHeaders(): boolean;
   cancel(reason: NonNullable<CatalogRequestTiming["abortReason"]>): void;
 }
 
@@ -257,6 +260,7 @@ function startCatalogSource(args: {
   loadStarted: number;
   trigger: NonNullable<CatalogRequestTiming["trigger"]>;
   expectedLanguage: SupportedLanguage;
+  onValidated(parsed: ParsedCatalogPayload): void;
   phaseRecorder?: LoadCompleteCatalogDataOptions["phaseRecorder"];
 }): CatalogAttempt {
   const {
@@ -266,6 +270,7 @@ function startCatalogSource(args: {
     loadStarted,
     trigger,
     expectedLanguage,
+    onValidated,
     phaseRecorder,
     source,
     now,
@@ -298,7 +303,9 @@ function startCatalogSource(args: {
   };
   const result = (async () => {
     try {
-      response = await fetchImpl(url, { signal: controller.signal });
+      response = await fetchImpl(url, source === "r2"
+        ? { signal: controller.signal, cache: "no-cache" }
+        : { signal: controller.signal });
       if (controller.signal.aborted) throw createAbortError();
       timing.headersWaitMs = Math.max(0, Math.round(now() - started));
       timing.status = response.status;
@@ -311,15 +318,19 @@ function startCatalogSource(args: {
       ensureActive();
       timing.bodyAndParseMs = Math.max(0, Math.round(now() - bodyStarted));
       observe(() => phaseRecorder?.startPhase("normalize"));
+      let parsed: ParsedCatalogPayload;
       try {
         validateVersionedCatalogPayload(payload, expectedLanguage);
-        const parsed = parseCatalogPayload(payload);
+        parsed = parseCatalogPayload(payload);
         ensureActive();
-        timing.outcome = "success";
-        return parsed;
       } finally {
         observe(() => phaseRecorder?.endPhase("normalize"));
       }
+      timing.outcome = "success";
+      record();
+      // Claim synchronously before another already-queued body continuation runs.
+      onValidated(parsed);
+      return parsed;
     } catch (error) {
       if (!recorded && error instanceof CatalogDeadlineError) {
         timing.outcome = "timeout";
@@ -334,6 +345,7 @@ function startCatalogSource(args: {
   })();
   return {
     result,
+    hasHeaders: () => response !== undefined,
     cancel(reason) {
       if (!recorded) {
         timing.outcome = reason === "deadline" ? "timeout" : "aborted";
@@ -409,6 +421,7 @@ export async function loadCompleteCatalogData(
     fetchImpl = fetch,
     timeoutMs = DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
     hedgeDelayMs = DEFAULT_CATALOG_HEDGE_DELAY_MS,
+    bodyHedgeDelayMs = DEFAULT_CATALOG_BODY_HEDGE_DELAY_MS,
     phaseRecorder,
     now = () => performance.now(),
   } = options;
@@ -452,16 +465,17 @@ export async function loadCompleteCatalogData(
       const attempt = startCatalogSource({
         url: urls[source], source, now, fetchImpl, timeoutMs, loadStarted,
         trigger, expectedLanguage: lang, phaseRecorder,
+        onValidated(parsed) {
+          if (settled) return;
+          if (expired()) { onDeadline(); return; }
+          settled = true;
+          cleanup("superseded", source);
+          resolve({ ...parsed, source });
+        },
       });
       attempts.set(source, attempt);
-      // Both outcomes are observed, including late failures after another source won.
-      void attempt.result.then((parsed) => {
-        if (settled) return;
-        if (expired()) { onDeadline(); return; }
-        settled = true;
-        cleanup("superseded", source);
-        resolve({ ...parsed, source });
-      }, (error: unknown) => {
+      // Success was claimed inline; still observe late failures after another source won.
+      void attempt.result.catch((error: unknown) => {
         if (settled) return;
         if (expired() || error instanceof CatalogDeadlineError) { onDeadline(); return; }
         errors.set(source, error);
@@ -478,7 +492,16 @@ export async function loadCompleteCatalogData(
 
     signal?.addEventListener("abort", onAbort, { once: true });
     start("api", "primary");
-    if (!settled) hedgeTimer = setTimeout(() => start("r2", "delayed-hedge"), hedgeDelayMs);
+    if (!settled) hedgeTimer = setTimeout(() => {
+      const remainingBodyGrace = bodyHedgeDelayMs - (now() - loadStarted);
+      // Headers suggest a progressing body, not a stalled server. Avoid competing
+      // for a slow connection, but still rescue an unfinished body within the budget.
+      if (attempts.get("api")?.hasHeaders() && remainingBodyGrace > 0) {
+        hedgeTimer = setTimeout(() => start("r2", "delayed-hedge"), remainingBodyGrace);
+      } else {
+        start("r2", "delayed-hedge");
+      }
+    }, hedgeDelayMs);
   });
 }
 

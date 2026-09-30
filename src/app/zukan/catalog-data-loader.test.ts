@@ -45,7 +45,8 @@ test("records header wait and body parsing separately, including failed fallback
     now: () => time,
     phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => requests.push(value) },
     fetchImpl: async (url, init) => {
-      assert.deepEqual(Object.keys(init ?? {}), ["signal"], "preload request options must not change");
+      assert.deepEqual(Object.keys(init ?? {}), String(url).startsWith("/api/") ? ["signal"] : ["signal", "cache"]);
+      if (!String(url).startsWith("/api/")) assert.equal(init?.cache, "no-cache");
       time += 4000;
       if (String(url).startsWith("/api/")) return jsonResponse({}, 503);
       const response = jsonResponse({ data: [createAkyo("0001")] });

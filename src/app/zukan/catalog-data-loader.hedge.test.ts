@@ -34,7 +34,7 @@ function harness(t: TestContext) {
     timers.delete(handle);
     realClearTimeout(handle);
   });
-  const calls: { url: string; signal: AbortSignal; response: ReturnType<typeof deferred<Response>> }[] = [];
+  const calls: { url: string; signal: AbortSignal; init?: RequestInit; response: ReturnType<typeof deferred<Response>> }[] = [];
   const requests: CatalogRequestTiming[] = [];
   const phases: string[] = [];
   const controller = new AbortController();
@@ -43,9 +43,8 @@ function harness(t: TestContext) {
     lang: "ja" as const, catalogUrl: "/api/catalog/ja", r2BaseUrl: "https://images.example.com",
     signal: controller.signal, now: () => time,
     fetchImpl: (async (url, init) => {
-      assert.deepEqual(Object.keys(init ?? {}), ["signal"]);
       const response = deferred<Response>();
-      calls.push({ url: String(url), signal: init!.signal!, response });
+      calls.push({ url: String(url), signal: init!.signal!, init, response });
       // Intentionally ignore abort: late responses must not delay or overwrite the winner.
       return response.promise;
     }) as typeof fetch,
@@ -78,9 +77,49 @@ test("fast API keeps the preload conditions and clears the unused hedge timer", 
   h.calls[0].response.resolve(Response.json(payload("api")));
   assert.equal((await loading).source, "api");
   assert.equal(h.calls.length, 1);
+  assert.deepEqual(h.calls[0].init, { signal: h.calls[0].signal });
   assert.deepEqual(h.scheduled.sort((a, b) => a - b), [2000, 15000]);
   assert.equal(h.timers.size, 0);
 });
+
+test("only R2 revalidates its browser cache; API preload and snapshot options stay unchanged", { timeout: 2000 }, async (t) => {
+  const h = harness(t);
+  const loading = loadCompleteCatalogData(h.options);
+  for (let index = 0; index < 2; index++) {
+    h.calls[index].response.resolve(Response.json({}, { status: 503 }));
+    await setImmediate();
+  }
+  h.calls[2].response.resolve(Response.json(payload("snapshot")));
+  await loading;
+  assert.deepEqual(h.calls.map((call) => call.init), [
+    { signal: h.calls[0].signal },
+    { signal: h.calls[1].signal, cache: "no-cache" },
+    { signal: h.calls[2].signal },
+  ]);
+});
+
+for (const winner of ["api", "r2"] as const) {
+  test(`${winner} claims a simultaneous body completion before the loser normalizes or records success`, { timeout: 2000 }, async (t) => {
+    const h = harness(t);
+    const bodies = [deferred<unknown>(), deferred<unknown>()];
+    const loading = loadCompleteCatalogData(h.options);
+    h.fire(2000);
+    for (let index = 0; index < 2; index++) {
+      const response = Response.json({});
+      response.json = () => bodies[index].promise;
+      h.calls[index].response.resolve(response);
+    }
+    await setImmediate();
+    const first = winner === "api" ? 0 : 1;
+    bodies[first].resolve(payload(winner));
+    bodies[1 - first].resolve(payload("loser"));
+    assert.equal((await loading).source, winner);
+    await setImmediate();
+    assert.deepEqual(h.phases, ["start:normalize", "end:normalize"]);
+    assert.equal(h.requests.filter((request) => request.outcome === "success").length, 1);
+    assert.equal(h.requests.find((request) => request.source !== winner)?.abortReason, "superseded");
+  });
+}
 
 test("the hedge delay is configurable without resetting the overall deadline", { timeout: 2000 }, async (t) => {
   const h = harness(t);
@@ -106,9 +145,14 @@ for (const stalledAt of ["headers", "body"] as const) {
     }
     h.time(2000);
     h.fire(2000);
+    if (stalledAt === "body") {
+      assert.equal(h.calls.length, 1, "headers already arrived; give the body until six seconds");
+      h.time(6000);
+      h.fire(4000);
+    }
     assert.equal(h.calls.length, 2);
     assert.match(h.calls[1].url, /akyo-data-ja.json$/);
-    h.time(2500);
+    h.time(stalledAt === "body" ? 6500 : 2500);
     h.calls[1].response.resolve(Response.json(payload("r2")));
     const result = await loading;
     assert.equal(result.source, "r2");
@@ -121,7 +165,7 @@ for (const stalledAt of ["headers", "body"] as const) {
     assert.equal(apiTiming.status, stalledAt === "body" ? 200 : null);
     const r2Timing = h.requests.find((request) => request.source === "r2")!;
     assert.equal(r2Timing.trigger, "delayed-hedge");
-    assert.equal(r2Timing.startOffsetMs, 2000);
+    assert.equal(r2Timing.startOffsetMs, stalledAt === "body" ? 6000 : 2000);
     const recorded = JSON.stringify(h.requests);
     h.time(11718);
     if (stalledAt === "body") body.resolve(payload("late-api"));
@@ -144,6 +188,60 @@ test("API can still win after the hedge starts, even if the losing request never
   await setImmediate();
   assert.equal(h.requests.length, 2);
 });
+
+test("a progressing API body finishes without a competing download between two and six seconds", { timeout: 2000 }, async (t) => {
+  const h = harness(t);
+  const body = deferred<unknown>();
+  const loading = loadCompleteCatalogData(h.options);
+  void loading.catch(() => {});
+  const response = Response.json({});
+  response.json = () => body.promise;
+  h.time(1000);
+  h.calls[0].response.resolve(response);
+  await setImmediate();
+  h.time(2000);
+  h.fire(2000);
+  assert.equal(h.calls.length, 1);
+  assert.deepEqual(h.scheduled, [15000, 2000, 4000]);
+  h.time(4000);
+  body.resolve(payload("api"));
+  assert.equal((await loading).source, "api");
+  assert.equal(h.calls.length, 1);
+  assert.equal(h.timers.size, 0);
+});
+
+for (const finish of ["body-error", "caller-abort", "deadline"] as const) {
+  test(`${finish} cancels a deferred body hedge without extending the load budget`, { timeout: 2000 }, async (t) => {
+    const h = harness(t);
+    const body = deferred<unknown>();
+    const loading = loadCompleteCatalogData({ ...h.options, timeoutMs: 3000 });
+    void loading.catch(() => {});
+    const response = Response.json({});
+    response.json = () => body.promise;
+    h.calls[0].response.resolve(response);
+    await setImmediate();
+    h.time(2000);
+    h.fire(2000);
+    assert.equal(h.calls.length, 1);
+    if (finish === "body-error") {
+      h.time(2500);
+      body.reject(new Error("body interrupted"));
+      await setImmediate();
+      assert.equal(h.calls.length, 2);
+      h.calls[1].response.resolve(Response.json(payload("r2")));
+      assert.equal((await loading).source, "r2");
+      assert.equal(h.requests.find((request) => request.source === "r2")?.trigger, "fallback");
+    } else {
+      const rejected = assert.rejects(loading, { name: finish === "deadline" ? "CatalogDeadlineError" : "AbortError" });
+      if (finish === "deadline") { h.time(3000); h.fire(3000); }
+      else h.controller.abort();
+      await rejected;
+      assert.equal(h.calls.length, 1);
+    }
+    assert.equal(h.timers.size, 0);
+    assert.equal(h.calls[0].signal.aborted, true);
+  });
+}
 
 for (const failure of ["http", "network", "invalid"] as const) {
   test(`early API ${failure} failure starts R2 immediately and only once`, { timeout: 2000 }, async (t) => {
@@ -244,6 +342,8 @@ test("one deadline covers both headers and body, and a new attempt can succeed a
   await setImmediate();
   h.time(2000);
   h.fire(2000);
+  h.time(6000);
+  h.fire(4000);
   h.time(15000);
   h.fire(15000);
   await rejected;
@@ -302,7 +402,7 @@ test("native fetch abandons an unfinished API body after R2 wins", { timeout: 50
   const base = `http://127.0.0.1:${address.port}`;
   const result = await loadCompleteCatalogData({
     lang: "ja", catalogUrl: `${base}/api/catalog/ja`, r2BaseUrl: base,
-    hedgeDelayMs: 50, timeoutMs: 2000,
+    hedgeDelayMs: 50, bodyHedgeDelayMs: 50, timeoutMs: 2000,
   });
   assert.equal(result.source, "r2");
   assert.equal(result.items[0].id, "r2");
