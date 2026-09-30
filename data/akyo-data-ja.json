@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-30T20:27:08.066Z",
-  "count": 1008,
+  "updatedAt": "2026-09-30T20:29:11.319Z",
+  "count": 1009,
   "data": [
     {
       "id": "0001",
@@ -11670,6 +11670,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a061f060-c3cd-47c5-b3cc-7a4189db1ec3",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a061f060-c3cd-47c5-b3cc-7a4189db1ec3",
       "urlUpdatedAt": "2026-09-30T20:27:08.012Z"
+    },
+    {
+      "id": "2025",
+      "entryType": "avatar",
+      "displaySerial": "0891",
+      "nickname": "256ポリゴンのヒューマノイドAkyo",
+      "avatarName": "Akyo 256",
+      "category": "対応機種,対応機種/PC,作風・スタイル,作風・スタイル/ローポリ,動物,動物/人間・人類,対応機種/Quest(Android),器官,器官/腕",
+      "comment": "このAkyoもフェイストラッキングつき！？",
+      "author": "LiteBlue",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_c174e69a-d209-4f37-a363-8bccde0861bc",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c174e69a-d209-4f37-a363-8bccde0861bc",
+      "urlUpdatedAt": "2026-09-30T20:29:11.268Z"
     }
   ]
 }
