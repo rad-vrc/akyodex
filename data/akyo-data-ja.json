@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-29T13:47:00.098Z",
+  "updatedAt": "2026-09-30T10:41:50.239Z",
   "count": 1003,
   "data": [
     {
@@ -350,9 +350,10 @@
     {
       "id": "0030",
       "entryType": "avatar",
+      "displaySerial": "0030",
       "nickname": "ダウンベストAkyo",
       "avatarName": "Downvest_Akyo",
-      "category": "チョコミント類,ファッション・装備,ファッション・装備/厚着,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "category": "チョコミント類,ファッション・装備,ファッション・装備/厚着,対応機種,対応機種/PC,対応機種/Quest(Android),季節・行事,季節・行事/冬",
       "comment": "",
       "author": "isamu_masashi",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_40663914-34fa-48d8-b355-e69c2c64e294",
@@ -3929,9 +3930,10 @@
     {
       "id": "0345",
       "entryType": "avatar",
+      "displaySerial": "0345",
       "nickname": "ダウンきつねAkyo",
       "avatarName": "akyo_きつねダウン",
-      "category": "動物,動物/きつね,対応機種,対応機種/PC",
+      "category": "動物,動物/きつね,対応機種,対応機種/PC,季節・行事,季節・行事/冬,ファッション・装備,ファッション・装備/厚着",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_01d23e78-5e37-45a1-adb5-1c86ef867142",

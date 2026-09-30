@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-29T13:47:00.133Z",
+  "updatedAt": "2026-09-30T10:41:50.289Z",
   "count": 1003,
   "data": [
     {
@@ -350,9 +350,10 @@
     {
       "id": "0030",
       "entryType": "avatar",
+      "displaySerial": "0030",
       "nickname": "Down Vest Akyo",
       "avatarName": "Downvest_Akyo",
-      "category": "Mint Chocolate,Fashion・Equipment,Fashion・Equipment/Warm Clothing,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Mint Chocolate,Fashion・Equipment,Fashion・Equipment/Warm Clothing,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Season・Event,Season・Event/Winter",
       "comment": "",
       "author": "isamu_masashi",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_40663914-34fa-48d8-b355-e69c2c64e294",
@@ -3929,9 +3930,10 @@
     {
       "id": "0345",
       "entryType": "avatar",
+      "displaySerial": "0345",
       "nickname": "Down Jacket Fox Akyo",
       "avatarName": "akyo_きつねダウン",
-      "category": "Animal,Animal/Fox,Supported Platform,Supported Platform/PC",
+      "category": "Animal,Animal/Fox,Supported Platform,Supported Platform/PC,Season・Event,Season・Event/Winter,Fashion・Equipment,Fashion・Equipment/Warm Clothing",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_01d23e78-5e37-45a1-adb5-1c86ef867142",
