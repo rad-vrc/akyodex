@@ -21,6 +21,9 @@ export interface CatalogRequestTiming {
   bodyAndParseMs: number | null;
   totalMs: number;
   server: CatalogServerTiming | null;
+  startOffsetMs?: number;
+  trigger?: "primary" | "delayed-hedge" | "fallback";
+  abortReason?: "superseded" | "caller" | "deadline";
 }
 
 /** Only our fixed, bounded fields are copied; never URLs, cookies or response bodies. */

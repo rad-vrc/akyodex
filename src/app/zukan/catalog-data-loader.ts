@@ -7,6 +7,8 @@ import type { CatalogLoadPhase } from "./catalog-performance";
 import { readCatalogServerTiming, type CatalogRequestTiming } from "@/lib/catalog-diagnostics";
 
 const DEFAULT_CATALOG_FETCH_TIMEOUT_MS = 15_000;
+const DEFAULT_CATALOG_HEDGE_DELAY_MS = 2_000;
+const DEFAULT_CATALOG_BODY_IDLE_TIMEOUT_MS = 3_000;
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 
 export interface CompleteCatalogResult {
@@ -27,6 +29,8 @@ interface LoadCompleteCatalogDataOptions {
   signal?: AbortSignal;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
+  hedgeDelayMs?: number;
+  bodyIdleTimeoutMs?: number;
   now?: () => number;
   phaseRecorder?: {
     startPhase(phase: CatalogLoadPhase): void;
@@ -237,70 +241,135 @@ async function withCatalogDeadline<T>(
   }
 }
 
-async function fetchCatalogSource(args: {
+interface CatalogAttempt {
+  result: Promise<ParsedCatalogPayload>;
+  cancel(reason: NonNullable<CatalogRequestTiming["abortReason"]>): void;
+}
+
+function observe(run: () => void): void {
+  try { run(); } catch { /* Diagnostics must not affect catalog availability. */ }
+}
+
+function startCatalogSource(args: {
   url: string;
   source: CompleteCatalogResult["source"];
   now: () => number;
-  signal?: AbortSignal;
   fetchImpl: typeof fetch;
   timeoutMs: number;
+  loadStarted: number;
+  trigger: NonNullable<CatalogRequestTiming["trigger"]>;
   expectedLanguage: SupportedLanguage;
+  onValidated(parsed: ParsedCatalogPayload): void;
+  onBodyProgress?(): void;
+  onBodyFinished?(): void;
   phaseRecorder?: LoadCompleteCatalogDataOptions["phaseRecorder"];
-}): Promise<ParsedCatalogPayload> {
+}): CatalogAttempt {
   const {
     url,
-    signal,
     fetchImpl,
     timeoutMs,
+    loadStarted,
+    trigger,
     expectedLanguage,
+    onValidated,
+    onBodyProgress,
+    onBodyFinished,
     phaseRecorder,
     source,
     now,
   } = args;
   const started = now();
+  const controller = new AbortController();
   let response: Response | undefined;
+  let bodyStarted: number | undefined;
+  let recorded = false;
   const timing: CatalogRequestTiming = {
     source, status: null, outcome: "error", headersWaitMs: null,
     bodyAndParseMs: null, totalMs: 0, server: null,
+    startOffsetMs: Math.max(0, Math.round(started - loadStarted)), trigger,
   };
-  try {
-    return await withCatalogDeadline(timeoutMs, signal, async (deadlineSignal) => {
-      response = await fetchImpl(url, { signal: deadlineSignal });
+  const record = () => {
+    if (recorded) return;
+    recorded = true;
+    timing.totalMs = Math.max(0, Math.round(now() - started));
+    if (bodyStarted !== undefined && timing.bodyAndParseMs === null) {
+      timing.bodyAndParseMs = Math.max(0, Math.round(now() - bodyStarted));
+    }
+    observe(() => {
+      if (source === "api" && response) timing.server = readCatalogServerTiming(response.headers);
+      phaseRecorder?.recordRequest?.({ ...timing });
+    });
+  };
+  const ensureActive = () => {
+    if (controller.signal.aborted) throw createAbortError();
+    if (now() - loadStarted >= timeoutMs) throw new CatalogDeadlineError(timeoutMs);
+  };
+  const result = (async () => {
+    try {
+      response = await fetchImpl(url, source === "r2"
+        ? { signal: controller.signal, cache: "no-cache" }
+        : { signal: controller.signal });
+      if (controller.signal.aborted) throw createAbortError();
       timing.headersWaitMs = Math.max(0, Math.round(now() - started));
       timing.status = response.status;
+      ensureActive();
       if (!response.ok) {
         throw new Error(`Catalog request failed with HTTP ${response.status}`);
       }
-      const bodyStarted = now();
-      let payload: unknown;
-      try {
-        payload = await response.json();
-      } finally {
-        timing.bodyAndParseMs = Math.max(0, Math.round(now() - bodyStarted));
-      }
-      phaseRecorder?.startPhase("normalize");
+      bodyStarted = now();
+      onBodyProgress?.();
+      // Observe delivered bytes without reimplementing JSON's UTF-8/BOM decoding.
+      // The signal also cancels a stalled reader when another source wins.
+      const body = onBodyProgress && response.body
+        ? new Response(response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+            transform(chunk, output) {
+              if (chunk.byteLength > 0) onBodyProgress();
+              output.enqueue(chunk);
+            },
+          }), { signal: controller.signal }))
+        : response;
+      const payload: unknown = await body.json();
+      ensureActive();
+      timing.bodyAndParseMs = Math.max(0, Math.round(now() - bodyStarted));
+      observe(() => phaseRecorder?.startPhase("normalize"));
+      let parsed: ParsedCatalogPayload;
       try {
         validateVersionedCatalogPayload(payload, expectedLanguage);
-        const parsed = parseCatalogPayload(payload);
-        timing.outcome = "success";
-        return parsed;
+        parsed = parseCatalogPayload(payload);
+        ensureActive();
       } finally {
-        phaseRecorder?.endPhase("normalize");
+        observe(() => phaseRecorder?.endPhase("normalize"));
       }
-    });
-  } catch (error) {
-    if (error instanceof CatalogDeadlineError) timing.outcome = "timeout";
-    else if (signal?.aborted) timing.outcome = "aborted";
-    throw error;
-  } finally {
-    try {
-      timing.totalMs = Math.max(0, Math.round(now() - started));
-      if (source === "api" && response) timing.server = readCatalogServerTiming(response.headers);
-      phaseRecorder?.recordRequest?.(timing);
-    } catch {
-      // Diagnostics must not turn a successful request into a fallback.
+      timing.outcome = "success";
+      record();
+      // Claim synchronously before another already-queued body continuation runs.
+      onValidated(parsed);
+      return parsed;
+    } catch (error) {
+      if (!recorded && error instanceof CatalogDeadlineError) {
+        timing.outcome = "timeout";
+        timing.abortReason = "deadline";
+      }
+      // HTTP/validation/deadline failures may leave an unread response body.
+      controller.abort();
+      throw error;
+    } finally {
+      onBodyFinished?.();
+      record();
     }
-  }
+  })();
+  return {
+    result,
+    cancel(reason) {
+      if (!recorded) {
+        timing.outcome = reason === "deadline" ? "timeout" : "aborted";
+        timing.abortReason = reason;
+        // Record immediately; a fetch ignoring abort must not hold up the winner.
+        record();
+      }
+      controller.abort();
+    },
+  };
 }
 
 /**
@@ -365,48 +434,85 @@ export async function loadCompleteCatalogData(
     signal,
     fetchImpl = fetch,
     timeoutMs = DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
+    hedgeDelayMs = DEFAULT_CATALOG_HEDGE_DELAY_MS,
+    bodyIdleTimeoutMs = DEFAULT_CATALOG_BODY_IDLE_TIMEOUT_MS,
     phaseRecorder,
     now = () => performance.now(),
   } = options;
   const normalizedR2BaseUrl = r2BaseUrl.replace(/\/$/, "");
   const r2Url = `${normalizedR2BaseUrl}/data/akyo-data-${lang}.json`;
-  const sources = [
-    { source: "api" as const, url: catalogUrl },
-    { source: "r2" as const, url: r2Url },
-    { source: "snapshot" as const, url: `/catalog/catalog-v1-${lang}.json` },
-  ];
-  const deadline = Date.now() + timeoutMs;
-  const errors: unknown[] = [];
+  if (signal?.aborted) throw createAbortError();
+  if (timeoutMs <= 0) throw new CatalogDeadlineError(timeoutMs);
+  const loadStarted = now();
+  const urls = { api: catalogUrl, r2: r2Url, snapshot: `/catalog/catalog-v1-${lang}.json` };
+  type Source = CompleteCatalogResult["source"];
 
-  for (const source of sources) {
-    const remainingMs = deadline - Date.now();
-    if (remainingMs <= 0) {
-      throw new CatalogDeadlineError(timeoutMs);
-    }
-
-    try {
-      const parsed = await fetchCatalogSource({
-        url: source.url,
-        source: source.source,
-        now,
-        signal,
-        fetchImpl,
-        timeoutMs: remainingMs,
-        expectedLanguage: lang,
-        phaseRecorder,
-      });
-      return { ...parsed, source: source.source };
-    } catch (error) {
-      if (signal?.aborted) throw createAbortError();
-      if (error instanceof CatalogDeadlineError) {
-        throw new CatalogDeadlineError(timeoutMs);
+  return new Promise<CompleteCatalogResult>((resolve, reject) => {
+    const attempts = new Map<Source, CatalogAttempt>();
+    const errors = new Map<Source, unknown>();
+    let settled = false;
+    let hedgeTimer: ReturnType<typeof setTimeout> | undefined;
+    const clearHedge = () => { clearTimeout(hedgeTimer); hedgeTimer = undefined; };
+    const cleanup = (reason: NonNullable<CatalogRequestTiming["abortReason"]>, winner?: Source) => {
+      clearHedge();
+      clearTimeout(deadlineTimer);
+      signal?.removeEventListener("abort", onAbort);
+      for (const [source, attempt] of attempts) {
+        if (source !== winner) attempt.cancel(reason);
       }
-      errors.push(error);
-    }
-  }
+    };
+    const fail = (error: unknown, reason: NonNullable<CatalogRequestTiming["abortReason"]>) => {
+      if (settled) return;
+      settled = true;
+      cleanup(reason);
+      reject(error);
+    };
+    const onAbort = () => fail(createAbortError(), "caller");
+    const onDeadline = () => fail(new CatalogDeadlineError(timeoutMs), "deadline");
+    const deadlineTimer = setTimeout(onDeadline, timeoutMs);
+    const expired = () => now() - loadStarted >= timeoutMs;
 
-  throw new Error("All complete catalog sources failed", {
-    cause: new AggregateError(errors),
+    const start = (source: Source, trigger: NonNullable<CatalogRequestTiming["trigger"]>) => {
+      if (settled || attempts.has(source)) return;
+      if (expired()) { onDeadline(); return; }
+      if (source === "r2") clearHedge();
+      const attempt = startCatalogSource({
+        url: urls[source], source, now, fetchImpl, timeoutMs, loadStarted,
+        trigger, expectedLanguage: lang, phaseRecorder,
+        onBodyProgress: source === "api" ? () => {
+          if (settled || attempts.has("r2")) return;
+          clearHedge();
+          hedgeTimer = setTimeout(() => start("r2", "delayed-hedge"), bodyIdleTimeoutMs);
+        } : undefined,
+        onBodyFinished: source === "api" ? clearHedge : undefined,
+        onValidated(parsed) {
+          if (settled) return;
+          if (expired()) { onDeadline(); return; }
+          settled = true;
+          cleanup("superseded", source);
+          resolve({ ...parsed, source });
+        },
+      });
+      attempts.set(source, attempt);
+      // Success was claimed inline; still observe late failures after another source won.
+      void attempt.result.catch((error: unknown) => {
+        if (settled) return;
+        if (expired() || error instanceof CatalogDeadlineError) { onDeadline(); return; }
+        errors.set(source, error);
+        if (source === "api") start("r2", "fallback");
+        if (source === "snapshot") {
+          fail(new Error("All complete catalog sources failed", {
+            cause: new AggregateError(["api", "r2", "snapshot"].map((key) => errors.get(key as Source))),
+          }), "superseded");
+        } else if (errors.has("api") && errors.has("r2")) {
+          start("snapshot", "fallback");
+        }
+      });
+    };
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+    start("api", "primary");
+    if (!settled) hedgeTimer = setTimeout(() => start("r2", "delayed-hedge"), hedgeDelayMs);
   });
 }
 

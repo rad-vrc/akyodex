@@ -28,6 +28,7 @@
     "test": "playwright test",
     "test:playwright": "playwright test",
     "test:catalog-diagnostics": "playwright test --config playwright.catalog-diagnostics.config.ts",
+    "test:catalog-transport": "playwright test --config playwright.catalog-transport.config.ts",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:lighthouse:summary": "node scripts/lighthouse-summary.js",

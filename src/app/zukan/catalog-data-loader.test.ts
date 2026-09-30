@@ -45,7 +45,8 @@ test("records header wait and body parsing separately, including failed fallback
     now: () => time,
     phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => requests.push(value) },
     fetchImpl: async (url, init) => {
-      assert.deepEqual(Object.keys(init ?? {}), ["signal"], "preload request options must not change");
+      assert.deepEqual(Object.keys(init ?? {}), String(url).startsWith("/api/") ? ["signal"] : ["signal", "cache"]);
+      if (!String(url).startsWith("/api/")) assert.equal(init?.cache, "no-cache");
       time += 4000;
       if (String(url).startsWith("/api/")) return jsonResponse({}, 503);
       const response = jsonResponse({ data: [createAkyo("0001")] });
@@ -59,10 +60,12 @@ test("records header wait and body parsing separately, including failed fallback
   assert.deepEqual(requests[0], {
     source: "api", status: 503, outcome: "error", headersWaitMs: 4000,
     bodyAndParseMs: null, totalMs: 4000, server: { durationsMs: {} },
+    startOffsetMs: 0, trigger: "primary",
   });
   assert.deepEqual(requests[1], {
     source: "r2", status: 200, outcome: "success", headersWaitMs: 4000,
     bodyAndParseMs: 200, totalMs: 4200, server: null,
+    startOffsetMs: 4000, trigger: "fallback",
   });
 });
 
@@ -77,19 +80,15 @@ test("a broken diagnostic observer cannot trigger fallback or lose a successful 
   assert.equal(calls, 1);
 });
 
-test("a body timeout keeps the response status and never starts a second source", { timeout: 2000 }, async () => {
+test("a deadline shorter than the hedge delay keeps the body timeout status without starting R2", { timeout: 2000 }, async () => {
   const requests: CatalogRequestTiming[] = [];
   let calls = 0;
   await assert.rejects(loadCompleteCatalogData({
     lang: "ja", catalogUrl: "/api/catalog/ja", r2BaseUrl: "https://images.example.com", timeoutMs: 20,
     phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => requests.push(value) },
-    fetchImpl: async (_url, init) => {
+    fetchImpl: async () => {
       calls++;
-      const response = jsonResponse({});
-      response.json = () => new Promise((_resolve, reject) => {
-        init!.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
-      });
-      return response;
+      return new Response(new ReadableStream());
     },
   }), { name: "CatalogDeadlineError" });
   assert.equal(calls, 1);
