@@ -73,14 +73,21 @@ language and environment before attributing it to a particular user incident.
 
 ## Delayed fallback
 
-The API starts immediately with the same fetch options as its preload. If no valid
-payload has completed after 2,000 ms and API headers have not arrived, the client
-also requests the existing R2 JSON. If headers have arrived at that point, R2 waits
-until 6,000 ms from the original load start, allowing a slow but progressing body
-to finish without bandwidth competition. Headers arriving after the two-second
-decision do not cancel an already-started hedge. An API HTTP/network/validation
-failure starts R2 immediately instead, including during the body grace period.
-Each source starts at most once per load.
+The API starts immediately with the same fetch options as its preload. If headers
+have not arrived after 2,000 ms, the client also requests the existing R2 JSON.
+Successful headers replace that timer with a 3,000 ms body-idle timer. Every
+non-empty body chunk restarts the idle timer; empty chunks do not. A slow body
+that keeps delivering chunks therefore does not compete with R2, even after six
+seconds. An API HTTP/network/JSON/validation failure starts R2 immediately.
+Each source starts at most once per load. Progress after R2 has already started
+does not schedule another request or cancel it.
+
+Only the API body is piped through a progress-observing TransformStream. A native
+Response still performs JSON decoding, including split UTF-8 characters and BOMs.
+Cancellation propagates to the stream reader as well as fetch. Progress here means
+bytes delivered by the browser's decoded response stream, not raw socket bytes:
+decompression/proxy/browser buffering can still hide wire-level progress.
+See [Response.body](https://developer.mozilla.org/en-US/docs/Web/API/Response/body).
 
 Only R2 uses `cache: "no-cache"`: a cached representation is revalidated, including
 when the browser considers it heuristically fresh. This permits a 304 and reuse
@@ -99,9 +106,9 @@ Caller abort stops every attempt and timer. Preparation after fetching is still
 excluded from the coordinator's stalled-network detection.
 
 This targets observed long API/header waits and body stalls, not initial HTML,
-hydration, or all Web Vitals. Two/six seconds are initial engineering settings, not
-measured optima. A body taking longer than six seconds can still compete with R2;
-this is not a guarantee of improvement on every connection. Fast API loads make no
+hydration, or all Web Vitals. Two/three seconds are initial engineering settings,
+not measured optima. A body with delivery gaps of three seconds can still compete
+with R2; this is not a guarantee of improvement on every connection. Fast API loads make no
 R2 request; slow loads can transfer both responses in part. Client cancellation
 does not guarantee cancellation of server work or a network request still consumed
 by a preload.
@@ -121,42 +128,61 @@ Worker header helper, loader and SDK transport together with deterministic clock
 
 `npx playwright test --config playwright.catalog-transport.config.ts` serves the
 real loader (TypeScript transpilation only) and checked-in `public/sw.js` from local
-HTTP servers. It tests heuristic browser caching, conditional 200/304 revalidation,
-and unfinished-body cancellation with/without SW and preload. No production requests
-or Sentry DSN are used. Set `CATALOG_TRANSPORT_BENCHMARK=1` and select the `manual
-throttled` test to compare 2s / header-aware 6s / no hedge using real Chromium network
-throttling and five samples per condition. Timing values are observations, not CI
-thresholds. The experiment does not simulate JS/images sharing the same connection.
+HTTP servers. It builds the API payload in memory with the production serializer
+from tracked `data/akyo-data-ja.json`; no generated `public/catalog` file or preceding
+build is required. Default fixtures use Brotli quality 4, not Node's default quality
+11. It tests heuristic browser caching, conditional 200/304 revalidation, and
+unfinished-body cancellation with/without SW and preload. No production requests
+or Sentry DSN are used by the tests. These E2Es are manual checks, not currently a
+GitHub CI step.
 
-### Local transport experiment (2026-09-30)
+Set `CATALOG_TRANSPORT_BENCHMARK=1` and select `manual throttled` to compare body-idle
+hedging / no hedge with real Chromium throttling and five samples per condition.
+Optional `CATALOG_BENCHMARK_BASE_REF` loads the prior loader from that local Git
+revision (for the 6s comparison, `cdfcbf5a742702c6dd7c63e43ef68af87852e324`; that
+commit must exist locally). Optional `CATALOG_BENCHMARK_API_BR` and
+`CATALOG_BENCHMARK_R2_BR` accept paths to captured, still-Brotli-compressed JSON
+bodies, avoiding recompression when reproducing a production transfer size. The
+experiment prints the actual byte counts and validates decompression. It does not
+download these fixtures itself. Timing values are observations, not CI thresholds.
+The experiment does not simulate JS/images sharing the same connection.
 
-Chromium 141.0.7390.37, five samples per condition, two loopback HTTP origins,
-checked-in JA payloads compressed with Brotli (API 61,681 bytes; R2 66,140 bytes).
-The timing begins when the loader starts, after the test page's modules are loaded.
-The preload case starts the real fetch preload 1,000 ms before the loader. Both
-hedged policies below use R2 revalidation. CDP throttles actual transfer, unlike
-Lighthouse's simulated scoring. These are local measurements, not production RUM.
+### Production-sized transport experiment (2026-09-30)
 
-| Condition | Always hedge at 2s | Headers at 2s: wait until 6s | No hedge |
+The preceding 6s experiment used Brotli quality 11 (API 61,681 bytes; R2 66,140
+bytes), which underestimated production transfer sizes. The API input was an
+ignored generated snapshot, not a checked-in file. Those measurements did not
+establish safety on extremely slow connections; the fixed 6s rule is superseded.
+
+The follow-up captured public production responses at 11:43 UTC and served their
+original Brotli bytes without recompression: API 81,331 bytes; R2 86,665 bytes.
+Chromium 141.0.7390.37, two loopback HTTP origins, five samples per condition,
+no preload, 300ms CDP latency for bandwidth-limited cases. The old 6s loader was
+loaded directly from commit `cdfcbf5a`, not simulated with new-loader options.
+Both hedged policies use R2 revalidation. These are local measurements starting
+when the loader starts, after JS loads; not production RUM or a universal bound.
+
+| Condition | Old fixed 6s | Body idle 3s | No hedge |
 | --- | ---: | ---: | ---: |
-| 150 kbps / 600ms RTT, no lead | 5,207ms | 3,926ms | 3,926ms |
-| 150 kbps / 600ms RTT, 1s preload lead | 3,160ms | 2,921ms | 2,922ms |
-| 400 kbps / 300ms RTT, no lead | 1,566ms | 1,565ms | 1,565ms |
-| 1.6 Mbps / 150ms RTT, no lead | 471ms | 470ms | 470ms |
-| Unthrottled, API headers held 8s | 2,015ms | 2,013ms | 8,011ms |
-| Unthrottled, API body held open | 2,014ms | 6,014ms | 15,002ms (timeout) |
+| 56 kbps | 15,002ms (5/5 timeout) | 12,005ms | 12,006ms |
+| 64 kbps | 14,632ms | 10,505ms | 10,505ms |
+| 100 kbps | 7,327ms | 6,844ms | 6,844ms |
+| 128 kbps | 5,443ms | 5,441ms | 5,441ms |
+| 150 kbps | 4,646ms | 4,644ms | 4,644ms |
+| Unthrottled, API headers held 8s | 2,012ms | 2,013ms | 8,011ms |
+| Unthrottled, API body held open | 6,012ms | 3,015ms | 15,002ms (timeout) |
 
-The 6s policy made no R2 request in the slow but progressing transfer cases.
-It trades four seconds of body-stall recovery time for avoiding that competition.
-An even slower body can still exceed six seconds, and images/JS or other browsers
-can change these results; the policy does not promise universal acceleration.
+All five progressing transfer conditions made zero R2 requests with the idle rule
+(25/25 samples). Separately, a 56 kbps load was deliberately timed out after 1s,
+then retried in the same page without preload: the retry succeeded from API in
+12,073ms with no R2 request. The default total deadline remains 15s; a single
+transfer that cannot finish within it still fails, regardless of hedging.
 
-With the same Chromium and the unmodified checked-in SW, an unfinished API body
-closed after loader cancellation when no preload was present, both with and without
-SW. With a preload present, the API connection remained open 500ms after R2 won in
-both cases. The loader still completed and recorded only the winning catalog. A
-page abort is therefore not a promise to stop preload-owned traffic; the tests
-report this observation without asserting it as a cross-browser transport contract.
+With the unmodified checked-in SW, the older loader left a preload-owned API
+connection open 500ms after R2 won. The idle version also cancels the body reader:
+in this Chromium all four SW/preload combinations closed the held API connection
+before that observation (three repetitions each). These are observations, not a
+cross-browser cancellation guarantee or a promise to stop server-side processing.
 
 This changes the Worker and browser bundle. It needs reviewed merge and manual activation
 before production evidence is available. After activation, compare roughly seven days

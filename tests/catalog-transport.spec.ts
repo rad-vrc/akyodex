@@ -1,23 +1,34 @@
 import { test, expect, type Page } from "@playwright/test";
 import { createServer, type ServerResponse } from "node:http";
 import { once } from "node:events";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { brotliCompressSync } from "node:zlib";
+import { brotliCompressSync, brotliDecompressSync, constants } from "node:zlib";
 import ts from "typescript";
 import type { loadCompleteCatalogData } from "../src/app/zukan/catalog-data-loader";
 import type { CatalogRequestTiming } from "../src/lib/catalog-diagnostics";
+import { serializeCatalogPayload } from "../src/lib/catalog-payload";
 
 declare global {
-  interface Window { transportLoader: typeof loadCompleteCatalogData }
+  interface Window { transportLoader: typeof loadCompleteCatalogData; baselineLoader: typeof loadCompleteCatalogData }
 }
 
 type Scenario = "normal" | "cache" | "headers" | "body";
-const apiBytes = brotliCompressSync(readFileSync("public/catalog/catalog-v1-ja.json"));
-const r2Bytes = brotliCompressSync(readFileSync("data/akyo-data-ja.json"));
+// Generate the compact API body from tracked data; no build output is required.
+const r2Text = readFileSync("data/akyo-data-ja.json", "utf8");
+const compression = { params: { [constants.BROTLI_PARAM_QUALITY]: 4 } };
+let apiBytes: Buffer;
+const apiFixture = process.env.CATALOG_BENCHMARK_API_BR;
+const r2Fixture = process.env.CATALOG_BENCHMARK_R2_BR;
+const r2Bytes = r2Fixture ? readFileSync(r2Fixture) : brotliCompressSync(r2Text, compression);
+const baselineRef = process.env.CATALOG_BENCHMARK_BASE_REF;
+const baselineSource = baselineRef
+  ? execFileSync("git", ["show", `${baselineRef}:src/app/zukan/catalog-data-loader.ts`], { encoding: "utf8" })
+  : undefined;
 const smallPayload = (revision: number) => ({ data: [{ id: `cache-${revision}`, avatarName: "Cache", nickname: "Cache" }] });
 const state = {
-  scenario: "normal" as Scenario, revision: 1, apiClosed: false,
+  scenario: "normal" as Scenario, revision: 1,
   requests: [] as { source: string; conditional?: string; status: number }[],
   held: undefined as ServerResponse | undefined,
   timers: new Set<ReturnType<typeof setTimeout>>(),
@@ -29,7 +40,6 @@ function catalogResponse(source: "api" | "r2", request: import("node:http").Inco
   response.setHeader("Access-Control-Allow-Origin", "*");
   const record = { source, conditional: request.headers["if-none-match"], status: 200 };
   state.requests.push(record);
-  if (source === "api") response.on("close", () => { state.apiClosed = true; });
   if (state.scenario === "cache") {
     if (source === "api") { record.status = 503; response.writeHead(503).end(); return; }
     const etag = `"revision-${state.revision}"`;
@@ -66,6 +76,13 @@ const apiServer = createServer((request, response) => {
     response.end(readFileSync("public/sw.js"));
     return;
   }
+  if (pathname === "/baseline-loader.js" && baselineSource) {
+    response.setHeader("Content-Type", "application/javascript");
+    response.end(ts.transpileModule(baselineSource, {
+      compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    }).outputText);
+    return;
+  }
   if (pathname.startsWith("/src/")) {
     const filename = path.resolve(`.${pathname.endsWith(".ts") ? pathname : `${pathname}.ts`}`);
     if (!filename.startsWith(path.resolve("src") + path.sep)) { response.writeHead(403).end(); return; }
@@ -81,6 +98,9 @@ const apiServer = createServer((request, response) => {
 const r2Server = createServer((request, response) => catalogResponse("r2", request, response));
 
 test.beforeAll(async () => {
+  const { text } = await serializeCatalogPayload("ja", JSON.parse(r2Text).data);
+  apiBytes = apiFixture ? readFileSync(apiFixture) : brotliCompressSync(text, compression);
+  for (const bytes of [apiBytes, r2Bytes]) expect(JSON.parse(brotliDecompressSync(bytes).toString()).data.length).toBeGreaterThan(12);
   for (const server of [apiServer, r2Server]) {
     server.listen(0, "127.0.0.1");
     await once(server, "listening");
@@ -97,7 +117,6 @@ function reset(scenario: Scenario) {
   state.held = undefined;
   state.scenario = scenario;
   state.requests = [];
-  state.apiClosed = false;
 }
 
 test.afterAll(async () => {
@@ -168,7 +187,7 @@ for (const { serviceWorker, preload } of [
       const timings: CatalogRequestTiming[] = [];
       const result = await window.transportLoader({
         lang: "ja", catalogUrl: "/api/catalog/ja", r2BaseUrl: base,
-        hedgeDelayMs: 100, bodyHedgeDelayMs: 100,
+        hedgeDelayMs: 100, bodyIdleTimeoutMs: 100,
         phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => timings.push(value) },
       });
       return { source: result.source, count: result.items.length, timings };
@@ -178,7 +197,7 @@ for (const { serviceWorker, preload } of [
     expect(observed.timings.find((timing) => timing.source === "api")).toMatchObject({ outcome: "aborted", abortReason: "superseded" });
     expect(routedThroughWorker).toBe(serviceWorker);
     await page.waitForTimeout(500);
-    const closedBeforeCleanup = state.apiClosed;
+    const closedBeforeCleanup = state.held?.destroyed === true;
     if (!serviceWorker && !preload) expect(closedBeforeCleanup).toBe(true);
     expect(state.requests.filter((request) => request.source === "api")).toHaveLength(1);
     // Record SW network cancellation, not an unsupported cross-browser guarantee.
@@ -189,18 +208,20 @@ for (const { serviceWorker, preload } of [
 
 test("manual throttled transport comparison", async ({ browser }, testInfo) => {
   test.skip(process.env.CATALOG_TRANSPORT_BENCHMARK !== "1", "opt-in timing experiment, not a CI performance threshold");
-  test.setTimeout(600_000);
+  test.setTimeout(900_000);
   const results: unknown[] = [];
-  console.log(JSON.stringify({ browser: browser.version(), apiCompressedBytes: apiBytes.length, r2CompressedBytes: r2Bytes.length }));
+  console.log(JSON.stringify({ browser: browser.version(), fixtures: { api: apiFixture ?? "generated-q4", r2: r2Fixture ?? "generated-q4" }, baselineRef, apiCompressedBytes: apiBytes.length, r2CompressedBytes: r2Bytes.length }));
   const cases = [
-    { name: "150kbps", kbps: 150, latency: 600, preload: 0, scenario: "normal" },
-    { name: "150kbps-preload", kbps: 150, latency: 600, preload: 1000, scenario: "normal" },
-    { name: "400kbps", kbps: 400, latency: 300, preload: 0, scenario: "normal" },
-    { name: "1600kbps", kbps: 1600, latency: 150, preload: 0, scenario: "normal" },
+    { name: "56kbps", kbps: 56, latency: 300, preload: 0, scenario: "normal" },
+    { name: "64kbps", kbps: 64, latency: 300, preload: 0, scenario: "normal" },
+    { name: "100kbps", kbps: 100, latency: 300, preload: 0, scenario: "normal" },
+    { name: "128kbps", kbps: 128, latency: 300, preload: 0, scenario: "normal" },
+    { name: "150kbps", kbps: 150, latency: 300, preload: 0, scenario: "normal" },
     { name: "headers-8s", kbps: 0, latency: 0, preload: 0, scenario: "headers" },
     { name: "body-stall", kbps: 0, latency: 0, preload: 0, scenario: "body" },
   ] as const;
-  for (const entry of cases) for (const policy of ["2s", "6s", "none"] as const) {
+  const policies = baselineSource ? ["6s", "idle", "none"] as const : ["idle", "none"] as const;
+  for (const entry of cases) for (const policy of policies) {
     const samples = [];
     for (let round = 0; round < 5; round++) {
       reset(entry.scenario);
@@ -208,6 +229,11 @@ test("manual throttled transport comparison", async ({ browser }, testInfo) => {
       try {
         const page = await context.newPage();
         await open(page);
+        if (policy === "6s") await page.evaluate(async () => {
+          const url = "/baseline-loader.js";
+          const baseline = await import(/* webpackIgnore: true */ url);
+          window.baselineLoader = baseline.loadCompleteCatalogData;
+        });
         const cdp = await context.newCDPSession(page);
         await cdp.send("Network.enable");
         await cdp.send("Network.emulateNetworkConditions", {
@@ -227,10 +253,11 @@ test("manual throttled transport comparison", async ({ browser }, testInfo) => {
           const started = performance.now();
           const timings: CatalogRequestTiming[] = [];
           try {
-            const result = await window.transportLoader({
+            const loader = policy === "6s" ? window.baselineLoader : window.transportLoader;
+            const result = await loader({
               lang: "ja", catalogUrl: "/api/catalog/ja", r2BaseUrl: base,
               hedgeDelayMs: policy === "none" ? 20_000 : 2000,
-              bodyHedgeDelayMs: policy === "2s" ? 2000 : 6000,
+              bodyIdleTimeoutMs: policy === "none" ? 20_000 : 3000,
               phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => timings.push(value) },
             });
             return { duration: Math.round(performance.now() - started), source: result.source, timings };
@@ -238,11 +265,15 @@ test("manual throttled transport comparison", async ({ browser }, testInfo) => {
             return { duration: Math.round(performance.now() - started), error: (error as Error).name, timings };
           }
         }, { base: r2Origin, policy });
-        if (entry.scenario === "body" && policy === "none") {
+        if (policy === "6s" && "error" in sample) {
+          // Preserve a baseline failure as evidence, rather than aborting the comparison.
+          expect(sample.error).toBe("CatalogDeadlineError");
+        } else if (entry.scenario === "body" && policy === "none") {
           expect(sample).toMatchObject({ error: "CatalogDeadlineError" });
         } else {
           expect(sample).toMatchObject({ source: entry.scenario === "normal" || policy === "none" ? "api" : "r2" });
         }
+        if (entry.scenario === "normal" && policy !== "6s") expect(state.requests.map((request) => request.source)).toEqual(["api"]);
         samples.push({ ...sample, requestSources: state.requests.map((request) => request.source) });
       } finally { await context.close(); }
     }
@@ -251,4 +282,29 @@ test("manual throttled transport comparison", async ({ browser }, testInfo) => {
     console.log(JSON.stringify(result));
   }
   await testInfo.attach("transport-comparison", { body: JSON.stringify({ browser: browser.version(), apiCompressedBytes: apiBytes.length, r2CompressedBytes: r2Bytes.length, results }, null, 2), contentType: "application/json" });
+});
+
+test("manual throttled retry succeeds after a shared deadline, without preload", async ({ page, context }) => {
+  test.skip(process.env.CATALOG_TRANSPORT_BENCHMARK !== "1", "opt-in slow network experiment");
+  test.setTimeout(40_000);
+  reset("normal");
+  await open(page);
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Network.enable");
+  await cdp.send("Network.emulateNetworkConditions", {
+    offline: false, latency: 300, downloadThroughput: 56 * 1000 / 8, uploadThroughput: 56 * 1000 / 8,
+  });
+  const observed = await page.evaluate(async (base) => {
+    const options = { lang: "ja" as const, catalogUrl: "/api/catalog/ja", r2BaseUrl: base };
+    let firstError: string | undefined;
+    try { await window.transportLoader({ ...options, timeoutMs: 1000 }); }
+    catch (error) { firstError = (error as Error).name; }
+    const started = performance.now();
+    const retried = await window.transportLoader(options);
+    return { firstError, source: retried.source, count: retried.items.length, retryMs: Math.round(performance.now() - started) };
+  }, r2Origin);
+  expect(observed).toMatchObject({ firstError: "CatalogDeadlineError", source: "api" });
+  expect(observed.count).toBeGreaterThan(12);
+  expect(state.requests.map((request) => request.source)).toEqual(["api", "api"]);
+  console.log(JSON.stringify({ case: "56kbps-retry", ...observed }));
 });

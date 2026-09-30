@@ -86,13 +86,9 @@ test("a deadline shorter than the hedge delay keeps the body timeout status with
   await assert.rejects(loadCompleteCatalogData({
     lang: "ja", catalogUrl: "/api/catalog/ja", r2BaseUrl: "https://images.example.com", timeoutMs: 20,
     phaseRecorder: { startPhase() {}, endPhase() {}, recordRequest: (value) => requests.push(value) },
-    fetchImpl: async (_url, init) => {
+    fetchImpl: async () => {
       calls++;
-      const response = jsonResponse({});
-      response.json = () => new Promise((_resolve, reject) => {
-        init!.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
-      });
-      return response;
+      return new Response(new ReadableStream());
     },
   }), { name: "CatalogDeadlineError" });
   assert.equal(calls, 1);

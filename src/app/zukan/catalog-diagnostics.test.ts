@@ -34,9 +34,9 @@ test("actual handler -> Worker headers -> loader -> Sentry transport retains slo
         });
       }, () => time), { id: "test-version" }, "production");
       time += 50;
-      const json = response.json.bind(response);
-      response.json = async () => { time += 150; return json(); };
-      return response;
+      return new Response(response.body!.pipeThrough(new TransformStream({
+        transform(chunk, output) { time += 150; output.enqueue(chunk); },
+      })), response);
     },
   });
   measurement.markResponse(result.source);

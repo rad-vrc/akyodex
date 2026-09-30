@@ -8,7 +8,7 @@ import { readCatalogServerTiming, type CatalogRequestTiming } from "@/lib/catalo
 
 const DEFAULT_CATALOG_FETCH_TIMEOUT_MS = 15_000;
 const DEFAULT_CATALOG_HEDGE_DELAY_MS = 2_000;
-const DEFAULT_CATALOG_BODY_HEDGE_DELAY_MS = 6_000;
+const DEFAULT_CATALOG_BODY_IDLE_TIMEOUT_MS = 3_000;
 const MULTI_VALUE_SPLIT_PATTERN = /[、,]/;
 
 export interface CompleteCatalogResult {
@@ -30,7 +30,7 @@ interface LoadCompleteCatalogDataOptions {
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   hedgeDelayMs?: number;
-  bodyHedgeDelayMs?: number;
+  bodyIdleTimeoutMs?: number;
   now?: () => number;
   phaseRecorder?: {
     startPhase(phase: CatalogLoadPhase): void;
@@ -243,7 +243,6 @@ async function withCatalogDeadline<T>(
 
 interface CatalogAttempt {
   result: Promise<ParsedCatalogPayload>;
-  hasHeaders(): boolean;
   cancel(reason: NonNullable<CatalogRequestTiming["abortReason"]>): void;
 }
 
@@ -261,6 +260,8 @@ function startCatalogSource(args: {
   trigger: NonNullable<CatalogRequestTiming["trigger"]>;
   expectedLanguage: SupportedLanguage;
   onValidated(parsed: ParsedCatalogPayload): void;
+  onBodyProgress?(): void;
+  onBodyFinished?(): void;
   phaseRecorder?: LoadCompleteCatalogDataOptions["phaseRecorder"];
 }): CatalogAttempt {
   const {
@@ -271,6 +272,8 @@ function startCatalogSource(args: {
     trigger,
     expectedLanguage,
     onValidated,
+    onBodyProgress,
+    onBodyFinished,
     phaseRecorder,
     source,
     now,
@@ -314,7 +317,18 @@ function startCatalogSource(args: {
         throw new Error(`Catalog request failed with HTTP ${response.status}`);
       }
       bodyStarted = now();
-      const payload: unknown = await response.json();
+      onBodyProgress?.();
+      // Observe delivered bytes without reimplementing JSON's UTF-8/BOM decoding.
+      // The signal also cancels a stalled reader when another source wins.
+      const body = onBodyProgress && response.body
+        ? new Response(response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+            transform(chunk, output) {
+              if (chunk.byteLength > 0) onBodyProgress();
+              output.enqueue(chunk);
+            },
+          }), { signal: controller.signal }))
+        : response;
+      const payload: unknown = await body.json();
       ensureActive();
       timing.bodyAndParseMs = Math.max(0, Math.round(now() - bodyStarted));
       observe(() => phaseRecorder?.startPhase("normalize"));
@@ -340,12 +354,12 @@ function startCatalogSource(args: {
       controller.abort();
       throw error;
     } finally {
+      onBodyFinished?.();
       record();
     }
   })();
   return {
     result,
-    hasHeaders: () => response !== undefined,
     cancel(reason) {
       if (!recorded) {
         timing.outcome = reason === "deadline" ? "timeout" : "aborted";
@@ -421,7 +435,7 @@ export async function loadCompleteCatalogData(
     fetchImpl = fetch,
     timeoutMs = DEFAULT_CATALOG_FETCH_TIMEOUT_MS,
     hedgeDelayMs = DEFAULT_CATALOG_HEDGE_DELAY_MS,
-    bodyHedgeDelayMs = DEFAULT_CATALOG_BODY_HEDGE_DELAY_MS,
+    bodyIdleTimeoutMs = DEFAULT_CATALOG_BODY_IDLE_TIMEOUT_MS,
     phaseRecorder,
     now = () => performance.now(),
   } = options;
@@ -465,6 +479,12 @@ export async function loadCompleteCatalogData(
       const attempt = startCatalogSource({
         url: urls[source], source, now, fetchImpl, timeoutMs, loadStarted,
         trigger, expectedLanguage: lang, phaseRecorder,
+        onBodyProgress: source === "api" ? () => {
+          if (settled || attempts.has("r2")) return;
+          clearHedge();
+          hedgeTimer = setTimeout(() => start("r2", "delayed-hedge"), bodyIdleTimeoutMs);
+        } : undefined,
+        onBodyFinished: source === "api" ? clearHedge : undefined,
         onValidated(parsed) {
           if (settled) return;
           if (expired()) { onDeadline(); return; }
@@ -492,16 +512,7 @@ export async function loadCompleteCatalogData(
 
     signal?.addEventListener("abort", onAbort, { once: true });
     start("api", "primary");
-    if (!settled) hedgeTimer = setTimeout(() => {
-      const remainingBodyGrace = bodyHedgeDelayMs - (now() - loadStarted);
-      // Headers suggest a progressing body, not a stalled server. Avoid competing
-      // for a slow connection, but still rescue an unfinished body within the budget.
-      if (attempts.get("api")?.hasHeaders() && remainingBodyGrace > 0) {
-        hedgeTimer = setTimeout(() => start("r2", "delayed-hedge"), remainingBodyGrace);
-      } else {
-        start("r2", "delayed-hedge");
-      }
-    }, hedgeDelayMs);
+    if (!settled) hedgeTimer = setTimeout(() => start("r2", "delayed-hedge"), hedgeDelayMs);
   });
 }
 
