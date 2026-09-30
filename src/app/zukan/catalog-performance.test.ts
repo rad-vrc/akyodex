@@ -95,6 +95,37 @@ test("slow success reporting is bounded per view, not consumed by fast loads or 
   assert.doesNotThrow(() => createCatalogSlowLoadReporter(() => { throw new Error("SDK"); })(event));
 });
 
+test("hedge reasons and cancelled losers survive ready and slow-event recording", () => {
+  const clock = new FakePerformanceClock();
+  const measurement = new CatalogLoadPerformance("ja", clock);
+  measurement.recordRequest({
+    source: "r2", trigger: "delayed-hedge", startOffsetMs: 2000,
+    status: 200, outcome: "success", headersWaitMs: 400, bodyAndParseMs: 50,
+    totalMs: 450, server: null,
+  });
+  measurement.recordRequest({
+    source: "api", trigger: "primary", startOffsetMs: 0,
+    status: 200, outcome: "aborted", abortReason: "superseded",
+    headersWaitMs: 100, bodyAndParseMs: 2350, totalMs: 2450,
+    server: { durationsMs: { catalog_kv: 90 } },
+  });
+  measurement.markResponse("r2");
+  clock.currentTime = 3100;
+  const event = measurement.markReady()!;
+  assert.equal(event.failureReason, null);
+  assert.equal(event.source, "r2");
+  const captured: Event[] = [];
+  createCatalogSlowLoadReporter((message, context) => {
+    captured.push({ message, ...context as Event });
+  })(event);
+  const requests = captured[0].extra?.requests as Record<string, unknown>[];
+  assert.equal(requests[0].trigger, "delayed-hedge");
+  assert.equal(requests[0].startOffsetMs, 2000);
+  assert.equal(requests[1].abortReason, "superseded");
+  assert.equal(requests[1].catalog_kv, 90);
+  assert.equal(captured.length, 1);
+});
+
 test("CatalogLoadPerformance measures normalization, search indexing, and state application separately", () => {
   const clock = new FakePerformanceClock();
   const measurement = new CatalogLoadPerformance("ja", clock);

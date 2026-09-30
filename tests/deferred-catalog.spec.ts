@@ -28,7 +28,10 @@ function waitForApiRoute(page: Page, language = "ja"): Promise<Route> {
 test.describe("Complete catalog loading", () => {
   test.use({ serviceWorkers: "block" });
 
-  test.beforeEach(async ({ context }) => {
+  test.beforeEach(async ({ context, page }) => {
+    // API-gated tests must not escape through real R2 after the hedge delay.
+    // Fallback-specific tests override this route with their own response below.
+    await page.route("**/data/akyo-data-*.json", (route) => route.abort("failed"));
     await context.addCookies([
       {
         name: "AKYO_LANG",

@@ -59,10 +59,12 @@ test("records header wait and body parsing separately, including failed fallback
   assert.deepEqual(requests[0], {
     source: "api", status: 503, outcome: "error", headersWaitMs: 4000,
     bodyAndParseMs: null, totalMs: 4000, server: { durationsMs: {} },
+    startOffsetMs: 0, trigger: "primary",
   });
   assert.deepEqual(requests[1], {
     source: "r2", status: 200, outcome: "success", headersWaitMs: 4000,
     bodyAndParseMs: 200, totalMs: 4200, server: null,
+    startOffsetMs: 4000, trigger: "fallback",
   });
 });
 
@@ -77,7 +79,7 @@ test("a broken diagnostic observer cannot trigger fallback or lose a successful 
   assert.equal(calls, 1);
 });
 
-test("a body timeout keeps the response status and never starts a second source", { timeout: 2000 }, async () => {
+test("a deadline shorter than the hedge delay keeps the body timeout status without starting R2", { timeout: 2000 }, async () => {
   const requests: CatalogRequestTiming[] = [];
   let calls = 0;
   await assert.rejects(loadCompleteCatalogData({

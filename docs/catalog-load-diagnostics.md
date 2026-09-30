@@ -1,8 +1,8 @@
 # Catalog load diagnostics
 
 This instruments the transition from the initial 12 cards to the complete catalog
-and enabled filters. It does not change source order, preloading, caching, the
-15-second deadline, or retry behavior. It is not itself a latency fix. Measurements
+and enabled filters. The delayed fallback below keeps preloading, caching, the
+15-second total deadline, and the existing retry UI. Measurements
 start at the client's full-catalog fetch, not at navigation or the initial SSR render;
 the time spent downloading JavaScript and hydrating before that is outside this interval.
 
@@ -24,6 +24,12 @@ Browser fields:
 - `bodyAndParseMs`: waiting for the body AND JSON parsing, not transfer time alone.
 - `totalMs`: whole source attempt including normalization. `null` means a stage did
   not complete/start; it is not zero. Status and outcome identify failed attempts.
+- `startOffsetMs`: attempt start relative to the full-catalog load start. Request
+  entries are recorded in completion/cancellation order, not necessarily start order.
+- `trigger`: `primary`, `delayed-hedge`, or `fallback` (after a source failed).
+- `abortReason`: `superseded` (another source won), `caller` (navigation/language
+  change/retry), or `deadline`. Superseded attempts are not catalog failures.
+- Cancelled body reads record elapsed time up to cancellation, not a completed parse.
 - Existing normalization, search-index and state-apply durations remain separate.
 - Visibility at start/end is only a pair of observations, not proof that the tab
   was visible throughout or that no freeze occurred.
@@ -65,14 +71,41 @@ scheduling as candidates, not a proven network fault. A large body/parse or prep
 interval calls for browser profiling. Match the observation to the reported time,
 language and environment before attributing it to a particular user incident.
 
+## Delayed fallback
+
+The API starts immediately with the same fetch options as its preload. If no valid
+payload has completed after 2,000 ms, the client also requests the existing R2 JSON.
+Headers alone do not stop that timer. An API HTTP/network/validation failure starts
+R2 immediately instead. Each source starts at most once per load.
+
+The first validated live payload wins; pending work is aborted without waiting for
+its rejection, and late results cannot update data or diagnostics. An R2 failure
+does not cancel a pending API. The bundled snapshot is tried only after both live
+sources fail, never raced against a pending live source. All attempts share one
+15-second budget from the initial API start, including body reads and validation.
+Caller abort stops every attempt and timer. Preparation after fetching is still
+excluded from the coordinator's stalled-network detection.
+
+This targets observed long API/header waits and body stalls, not initial HTML,
+hydration, or all Web Vitals. Two seconds is an initial engineering setting, not a
+measured optimum. Fast API loads make no R2 request; slow loads can transfer both
+responses in part. Client cancellation does not guarantee cancellation of server work.
+
+API and R2 freshness is not compared: they use different metadata and retain their
+existing synchronization/cache behavior. The first valid response is not necessarily
+the newest. No extra refresh overwrites it after display. Administrative CSV loading
+does not use this fallback and keeps its separate deadline/error contract.
+
 ## Verification and rollout
 
 `npx playwright test --config playwright.catalog-diagnostics.config.ts` starts an
 isolated local dev server on port 3517 with a localhost-only DSN, intercepts envelopes,
-holds a catalog response, and checks the real 12-card -> enabled-filter -> Sentry path.
+controls API and R2 responses, and checks the real 12-card -> enabled-filter -> Sentry path.
 It does not send test events to production. Node tests also exercise the actual handler,
 Worker header helper, loader and SDK transport together with deterministic clocks.
 
 This changes the Worker and browser bundle. It needs reviewed merge and manual activation
-before production evidence is available. After activation, inspect `catalog-slow-load`
-and compare the above intervals before changing caches or adding parallel fallback fetches.
+before production evidence is available. After activation, compare roughly seven days
+of timeouts, slow completions and hedge/winner metadata, separated by bots and normal
+browsers and by release. Fast hedge successes appear only in sampled `catalog.ready`
+spans; raw issue counts are not a success rate. Zero reports alone do not prove a fix.
