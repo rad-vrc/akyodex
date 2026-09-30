@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-30T18:57:21.124Z",
+  "updatedAt": "2026-09-30T19:03:36.441Z",
   "count": 1005,
   "data": [
     {
@@ -327,10 +327,11 @@
     {
       "id": "0028",
       "entryType": "avatar",
+      "displaySerial": "0028",
       "nickname": "ロボットAkyo（サンプル）",
       "avatarName": "AkyoRobotSample",
-      "category": "機械,Booth,対応機種,対応機種/PC",
-      "comment": "",
+      "category": "機械,Booth,対応機種,対応機種/PC,体格・形状・触り心地,体格・形状・触り心地/硬い,作風・スタイル,作風・スタイル/SF,素材・原材料,素材・原材料/金属,色,色/緑色系,色/青色系",
+      "comment": "Vketに展示されていたこともあるよ！",
       "author": "n777",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6",

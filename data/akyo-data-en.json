@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-30T18:57:21.165Z",
+  "updatedAt": "2026-09-30T19:03:36.496Z",
   "count": 1005,
   "data": [
     {
@@ -327,10 +327,11 @@
     {
       "id": "0028",
       "entryType": "avatar",
+      "displaySerial": "0028",
       "nickname": "Robot Akyo（Sample）",
       "avatarName": "AkyoRobotSample",
-      "category": "Machine,Booth,Supported Platform,Supported Platform/PC",
-      "comment": "",
+      "category": "Machine,Booth,Supported Platform,Supported Platform/PC,Physique・Shape・Texture,Physique・Shape・Texture/Hard,Style,Style/Sci-Fi,Material・Raw Material,Material・Raw Material/Metal,Color,Color/Green Tones,Color/Blue Tones",
+      "comment": "Vketに展示されていたこともあるよ！",
       "author": "n777",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f639a269-adb1-4506-9209-6631ce4201c6",
