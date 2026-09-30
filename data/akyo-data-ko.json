@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-09-30T10:41:50.328Z",
-  "count": 1003,
+  "updatedAt": "2026-09-30T18:48:45.185Z",
+  "count": 1004,
   "data": [
     {
       "id": "0001",
@@ -12307,6 +12307,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_542699bc-8bb6-402f-91ec-f03c30c7a1cd",
       "avatarUrl": "https://vrchat.com/home/world/wrld_542699bc-8bb6-402f-91ec-f03c30c7a1cd",
       "urlUpdatedAt": "2026-09-28T10:09:57.781Z"
+    },
+    {
+      "id": "1954",
+      "entryType": "avatar",
+      "displaySerial": "0886",
+      "nickname": "タイタンAkyo",
+      "avatarName": "kyodai akyo",
+      "category": "지원 기기,지원 기기/PC,에너지,역사,살아있는 전설,체격・형태・촉감,체격・형태・촉감/장신,최강 전사",
+      "comment": "こ、このAkyoは・・・\n2020年の文献、Project Akyoに記されていた伝説の・・・！！",
+      "author": "hahiho",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e1e5ad6e-aacc-4e30-8fab-2ef794293d63",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e1e5ad6e-aacc-4e30-8fab-2ef794293d63",
+      "urlUpdatedAt": "2026-09-30T18:48:45.061Z"
     }
   ]
 }

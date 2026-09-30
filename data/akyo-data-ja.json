@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-30T10:41:50.239Z",
-  "count": 1003,
+  "updatedAt": "2026-09-30T18:48:45.106Z",
+  "count": 1004,
   "data": [
     {
       "id": "0001",
@@ -11604,6 +11604,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_542699bc-8bb6-402f-91ec-f03c30c7a1cd",
       "avatarUrl": "https://vrchat.com/home/world/wrld_542699bc-8bb6-402f-91ec-f03c30c7a1cd",
       "urlUpdatedAt": "2026-09-28T10:09:57.781Z"
+    },
+    {
+      "id": "1954",
+      "entryType": "avatar",
+      "displaySerial": "0886",
+      "nickname": "タイタンAkyo",
+      "avatarName": "kyodai akyo",
+      "category": "対応機種,対応機種/PC,エネルギー,歴史,生ける伝説,体格・形状・触り心地,体格・形状・触り心地/高身長,最強戦士",
+      "comment": "こ、このAkyoは・・・\n2020年の文献、Project Akyoに記されていた伝説の・・・！！",
+      "author": "hahiho",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e1e5ad6e-aacc-4e30-8fab-2ef794293d63",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e1e5ad6e-aacc-4e30-8fab-2ef794293d63",
+      "urlUpdatedAt": "2026-09-30T18:48:45.061Z"
     }
   ]
 }
