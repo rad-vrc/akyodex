@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-30T19:26:00.386Z",
-  "count": 1006,
+  "updatedAt": "2026-09-30T19:35:29.745Z",
+  "count": 1007,
   "data": [
     {
       "id": "0001",
@@ -11644,6 +11644,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_102b4687-b47d-4ee7-ba04-7b8284f97a6a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_102b4687-b47d-4ee7-ba04-7b8284f97a6a",
       "urlUpdatedAt": "2026-09-30T19:26:00.347Z"
+    },
+    {
+      "id": "2023",
+      "entryType": "avatar",
+      "displaySerial": "0889",
+      "nickname": "黒の6ポリゴンAkyo",
+      "avatarName": "6 polygon black akyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),色,色/黒色系,作風・スタイル,作風・スタイル/ローポリ",
+      "comment": "これAkyoなの？",
+      "author": "hadorusu",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_0220ac91-8cca-4f60-8105-682c2ae23490",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0220ac91-8cca-4f60-8105-682c2ae23490",
+      "urlUpdatedAt": "2026-09-30T19:35:29.691Z"
     }
   ]
 }
