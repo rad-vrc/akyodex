@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-09-30T18:48:45.106Z",
-  "count": 1004,
+  "updatedAt": "2026-09-30T18:57:21.124Z",
+  "count": 1005,
   "data": [
     {
       "id": "0001",
@@ -11617,6 +11617,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e1e5ad6e-aacc-4e30-8fab-2ef794293d63",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e1e5ad6e-aacc-4e30-8fab-2ef794293d63",
       "urlUpdatedAt": "2026-09-30T18:48:45.061Z"
+    },
+    {
+      "id": "2021",
+      "entryType": "avatar",
+      "displaySerial": "0887",
+      "nickname": "HH式ロボットAkyo",
+      "avatarName": "Robo Akyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),色,色/白色系,色/無彩色系,機械,体格・形状・触り心地,体格・形状・触り心地/硬い,作風・スタイル,作風・スタイル/SF,素材・原材料,素材・原材料/金属",
+      "comment": "いろんなロボットAkyoがいるんだね！",
+      "author": "HH2099",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3ba40dfb-4364-4136-bac4-a79ace1f3646",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3ba40dfb-4364-4136-bac4-a79ace1f3646",
+      "urlUpdatedAt": "2026-09-30T18:57:21.083Z"
     }
   ]
 }
