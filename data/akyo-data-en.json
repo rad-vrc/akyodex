@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-09-30T19:35:29.799Z",
-  "count": 1007,
+  "updatedAt": "2026-09-30T20:27:08.121Z",
+  "count": 1008,
   "data": [
     {
       "id": "0001",
@@ -11657,6 +11657,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0220ac91-8cca-4f60-8105-682c2ae23490",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_0220ac91-8cca-4f60-8105-682c2ae23490",
       "urlUpdatedAt": "2026-09-30T19:35:29.691Z"
+    },
+    {
+      "id": "2024",
+      "entryType": "avatar",
+      "displaySerial": "0890",
+      "nickname": "16ポリゴンのヒューマノイドAkyo",
+      "avatarName": "Akyo 16",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Gimmick・Special,Gimmick・Special/Face Tracking,Animal,Animal/Human,Style,Style/Low-poly",
+      "comment": "フェイストラッキングついてるの！？",
+      "author": "LiteBlue",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a061f060-c3cd-47c5-b3cc-7a4189db1ec3",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a061f060-c3cd-47c5-b3cc-7a4189db1ec3",
+      "urlUpdatedAt": "2026-09-30T20:27:08.012Z"
     }
   ]
 }
