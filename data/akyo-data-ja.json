@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-01T06:31:44.268Z",
-  "count": 1012,
+  "updatedAt": "2026-10-01T07:06:40.313Z",
+  "count": 1013,
   "data": [
     {
       "id": "0001",
@@ -11722,6 +11722,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1a72fdff-2119-4ce3-8988-6ae5f219b409",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_1a72fdff-2119-4ce3-8988-6ae5f219b409",
       "urlUpdatedAt": "2026-10-01T06:31:44.212Z"
+    },
+    {
+      "id": "2029",
+      "entryType": "avatar",
+      "displaySerial": "0895",
+      "nickname": "ヴェイパーウェイブ・クリーチャーAkyo",
+      "avatarName": "vaporwave creature",
+      "category": "対応機種,対応機種/PC,架空の存在,架空の存在/モンスター,色,色/黒色系,色/紫色系,ファッション・装備,ファッション・装備/メガネ",
+      "comment": "創作文化から生まれたみたい！\nヴェイパーウェイブ・クリーチャーで検索してみて！",
+      "author": "AstralGhosty",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
+      "urlUpdatedAt": "2026-10-01T07:06:40.270Z"
     }
   ]
 }
