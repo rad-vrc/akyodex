@@ -110,23 +110,40 @@ lag behind a new CSV commit; this is not an atomic cross-service transaction.
 This deliberately preserves the current **JA-only** database/index. D1's primary
 key is `id`, not `(language, id)`; uploading EN/KO under those IDs would replace
 Japanese data. A multilingual schema/index migration is separate work. The
-`latest` intent and result ordering are also unchanged: refreshed data alone does
-not make a semantic search a chronological search.
+latest-query path can fall back to JA records when the requested language has no
+stored rows; each returned record keeps its actual `language`.
+
+### Latest-query rollout
+
+The synchronizer now stores the catalog's `urlUpdatedAt` in D1. On an enabled
+apply it adds this column if absent, **after** inventory validation and the
+large-deletion guard. Dry runs do not alter the schema. Timestamp-only updates
+do not generate embeddings or change Vectorize metadata. Existing ingest updates
+preserve this sync-owned column; ingestion does not assign chronology itself.
+
+After merge, run a dry run, apply and a zero-diff dry run before deploying the
+new search Worker. Do not deploy first and claim latest ordering is ready: a
+missing column returns 503 instead of substituting semantic guesses, and a
+partially completed initial timestamp backfill is not the final catalog order.
+The column is additive, so ordinary name/discovery searches keep working on the
+old Worker during sync. Rollback of the Worker does not require dropping it.
 
 ### Rollout and recovery
 
 After review and explicit production approval:
+
+Prerequisite: the existing D1-existence guard from #589 must already be deployed
+(production uses it as of `173e21f8`). On a new installation, deploy that reviewed
+pre-latest version first; do not expose latest search before its backfill.
 
 1. Merge and register the dedicated sync secret. Dispatch `sync-ai-catalog.yml`
    on `main` with `apply=false` **before deploying the Worker**. Inspect the source
    SHA, update/deletion counts and deletion guard. This uses read APIs but no
    embedding inference or data mutations, and confirms only read permissions;
    it cannot prove write/inference permissions. Fix unexpected plans first.
-2. Deploy this **search Worker** with its existing configuration and
-   secret. This is separate from the website's production activate workflow.
-   Deploy the D1 guard before enabling data writes. Record the prior Worker
+2. Keep the currently deployed, guarded search Worker running. Record its
    version for rollback; do not rotate the ingest secret as part of this change.
-3. Set `AI_CATALOG_SYNC_ENABLED=true` and dispatch with `apply=true` for the first
+   Set `AI_CATALOG_SYNC_ENABLED=true` and dispatch with `apply=true` for the first
    reconciliation. Enabling the variable also permits future successful CSV
    syncs to launch a queued AI sync. Workers AI inference and D1/Vectorize
    operations can incur usage/cost, especially the first reconciliation of old
@@ -135,10 +152,15 @@ After review and explicit production approval:
    `allow_large_deletion=true` as well. Every run uses current main, so repeat the
    dry run if main changed since review; do not set the override just to clear a
    failed run. Ordinary automatic updates keep the deletion guard enabled.
-4. Check the workflow's D1/Vectorize verification, then `/search` for `2030` and
-   `MenmeAkyo`, an updated category, and a known unchanged entry. Check the Dify
-   chat by name, not a `latest` question. Test a subsequent normal catalog change
-   to verify the automatic trigger; local mocks/CI do not prove this integration.
+3. Wait for complete D1/Vectorize verification and run another read-only diff.
+   Require zero remaining differences, including timestamps. Only then deploy
+   this **search Worker** with its existing configuration and secret. This is
+   separate from the website's production activate workflow.
+4. Check `/search` for `2030`, `MenmeAkyo`, an updated category, and a known
+   unchanged entry. Compare a latest query against the website's latest order.
+   Check both named and latest questions in the actual Dify chat: local Worker
+   tests do not prove what Dify sends or how it uses the response. Test a subsequent
+   normal catalog change to verify the automatic trigger.
 
 On failure, inspect the failed step and retry on main after resolving access or
 service errors. To pause, set `AI_CATALOG_SYNC_ENABLED=false`; this prevents new
@@ -151,6 +173,19 @@ serve stale vectors during a later partial sync.
 
 ## Search behavior
 
+- Unqualified latest requests such as `最新のAkyoは？`, `What is the latest Akyo?`
+  and `최근 추가된 Akyo 알려주세요` bypass name/vector search. Keyword-only
+  requests like `["最新", "Akyo"]` are also recognized. An explicit query takes
+  precedence over generated keywords. Qualified/negated requests are not rewritten
+  into a global latest query (for example, `最新の青いAkyo` is not supported as a
+  chronological filter yet).
+- Latest results use the website's shared comparator: valid `urlUpdatedAt` first,
+  descending by time, then descending numeric internal ID. This includes URL
+  replacements and first BOOTH publication, not only newly registered records.
+  Results declare `searchMode: "latest"` and
+  `latestBasis: "urlUpdatedAt-desc-then-internal-id-desc"`. This is ordering,
+  not semantic similarity. It reflects the most recent completed AI catalog sync,
+  not an atomic view of a concurrent catalog update.
 - `topK` defaults to 5 and is clamped to 1-8.
 - At most three input keywords are processed.
 - Natural-language suffixes are removed before exact D1 lookup.
@@ -183,8 +218,8 @@ serve stale vectors during a later partial sync.
 `POST /search` accepts a JSON object with `query` or `keywords`, plus optional
 `language` (`ja`, `en`, or `ko`) and `topK`. It returns the detected language,
 matching records, and `count`.
-`searchMode` is `specific-name` for a named Akyo lookup and `discovery` for a
-general search. Specific-name responses also include `nameMatch`; when it is
+`searchMode` is `latest`, `specific-name` for a named Akyo lookup, or `discovery`
+for a general search. Specific-name responses also include `nameMatch`; when it is
 `false`, `results` is empty even if Vectorize found semantically similar items.
 Consumers must use each result's `entryType` to label it as an avatar or world;
 world results should use `nickname` as the world name and label `url` as the
@@ -211,7 +246,7 @@ the total count and up to 10 avatars.
 Vectorize `indexed` count, `failed`, and per-record `errors`. Records are
 committed to D1 as one transaction before their vectors are uploaded in bounded
 batches; failed vector uploads can be retried safely because D1 writes use
-`INSERT OR REPLACE`.
+an upsert that preserves fields owned by catalog synchronization.
 
 ```json
 {

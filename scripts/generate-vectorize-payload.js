@@ -45,6 +45,7 @@ function buildPayload(parsed) {
     author: item.author || '',
     url: item.avatarUrl || '',
     language: item.language || 'ja',
+    ...(typeof item.urlUpdatedAt === 'string' ? { urlUpdatedAt: item.urlUpdatedAt } : {}),
   }));
 }
 

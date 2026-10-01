@@ -46,7 +46,7 @@ class FakeStatement implements D1PreparedStatement {
   }
 
   async all<T>(): Promise<D1Result<T>> {
-    if (this.query.includes("INSERT OR REPLACE")) {
+    if (this.query.includes("INSERT INTO")) {
       this.database.runCalls += 1;
       return { results: [] };
     }
