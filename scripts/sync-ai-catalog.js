@@ -7,6 +7,7 @@ const { buildPayload } = require('./generate-vectorize-payload');
 const { createCloudflareClient } = require('./ai-catalog-cloudflare');
 
 const COLUMNS = ['id', 'nickname', 'name', 'category', 'description', 'author', 'url', 'language'];
+const ROW_COLUMNS = [...COLUMNS, 'urlUpdatedAt'];
 const MAX_RECORDS = 10_000;
 const MAX_AUTO_DELETIONS = 20;
 const MAX_AUTO_DELETION_PERCENT = 5;
@@ -23,6 +24,10 @@ function sameRecord(left, right) {
   return Boolean(left && right) && COLUMNS.every(key => (left[key] ?? '') === (right[key] ?? ''));
 }
 
+function sameRow(left, right) {
+  return sameRecord(left, right) && (left.urlUpdatedAt ?? '') === (right.urlUpdatedAt ?? '');
+}
+
 function validateCatalog(records) {
   if (!Array.isArray(records) || !records.length || records.length > MAX_RECORDS) {
     throw new Error('Expected a non-empty Japanese catalog of at most 10000 records');
@@ -35,7 +40,12 @@ function validateCatalog(records) {
       throw new Error('Invalid or duplicate Japanese catalog record');
     }
     ids.add(record.id);
-    return { ...canonical(record), entryType: record.entryType };
+    const urlUpdatedAt = record.urlUpdatedAt ?? '';
+    if (typeof urlUpdatedAt !== 'string' || (urlUpdatedAt.trim() &&
+      (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(urlUpdatedAt.trim()) || !Number.isFinite(Date.parse(urlUpdatedAt))))) {
+      throw new Error('Invalid catalog urlUpdatedAt');
+    }
+    return { ...canonical(record), entryType: record.entryType, urlUpdatedAt: urlUpdatedAt.trim() };
   });
 }
 
@@ -59,7 +69,9 @@ async function readVectors(api, ids) {
 async function reconcileCatalog(input, api, options = {}) {
   const records = validateCatalog(input);
   const desired = new Map(records.map(record => [record.id, record]));
-  const rows = await api.query(`SELECT ${COLUMNS.join(', ')} FROM akyos`);
+  const columns = await api.query('PRAGMA table_info(akyos)');
+  const hasTimestamp = columns.some(column => column.name === 'urlUpdatedAt');
+  const rows = await api.query(`SELECT ${COLUMNS.join(', ')}, ${hasTimestamp ? 'urlUpdatedAt' : "'' AS urlUpdatedAt"} FROM akyos`);
   if (!Array.isArray(rows) || rows.some(row => row.language !== 'ja' || !/^\d{4}$/.test(row.id))) {
     throw new Error('Expected only Japanese rows in the existing search database');
   }
@@ -71,7 +83,7 @@ async function reconcileCatalog(input, api, options = {}) {
   }
   // Read both stores. A prior failed upload may have changed D1 but not Vectorize.
   const vectors = await readVectors(api, [...new Set([...vectorIds, ...desired.keys()])]);
-  const changedRows = records.filter(record => !sameRecord(record, current.get(record.id)));
+  const changedRows = records.filter(record => !sameRow(record, current.get(record.id)));
   const changedVectors = records.filter(record => !sameRecord(record, vectors.get(record.id)?.metadata) ||
     vectors.get(record.id)?.metadata?.entryType !== record.entryType);
   const removedRows = rows.filter(row => !desired.has(row.id)).map(row => row.id);
@@ -89,9 +101,12 @@ async function reconcileCatalog(input, api, options = {}) {
 
   // D1 serves current fields for all search results. Semantic ranking can use an
   // older embedding until Vectorize catches up, without returning its stale text.
+  // Additive migration is inside the enabled apply path, after all inventories
+  // and deletion guards. Dry runs work against both schemas without writing.
+  if (!hasTimestamp) await api.query("ALTER TABLE akyos ADD COLUMN urlUpdatedAt TEXT NOT NULL DEFAULT ''");
   for (const batch of chunks(changedRows, 10)) {
-    await api.query(`INSERT OR REPLACE INTO akyos (${COLUMNS.join(', ')}) VALUES ${batch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}`,
-      batch.flatMap(record => COLUMNS.map(key => record[key])));
+    await api.query(`INSERT OR REPLACE INTO akyos (${ROW_COLUMNS.join(', ')}) VALUES ${batch.map(() => `(${ROW_COLUMNS.map(() => '?').join(', ')})`).join(', ')}`,
+      batch.flatMap(record => ROW_COLUMNS.map(key => record[key])));
   }
   for (const batch of chunks(changedVectors, 20)) {
     const embeddings = await api.embed(batch);
@@ -99,7 +114,8 @@ async function reconcileCatalog(input, api, options = {}) {
       !Array.isArray(vector) || !vector.length || vector.some(value => typeof value !== 'number' || !Number.isFinite(value)))) {
       throw new Error('Embedding response was incomplete or invalid');
     }
-    await api.upsert(batch.map((record, i) => ({ id: record.id, values: embeddings[i], metadata: record })));
+    await api.upsert(batch.map((record, i) => ({ id: record.id, values: embeddings[i],
+      metadata: { ...canonical(record), entryType: record.entryType } })));
     options.log?.(`Submitted ${batch.length} vectors (${batch[0].id}..${batch.at(-1).id})`);
   }
 
@@ -110,8 +126,8 @@ async function reconcileCatalog(input, api, options = {}) {
   }
   for (const batch of chunks(removedVectors, 100)) await api.remove(batch);
 
-  const verifiedRows = await api.query(`SELECT ${COLUMNS.join(', ')} FROM akyos`);
-  if (verifiedRows.length !== records.length || verifiedRows.some(row => !sameRecord(row, desired.get(row.id)))) {
+  const verifiedRows = await api.query(`SELECT ${ROW_COLUMNS.join(', ')} FROM akyos`);
+  if (verifiedRows.length !== records.length || verifiedRows.some(row => !sameRow(row, desired.get(row.id)))) {
     throw new Error('D1 verification failed; rerun from current main');
   }
   // Vectorize mutations are asynchronous; accepted is not yet indexed/visible.

@@ -18,11 +18,12 @@ export interface AkyoRecord {
   author: string;
   url: string;
   language: Language;
+  urlUpdatedAt?: string;
 }
 
 export interface SearchResult extends AkyoRecord {
   score: number;
-  matchType: "exact" | "partial" | "semantic";
+  matchType: "exact" | "partial" | "semantic" | "latest";
   matchedField: string;
   matchedKeyword: string;
 }

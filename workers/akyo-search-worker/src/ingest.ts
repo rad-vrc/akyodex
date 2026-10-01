@@ -6,9 +6,12 @@ const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const EMBEDDING_BATCH_SIZE = 20;
 const VECTOR_UPSERT_BATCH_SIZE = 100;
 const INSERT_RECORD_SQL = `
-  INSERT OR REPLACE INTO akyos
+  INSERT INTO akyos
     (id, nickname, name, category, description, author, url, language)
   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT(id) DO UPDATE SET nickname = excluded.nickname,
+    name = excluded.name, category = excluded.category, description = excluded.description,
+    author = excluded.author, url = excluded.url, language = excluded.language
 `;
 export const MAX_INGEST_RECORDS = 1_000;
 

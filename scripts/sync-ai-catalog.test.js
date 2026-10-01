@@ -19,7 +19,7 @@ function harness(rows = [], vectors = rows) {
   const calls = { embeddings: [], upserts: [], deletes: [], writes: 0 };
   const api = {
     async query(sql, params = []) {
-      if (!sql.trim().startsWith('SELECT')) calls.writes++;
+      if (!/^(SELECT|PRAGMA)/.test(sql.trim())) calls.writes++;
       return db.prepare(sql).all(...params).map(row => ({ ...row }));
     },
     async listIds() { return [...index.keys()]; },
@@ -206,6 +206,49 @@ test('bounds D1 parameters, embedding batches and vector lookups across multiple
 function catalog(count) {
   return Array.from({ length: count }, (_, i) => record(String(i + 1).padStart(4, '0')));
 }
+
+test('latest timestamps migrate only on apply and update D1 without re-embedding unchanged content', async () => {
+  const old = record('2030', 'MenmeAkyo');
+  const h = harness([old]);
+  const desired = buildPayload({ data: [{ id: old.id, nickname: old.nickname, category: old.category,
+    author: old.author, urlUpdatedAt: '2026-10-01T00:00:00Z' }] });
+  try {
+    const dry = await reconcileCatalog(desired, h.api, { dryRun: true });
+    assert.equal(dry.rowsUpdated, 1);
+    assert.equal(dry.vectorsUpdated, 0);
+    assert.equal(h.calls.writes, 0);
+    assert.equal(h.db.prepare('PRAGMA table_info(akyos)').all().some(c => c.name === 'urlUpdatedAt'), false);
+    await reconcileCatalog(desired, h.api);
+    assert.equal(h.db.prepare('SELECT urlUpdatedAt FROM akyos').get().urlUpdatedAt, '2026-10-01T00:00:00Z');
+    assert.equal(h.calls.embeddings.length, 0);
+    const writes = h.calls.writes;
+    assert.equal((await reconcileCatalog(desired, h.api)).rowsUpdated, 0);
+    assert.equal(h.calls.writes, writes);
+    desired[0].urlUpdatedAt = '2026-10-02T00:00:00Z';
+    await reconcileCatalog(desired, h.api);
+    assert.equal(h.db.prepare('SELECT urlUpdatedAt FROM akyos').get().urlUpdatedAt, desired[0].urlUpdatedAt);
+    assert.equal(h.calls.embeddings.length, 0);
+  } finally { h.db.close(); }
+});
+
+test('timestamp verification detects lost writes and malformed timestamps fail before inventory', async () => {
+  const old = record('2030');
+  const h = harness([old]);
+  try {
+    const query = h.api.query;
+    h.api.query = async (sql, params) => {
+      const result = await query(sql, params);
+      if (sql.startsWith('INSERT')) h.db.exec("UPDATE akyos SET urlUpdatedAt = ''");
+      return result;
+    };
+    await assert.rejects(reconcileCatalog([{ ...old, urlUpdatedAt: '2026-10-01T00:00:00Z' }], h.api), /D1 verification/);
+    for (const urlUpdatedAt of [123, '2026', 'invalid', '2026-99-01T00:00:00Z']) {
+      await assert.rejects(reconcileCatalog([{ ...old, urlUpdatedAt }], {
+        query() { assert.fail('must validate before any remote access'); },
+      }), /urlUpdatedAt/);
+    }
+  } finally { h.db.close(); }
+});
 
 test('dry run reads every vector in batches within the live 20-ID limit', async () => {
   const rows = catalog(42);

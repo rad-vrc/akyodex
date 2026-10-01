@@ -1,4 +1,5 @@
 import { countByAuthor, countByKeyword } from "./count";
+import { isLatestRequest, LatestCatalogNotReadyError, searchLatest } from "./latest";
 import {
   MAX_INGEST_RECORDS,
   ingestRecords,
@@ -55,6 +56,11 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
 
   const language = normalizeLanguage(body.language, terms.join(" "));
   const topK = normalizeTopK(body.topK);
+  if (isLatestRequest(body.query, body.keywords)) {
+    const results = await searchLatest(language, topK, env);
+    return jsonResponse({ query: body.query, language, searchMode: "latest",
+      latestBasis: "urlUpdatedAt-desc-then-internal-id-desc", results, count: results.length });
+  }
   const specificNameInput =
     typeof body.query === "string" && body.query.trim()
       ? body.query
@@ -148,7 +154,7 @@ const worker = {
         return await handleInsertData(request, env);
       }
     } catch (error) {
-      const status = error instanceof BadRequestError ? 400 : 500;
+      const status = error instanceof BadRequestError ? 400 : error instanceof LatestCatalogNotReadyError ? 503 : 500;
       if (status === 500) {
         console.error("Worker request failed", error);
       }
