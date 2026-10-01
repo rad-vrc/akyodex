@@ -66,8 +66,9 @@ export async function processAkyoBatchUpdate(
     const currentData = parseCsvToAkyoData(stringify([header, ...dataRecords]));
     // Compare the edited fields, not the whole record, let alone the catalog: unrelated
     // registrations and changes to other fields of the same row (an author label cleanup
-    // merged as a data PR) proceed and are kept. Only a field both sides changed differently
-    // is refused, and the row to cancel is named, because refetching alone cannot resolve it.
+    // merged as a data PR) proceed and are kept. Category membership changes are merged
+    // separately; incompatible edits are refused and name the row to cancel, because
+    // refetching alone must not replace a pending edit's conflict baseline.
     const forms: AkyoFormData[] = [];
     for (const { original, changes } of drafts) {
       const current = currentData.find((akyo) => akyo.id === original.id);

@@ -147,6 +147,43 @@ test('a category renamed elsewhere is kept for a held edit that did not touch ca
   assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], 'どうぶつ');
 });
 
+test('a held category addition merges with a rename and returns exactly the committed row', async () => {
+  const f = fixture(new Set(['行事・文化']));
+  const [, update] = f.updates;
+  update.original.category = 'ファッション・装備,ファッション・装備/メガネ';
+  update.changes = { ...update.original, category: `${update.original.category},行事・文化` };
+  f.records[1][header.indexOf('Category')] = 'ファッション・装備,ファッション・装備/メガネ・サングラス';
+  const response = await processAkyoBatchUpdate([update], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits.length, 1);
+  assert.equal(f.commits[0].parentSha, 'head-1');
+  const expected = 'ファッション・装備,ファッション・装備/メガネ・サングラス,行事・文化';
+  assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], expected);
+  const { data } = await response.json();
+  assert.equal(data[0].category, expected);
+  assert.equal(data[0].attribute, expected);
+});
+
+test('a parent removal conflicting with a new descendant blocks the entire batch', async () => {
+  const f = fixture(new Set(['行事・文化']));
+  f.records[1][header.indexOf('Category')] = '動物,動物/うま';
+  f.updates[1].changes.category = '行事・文化';
+  const response = await processAkyoBatchUpdate(f.updates, f.dependencies);
+  assert.equal(response.status, 409);
+  assert.equal(f.commits.length, 0);
+  assert.match((await response.json()).error, /#0002 のカテゴリは、別の更新でも変更されています/);
+});
+
+test('a new local category that disappeared from the registry is still rejected after merging', async () => {
+  const f = fixture();
+  f.records[1][header.indexOf('Category')] = '動物,動物/うま';
+  f.updates[1].changes.category = '動物,削除済み';
+  const response = await processAkyoBatchUpdate([f.updates[1]], f.dependencies);
+  assert.equal(response.status, 400);
+  assert.equal(f.commits.length, 0);
+  assert.match((await response.json()).error, /削除済み/);
+});
+
 // 送られてきたカテゴリが、正規化すれば保留したときと同じ（祖先を省いただけ）なら、触っていない扱い
 test('a held category that only leaves out its ancestors counts as untouched', async () => {
   const f = fixture();
