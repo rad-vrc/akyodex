@@ -875,61 +875,25 @@
     "en": "Progenitor",
     "ko": "시조"
   },
-  "季節・行事": {
-    "en": "Season・Event",
-    "ko": "계절・행사"
+  "季節": {
+    "en": "Season",
+    "ko": "계절"
   },
-  "季節・行事/VRChat": {
-    "en": "Season・Event/VRChat",
-    "ko": "계절・행사/VRChat"
+  "季節/冬": {
+    "en": "Season/Winter",
+    "ko": "계절/겨울"
   },
-  "季節・行事/お正月": {
-    "en": "Season・Event/New Year",
-    "ko": "계절・행사/설날"
+  "季節/夏": {
+    "en": "Season/Summer",
+    "ko": "계절/여름"
   },
-  "季節・行事/お盆": {
-    "en": "Season・Event/Obon",
-    "ko": "계절・행사/오봉"
+  "季節/春": {
+    "en": "Season/Spring",
+    "ko": "계절/봄"
   },
-  "季節・行事/お盆/精霊馬": {
-    "en": "Season・Event/Obon/Spirit Horse",
-    "ko": "계절・행사/오봉/정령마"
-  },
-  "季節・行事/クリスマス": {
-    "en": "Season・Event/Christmas",
-    "ko": "계절・행사/크리스마스"
-  },
-  "季節・行事/ハロウィン": {
-    "en": "Season・Event/Halloween",
-    "ko": "계절・행사/할로윈"
-  },
-  "季節・行事/七夕": {
-    "en": "Season・Event/Tanabata",
-    "ko": "계절・행사/칠석"
-  },
-  "季節・行事/冬": {
-    "en": "Season・Event/Winter",
-    "ko": "계절・행사/겨울"
-  },
-  "季節・行事/夏": {
-    "en": "Season・Event/Summer",
-    "ko": "계절・행사/여름"
-  },
-  "季節・行事/恋愛": {
-    "en": "Season・Event/Romance",
-    "ko": "계절・행사/연애"
-  },
-  "季節・行事/春": {
-    "en": "Season・Event/Spring",
-    "ko": "계절・행사/봄"
-  },
-  "季節・行事/秋": {
-    "en": "Season・Event/Autumn",
-    "ko": "계절・행사/가을"
-  },
-  "季節・行事/端午の節句": {
-    "en": "Season・Event/Tango no Sekku",
-    "ko": "계절・행사/단오"
+  "季節/秋": {
+    "en": "Season/Autumn",
+    "ko": "계절/가을"
   },
   "学校": {
     "en": "School",
@@ -1318,6 +1282,46 @@
   "芸術/音楽・楽器": {
     "en": "Art/Music・Instrument",
     "ko": "예술/음악・악기"
+  },
+  "行事・文化": {
+    "en": "Event・Culture",
+    "ko": "행사・문화"
+  },
+  "行事・文化/VRChat": {
+    "en": "Event・Culture/VRChat",
+    "ko": "행사・문화/VRChat"
+  },
+  "行事・文化/お正月": {
+    "en": "Event・Culture/New Year",
+    "ko": "행사・문화/설날"
+  },
+  "行事・文化/お盆": {
+    "en": "Event・Culture/Obon",
+    "ko": "행사・문화/오봉"
+  },
+  "行事・文化/お盆/精霊馬": {
+    "en": "Event・Culture/Obon/Spirit Horse",
+    "ko": "행사・문화/오봉/정령마"
+  },
+  "行事・文化/クリスマス": {
+    "en": "Event・Culture/Christmas",
+    "ko": "행사・문화/크리스마스"
+  },
+  "行事・文化/ハロウィン": {
+    "en": "Event・Culture/Halloween",
+    "ko": "행사・문화/할로윈"
+  },
+  "行事・文化/七夕": {
+    "en": "Event・Culture/Tanabata",
+    "ko": "행사・문화/칠석"
+  },
+  "行事・文化/恋愛": {
+    "en": "Event・Culture/Romance",
+    "ko": "행사・문화/연애"
+  },
+  "行事・文化/端午の節句": {
+    "en": "Event・Culture/Tango no Sekku",
+    "ko": "행사・문화/단오"
   },
   "設備": {
     "en": "Equipment",
