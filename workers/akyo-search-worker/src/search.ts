@@ -8,6 +8,9 @@ import type {
   VectorizeMetadata,
 } from "./types";
 import { normalizeEntryType } from "./types";
+import { createSubstringMatch } from "./sql-matching";
+
+export { escapeLikePattern } from "./sql-matching";
 
 export const DEFAULT_TOP_K = 5;
 export const MAX_TOP_K = 8;
@@ -66,10 +69,6 @@ export function normalizeTopK(value: unknown): number {
   }
 
   return Math.min(Math.max(Math.floor(parsed), 1), MAX_TOP_K);
-}
-
-export function escapeLikePattern(value: string): string {
-  return value.replace(/[\\%_]/gu, "\\$&");
 }
 
 export function isJapanese(text: string): boolean {
@@ -328,32 +327,32 @@ async function findPartialMatches(
   limit: number,
   env: Env
 ): Promise<SearchResult[]> {
-  const like = `%${escapeLikePattern(keyword)}%`;
+  const { sql: contains, parameter } = createSubstringMatch(keyword);
   const result = await env.DB.prepare(`
     SELECT id, nickname, name, category, description, author, url, language,
       CASE
         WHEN category = ? THEN 0.95
         WHEN author = ? THEN 0.90
-        WHEN nickname LIKE ? ESCAPE '\\' THEN 0.85
-        WHEN name LIKE ? ESCAPE '\\' THEN 0.80
-        WHEN category LIKE ? ESCAPE '\\' THEN 0.75
-        WHEN author LIKE ? ESCAPE '\\' THEN 0.70
+        WHEN ${contains("nickname")} THEN 0.85
+        WHEN ${contains("name")} THEN 0.80
+        WHEN ${contains("category")} THEN 0.75
+        WHEN ${contains("author")} THEN 0.70
         ELSE 0.50
       END AS match_score,
       CASE
         WHEN category = ? THEN 'category'
         WHEN author = ? THEN 'author'
-        WHEN nickname LIKE ? ESCAPE '\\' THEN 'nickname'
-        WHEN name LIKE ? ESCAPE '\\' THEN 'name'
-        WHEN category LIKE ? ESCAPE '\\' THEN 'category'
-        WHEN author LIKE ? ESCAPE '\\' THEN 'author'
+        WHEN ${contains("nickname")} THEN 'nickname'
+        WHEN ${contains("name")} THEN 'name'
+        WHEN ${contains("category")} THEN 'category'
+        WHEN ${contains("author")} THEN 'author'
         ELSE 'description'
       END AS matched_field
     FROM akyos
     WHERE language = ? AND (
-      nickname LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\' OR
-      category LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' OR
-      author LIKE ? ESCAPE '\\'
+      ${contains("nickname")} OR ${contains("name")} OR
+      ${contains("category")} OR ${contains("description")} OR
+      ${contains("author")}
     )
     ORDER BY match_score DESC, id ASC
     LIMIT ?
@@ -361,22 +360,22 @@ async function findPartialMatches(
     .bind(
       keyword,
       keyword,
-      like,
-      like,
-      like,
-      like,
+      parameter,
+      parameter,
+      parameter,
+      parameter,
       keyword,
       keyword,
-      like,
-      like,
-      like,
-      like,
+      parameter,
+      parameter,
+      parameter,
+      parameter,
       language,
-      like,
-      like,
-      like,
-      like,
-      like,
+      parameter,
+      parameter,
+      parameter,
+      parameter,
+      parameter,
       limit
     )
     .all<SearchRow>();
@@ -390,25 +389,25 @@ async function findPartialNameMatches(
   limit: number,
   env: Env
 ): Promise<SearchResult[]> {
-  const like = `%${escapeLikePattern(keyword)}%`;
+  const { sql: contains, parameter } = createSubstringMatch(keyword);
   const result = await env.DB.prepare(`
     SELECT id, nickname, name, category, description, author, url, language,
       CASE
-        WHEN nickname LIKE ? ESCAPE '\\' THEN 0.85
+        WHEN ${contains("nickname")} THEN 0.85
         ELSE 0.80
       END AS match_score,
       CASE
-        WHEN nickname LIKE ? ESCAPE '\\' THEN 'nickname'
+        WHEN ${contains("nickname")} THEN 'nickname'
         ELSE 'name'
       END AS matched_field
     FROM akyos
     WHERE language = ? AND (
-      nickname LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'
+      ${contains("nickname")} OR ${contains("name")}
     )
     ORDER BY match_score DESC, id ASC
     LIMIT ?
   `)
-    .bind(like, like, language, like, like, limit)
+    .bind(parameter, parameter, language, parameter, parameter, limit)
     .all<SearchRow>();
 
   return (result.results ?? []).map((row) => toSearchResult(row, keyword));
