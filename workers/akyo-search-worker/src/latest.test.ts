@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import test from "node:test";
 import { selectLatestEntries } from "../../../src/lib/akyo-entry";
 import worker from "./index";
 import { ingestRecords } from "./ingest";
+import { isLatestRequest } from "./latest";
 import type { D1Database, D1PreparedStatement, Env } from "./types";
 
 interface SqliteDatabase {
@@ -14,6 +16,52 @@ interface SqliteDatabase {
 const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as {
   DatabaseSync: new (path: string) => SqliteDatabase;
 };
+
+test("latest intent bounds raw queries and every keyword before whitespace normalization", () => {
+  for (const gap of [" ", "\u3000", "\t", "\n", "\u00a0"]) {
+    const atLimit = `最新${gap.repeat(58)}`;
+    const overLimit = `${atLimit}${gap}`;
+    assert.equal(isLatestRequest(atLimit, undefined), true, "60 code units are allowed");
+    assert.equal(isLatestRequest(overLimit, ["latest"]), false, "an explicit long query must not fall back to keywords");
+    assert.equal(isLatestRequest(undefined, [overLimit, "Akyo"]), false);
+    assert.equal(isLatestRequest(undefined, ["最新", `${gap.repeat(57)}Akyo`]), false,
+      "the catalog noun keyword must obey the same raw limit");
+  }
+  assert.equal(isLatestRequest(undefined, ["latest", "Akyo"]), true);
+  assert.equal(isLatestRequest(" \t\n", ["latest"]), true, "blank queries still allow keyword-only requests");
+});
+
+test("latest intent normalizes bounded whitespace without dropping qualifications or negations", () => {
+  for (const query of [
+    "最新の\t\tAkyo\u3000を\n教えてください？",
+    "What  is\tthe\u3000latest  Akyo?",
+    "최근\u3000추가된\tAkyo\n알려  주세요",
+  ]) assert.equal(isLatestRequest(query, undefined), true, query);
+  for (const query of ["最新の  青いAkyo", "最新  ではないAkyo", "latest  blue Akyo", "최신  파란 아쿄"]) {
+    assert.equal(isLatestRequest(query, ["latest"]), false, query);
+  }
+});
+
+test("adversarial latest phrases finish without unbounded regex backtracking", () => {
+  // A child process timeout can stop a synchronous regex; node:test's timeout cannot.
+  const require = createRequire(import.meta.url);
+  const result = spawnSync(process.execPath, ["--require", require.resolve("tsx/cjs"), "-e", `
+    const assert = require("node:assert/strict");
+    const { isLatestRequest } = require(${JSON.stringify(require.resolve("./latest.ts"))});
+    for (const prefix of ["最新", "최신", "latest"]) {
+      for (const gap of [" ", "\\u3000", "\\t\\n"]) {
+        for (const count of [800, 1600, 100000]) {
+          const query = prefix + gap.repeat(count) + "x";
+          assert.equal(isLatestRequest(query, ["latest"]), false);
+          assert.equal(isLatestRequest(undefined, [query, "Akyo"]), false);
+          assert.equal(isLatestRequest(undefined, ["latest", query]), false);
+        }
+      }
+    }
+  `], { timeout: 5000, encoding: "utf8" });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
+});
 
 function fixture() {
   const db = new DatabaseSync(":memory:");
@@ -30,6 +78,7 @@ function fixture() {
   for (const row of data) db.prepare("INSERT INTO akyos VALUES (?, ?, '', '', '', '', ?, 'ja', ?)")
     .run(row.id, `Item${row.id}Akyo`, row.id === "0002" ? "https://vrchat.com/home/world/wrld-example" : "", row.urlUpdatedAt);
   let aiCalls = 0;
+  const aiInputs: (string | string[])[] = [];
   let vectorCalls = 0;
   const database: D1Database = {
     prepare(sql) {
@@ -44,10 +93,10 @@ function fixture() {
     batch: <T>(statements: D1PreparedStatement[]) => Promise.all(statements.map(s => s.all<T>())),
   };
   const env: Env = { DB: database,
-    AI: { async run() { aiCalls++; return { data: [[1, 2]] }; } },
+    AI: { async run(_model, input) { aiCalls++; aiInputs.push(input.text); return { data: [[1, 2]] }; } },
     VECTORIZE: { async query() { vectorCalls++; return { matches: [] }; }, async upsert() {} },
   };
-  return { db, env, data, counts: () => ({ aiCalls, vectorCalls }) };
+  return { db, env, data, aiInputs, counts: () => ({ aiCalls, vectorCalls }) };
 }
 
 async function search(env: Env, body: object) {
@@ -56,6 +105,7 @@ async function search(env: Env, body: object) {
   }), env);
   assert.equal(response.status, 200);
   return response.json() as Promise<{ searchMode: string; count: number;
+    query?: string;
     results: { id: string; entryType: string; language: string; urlUpdatedAt?: string }[] }>;
 }
 
@@ -75,6 +125,19 @@ test("latest requests follow the same timestamp/internal-ID order as the catalog
       assert.equal(result.results[0].language, "ja", "JA fallback is not relabelled as a translation");
     }
     assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+  } finally { h.db.close(); }
+});
+
+test("the latest guard leaves long queries intact for ordinary search", async () => {
+  const h = fixture();
+  try {
+    const query = `最新${" ".repeat(800)}blue`;
+    const result = await search(h.env, { query });
+    assert.notEqual(result.searchMode, "latest");
+    assert.equal(result.query, query);
+    assert.deepEqual(h.aiInputs, [query], "ordinary semantic search receives the full query");
+    const keywordsOnly = await search(h.env, { keywords: ["latest", `${" ".repeat(57)}Akyo`] });
+    assert.notEqual(keywordsOnly.searchMode, "latest");
   } finally { h.db.close(); }
 });
 

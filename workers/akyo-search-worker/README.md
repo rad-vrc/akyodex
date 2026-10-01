@@ -179,6 +179,14 @@ serve stale vectors during a later partial sync.
   precedence over generated keywords. Qualified/negated requests are not rewritten
   into a global latest query (for example, `最新の青いAkyo` is not supported as a
   chronological filter yet).
+- Latest-intent matching only accepts raw phrases of at most 60 UTF-16 code
+  units, before trimming or normalization. The same bound applies to every
+  keyword, including a catalog noun such as `Akyo`. Bounded whitespace runs are
+  collapsed before matching to prevent regex backtracking on crafted input.
+  Longer queries still use ordinary search unchanged; they are not truncated or
+  rejected, and an explicit nonblank query never falls back to latest keywords.
+  Wording recognition remains deliberately narrow; verify actual Dify requests
+  after deployment before expanding supported phrases.
 - Latest results use the website's shared comparator: valid `urlUpdatedAt` first,
   descending by time, then descending numeric internal ID. This includes URL
   replacements and first BOOTH publication, not only newly registered records.

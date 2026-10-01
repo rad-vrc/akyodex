@@ -5,8 +5,13 @@ import type { AkyoRecord, Env, Language, SearchResult } from "./types";
 
 export class LatestCatalogNotReadyError extends Error {}
 
+const MAX_LATEST_PHRASE_LENGTH = 60;
+
 function isLatestPhrase(value: string): boolean {
-  const text = value.trim().replace(/[?？!！。.]+$/gu, "").trim();
+  // Bound raw input before normalization and prevent adjacent optional groups
+  // from redistributing arbitrarily long whitespace runs during backtracking.
+  if (value.length > MAX_LATEST_PHRASE_LENGTH) return false;
+  const text = value.replace(/\s+/gu, " ").trim().replace(/[?？!！。.]+$/gu, "").trim();
   // Only unqualified catalog requests: do not turn "latest blue Akyo" or a
   // named item's latest news into a different, global-catalog question.
   return /^(?:最新|一番新しい|いちばん新しい|最近(?:追加|登録)された|最近の)(?:の)?\s*(?:akyo|アキョ|あきょ)?\s*(?:は|を)?\s*(?:何|どれ)?\s*(?:ですか|教えて(?:ください)?|知りたい(?:です)?)?$/iu.test(text)
@@ -17,9 +22,9 @@ function isLatestPhrase(value: string): boolean {
 export function isLatestRequest(query: unknown, keywords: unknown): boolean {
   if (typeof query === "string" && query.trim()) return isLatestPhrase(query);
   if (!Array.isArray(keywords) || !keywords.length) return false;
-  return keywords.some(k => typeof k === "string" && isLatestPhrase(k))
-    && keywords.every(k => typeof k === "string"
-      && (isLatestPhrase(k) || /^(?:akyo|アキョ|あきょ|아쿄)$/iu.test(k.trim())));
+  if (!keywords.every((k): k is string => typeof k === "string" && k.length <= MAX_LATEST_PHRASE_LENGTH)) return false;
+  return keywords.some(isLatestPhrase)
+    && keywords.every(k => isLatestPhrase(k) || /^(?:akyo|アキョ|あきょ|아쿄)$/iu.test(k.trim()));
 }
 
 export async function searchLatest(language: Language, topK: unknown, env: Env): Promise<SearchResult[]> {
