@@ -64,6 +64,10 @@ export async function processAkyoBatchUpdate(
     const snapshot = await loadSnapshot();
     const { head, header, dataRecords } = snapshot;
     const currentData = parseCsvToAkyoData(stringify([header, ...dataRecords]));
+    const unregisteredOriginalCategories = new Set(findUnregisteredCategories(
+      snapshot,
+      drafts.map(({ original }) => ensureCategoryAncestors(original.category)),
+    ));
     // Compare the edited fields, not the whole record, let alone the catalog: unrelated
     // registrations and changes to other fields of the same row (an author label cleanup
     // merged as a data PR) proceed and are kept. Category membership changes are merged
@@ -75,7 +79,9 @@ export async function processAkyoBatchUpdate(
       if (!current) {
         return jsonError(`#${original.id} は削除されています。#${original.id} の保留を取り消してから、もう一度反映してください。保留内容は維持されています。`, 409);
       }
-      const { merged, conflicts } = mergeAkyoEditFields(original, changes, getAkyoEditFields(current));
+      const { merged, conflicts } = mergeAkyoEditFields(
+        original, changes, getAkyoEditFields(current), unregisteredOriginalCategories,
+      );
       const retry = `#${original.id} の保留を取り消し、最新データを取り込んでから編集し直してください。保留内容は維持されています。`;
       if (conflicts.length > 0) {
         const labels = conflicts.map((key) =>

@@ -8,11 +8,12 @@ const fields = getAkyoEditFields({
   attribute: '', notes: '', creator: '', avatarUrl: '',
 });
 
-function merge(base: string, mine: string, theirs: string) {
+function merge(base: string, mine: string, theirs: string, unregistered = new Set<string>()) {
   return mergeAkyoEditFields(
     { ...fields, category: base },
     { ...fields, category: mine },
     { ...fields, category: theirs },
+    unregistered,
   );
 }
 
@@ -42,6 +43,25 @@ test('overlapping additions and removals are idempotent', () => {
   const result = merge('A,B,C', 'A,D/Child', 'A,D/Child,E');
   assert.deepEqual(result.conflicts, []);
   assert.equal(result.merged.category, 'A,D,D/Child,E');
+});
+
+test('removing a retired name conflicts with a possible remote replacement', () => {
+  const result = merge('A/Old,B', 'A,B', 'A/New,B', new Set(['A/Old']));
+  assert.deepEqual(result.conflicts, ['category']);
+  assert.equal(result.merged.category, 'A/New,B', 'a conflict does not partially apply the category edit');
+});
+
+test('retired names do not prevent identical results or unrelated additions from merging', () => {
+  for (const [base, mine, theirs, expected] of [
+    ['A,B', 'B,C', 'B,C', 'B,C'],
+    ['A,B', 'B,C', 'B', 'B,C'],
+    ['A,B', 'A,B,C', 'B,D', 'B,D,C'],
+    ['A,B', 'B,A', 'B,D', 'B,D'],
+  ]) {
+    const result = merge(base, mine, theirs, new Set(['A']));
+    assert.deepEqual(result.conflicts, [], `${base} -> ${mine} / ${theirs}`);
+    assert.equal(result.merged.category, expected);
+  }
 });
 
 test('removing a parent conflicts with the other editor adding a descendant in either direction', () => {

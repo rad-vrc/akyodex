@@ -400,3 +400,69 @@ test('編集保留中に再取得しても、独立したカテゴリ改名と�
     await h.cleanup();
   }
 });
+
+test('外す保留中のカテゴリが改名されたら全件を止め、再取得後も保留を取り消せる', { timeout: 10_000 }, async () => {
+  const header = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comment', 'Author', 'SourceURL', 'EntryType', 'DisplaySerial'];
+  const records = ['0001', '0002'].map((id) => createAkyoRecord({
+    id, nickname: `Test ${id}`, avatarName: 'Test', author: 'tester', comment: '',
+    entryType: 'avatar', displaySerial: id,
+    sourceUrl: 'https://vrchat.com/home/avatar/avtr_12345678-1234-1234-1234-123456789abc',
+    category: '装備,装備/メガネ,行事',
+  }, header));
+  const currentRows = () => parseCsvToAkyoData(stringify([header, ...records]));
+  const commits: Parameters<AkyoBatchDependencies['commit']>[0][] = [];
+  const h = await setup({
+    initial: currentRows(),
+    batchDependencies: {
+      loadSnapshot: async () => ({
+        head: 'renamed-head', header, dataRecords: records, registeredCategories: new Set(['装備', '装備/メガネ・サングラス', '行事']),
+      }),
+      commit: async (args) => {
+        commits.push(args);
+        return { commit: { html_url: 'https://github.com/example/repo/commit/test' } };
+      },
+    },
+  });
+  try {
+    h.setCategories([
+      { path: '装備', en: 'Equipment', ko: '장비', count: 2 },
+      { path: '装備/メガネ', en: 'Equipment/Glasses', ko: '장비/안경', count: 2 },
+      { path: '行事', en: 'Events', ko: '행사', count: 2 },
+    ]);
+    await h.click(h.buttons('カテゴリ')[0]);
+    await h.click(h.listRowButton('装備/メガネ', '選択'));
+    await h.click(h.buttons('外す')[0]);
+    for (const id of ['0001', '0002']) await h.click(h.cardToggle(id).toggle);
+    assert.match(h.win.document.body.textContent!, /保留 2件/);
+    assert.equal(h.batches.length, 0);
+
+    for (const row of records) row[header.indexOf('Category')] = '装備,装備/メガネ・サングラス,行事';
+    const latest = structuredClone(records);
+    await h.click(h.buttons('カテゴリの変更を反映する')[0]);
+    assert.equal(h.batches.length, 1);
+    assert.equal(h.batches[0].length, 2);
+    assert.ok(h.batches[0].every(({ changes }) => changes.category === '装備,行事'));
+    assert.equal(commits.length, 0, 'ambiguous removals must not be reported as successfully saved');
+    assert.match(h.win.document.body.textContent!, /#0001 のカテゴリは、別の更新でも変更されています/);
+    assert.match(h.win.document.body.textContent!, /保留 2件/);
+
+    h.setCategories([
+      { path: '装備', en: 'Equipment', ko: '장비', count: 2 },
+      { path: '装備/メガネ・サングラス', en: 'Equipment/Eyewear', ko: '장비/안경류', count: 2 },
+      { path: '行事', en: 'Events', ko: '행사', count: 2 },
+    ]);
+    h.setRefreshRows(currentRows());
+    await h.click(h.buttons('編集・削除')[0]);
+    await h.click(h.refreshButton());
+    await h.click(h.buttons('カテゴリ')[0]);
+    assert.match(h.win.document.body.textContent!, /保留 2件/);
+    await h.click(h.buttons('カテゴリの変更を反映する')[0]);
+    assert.deepEqual(h.batches[1], h.batches[0], 'refresh must not silently discard or rebase the removals');
+    assert.equal(commits.length, 0);
+    for (const id of ['0001', '0002']) await h.click(h.cardToggle(id).toggle);
+    assert.match(h.win.document.body.textContent!, /保留 0件/);
+    assert.deepEqual(records, latest, 'cancelling the drafts does not change the latest data');
+  } finally {
+    await h.cleanup();
+  }
+});
