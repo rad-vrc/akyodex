@@ -92,3 +92,13 @@ test('one request deadline also covers a body that never finishes', async () => 
     assert.equal(calls, 4);
   } finally { clearInterval(keepAlive); }
 });
+
+test('API errors never include upstream bodies or request credentials', async () => {
+  await assert.rejects(client(async () => Response.json({ success: false,
+    errors: [{ code: 10000, message: 'PRIVATE_BODY_CANARY' }], result: { description: 'CATALOG_TEXT_CANARY' },
+  }, { status: 403 })).getVectors(['0001']), error => {
+    assert.match(error.message, /HTTP 403; codes 10000/);
+    assert.doesNotMatch(error.message, /PRIVATE_BODY_CANARY|CATALOG_TEXT_CANARY|fake-token/);
+    return true;
+  });
+});

@@ -11,6 +11,10 @@ on:
         description: 'Apply changes (false performs a read-only inventory/diff)'
         type: boolean
         default: false
+      allow_large_deletion:
+        description: 'Approve >20 or >5% deletions after reviewing a dry run (manual apply only)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -52,11 +56,15 @@ jobs:
           # Manual dry runs work before enabling; manual writes also check this.
           AI_CATALOG_SYNC_ENABLED: ${{ vars.AI_CATALOG_SYNC_ENABLED }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AI_CATALOG_SYNC_API_TOKEN: ${{ secrets.AI_CATALOG_SYNC_API_TOKEN }}
           APPLY: ${{ github.event_name == 'workflow_run' || inputs.apply }}
+          ALLOW_LARGE_DELETION: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_large_deletion }}
         run: |
+          args=(--dry-run)
           if [ "$APPLY" = "true" ]; then
-            npm run sync:ai-catalog -- --apply
-          else
-            npm run sync:ai-catalog -- --dry-run
+            args=(--apply)
+            if [ "$ALLOW_LARGE_DELETION" = "true" ]; then
+              args+=(--allow-large-deletion)
+            fi
           fi
+          npm run sync:ai-catalog -- "${args[@]}"

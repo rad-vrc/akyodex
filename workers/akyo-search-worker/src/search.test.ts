@@ -235,11 +235,13 @@ test("normalizes topK to the supported 1-8 range", () => {
   assert.equal(normalizeTopK("not-a-number"), 5);
 });
 
-test("semantic search never resurrects deleted rows or stale category metadata during sync", async () => {
+test("semantic search keeps live candidates during sync and returns current D1 fields, never deleted rows", async () => {
   const matches = vectorMatches(3);
   const database = new FakeDatabase();
   database.semanticRows = [
-    row({ ...matches[1].metadata, category: 'Culture' }),
+    row({ ...matches[1].metadata, nickname: 'Current name', name: 'Current avatar',
+      category: 'Culture', description: 'Current description', author: 'Current author',
+      url: 'https://vrchat.com/home/world/wrld-current' }),
     row({ ...matches[2].metadata }),
   ];
   const response = await worker.fetch(new Request('https://worker.example/search', {
@@ -248,8 +250,26 @@ test("semantic search never resurrects deleted rows or stale category metadata d
   }), fakeEnv({ database, vectorize: new FakeVectorize(matches) }));
   const result = await response.json() as { results: SearchResult[] };
   assert.equal(response.status, 200);
-  assert.deepEqual(result.results.map(row => row.id), ['0003']);
-  assert.equal(result.results[0].nickname, matches[2].metadata?.nickname);
+  assert.deepEqual(result.results.map(row => row.id), ['0002', '0003']);
+  for (const field of ['nickname', 'name', 'category', 'description', 'author', 'url', 'language'] as const) {
+    assert.equal(result.results[0][field], database.semanticRows[0][field]);
+  }
+  assert.equal(result.results[0].entryType, 'world');
+  assert.equal(result.results[1].nickname, matches[2].metadata?.nickname);
+});
+
+test("semantic results use D1 language and fields even when legacy vector metadata is missing", async () => {
+  const database = new FakeDatabase();
+  database.semanticRows = [row({ id: '0001', category: 'Current category' }), row({ id: '0002', language: 'en' })];
+  const matches: VectorizeMatch[] = [
+    { id: '0001', score: 0.9 },
+    { id: '0002', score: 0.9, metadata: { id: '0002', language: 'ja' } },
+    { id: '0003', score: 0.9, metadata: { id: '0003', nickname: 'Deleted Akyo' } },
+  ];
+  const results = await searchWithD1AndVectorize(['colorful'], 'ja', 5,
+    fakeEnv({ database, vectorize: new FakeVectorize(matches) }));
+  assert.deepEqual(results.map(result => result.id), ['0001']);
+  assert.equal(results[0].category, 'Current category');
 });
 
 test("escapes SQL LIKE wildcards in user input", () => {

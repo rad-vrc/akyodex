@@ -8,6 +8,8 @@ const { createCloudflareClient } = require('./ai-catalog-cloudflare');
 
 const COLUMNS = ['id', 'nickname', 'name', 'category', 'description', 'author', 'url', 'language'];
 const MAX_RECORDS = 10_000;
+const MAX_AUTO_DELETIONS = 20;
+const MAX_AUTO_DELETION_PERCENT = 5;
 
 function chunks(values, size) {
   return Array.from({ length: Math.ceil(values.length / size) }, (_, i) => values.slice(i * size, (i + 1) * size));
@@ -73,13 +75,19 @@ async function reconcileCatalog(input, api, options = {}) {
     vectors.get(record.id)?.metadata?.entryType !== record.entryType);
   const removedRows = rows.filter(row => !desired.has(row.id)).map(row => row.id);
   const removedVectors = vectorIds.filter(id => !desired.has(id));
+  const requiresLargeDeletionApproval = [[removedRows.length, rows.length], [removedVectors.length, vectorIds.length]]
+    .some(([count, total]) => count > MAX_AUTO_DELETIONS || count * 100 > total * MAX_AUTO_DELETION_PERCENT);
   const summary = { total: records.length, rowsUpdated: changedRows.length, vectorsUpdated: changedVectors.length,
-    rowsDeleted: removedRows.length, vectorsDeleted: removedVectors.length };
+    rowsDeleted: removedRows.length, vectorsDeleted: removedVectors.length, requiresLargeDeletionApproval };
   options.log?.(JSON.stringify(summary));
   if (options.dryRun) return summary;
+  if (requiresLargeDeletionApproval && options.allowLargeDeletion !== true) {
+    throw new Error(`Large deletion blocked before any write (D1 ${removedRows.length}/${rows.length}; ` +
+      `Vectorize ${removedVectors.length}/${vectorIds.length}). Review a dry run and explicitly approve a manual apply.`);
+  }
 
-  // D1 serves exact/name/category queries immediately. Semantic results are checked
-  // against D1 in the Worker, so old vectors cannot resurrect removed/renamed data.
+  // D1 serves current fields for all search results. Semantic ranking can use an
+  // older embedding until Vectorize catches up, without returning its stale text.
   for (const batch of chunks(changedRows, 10)) {
     await api.query(`INSERT OR REPLACE INTO akyos (${COLUMNS.join(', ')}) VALUES ${batch.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}`,
       batch.flatMap(record => COLUMNS.map(key => record[key])));
@@ -116,28 +124,40 @@ async function reconcileCatalog(input, api, options = {}) {
   throw new Error('Vectorize verification timed out; rerun to reconcile both stores');
 }
 
-async function main(args = process.argv.slice(2)) {
-  if (args.some(arg => !['--dry-run', '--apply'].includes(arg)) || args.length !== 1) {
-    throw new Error('Use --dry-run or --apply; writes are never the default');
+function parseRunOptions(args, env = process.env) {
+  if (args.some(arg => !['--dry-run', '--apply', '--allow-large-deletion'].includes(arg)) ||
+    new Set(args).size !== args.length || args.filter(arg => ['--dry-run', '--apply'].includes(arg)).length !== 1) {
+    throw new Error('Use --dry-run or --apply, optionally --allow-large-deletion for a manual apply; writes are never the default');
   }
-  const apply = args[0] === '--apply';
-  if (apply && (process.env.GITHUB_ACTIONS !== 'true' || process.env.GITHUB_REF !== 'refs/heads/main' ||
-    process.env.AI_CATALOG_SYNC_ENABLED !== 'true')) {
+  const apply = args.includes('--apply');
+  const allowLargeDeletion = args.includes('--allow-large-deletion');
+  if (allowLargeDeletion && (!apply || env.GITHUB_EVENT_NAME !== 'workflow_dispatch')) {
+    throw new Error('Large-deletion approval is only accepted with a manual workflow_dispatch --apply');
+  }
+  if (apply && (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REF !== 'refs/heads/main' ||
+    env.AI_CATALOG_SYNC_ENABLED !== 'true')) {
     throw new Error('Apply requires the enabled, serialized main-branch Sync AI Catalog workflow');
   }
+  return { dryRun: !apply, allowLargeDeletion };
+}
+
+async function main(args = process.argv.slice(2)) {
+  const options = parseRunOptions(args);
   const root = resolve(__dirname, '..');
   const config = JSON.parse(readFileSync(resolve(root, 'workers/akyo-search-worker/wrangler.jsonc'), 'utf8'));
   const records = buildPayload(JSON.parse(readFileSync(resolve(root, 'data/akyo-data-ja.json'), 'utf8')));
   const revision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   const api = createCloudflareClient({ accountId: process.env.CLOUDFLARE_ACCOUNT_ID,
-    token: process.env.CLOUDFLARE_API_TOKEN, databaseId: config.d1_databases.find(b => b.binding === 'DB').database_id,
+    token: process.env.AI_CATALOG_SYNC_API_TOKEN, databaseId: config.d1_databases.find(b => b.binding === 'DB').database_id,
     indexName: config.vectorize.find(b => b.binding === 'VECTORIZE').index_name });
-  const summary = await reconcileCatalog(records, api, { dryRun: !apply, log: console.log });
-  console.log(JSON.stringify({ revision, dryRun: !apply, ...summary }));
+  const summary = await reconcileCatalog(records, api, { ...options, log: console.log });
+  console.log(JSON.stringify({ revision, ...options, ...summary }));
   if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## AI catalog sync\n\nSource: \`${revision}\` (JA)\n\n\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\`\n`);
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## AI catalog sync\n\nSource: \`${revision}\` (JA)\n\n` +
+      `Mode: ${options.dryRun ? 'dry-run' : 'apply'}; large-deletion override: ${options.allowLargeDeletion}\n\n` +
+      `\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\`\n`);
   }
 }
 
 if (require.main === module) main().catch(error => { console.error(error.message); process.exitCode = 1; });
-module.exports = { reconcileCatalog, validateCatalog };
+module.exports = { reconcileCatalog, validateCatalog, parseRunOptions };

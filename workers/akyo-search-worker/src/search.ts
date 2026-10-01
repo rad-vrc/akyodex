@@ -463,8 +463,8 @@ async function findVectorMatches(
     returnMetadata: true,
   });
 
-  // Vectorize mutations become visible asynchronously. D1 is authoritative;
-  // deleted rows and candidates embedded from an older record must not leak out.
+  // Vectorize mutations become visible asynchronously. Keep live candidates
+  // while re-embedding, but always return current D1 fields, never deleted rows.
   const ids = [...new Set(vectorResults.matches.map(match => match.metadata?.id || match.id))];
   if (!ids.length) return [];
   const current = await env.DB.prepare(`
@@ -472,19 +472,14 @@ async function findVectorMatches(
     FROM akyos WHERE id IN (${ids.map(() => '?').join(', ')})
   `).bind(...ids).all<AkyoRecord>();
   const rowsById = new Map((current.results ?? []).map(row => [row.id, row]));
-  const fields = ['nickname', 'name', 'category', 'description', 'author', 'url', 'language'] as const;
 
   const results: SearchResult[] = [];
   for (const match of vectorResults.matches) {
-    if (match.score < MIN_SEMANTIC_SCORE || !match.metadata) {
+    if (match.score < MIN_SEMANTIC_SCORE) {
       continue;
     }
-    const dataLanguage = match.metadata.language ?? language;
-    if (dataLanguage !== language) {
-      continue;
-    }
-    const row = rowsById.get(match.metadata.id || match.id);
-    if (!row || fields.some(field => (row[field] ?? '') !== (match.metadata?.[field] ?? ''))) {
+    const row = rowsById.get(match.metadata?.id || match.id);
+    if (!row || row.language !== language) {
       continue;
     }
     const result = metadataToResult(

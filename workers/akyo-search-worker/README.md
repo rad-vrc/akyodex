@@ -65,11 +65,13 @@ block publication of the catalog, fonts, or images.
 Automatic writes are **disabled by default**. The repository variable
 `AI_CATALOG_SYNC_ENABLED` must equal `true`. Manual dispatch defaults to
 `apply=false` (read-only); `apply=true` also requires that variable and `main`.
-The workflow uses the existing `CLOUDFLARE_ACCOUNT_ID` and
-`CLOUDFLARE_API_TOKEN` secrets. The token needs D1 read/write, Vectorize
-read/write, and Workers AI inference access for this account. Secret presence
-does not prove those permissions; verify them during rollout. There is no new
-public write endpoint or ingest secret.
+The workflow uses the existing `CLOUDFLARE_ACCOUNT_ID` and a dedicated
+`AI_CATALOG_SYNC_API_TOKEN` secret. Grant only D1 read/write, Vectorize read/write,
+and Workers AI inference access, scoped to the target account/resources wherever
+supported. Do not expand or fall back to the deployment token
+(`CLOUDFLARE_API_TOKEN`). The dedicated secret must be created and registered
+before rollout; never paste its value in PRs or chat. Secret presence does not
+prove its permissions. There is no new public write endpoint or ingest secret.
 
 Every run is serialized in `ai-catalog-production` (`queue: max`, no cancellation
 of a running writer), checks out **current main**, and regenerates JSON locally
@@ -81,6 +83,13 @@ lag behind a new CSV commit; this is not an atomic cross-service transaction.
 - Validate the complete nonempty JA payload and inventory both D1 and Vectorize
   before writing. Unexpected IDs or non-JA records stop the run rather than
   guessing how to migrate them. Existing IDs remain stable.
+- If either store would lose more than **20 entries OR 5% of its current entries**,
+  stop before any D1 write, inference, or vector mutation. D1 rows and orphan
+  vectors have independent denominators. Exactly 20 and exactly 5% are allowed.
+  Dry runs still report the plan and `requiresLargeDeletionApproval`, without
+  writes. Only an enabled manual `apply=true` with `allow_large_deletion=true`
+  can override this guard. Automatic runs cannot approve it; the CLI also checks
+  `workflow_dispatch` for `--allow-large-deletion`.
 - Upsert changed D1 rows; embed and upsert only missing/changed vectors. Compare
   each store separately so a previous D1 success / Vectorize failure can heal
   on retry. Metadata-only changes also regenerate the affected embedding.
@@ -90,9 +99,13 @@ lag behind a new CSV commit; this is not an atomic cross-service transaction.
 - Verify all D1 rows and poll Vectorize metadata/deletions. An accepted mutation
   alone is not success. The timeout reports failure and the next run rechecks
   both stores. Query-index visibility may still lag metadata visibility briefly.
-- The search Worker checks semantic candidates against D1, excluding deleted
-  records and vectors whose metadata no longer matches. While embeddings catch
-  up, exact/name/category lookups use D1 and semantic results can be fewer.
+- The search Worker checks that semantic candidates still exist in D1 and match
+  the requested language, then builds results exclusively from D1. Deletions
+  cannot reappear via stale vectors, and names/categories/URLs are current as of
+  D1. Live candidates stay available while re-embedding. Ranking can temporarily
+  reflect older content (including an old category); if sync fails, this lasts
+  until a successful retry. This is availability with current result fields,
+  not a guarantee that the semantic ranking is already current.
 
 This deliberately preserves the current **JA-only** database/index. D1's primary
 key is `id`, not `(language, id)`; uploading EN/KO under those IDs would replace
@@ -104,18 +117,24 @@ not make a semantic search a chronological search.
 
 After review and explicit production approval:
 
-1. Merge, then deploy this **search Worker** with its existing configuration and
+1. Merge and register the dedicated sync secret. Dispatch `sync-ai-catalog.yml`
+   on `main` with `apply=false` **before deploying the Worker**. Inspect the source
+   SHA, update/deletion counts and deletion guard. This uses read APIs but no
+   embedding inference or data mutations, and confirms only read permissions;
+   it cannot prove write/inference permissions. Fix unexpected plans first.
+2. Deploy this **search Worker** with its existing configuration and
    secret. This is separate from the website's production activate workflow.
    Deploy the D1 guard before enabling data writes. Record the prior Worker
    version for rollback; do not rotate the ingest secret as part of this change.
-2. Dispatch `sync-ai-catalog.yml` on `main` with `apply=false`. Inspect the source
-   SHA and addition/update/deletion counts. This uses read APIs but no embedding
-   inference or data mutations.
 3. Set `AI_CATALOG_SYNC_ENABLED=true` and dispatch with `apply=true` for the first
    reconciliation. Enabling the variable also permits future successful CSV
    syncs to launch a queued AI sync. Workers AI inference and D1/Vectorize
    operations can incur usage/cost, especially the first reconciliation of old
    metadata. No free-tier assumption is made.
+   If large deletions are intentional, review a fresh dry run and manually set
+   `allow_large_deletion=true` as well. Every run uses current main, so repeat the
+   dry run if main changed since review; do not set the override just to clear a
+   failed run. Ordinary automatic updates keep the deletion guard enabled.
 4. Check the workflow's D1/Vectorize verification, then `/search` for `2030` and
    `MenmeAkyo`, an updated category, and a known unchanged entry. Check the Dify
    chat by name, not a `latest` question. Test a subsequent normal catalog change
