@@ -9,14 +9,17 @@ const { parseRunOptions } = require('./sync-ai-catalog');
 const root = resolve(__dirname, '..');
 const workflow = readFileSync(resolve(root, '.github/workflows/sync-ai-catalog.yml'), 'utf8');
 
-test('manual dispatch defaults to read-only without a large-deletion override', () => {
-  for (const input of ['apply', 'allow_large_deletion']) {
-    const block = workflow.match(new RegExp(`^      ${input}:\\s*\\n((?: {8}.*\\n)+)`, 'm'))?.[1];
-    assert.ok(block);
-    assert.match(block, /^        type: boolean\s*$/m);
-    assert.match(block, /^        default: false\s*$/m);
-  }
-});
+for (const [name, newline] of [['LF', '\n'], ['CRLF', '\r\n']]) {
+  test(`manual dispatch defaults to read-only without a large-deletion override (${name})`, () => {
+    const contents = workflow.replace(/\r?\n/g, newline);
+    for (const input of ['apply', 'allow_large_deletion']) {
+      const block = contents.match(new RegExp(`^      ${input}:\\s*\\r?\\n((?: {8}.*\\r?\\n)+)`, 'm'))?.[1];
+      assert.ok(block);
+      assert.match(block, /^        type: boolean\s*$/m);
+      assert.match(block, /^        default: false\s*$/m);
+    }
+  });
+}
 
 test('sync is serialized, uses current main, and runs only after successful trusted sync or a manual request', () => {
   assert.match(workflow, /workflows: \['Sync JSON Data from CSV'\]/);
