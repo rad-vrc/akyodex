@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-01T04:42:48.293Z",
-  "count": 1009,
+  "updatedAt": "2026-10-01T04:43:44.152Z",
+  "count": 1010,
   "data": [
     {
       "id": "0001",
@@ -12385,6 +12385,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c174e69a-d209-4f37-a363-8bccde0861bc",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_c174e69a-d209-4f37-a363-8bccde0861bc",
       "urlUpdatedAt": "2026-09-30T20:29:11.268Z"
+    },
+    {
+      "id": "2026",
+      "entryType": "avatar",
+      "displaySerial": "0892",
+      "nickname": "ヒーローAkyo",
+      "avatarName": "Akyo Hero",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),신분・역할,신분・역할/히어로,최강 전사,패션・장비,패션・장비/망토",
+      "comment": "Akyoが来た！",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4cc080ab-d25f-4a03-a39c-489117af1eb0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4cc080ab-d25f-4a03-a39c-489117af1eb0",
+      "urlUpdatedAt": "2026-10-01T04:43:44.022Z"
     }
   ]
 }

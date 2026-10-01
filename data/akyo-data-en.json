@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-01T04:42:48.249Z",
-  "count": 1009,
+  "updatedAt": "2026-10-01T04:43:44.108Z",
+  "count": 1010,
   "data": [
     {
       "id": "0001",
@@ -11683,6 +11683,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c174e69a-d209-4f37-a363-8bccde0861bc",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_c174e69a-d209-4f37-a363-8bccde0861bc",
       "urlUpdatedAt": "2026-09-30T20:29:11.268Z"
+    },
+    {
+      "id": "2026",
+      "entryType": "avatar",
+      "displaySerial": "0892",
+      "nickname": "ヒーローAkyo",
+      "avatarName": "Akyo Hero",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Role・Status,Role・Status/Hero,Strongest Warrior,Fashion・Equipment,Fashion・Equipment/Cloak",
+      "comment": "Akyoが来た！",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_4cc080ab-d25f-4a03-a39c-489117af1eb0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_4cc080ab-d25f-4a03-a39c-489117af1eb0",
+      "urlUpdatedAt": "2026-10-01T04:43:44.022Z"
     }
   ]
 }
