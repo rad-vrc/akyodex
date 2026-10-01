@@ -63,6 +63,9 @@ jobs:
       - name: Run reference image generator tests
         run: npm run test:reference-images
 
+      - name: Test and typecheck the AI search Worker
+        run: npm run test:worker && npm run typecheck:worker
+
       - name: Run reference image generator type check
         run: npm run typecheck:reference-images
         

@@ -22,6 +22,7 @@ import type {
   D1Result,
   EntryType,
   Env,
+  SearchResult,
   VectorizeIndex,
   VectorizeMatch,
   VectorizeVector,
@@ -64,6 +65,7 @@ class FakeStatement implements D1PreparedStatement {
 }
 
 class FakeDatabase implements D1Database {
+  semanticRows?: FakeSearchRow[];
   exactRows: FakeSearchRow[] = [];
   partialRows: FakeSearchRow[] = [];
   exactCandidates: string[] = [];
@@ -85,6 +87,9 @@ class FakeDatabase implements D1Database {
   }
 
   rowsFor(query: string, values: unknown[]): FakeSearchRow[] {
+    if (query.includes('WHERE id IN (')) {
+      return (this.semanticRows ?? []).filter(row => values.includes(row.id));
+    }
     if (query.includes("1.0 AS match_score") && query.includes("WHERE id = ?")) {
       this.exactCandidates.push(String(values[0] ?? ""));
       const candidate = String(values[0] ?? "");
@@ -205,10 +210,15 @@ function fakeEnv(options?: {
   vectorizeJa?: FakeVectorize;
   ingestToken?: string;
 }): Env {
+  const database = options?.database ?? new FakeDatabase();
+  const vectorize = options?.vectorize ?? new FakeVectorize();
+  database.semanticRows ??= vectorize.matches.flatMap(match => match.metadata
+    ? [row({ ...match.metadata, id: match.metadata.id || match.id })]
+    : []);
   return {
-    DB: options?.database ?? new FakeDatabase(),
+    DB: database,
     AI: options?.ai ?? new FakeAi(),
-    VECTORIZE: options?.vectorize ?? new FakeVectorize(),
+    VECTORIZE: vectorize,
     VECTORIZE_JA: options?.vectorizeJa,
     INGEST_TOKEN: options?.ingestToken,
   };
@@ -223,6 +233,43 @@ test("normalizes topK to the supported 1-8 range", () => {
   assert.equal(normalizeTopK(4.9), 4);
   assert.equal(normalizeTopK(16), 8);
   assert.equal(normalizeTopK("not-a-number"), 5);
+});
+
+test("semantic search keeps live candidates during sync and returns current D1 fields, never deleted rows", async () => {
+  const matches = vectorMatches(3);
+  const database = new FakeDatabase();
+  database.semanticRows = [
+    row({ ...matches[1].metadata, nickname: 'Current name', name: 'Current avatar',
+      category: 'Culture', description: 'Current description', author: 'Current author',
+      url: 'https://vrchat.com/home/world/wrld-current' }),
+    row({ ...matches[2].metadata }),
+  ];
+  const response = await worker.fetch(new Request('https://worker.example/search', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: 'colorful avatar', language: 'ja' }),
+  }), fakeEnv({ database, vectorize: new FakeVectorize(matches) }));
+  const result = await response.json() as { results: SearchResult[] };
+  assert.equal(response.status, 200);
+  assert.deepEqual(result.results.map(row => row.id), ['0002', '0003']);
+  for (const field of ['nickname', 'name', 'category', 'description', 'author', 'url', 'language'] as const) {
+    assert.equal(result.results[0][field], database.semanticRows[0][field]);
+  }
+  assert.equal(result.results[0].entryType, 'world');
+  assert.equal(result.results[1].nickname, matches[2].metadata?.nickname);
+});
+
+test("semantic results use D1 language and fields even when legacy vector metadata is missing", async () => {
+  const database = new FakeDatabase();
+  database.semanticRows = [row({ id: '0001', category: 'Current category' }), row({ id: '0002', language: 'en' })];
+  const matches: VectorizeMatch[] = [
+    { id: '0001', score: 0.9 },
+    { id: '0002', score: 0.9, metadata: { id: '0002', language: 'ja' } },
+    { id: '0003', score: 0.9, metadata: { id: '0003', nickname: 'Deleted Akyo' } },
+  ];
+  const results = await searchWithD1AndVectorize(['colorful'], 'ja', 5,
+    fakeEnv({ database, vectorize: new FakeVectorize(matches) }));
+  assert.deepEqual(results.map(result => result.id), ['0001']);
+  assert.equal(results[0].category, 'Current category');
 });
 
 test("escapes SQL LIKE wildcards in user input", () => {

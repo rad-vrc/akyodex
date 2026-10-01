@@ -33,6 +33,7 @@
     "test:headed": "playwright test --headed",
     "test:lighthouse:summary": "node scripts/lighthouse-summary.js",
     "test:worker": "tsx --test workers/akyo-search-worker/src/*.test.ts scripts/generate-vectorize-payload.test.js scripts/upload-vectorize-data.test.js",
+    "sync:ai-catalog": "node scripts/sync-ai-catalog.js",
     "typecheck:worker": "tsc -p workers/akyo-search-worker/tsconfig.json",
     "build:worker": "wrangler deploy --dry-run --config workers/akyo-search-worker/wrangler.jsonc",
     "test:reference-images": "tsx --test workers/reference-image-generator/src/*.test.ts",
