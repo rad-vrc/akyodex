@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-01T08:40:39.360Z",
-  "count": 1013,
+  "updatedAt": "2026-10-01T09:11:44.126Z",
+  "count": 1014,
   "data": [
     {
       "id": "0001",
@@ -11735,6 +11735,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
       "urlUpdatedAt": "2026-10-01T07:06:40.270Z"
+    },
+    {
+      "id": "2030",
+      "entryType": "avatar",
+      "displaySerial": "0896",
+      "nickname": "MenmeAkyo",
+      "avatarName": "AkyoMenme",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Parody,Parody/VRChat,Color,Color/White Tones,Body Part,Body Part/Tail,Body Part/Ear,Gimmick・Special,Gimmick・Special/Take Along",
+      "comment": "作者さんのお友達が頭に載せているオリジナルキャラクターがモチーフらしいよ！",
+      "author": "かーばんくる",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
+      "urlUpdatedAt": "2026-10-01T09:11:44.013Z"
     }
   ]
 }

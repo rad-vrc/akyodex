@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-01T08:40:39.305Z",
-  "count": 1013,
+  "updatedAt": "2026-10-01T09:11:44.068Z",
+  "count": 1014,
   "data": [
     {
       "id": "0001",
@@ -11735,6 +11735,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
       "urlUpdatedAt": "2026-10-01T07:06:40.270Z"
+    },
+    {
+      "id": "2030",
+      "entryType": "avatar",
+      "displaySerial": "0896",
+      "nickname": "MenmeAkyo",
+      "avatarName": "AkyoMenme",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),パロディ,パロディ/VRChat,色,色/白色系,器官,器官/しっぽ,器官/耳,ギミック・特殊,ギミック・特殊/連れ歩き",
+      "comment": "作者さんのお友達が頭に載せているオリジナルキャラクターがモチーフらしいよ！",
+      "author": "かーばんくる",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
+      "urlUpdatedAt": "2026-10-01T09:11:44.013Z"
     }
   ]
 }

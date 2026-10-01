@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-01T08:40:39.405Z",
-  "count": 1013,
+  "updatedAt": "2026-10-01T09:11:44.172Z",
+  "count": 1014,
   "data": [
     {
       "id": "0001",
@@ -12437,6 +12437,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d5bb33e1-03a1-4a80-8f44-f634a8503f52",
       "urlUpdatedAt": "2026-10-01T07:06:40.270Z"
+    },
+    {
+      "id": "2030",
+      "entryType": "avatar",
+      "displaySerial": "0896",
+      "nickname": "MenmeAkyo",
+      "avatarName": "AkyoMenme",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),패러디,패러디/VRChat,색상,색상/흰색 계열,기관,기관/꼬리,기관/귀,기믹・특수,기믹・특수/데리고 다니기",
+      "comment": "作者さんのお友達が頭に載せているオリジナルキャラクターがモチーフらしいよ！",
+      "author": "かーばんくる",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
+      "urlUpdatedAt": "2026-10-01T09:11:44.013Z"
     }
   ]
 }
