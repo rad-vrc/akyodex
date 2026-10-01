@@ -1,0 +1,62 @@
+name: Sync AI Catalog
+
+on:
+  workflow_run:
+    workflows: ['Sync JSON Data from CSV']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply changes (false performs a read-only inventory/diff)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Never cancel a writer half-way through. Every queued run checks out CURRENT
+# main, not the old event SHA; rerunning an old event cannot replay an old catalog.
+concurrency:
+  group: ai-catalog-production
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  sync:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (vars.AI_CATALOG_SYNC_ENABLED == 'true' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # A newer CSV commit can already be on main before its JSON sync finishes.
+      # Generate locally from that exact checkout; never push from this workflow.
+      - name: Prepare the current catalog
+        run: npm run data:convert
+      - name: Reconcile AI search data
+        env:
+          # Keep disabled until the matching search Worker guard is deployed.
+          # Manual dry runs work before enabling; manual writes also check this.
+          AI_CATALOG_SYNC_ENABLED: ${{ vars.AI_CATALOG_SYNC_ENABLED }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          APPLY: ${{ github.event_name == 'workflow_run' || inputs.apply }}
+        run: |
+          if [ "$APPLY" = "true" ]; then
+            npm run sync:ai-catalog -- --apply
+          else
+            npm run sync:ai-catalog -- --dry-run
+          fi
