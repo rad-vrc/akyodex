@@ -147,6 +147,100 @@ test('a category renamed elsewhere is kept for a held edit that did not touch ca
   assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], 'どうぶつ');
 });
 
+test('a held category addition merges with a rename and returns exactly the committed row', async () => {
+  const f = fixture(new Set(['行事・文化']));
+  const [, update] = f.updates;
+  update.original.category = 'ファッション・装備,ファッション・装備/メガネ';
+  update.changes = { ...update.original, category: `${update.original.category},行事・文化` };
+  f.records[1][header.indexOf('Category')] = 'ファッション・装備,ファッション・装備/メガネ・サングラス';
+  const response = await processAkyoBatchUpdate([update], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits.length, 1);
+  assert.equal(f.commits[0].parentSha, 'head-1');
+  const expected = 'ファッション・装備,ファッション・装備/メガネ・サングラス,行事・文化';
+  assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], expected);
+  const { data } = await response.json();
+  assert.equal(data[0].category, expected);
+  assert.equal(data[0].attribute, expected);
+});
+
+test('removing a retired category refuses an ambiguous rename without committing any row', async () => {
+  for (const [base, mine, latest] of [
+    ['装備,装備/メガネ,行事', '装備,行事', '装備,装備/メガネ・サングラス,行事'],
+    ['メガネ', '行事', 'メガネ・サングラス'],
+    ['装備/メガネ', '装備,行事', '装備/メガネ・サングラス'],
+  ]) {
+    const f = fixture(new Set(['行事']));
+    const update = f.updates[1];
+    update.original.category = base;
+    update.changes = { ...update.original, category: mine };
+    f.records[1][header.indexOf('Category')] = latest;
+    const before = structuredClone(f.updates);
+    const response = await processAkyoBatchUpdate(f.updates, f.dependencies);
+    assert.equal(response.status, 409, `${base} -> ${mine}, renamed to ${latest}`);
+    assert.equal(f.commits.length, 0, 'even the unrelated first update must not be committed');
+    assert.deepEqual(f.updates, before, 'held changes remain available to retry or cancel');
+    assert.match((await response.json()).error, /#0002 のカテゴリは、別の更新でも変更されています/);
+  }
+});
+
+test('a category still registered or carried on another row can be removed on both sides', async () => {
+  for (const knownBy of ['registry', 'other-row']) {
+    const f = fixture(new Set(knownBy === 'registry' ? ['旧カテゴリ'] : []));
+    if (knownBy === 'other-row') f.records[2][header.indexOf('Category')] = '旧カテゴリ';
+    const update = f.updates[1];
+    update.original.category = '旧カテゴリ,行事';
+    update.changes = { ...update.original, category: '行事,新カテゴリ' };
+    f.records[1][header.indexOf('Category')] = '行事,新カテゴリ,追加カテゴリ';
+    const response = await processAkyoBatchUpdate([update], f.dependencies);
+    assert.equal(response.status, 200, knownBy);
+    assert.equal(f.commits.length, 1);
+    assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], '行事,新カテゴリ,追加カテゴリ');
+  }
+});
+
+test('removing an already deleted category is safe when no replacement appeared', async () => {
+  const f = fixture(new Set(['新カテゴリ']));
+  const update = f.updates[1];
+  update.original.category = '旧カテゴリ,行事';
+  update.changes = { ...update.original, category: '行事,新カテゴリ' };
+  f.records[1][header.indexOf('Category')] = '行事';
+  const response = await processAkyoBatchUpdate([update], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], '行事,新カテゴリ');
+});
+
+test('independent replacements of a still registered category keep both additions', async () => {
+  const f = fixture(new Set(['旧カテゴリ', '自分の追加']));
+  const update = f.updates[1];
+  update.original.category = '旧カテゴリ,行事';
+  update.changes = { ...update.original, category: '行事,自分の追加' };
+  f.records[1][header.indexOf('Category')] = '行事,相手の追加';
+  const response = await processAkyoBatchUpdate([update], f.dependencies);
+  assert.equal(response.status, 200);
+  assert.equal(f.commits[0].dataRecords[1][header.indexOf('Category')], '行事,相手の追加,自分の追加');
+});
+
+test('a parent removal conflicting with a new descendant blocks the entire batch', async () => {
+  const f = fixture(new Set(['行事・文化']));
+  f.records[1][header.indexOf('Category')] = '動物,動物/うま';
+  f.updates[1].changes.category = '行事・文化';
+  const response = await processAkyoBatchUpdate(f.updates, f.dependencies);
+  assert.equal(response.status, 409);
+  assert.equal(f.commits.length, 0);
+  assert.match((await response.json()).error, /#0002 のカテゴリは、別の更新でも変更されています/);
+});
+
+test('a new local category that disappeared from the registry is still rejected after merging', async () => {
+  const f = fixture();
+  f.records[1][header.indexOf('Category')] = '動物,動物/うま';
+  f.updates[1].changes.category = '動物,削除済み';
+  const response = await processAkyoBatchUpdate([f.updates[1]], f.dependencies);
+  assert.equal(response.status, 400);
+  assert.equal(f.commits.length, 0);
+  assert.match((await response.json()).error, /削除済み/);
+});
+
 // 送られてきたカテゴリが、正規化すれば保留したときと同じ（祖先を省いただけ）なら、触っていない扱い
 test('a held category that only leaves out its ancestors counts as untouched', async () => {
   const f = fixture();

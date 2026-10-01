@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { act, createElement } from 'react';
+import { stringify } from 'csv-stringify/sync';
+import { processAkyoBatchUpdate, type AkyoBatchDependencies } from '@/lib/akyo-batch-update';
+import { createAkyoRecord, parseCsvToAkyoData } from '@/lib/csv-utils';
 import type { PendingAkyoUpdate } from '@/lib/akyo-edit-fields';
 import type { AkyoData } from '@/types/akyo';
 
@@ -26,7 +29,7 @@ function akyo(id: string, nickname: string, category: string): AkyoData {
   };
 }
 
-async function setup() {
+async function setup(options: { initial?: AkyoData[]; batchDependencies?: AkyoBatchDependencies } = {}) {
   const dom = new JSDOM('<!doctype html><div id="root"></div>', { url: 'http://localhost/admin', pretendToBeVisual: true });
   const win = dom.window;
   const descriptors = new Map<string, PropertyDescriptor | undefined>();
@@ -34,7 +37,7 @@ async function setup() {
     descriptors.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   };
-  const initial = [akyo('0001', 'うまAkyo', '動物'), akyo('0002', 'ねこAkyo', '動物')];
+  const initial = options.initial ?? [akyo('0001', 'うまAkyo', '動物'), akyo('0002', 'ねこAkyo', '動物')];
   let categories = [
     { path: '動物', en: 'Animal', ko: '동물', count: 2 },
     { path: '乗り物', en: 'Vehicle', ko: '탈것', count: 0 },
@@ -73,6 +76,7 @@ async function setup() {
       if (url !== '/api/update-akyo-batch') throw new Error(`unexpected request: ${url}`);
       const body = JSON.parse(String(init?.body)) as PendingAkyoUpdate[];
       batches.push(body);
+      if (options.batchDependencies) return processAkyoBatchUpdate(body, options.batchDependencies);
       const saved = body.map((update) => ({
         ...initial.find((entry) => entry.id === update.changes.id)!,
         category: update.changes.category, attribute: update.changes.category,
@@ -320,6 +324,144 @@ test('再取得が失敗しても、保留は残り、タブも再取得も使�
     await h.click(h.buttons('編集・削除')[0]);
     await h.click(h.refreshButton());
     assert.match(h.win.document.body.textContent!, /データを再取得しました/, '失敗のあとも取得できる');
+  } finally {
+    await h.cleanup();
+  }
+});
+
+test('編集保留中に再取得しても、独立したカテゴリ改名と追加を一緒に反映できる', { timeout: 10_000 }, async () => {
+  const header = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comment', 'Author', 'SourceURL', 'EntryType', 'DisplaySerial'];
+  let records = [createAkyoRecord({
+    id: '2029', nickname: 'Test 2029', avatarName: 'Test', author: 'tester', comment: '',
+    entryType: 'avatar', displaySerial: '2029',
+    sourceUrl: 'https://vrchat.com/home/avatar/avtr_12345678-1234-1234-1234-123456789abc',
+    category: 'ファッション・装備,ファッション・装備/メガネ',
+  }, header)];
+  const currentRows = () => parseCsvToAkyoData(stringify([header, ...records]));
+  const initial = currentRows();
+  const commits: Parameters<AkyoBatchDependencies['commit']>[0][] = [];
+  const h = await setup({
+    initial,
+    batchDependencies: {
+      loadSnapshot: async () => ({
+        head: 'renamed-head', header, dataRecords: records, registeredCategories: new Set(['行事・文化']),
+      }),
+      commit: async (args) => {
+        commits.push(args);
+        records = args.dataRecords;
+        return { commit: { html_url: 'https://github.com/example/repo/commit/test' } };
+      },
+    },
+  });
+  const modalButton = (text: string) => {
+    const dialogs = h.win.document.querySelectorAll('[role="dialog"]');
+    const dialog = dialogs[dialogs.length - 1];
+    assert.ok(dialog, 'dialog is open');
+    return [...dialog.querySelectorAll('button')].find((button) => button.textContent?.trim() === text);
+  };
+  const editButton = () => h.buttons('編集').find((button) => button.closest('tr')?.textContent?.includes('#2029'));
+  try {
+    h.setCategories([
+      { path: 'ファッション・装備', en: 'Fashion', ko: '패션', count: 1 },
+      { path: 'ファッション・装備/メガネ', en: 'Fashion/Glasses', ko: '패션/안경', count: 1 },
+      { path: '行事・文化', en: 'Event・Culture', ko: '행사・문화', count: 0 },
+    ]);
+    await h.click(h.buttons('編集・削除')[0]);
+    await h.click(editButton());
+    await h.click(modalButton('カテゴリを管理'));
+    await h.click(modalButton('行事・文化'));
+    await h.click(modalButton('選択を決定'));
+    await h.click(modalButton('更新を保留'));
+    assert.match(h.win.document.body.textContent!, /保留 1件/);
+    assert.equal(h.batches.length, 0, 'holding does not save');
+
+    records[0][header.indexOf('Category')] = 'ファッション・装備,ファッション・装備/メガネ・サングラス';
+    h.setRefreshRows(currentRows());
+    await h.click(h.refreshButton());
+    await h.click(h.refreshButton());
+    assert.equal(h.refreshCalls(), 2);
+    assert.match(h.win.document.body.textContent!, /データを再取得しました/);
+    assert.match(h.win.document.body.textContent!, /保留 1件/);
+    await h.click(h.buttons('更新を反映する')[0]);
+
+    assert.equal(h.batches.length, 1);
+    assert.equal(h.batches[0][0].original.category, initial[0].category, 'refresh must keep the original conflict baseline');
+    assert.equal(h.batches[0][0].changes.category, `${initial[0].category},行事・文化`);
+    assert.equal(commits.length, 1, 'the real batch processor saves the merged row once');
+    assert.equal(commits[0].parentSha, 'renamed-head');
+    assert.equal(currentRows()[0].category, 'ファッション・装備,ファッション・装備/メガネ・サングラス,行事・文化');
+    assert.match(h.win.document.body.textContent!, /保留 0件/);
+    await h.click(editButton());
+    await h.click(modalButton('カテゴリを管理'));
+    assert.ok(modalButton('行事・文化')?.className.includes('bg-green-100'));
+    assert.ok(modalButton('ファッション・装備/メガネ・サングラス')?.className.includes('bg-green-100'));
+    assert.ok(!modalButton('ファッション・装備/メガネ')?.className.includes('bg-green-100'), 'old name is not selected');
+  } finally {
+    await h.cleanup();
+  }
+});
+
+test('外す保留中のカテゴリが改名されたら全件を止め、再取得後も保留を取り消せる', { timeout: 10_000 }, async () => {
+  const header = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comment', 'Author', 'SourceURL', 'EntryType', 'DisplaySerial'];
+  const records = ['0001', '0002'].map((id) => createAkyoRecord({
+    id, nickname: `Test ${id}`, avatarName: 'Test', author: 'tester', comment: '',
+    entryType: 'avatar', displaySerial: id,
+    sourceUrl: 'https://vrchat.com/home/avatar/avtr_12345678-1234-1234-1234-123456789abc',
+    category: '装備,装備/メガネ,行事',
+  }, header));
+  const currentRows = () => parseCsvToAkyoData(stringify([header, ...records]));
+  const commits: Parameters<AkyoBatchDependencies['commit']>[0][] = [];
+  const h = await setup({
+    initial: currentRows(),
+    batchDependencies: {
+      loadSnapshot: async () => ({
+        head: 'renamed-head', header, dataRecords: records, registeredCategories: new Set(['装備', '装備/メガネ・サングラス', '行事']),
+      }),
+      commit: async (args) => {
+        commits.push(args);
+        return { commit: { html_url: 'https://github.com/example/repo/commit/test' } };
+      },
+    },
+  });
+  try {
+    h.setCategories([
+      { path: '装備', en: 'Equipment', ko: '장비', count: 2 },
+      { path: '装備/メガネ', en: 'Equipment/Glasses', ko: '장비/안경', count: 2 },
+      { path: '行事', en: 'Events', ko: '행사', count: 2 },
+    ]);
+    await h.click(h.buttons('カテゴリ')[0]);
+    await h.click(h.listRowButton('装備/メガネ', '選択'));
+    await h.click(h.buttons('外す')[0]);
+    for (const id of ['0001', '0002']) await h.click(h.cardToggle(id).toggle);
+    assert.match(h.win.document.body.textContent!, /保留 2件/);
+    assert.equal(h.batches.length, 0);
+
+    for (const row of records) row[header.indexOf('Category')] = '装備,装備/メガネ・サングラス,行事';
+    const latest = structuredClone(records);
+    await h.click(h.buttons('カテゴリの変更を反映する')[0]);
+    assert.equal(h.batches.length, 1);
+    assert.equal(h.batches[0].length, 2);
+    assert.ok(h.batches[0].every(({ changes }) => changes.category === '装備,行事'));
+    assert.equal(commits.length, 0, 'ambiguous removals must not be reported as successfully saved');
+    assert.match(h.win.document.body.textContent!, /#0001 のカテゴリは、別の更新でも変更されています/);
+    assert.match(h.win.document.body.textContent!, /保留 2件/);
+
+    h.setCategories([
+      { path: '装備', en: 'Equipment', ko: '장비', count: 2 },
+      { path: '装備/メガネ・サングラス', en: 'Equipment/Eyewear', ko: '장비/안경류', count: 2 },
+      { path: '行事', en: 'Events', ko: '행사', count: 2 },
+    ]);
+    h.setRefreshRows(currentRows());
+    await h.click(h.buttons('編集・削除')[0]);
+    await h.click(h.refreshButton());
+    await h.click(h.buttons('カテゴリ')[0]);
+    assert.match(h.win.document.body.textContent!, /保留 2件/);
+    await h.click(h.buttons('カテゴリの変更を反映する')[0]);
+    assert.deepEqual(h.batches[1], h.batches[0], 'refresh must not silently discard or rebase the removals');
+    assert.equal(commits.length, 0);
+    for (const id of ['0001', '0002']) await h.click(h.cardToggle(id).toggle);
+    assert.match(h.win.document.body.textContent!, /保留 0件/);
+    assert.deepEqual(records, latest, 'cancelling the drafts does not change the latest data');
   } finally {
     await h.cleanup();
   }

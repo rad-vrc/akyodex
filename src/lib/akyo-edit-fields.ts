@@ -51,16 +51,48 @@ export function applyAkyoEditFields(akyo: AkyoData, fields: AkyoEditFields): Aky
 
 // CSV -> JSON inserts category ancestors and normalizes line endings.
 // Compare the same representation without changing the submitted values.
+function categoryTokens(value: string): Set<string> {
+  return new Set(value.split(',').map((token) => token.trim()).filter(Boolean).flatMap((token) => {
+    const parts = token.split('/');
+    return parts.map((_, index) => parts.slice(0, index + 1).join('/'));
+  }));
+}
+
 function sameEditField(key: AkyoEditFieldName, a: string, b: string): boolean {
   const comparable = (value: string) => {
     if (key === 'comment') return value.replace(/\r\n?/g, '\n');
     if (key !== 'category') return value;
-    return [...new Set(value.split(',').map((token) => token.trim()).filter(Boolean).flatMap((token) => {
-      const parts = token.split('/');
-      return parts.map((_, index) => parts.slice(0, index + 1).join('/'));
-    }))].join(',');
+    return [...categoryTokens(value)].join(',');
   };
   return comparable(a) === comparable(b);
+}
+
+/** Apply membership changes to the latest set, never replay unchanged old category names. */
+function mergeCategories(
+  base: string, mine: string, theirs: string, unregisteredCategories: ReadonlySet<string>,
+): string | null {
+  const before = categoryTokens(base);
+  const local = categoryTokens(mine);
+  const remote = categoryTokens(theirs);
+  const added = [...local].filter((token) => !before.has(token));
+  const removed = [...before].filter((token) => !local.has(token));
+  const remoteAdded = [...remote].filter((token) => !before.has(token));
+  const remoteRemoved = [...before].filter((token) => !remote.has(token));
+  // A subtree removal and a new descendant cannot both be honored. Do not silently
+  // discard the new child or restore a parent the other editor explicitly removed.
+  const crossesRemoval = (additions: string[], removals: string[]) =>
+    additions.some((token) => removals.some((parent) => token.startsWith(`${parent}/`)));
+  if (crossesRemoval(added, remoteRemoved) || crossesRemoval(remoteAdded, removed)) return null;
+
+  // A retired name may have been renamed into one of the new remote tokens. Without
+  // stable category IDs, silently treating its removal as already done can lose intent.
+  if (remoteAdded.length > 0 && removed.some((token) => !remote.has(token) && unregisteredCategories.has(token))) {
+    return null;
+  }
+
+  for (const token of removed) remote.delete(token);
+  for (const token of added) remote.add(token);
+  return [...remote].join(',');
 }
 
 export function sameAkyoEditFields(a: AkyoEditFields, b: AkyoEditFields): boolean {
@@ -73,7 +105,9 @@ export function sameAkyoEditFields(a: AkyoEditFields, b: AkyoEditFields): boolea
  *
  * - 自分が変えていない項目は、保存先の値を残す（別の更新を巻き戻さない）
  * - 自分だけが変えた項目、両方が同じ値に変えた項目は、自分の値を使う
- * - 両方が違う値に変えた項目だけを、衝突として返す
+ * - カテゴリは追加・削除した分だけを最新の集合に反映する。親の削除と子の追加は衝突させる
+ * - 全行と登録簿から消えた名前の削除は、最新の行に追加もあれば改名の可能性があるので止める
+ * - それ以外は、両方が違う値に変えた項目だけを衝突として返す
  *
  * 行を丸ごと比べると、作者の表記揃えのような無関係な更新が 1 つ入っただけで、その行の保留は
  * 二度と反映できない。保留は再取得しても保留したときの行（ここでの `base`）を持ち続けるので、
@@ -83,6 +117,8 @@ export function mergeAkyoEditFields(
   base: AkyoEditFields,
   mine: AkyoEditFields,
   theirs: AkyoEditFields,
+  /** Names absent from both the CSV and registry at the revision being committed. */
+  unregisteredCategories: ReadonlySet<string>,
 ): { merged: AkyoEditFields; conflicts: AkyoEditFieldName[] } {
   const merged = { ...theirs };
   const conflicts: AkyoEditFieldName[] = [];
@@ -90,6 +126,10 @@ export function mergeAkyoEditFields(
     if (sameEditField(key, mine[key], base[key])) continue;
     if (sameEditField(key, theirs[key], base[key]) || sameEditField(key, theirs[key], mine[key])) {
       merged[key] = mine[key];
+    } else if (key === 'category') {
+      const category = mergeCategories(base.category, mine.category, theirs.category, unregisteredCategories);
+      if (category === null) conflicts.push(key);
+      else merged.category = category;
     } else {
       conflicts.push(key);
     }
