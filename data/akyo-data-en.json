@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-01T04:43:44.108Z",
-  "count": 1010,
+  "updatedAt": "2026-10-01T06:27:17.597Z",
+  "count": 1011,
   "data": [
     {
       "id": "0001",
@@ -11696,6 +11696,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_4cc080ab-d25f-4a03-a39c-489117af1eb0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_4cc080ab-d25f-4a03-a39c-489117af1eb0",
       "urlUpdatedAt": "2026-10-01T04:43:44.022Z"
+    },
+    {
+      "id": "2027",
+      "entryType": "avatar",
+      "displaySerial": "0893",
+      "nickname": "ストロングアームAkyo",
+      "avatarName": "Akyo with Strong Arms",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Body Part,Body Part/Arm,Color,Color/White Tones,Strongest Warrior,Physical,Physical/Athletic,Physique・Shape・Texture,Physique・Shape・Texture/Muscular",
+      "comment": "Akyoのすべてをこの拳にかける！！",
+      "author": "あ～さ～ arthur",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ca894b31-9d63-4649-bb44-2ceb3f5b22af",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ca894b31-9d63-4649-bb44-2ceb3f5b22af",
+      "urlUpdatedAt": "2026-10-01T06:27:17.484Z"
     }
   ]
 }
