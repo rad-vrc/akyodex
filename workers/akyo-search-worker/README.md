@@ -176,6 +176,32 @@ serve stale vectors during a later partial sync.
 - Semantic failures fall back to D1 results instead of returning an HTTP 500.
 - Results are deduplicated, sorted, and globally limited after all searches.
 
+### Long queries
+
+D1 limits a `LIKE` pattern to [50 UTF-8 bytes](https://developers.cloudflare.com/d1/platform/limits/),
+including the surrounding `%` characters and the escapes for literal `%`, `_`,
+and `\`. For example, 48 ASCII characters or 16 three-byte Japanese characters
+fit, but one additional ASCII character does not. This applies to the normalized
+search term, not the original question before natural-language cleanup.
+
+Partial search, specific-name partial search, and keyword counts keep the existing
+escaped `LIKE` for patterns within that limit. Longer patterns use
+`instr(lower(column), lower(?)) > 0`, binding the entire unescaped search term.
+No term is truncated, split, or discarded, and SQL's ASCII-only case folding is
+preserved. Short patterns retain the existing LIKE behavior, including its NUL
+handling; the long-input path treats embedded NUL as part of the literal term.
+Exact matches, scoring, language filters, semantic input, and result limits are
+unchanged. Unrelated D1 failures are not converted into empty successful results.
+
+`src/long-query.test.ts` exercises the Worker request handler against real local
+Miniflare D1, with only AI and Vectorize stubbed. It verifies D1's actual 50/51-byte
+boundary using a nonempty test database, multilingual and escaped input, lexical
+and semantic fallback, and counts. Miniflare is resolved through Wrangler's
+existing dependency; no credentials, remote bindings, or production requests are
+used. The suite is included in `npm run test:worker` and the existing CI worker
+test step. Chronological "latest" intent routing and timestamp/schema changes
+are separate work and are not implemented by this long-query fix.
+
 ## Endpoints
 
 `GET /health` returns `{ "status": "ok" }`.

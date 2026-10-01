@@ -1,30 +1,29 @@
 import type { AkyoRecord, CountResult, Env, Language } from "./types";
-import { escapeLikePattern } from "./search";
-
-const KEYWORD_MATCH_SQL = `
-  category LIKE ? ESCAPE '\\' OR author LIKE ? ESCAPE '\\' OR
-  nickname LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\'
-`;
+import { createSubstringMatch } from "./sql-matching";
 
 export async function countByKeyword(
   keyword: string,
   language: Language,
   env: Env
 ): Promise<CountResult> {
-  const like = `%${escapeLikePattern(keyword)}%`;
+  const { sql: contains, parameter } = createSubstringMatch(keyword);
+  const keywordMatchSql = `
+    ${contains("category")} OR ${contains("author")} OR
+    ${contains("nickname")} OR ${contains("name")}
+  `;
   const [countResult, examplesResult] = await env.DB.batch([
     env.DB.prepare(`
       SELECT COUNT(*) AS total
       FROM akyos
-      WHERE language = ? AND (${KEYWORD_MATCH_SQL})
-    `).bind(language, like, like, like, like),
+      WHERE language = ? AND (${keywordMatchSql})
+    `).bind(language, parameter, parameter, parameter, parameter),
     env.DB.prepare(`
       SELECT id, nickname, category, author
       FROM akyos
-      WHERE language = ? AND (${KEYWORD_MATCH_SQL})
+      WHERE language = ? AND (${keywordMatchSql})
       ORDER BY id ASC
       LIMIT 10
-    `).bind(language, like, like, like, like),
+    `).bind(language, parameter, parameter, parameter, parameter),
   ]);
   const countRow = countResult.results?.[0] as { total?: number } | undefined;
   const examples = (examplesResult.results ?? []) as Array<
