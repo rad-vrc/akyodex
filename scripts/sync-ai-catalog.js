@@ -41,7 +41,8 @@ function validateCatalog(records) {
 
 async function readVectors(api, ids) {
   const vectors = new Map();
-  for (const batch of chunks(ids, 100)) {
+  // The live get_by_ids endpoint rejects requests containing more than 20 IDs.
+  for (const batch of chunks(ids, 20)) {
     const response = await api.getVectors(batch);
     if (!Array.isArray(response)) throw new Error('Invalid Vectorize inventory');
     for (const vector of response) {

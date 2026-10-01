@@ -192,7 +192,7 @@ test('bounds D1 parameters, embedding batches and vector lookups across multiple
     const query = h.api.query;
     h.api.query = async (sql, params = []) => { assert.ok(params.length <= 100); return query(sql, params); };
     const getVectors = h.api.getVectors;
-    h.api.getVectors = async ids => { assert.ok(ids.length <= 100); return getVectors(ids); };
+    h.api.getVectors = async ids => { assert.ok(ids.length <= 20, 'Vectorize get_by_ids accepts at most 20 IDs'); return getVectors(ids); };
     const records = Array.from({ length: 225 }, (_, i) => record(String(i + 10).padStart(4, '0')));
     const result = await reconcileCatalog(records, h.api, { allowLargeDeletion: true });
     assert.equal(result.total, 225);
@@ -206,6 +206,26 @@ test('bounds D1 parameters, embedding batches and vector lookups across multiple
 function catalog(count) {
   return Array.from({ length: count }, (_, i) => record(String(i + 1).padStart(4, '0')));
 }
+
+test('dry run reads every vector in batches within the live 20-ID limit', async () => {
+  const rows = catalog(42);
+  const h = harness(rows);
+  const batches = [];
+  const getVectors = h.api.getVectors;
+  h.api.getVectors = async ids => {
+    assert.ok(ids.length <= 20, 'Vectorize get_by_ids accepts at most 20 IDs');
+    batches.push([...ids]);
+    return getVectors(ids);
+  };
+  try {
+    const result = await reconcileCatalog(rows, h.api, { dryRun: true });
+    assert.deepEqual(batches.map(ids => ids.length), [20, 20, 2]);
+    assert.deepEqual(batches.flat(), rows.map(row => row.id));
+    assert.equal(result.vectorsUpdated, 0);
+    assert.equal(h.calls.writes, 0);
+    assert.equal(h.calls.embeddings.length, 0);
+  } finally { h.db.close(); }
+});
 
 test('a 935-to-10 catalog shrink stops before any D1 write, inference or vector mutation', async () => {
   const rows = catalog(935);
