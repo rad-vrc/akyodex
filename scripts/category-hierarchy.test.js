@@ -164,9 +164,9 @@ const adoptedHierarchyMigrations = [
   {
     ids: ['0616'],
     vectorizeIds: ['0616'],
-    ja: ['精霊馬', '季節・行事/お盆/精霊馬'],
-    en: ['Spirit Horse', 'Season・Event/Obon/Spirit Horse'],
-    ko: ['정령마', '계절・행사/오봉/정령마'],
+    ja: ['精霊馬', '行事・文化/お盆/精霊馬'],
+    en: ['Spirit Horse', 'Event・Culture/Obon/Spirit Horse'],
+    ko: ['정령마', '행사・문화/오봉/정령마'],
   },
   {
     ids: ['0282'],
