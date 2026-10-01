@@ -173,6 +173,17 @@ serve stale vectors during a later partial sync.
 
 ## Search behavior
 
+- Japanese count/list questions for explicit platform/color AND conditions, an
+  exact author, or worlds use D1 filtering rather than semantic ranking. `total`
+  is the complete matching count; `count` remains the length of `results`.
+  These queries explicitly use the synchronized JA catalog. Unsupported qualified
+  conditions return `clarification`; unresolved follow-ups return `needs-context`
+  instead of substituting another record. See [Dify answer routing](dify-answer-routing.md)
+  for supported scope, the corresponding Dify graph/prompt change, audit and
+  rollout steps. The four new modes include a deterministic `directAnswer` so
+  Dify can display totals/results without another model interpreting them.
+- Numbered phrases such as `#0001のAkyoについて教えて` use the existing internal
+  ID lookup. This does not introduce public display-number resolution.
 - Unqualified latest requests such as `最新のAkyoは？`, `What is the latest Akyo?`
   and `최근 추가된 Akyo 알려주세요` bypass name/vector search. Keyword-only
   requests like `["最新", "Akyo"]` are also recognized. An explicit query takes

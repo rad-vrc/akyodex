@@ -1,4 +1,5 @@
 import { countByAuthor, countByKeyword } from "./count";
+import { answerCatalogQuestion, parseCatalogQuestion } from "./catalog-question";
 import { isLatestRequest, LatestCatalogNotReadyError, searchLatest } from "./latest";
 import {
   MAX_INGEST_RECORDS,
@@ -60,6 +61,10 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
     const results = await searchLatest(language, topK, env);
     return jsonResponse({ query: body.query, language, searchMode: "latest",
       latestBasis: "urlUpdatedAt-desc-then-internal-id-desc", results, count: results.length });
+  }
+  const question = parseCatalogQuestion(body.query);
+  if (question) {
+    return jsonResponse({ query: body.query, ...await answerCatalogQuestion(question, topK, env) });
   }
   const specificNameInput =
     typeof body.query === "string" && body.query.trim()

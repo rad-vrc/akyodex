@@ -101,7 +101,7 @@ function cleanNaturalLanguageQuery(value: string): string {
 
   cleaned = cleaned
     .replace(
-      /(?:について)?(?:教えて(?:ください)?|知りたい(?:です)?|説明して(?:ください)?)$/u,
+      /(?:について|を)?(?:教えて(?:ください)?|知りたい(?:です)?|説明して(?:ください)?)$/u,
       ""
     )
     .replace(/とは$/u, "")
@@ -124,6 +124,11 @@ function isDescriptiveAkyoQuery(value: string): boolean {
   return DESCRIPTIVE_AKYO_MODIFIERS.has(match[1].trim().toLowerCase());
 }
 
+function catalogIdCandidate(value: string): string | undefined {
+  const match = value.match(/^#?(?:avatar)?\s*0*(\d{1,4})(?:番)?(?:の(?:akyo|アキョ|あきょ))?$/iu);
+  return match?.[1].padStart(4, "0");
+}
+
 export function isSpecificNameQuery(value: unknown): boolean {
   if (typeof value !== "string") {
     return false;
@@ -134,7 +139,7 @@ export function isSpecificNameQuery(value: unknown): boolean {
     return false;
   }
 
-  if (/^(?:#?avatar)?\s*0*\d{1,4}$/iu.test(candidate)) {
+  if (catalogIdCandidate(candidate)) {
     return true;
   }
 
@@ -159,9 +164,8 @@ export function exactCandidates(value: string): string[] {
   }
 
   for (const candidate of [...candidates]) {
-    const idMatch = candidate.match(/^(?:#?avatar)?\s*0*(\d{1,4})$/iu);
-    if (idMatch) {
-      const id = idMatch[1].padStart(4, "0");
+    const id = catalogIdCandidate(candidate);
+    if (id) {
       if (!candidates.includes(id)) {
         candidates.unshift(id);
       }
