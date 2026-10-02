@@ -138,6 +138,18 @@ number. Public IDs must be valid, type-consistent and unique before any remote
 access or write. They are row-only data: changing a display number does not
 regenerate embeddings or alter vector metadata.
 
+BOOTH-only entries (`Booth0001`, etc.) are not supported by this sync yet. None
+are in the current catalog, and support is deferred. Add support before the first
+BOOTH-only registration: one such entry currently fails validation for the entire
+AI sync and the all-catalog Worker test. Do not bypass public-ID validation or
+silently omit those entries as a workaround.
+
+Automatic AI sync is already enabled. Merging can therefore allow the next
+catalog edit to add/backfill the column without a manual dispatch. To guarantee
+a dry run before any production write, disable `AI_CATALOG_SYNC_ENABLED` before
+merge, then re-enable it only after the approved manual sync and verification.
+Changing that production variable requires release approval.
+
 After merge, inspect a dry run, apply the sync and verify a zero-diff dry run
 **before deploying this Worker**. The column is additive and the old Worker can
 continue running during sync. New numbered searches return 503 when the column
@@ -217,12 +229,14 @@ serve stale vectors during a later partial sync.
   `#World0001について教えて`, `1番のワールドを教えて` and
   `#0001のワールドについて教えて` resolve the site's `World0001`.
   `#Avatar0896`, `896番のアバターを教えて` and `#0896のAkyoを教えて`
-  resolve `Avatar0896`. English introductions and full-width letters/digits are
+  resolve `Avatar0896`. A prefixed ID can also be followed by `のAkyo`,
+  `のアバター` or `のワールド`; the prefix still determines the public series.
+  For unprefixed numbers, `のAkyo` selects avatars. English introductions and full-width letters/digits are
   supported. The response keeps the stable internal `id` for data consumers and
   adds the resolved `publicId`; `matchedField` is `publicId`.
 - A bare `#0896` (also `896` / `896番`) searches both public series. One result
   is returned only when unique. If both exist, `searchMode: "clarification"`
-  and `directAnswer` ask the visitor to choose `#Avatar...` or `#World...`, with
+  and `directAnswer` ask the visitor to resend the full `#Avatar...` or `#World...` number, with
   no candidate presented as the answer. Missing numbers return zero results,
   with no name/substring/semantic substitution. An explicit query takes priority
   over generated keywords; a single keyword-only public-number request works too.

@@ -15,7 +15,7 @@ export function parsePublicNumber(value: unknown): PublicNumber | undefined {
   if (typeof value !== "string" || value.length > 200) return;
   const text = cleanNaturalLanguageQuery(value.normalize("NFKC"))
     .replace(/の作者(?:は誰(?:ですか)?)?$/u, "").trim();
-  const prefixed = text.match(/^#?(avatar|world|アバター|ワールド)(\d{1,4})$/iu);
+  const prefixed = text.match(/^#?(avatar|world|アバター|ワールド)(\d{1,4})(?:\s*の\s*(?:akyo|アキョ|あきょ|アバター|ワールド))?$/iu);
   if (prefixed) return { serial: prefixed[2].padStart(4, "0"),
     entryType: /^(world|ワールド)$/iu.test(prefixed[1]) ? "world" : "avatar" };
   const numbered = text.match(/^(#)?\s*(\d{1,4})(番)?(?:\s*の\s*(akyo|アキョ|あきょ|アバター|ワールド))?$/iu);
@@ -50,9 +50,9 @@ export async function answerPublicNumber(number: PublicNumber, language: Languag
   }
   if (byPublicId.size > 1) {
     const choices = [...byPublicId.keys()].map(id => `#${id}`).join(" / ");
-    const directAnswer = language === "ja" ? `この番号はアバターとワールドの両方にあります。${choices} のどちらですか？`
-      : language === "ko" ? `이 번호는 아바타와 월드에 모두 있습니다. ${choices} 중 어느 것인가요?`
-        : `This number exists for both an avatar and a world. Which do you mean: ${choices}?`;
+    const directAnswer = language === "ja" ? `この番号はアバターとワールドの両方にあります。${choices} のどちらか、番号を含めてもう一度送ってください。`
+      : language === "ko" ? `이 번호는 아바타와 월드에 모두 있습니다. ${choices} 중 하나를 번호까지 포함하여 다시 보내 주세요.`
+        : `This number exists for both an avatar and a world. Please send one of ${choices} again, including the full number.`;
     return { language, searchMode: "clarification", directAnswer, results: [], count: 0 };
   }
   const results: SearchResult[] = [...byPublicId.values()].map(row => ({ ...row,

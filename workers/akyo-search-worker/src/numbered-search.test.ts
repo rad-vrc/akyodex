@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { after, before, describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { getPublicDisplayId } from "../../../src/lib/akyo-entry";
 import type { AkyoData } from "../../../src/types/akyo";
 import worker from "./index";
@@ -10,19 +11,27 @@ import type { AkyoRecord, D1Database, Env, SearchResult } from "./types";
 const require = createRequire(import.meta.url);
 const requireFromWrangler = createRequire(require.resolve("wrangler/package.json"));
 const { Miniflare, convertV4MiniflareOptions } = requireFromWrangler("miniflare");
+const { buildSync } = requireFromWrangler("esbuild");
 const { buildPayload } = require("../../../scripts/generate-vectorize-payload.js");
 const { reconcileCatalog } = require("../../../scripts/sync-ai-catalog.js");
 interface LocalRuntime {
   getD1Database(binding: string): Promise<D1Database>;
+  dispatchFetch(url: string, init: RequestInit): Promise<Response>;
   dispose(): Promise<void>;
 }
 
-async function harness() {
+async function harness(inRuntime = false) {
+  // Bulk checks run inside workerd to avoid thousands of D1 proxy TCP calls on Windows.
+  const script = inRuntime ? buildSync({
+    entryPoints: [fileURLToPath(new URL("./index.ts", import.meta.url))],
+    bundle: true, format: "esm", platform: "browser", write: false,
+  }).outputFiles[0].text : "export default { fetch() { return new Response('local D1 only'); } };";
   const runtime: LocalRuntime = new Miniflare({
     ...convertV4MiniflareOptions({
-      script: "export default { fetch() { return new Response('local D1 only'); } };",
+      script,
       modules: true, compatibilityDate: "2025-11-09", cf: false,
       d1Databases: { DB: "public-number-regression" },
+      // The in-runtime Worker has no AI/Vectorize bindings or external network access.
       outboundService: () => new Response("Network disabled", { status: 403 }),
     }), telemetry: { enabled: false },
   });
@@ -40,9 +49,12 @@ async function harness() {
     },
   };
   const request = async (input: object) => {
-    const response = await worker.fetch(new Request("https://worker.example/search", {
+    const url = "https://worker.example/search";
+    const init = {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
-    }), env);
+    };
+    const response = inRuntime ? await runtime.dispatchFetch(url, init)
+      : await worker.fetch(new Request(url, init), env);
     const body = await response.json() as { searchMode: string; nameMatch?: boolean; count: number;
       directAnswer?: string; error?: string; results: SearchResult[] };
     return { response, body };
@@ -70,9 +82,16 @@ describe("public numbers against real local D1", () => {
 
   for (const [query, id, publicId] of [
     ["#World0001について教えて", "0746", "World0001"],
+    ["#World0001のワールドについて教えて", "0746", "World0001"],
+    ["#World0001のAkyoについて教えて", "0746", "World0001"],
+    ["#Avatar0001のAkyoについて教えて", "0001", "Avatar0001"],
+    ["#0001のAkyoについて教えて", "0001", "Avatar0001"],
     ["1番のワールドを教えて", "0746", "World0001"],
     ["#0001のワールドについて教えて", "0746", "World0001"],
     ["#Avatar0896について教えて", "2030", "Avatar0896"],
+    ["#Avatar0896のアバターについて教えて", "2030", "Avatar0896"],
+    ["#Avatar0896 の アキョを知りたいです", "2030", "Avatar0896"],
+    ["＃Ａｖａｔａｒ０８９６のあきょを説明してください", "2030", "Avatar0896"],
     ["896番のアバターを教えて", "2030", "Avatar0896"],
     ["#0896のAkyoを知りたいです", "2030", "Avatar0896"],
     ["Tell me about #World0001", "0746", "World0001"],
@@ -81,31 +100,51 @@ describe("public numbers against real local D1", () => {
     ["#World0001の作者は誰？", "0746", "World0001"],
     ["#0896", "2030", "Avatar0896"], ["900", "2034", "Avatar0900"],
   ]) it(`resolves the displayed number, not an internal ID: ${query}`, async () => {
+    const before = h.counts();
     const { response, body } = await h.request({ query, keywords: ["Wrong internal-ID candidate"], topK: 8 });
     assert.equal(response.status, 200);
     assert.equal(body.searchMode, "specific-name");
     assert.equal(body.nameMatch, true);
     assert.equal(body.count, 1);
     assert.deepEqual(body.results.map(r => [r.id, r.publicId, r.matchedField]), [[id, publicId, "publicId"]]);
-    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+    assert.deepEqual(h.counts(), before);
   });
   for (const query of ["#0001", "1番", "0001について教えて"]) it(`asks which public series is meant: ${query}`, async () => {
+    const before = h.counts();
     const { response, body } = await h.request({ query, language: "ja" });
     assert.equal(response.status, 200);
     assert.equal(body.searchMode, "clarification");
     assert.match(body.directAnswer ?? "", /#Avatar0001/);
     assert.match(body.directAnswer ?? "", /#World0001/);
+    assert.match(body.directAnswer ?? "", /番号を含めて.*送/);
     assert.deepEqual(body.results, []);
-    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+    assert.deepEqual(h.counts(), before);
   });
-  for (const query of ["#World0746", "#0746のワールドを教えて", "#World9999", "#8888", "#2030"]) {
+  it("asks for a complete public number in each response language", async () => {
+    const before = h.counts();
+    for (const [language, instruction] of [
+      ["ja", /番号を含めて.*送/], ["en", /including the full number/], ["ko", /번호까지 포함하여 다시/],
+    ] as const) {
+      const { body } = await h.request({ query: "#0001", language });
+      assert.equal(body.searchMode, "clarification");
+      assert.match(body.directAnswer ?? "", instruction);
+      for (const publicId of ["Avatar0001", "World0001"]) {
+        assert.ok(body.directAnswer?.includes(`#${publicId}`));
+        const reply = await h.request({ query: `#${publicId}`, language });
+        assert.deepEqual(reply.body.results.map(r => r.publicId), [publicId]);
+      }
+    }
+    assert.deepEqual(h.counts(), before);
+  });
+  for (const query of ["#World0746", "#World0746のワールドについて教えて", "#Avatar2030のAkyoについて教えて", "#0746のワールドを教えて", "#World9999", "#8888", "#2030"]) {
     it(`does not fall back to internal IDs, names or semantic candidates: ${query}`, async () => {
+      const before = h.counts();
       const { response, body } = await h.request({ query, language: "ja" });
       assert.equal(response.status, 200);
       assert.equal(body.searchMode, "specific-name");
       assert.equal(body.nameMatch, false);
       assert.deepEqual(body.results, []);
-      assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+      assert.deepEqual(h.counts(), before);
     });
   }
   it("resolves an explicit public number in keyword-only input", async () => {
@@ -143,7 +182,7 @@ describe("public numbers against real local D1", () => {
 });
 
 it("migrates the actual catalog then resolves every site's public number with no embeddings", async t => {
-  const h = await harness();
+  const h = await harness(true);
   const source = JSON.parse(readFileSync(new URL("../../../data/akyo-data-ja.json", import.meta.url), "utf8"));
   const items: AkyoData[] = source.data ?? source;
   const records: AkyoRecord[] = buildPayload(source);
@@ -164,7 +203,13 @@ it("migrates the actual catalog then resolves every site's public number with no
     await reconcileCatalog(records, api);
     for (const item of items) {
       const publicId = getPublicDisplayId(item);
-      for (const query of [`#${publicId}について教えて`, `${Number(publicId.replace(/^(Avatar|World)/, ""))}番の${publicId.startsWith("World") ? "ワールド" : "アバター"}を教えて`]) {
+      const noun = publicId.startsWith("World") ? "ワールド" : "アバター";
+      for (const query of [
+        `#${publicId}について教えて`,
+        `${Number(publicId.replace(/^(Avatar|World)/, ""))}番の${noun}を教えて`,
+        `#${publicId}の${noun}について教えて`,
+        `#${publicId}のAkyoについて教えて`,
+      ]) {
         const { response, body } = await h.request({ query });
         assert.equal(response.status, 200, query);
         assert.equal(body.searchMode, "specific-name", query);
@@ -172,11 +217,10 @@ it("migrates the actual catalog then resolves every site's public number with no
         assert.equal(body.results[0].publicId, publicId, query);
       }
     }
-    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
     const before = writes;
     const repeated = await reconcileCatalog(records, api);
     assert.equal(repeated.rowsUpdated, 0);
     assert.equal(writes, before);
-    t.diagnostic(`${items.length} public IDs, ${items.length * 2} queries matched the site's getPublicDisplayId`);
+    t.diagnostic(`${items.length} public IDs, ${items.length * 4} queries matched the site's getPublicDisplayId`);
   } finally { await h.runtime.dispose(); }
 });
