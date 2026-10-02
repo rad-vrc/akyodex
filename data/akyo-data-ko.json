@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T06:28:32.350Z",
-  "count": 1017,
+  "updatedAt": "2026-10-02T07:16:43.728Z",
+  "count": 1018,
   "data": [
     {
       "id": "0001",
@@ -12489,6 +12489,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_119eae24-6d91-414a-a943-c3caf6658fe9",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_119eae24-6d91-414a-a943-c3caf6658fe9",
       "urlUpdatedAt": "2026-10-02T06:23:54.487Z"
+    },
+    {
+      "id": "2034",
+      "entryType": "avatar",
+      "displaySerial": "0900",
+      "nickname": "天ぷらAkyo/えびフライAkyo",
+      "avatarName": "Akyo Tempura （using ＂ebigurumi＂）",
+      "category": "지원 기기,지원 기기/PC,음식,음식/요리,음식/요리/튀김,색상,색상/갈색 계열,기관,기관/꼬리",
+      "comment": "天ぷら？えびフライ？それを決めるのはあなたの心です。",
+      "author": "uqai",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_887b61a7-977d-49c2-8e73-e6f254261770",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_887b61a7-977d-49c2-8e73-e6f254261770",
+      "urlUpdatedAt": "2026-10-02T07:16:43.575Z"
     }
   ]
 }
