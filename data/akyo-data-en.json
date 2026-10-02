@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-02T13:28:52.073Z",
-  "count": 1023,
+  "updatedAt": "2026-10-02T13:31:58.885Z",
+  "count": 1024,
   "data": [
     {
       "id": "0001",
@@ -11866,6 +11866,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_aae0e05c-8a0f-429a-80fe-4d7ec3267938",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_aae0e05c-8a0f-429a-80fe-4d7ec3267938",
       "urlUpdatedAt": "2026-10-02T13:28:51.997Z"
+    },
+    {
+      "id": "2040",
+      "entryType": "avatar",
+      "displaySerial": "0905",
+      "nickname": "グレープアイスAkyo",
+      "avatarName": "grapeakyoice",
+      "category": "Supported Platform,Supported Platform/PC,Food,Food/Fruit,Food/Sweets,Color,Color/Purple,Physique・Shape・Texture,Physique・Shape・Texture/Cold",
+      "comment": "ぶどうAkyoより前からいたみたい！",
+      "author": "City Tanuki",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_f448b606-78da-4f7f-b265-3c7cbdfa1271",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f448b606-78da-4f7f-b265-3c7cbdfa1271",
+      "urlUpdatedAt": "2026-10-02T13:31:58.774Z"
     }
   ]
 }
