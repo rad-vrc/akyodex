@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T00:37:54.375Z",
-  "count": 1014,
+  "updatedAt": "2026-10-02T06:05:40.300Z",
+  "count": 1015,
   "data": [
     {
       "id": "0001",
@@ -12450,6 +12450,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_9749f3dd-064a-486d-a84b-324025088fa9",
       "urlUpdatedAt": "2026-10-01T09:11:44.013Z"
+    },
+    {
+      "id": "2031",
+      "entryType": "avatar",
+      "displaySerial": "0897",
+      "nickname": "Sakyo",
+      "avatarName": "sakyo",
+      "category": "지원 기기,지원 기기/PC,패러디,패러디/VRChat,체격・형태・촉감,체격・형태・촉감/둥근,초코민트류,색상,색상/초록색 계열,색상/파란색 계열",
+      "comment": "Akyoと縁の深いクリエイターさんのキャラクターがモチーフのAkyoだよ！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d30b7fc5-cbdb-42f9-89e2-b5d2847c0c5a",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d30b7fc5-cbdb-42f9-89e2-b5d2847c0c5a",
+      "urlUpdatedAt": "2026-10-02T06:05:40.147Z"
     }
   ]
 }
