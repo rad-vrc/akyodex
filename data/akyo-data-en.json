@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-01T10:30:32.731Z",
+  "updatedAt": "2026-10-02T00:37:54.331Z",
   "count": 1014,
   "data": [
     {
@@ -1992,9 +1992,10 @@
     {
       "id": "0177",
       "entryType": "avatar",
+      "displaySerial": "0177",
       "nickname": "Muffler Akyo",
       "avatarName": "akyo_マフラー",
-      "category": "Fashion・Equipment,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Fashion・Equipment,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Season,Season/Winter,Fashion・Equipment/Warm Clothing",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b0dd2e0a-012c-4867-99c8-22a7e4b0ee79",
