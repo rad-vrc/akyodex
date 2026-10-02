@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T13:23:47.542Z",
-  "count": 1022,
+  "updatedAt": "2026-10-02T13:28:52.103Z",
+  "count": 1023,
   "data": [
     {
       "id": "0001",
@@ -12554,6 +12554,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_00e5d072-9f42-46d0-a79c-710e5f88b6ee",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_00e5d072-9f42-46d0-a79c-710e5f88b6ee",
       "urlUpdatedAt": "2026-10-02T13:23:47.397Z"
+    },
+    {
+      "id": "2039",
+      "entryType": "avatar",
+      "displaySerial": "0904",
+      "nickname": "アキョチップアイスAkyo",
+      "avatarName": "akyochipice",
+      "category": "지원 기기,지원 기기/PC,체격・형태・촉감,체격・형태・촉감/차가운,색상,색상/흰색 계열,음식,음식/디저트",
+      "comment": "つい食べすぎちゃうけど、お腹をこわさないように気をつけて！",
+      "author": "City Tanuki",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_aae0e05c-8a0f-429a-80fe-4d7ec3267938",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_aae0e05c-8a0f-429a-80fe-4d7ec3267938",
+      "urlUpdatedAt": "2026-10-02T13:28:51.997Z"
     }
   ]
 }
