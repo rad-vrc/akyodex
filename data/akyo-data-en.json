@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-02T13:37:53.486Z",
+  "updatedAt": "2026-10-02T13:59:11.889Z",
   "count": 1025,
   "data": [
     {
@@ -1173,9 +1173,10 @@
     {
       "id": "0104",
       "entryType": "avatar",
+      "displaySerial": "0104",
       "nickname": "Rainbow Akyo",
       "avatarName": "RainbowAkyo",
-      "category": "Color,Mint Chocolate,Supported Platform,Supported Platform/PC",
+      "category": "Color,Mint Chocolate,Supported Platform,Supported Platform/PC,Color/Rainbow",
       "comment": "",
       "author": "SauAu",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1d9cb50f-6080-4aa5-a62d-109dc2602794",
@@ -7679,9 +7680,10 @@
     {
       "id": "0677",
       "entryType": "avatar",
+      "displaySerial": "0677",
       "nickname": "Rainbow Akyo",
       "avatarName": "量産型ななきょう",
-      "category": "Color,Environment・Weather,Environment・Weather/Rain,Rare,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Color,Environment・Weather,Environment・Weather/Rain,Rare,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Color/Rainbow",
       "comment": "On a rainy day, it was captured on video by a TV crew, bringing its existence into the public eye.",
       "author": "nanairoshikibu",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ea5ee448-52f5-4684-9a5f-4113ba29bc4b",
@@ -10350,7 +10352,7 @@
       "displaySerial": "0814",
       "nickname": "Rainbow Akyo",
       "avatarName": "niziakyo",
-      "category": "Get Well Soon,Condition,Condition/Captive,Condition/Aging,Supported Platform,Supported Platform/PC",
+      "category": "Get Well Soon,Condition,Condition/Captive,Condition/Aging,Supported Platform,Supported Platform/PC,Color,Color/Rainbow",
       "comment": "Its form, which once shone in rainbow colors, was swallowed by the power of calamity and is now sealed away.\nAll we who remain can do is believe that someday, in some future, it will once again grant people the radiance of the rainbow.",
       "author": "にじざかな",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f8751cb4-0326-41cb-afec-3b5dd4a6bc16",

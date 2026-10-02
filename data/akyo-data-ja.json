@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-02T13:37:53.424Z",
+  "updatedAt": "2026-10-02T13:59:11.847Z",
   "count": 1025,
   "data": [
     {
@@ -1173,9 +1173,10 @@
     {
       "id": "0104",
       "entryType": "avatar",
+      "displaySerial": "0104",
       "nickname": "レインボーAkyo",
       "avatarName": "RainbowAkyo",
-      "category": "色,チョコミント類,対応機種,対応機種/PC",
+      "category": "色,チョコミント類,対応機種,対応機種/PC,色/虹色系",
       "comment": "",
       "author": "SauAu",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_1d9cb50f-6080-4aa5-a62d-109dc2602794",
@@ -7679,9 +7680,10 @@
     {
       "id": "0677",
       "entryType": "avatar",
+      "displaySerial": "0677",
       "nickname": "虹Akyo",
       "avatarName": "量産型ななきょう",
-      "category": "色,環境・天候,環境・天候/雨,レア,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "category": "色,環境・天候,環境・天候/雨,レア,対応機種,対応機種/PC,対応機種/Quest(Android),色/虹色系",
       "comment": "とある雨の日、TVクルーが撮影したビデオに映り込んでおりその存在が公に晒されることとなった。",
       "author": "nanairoshikibu",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ea5ee448-52f5-4684-9a5f-4113ba29bc4b",
@@ -10350,7 +10352,7 @@
       "displaySerial": "0814",
       "nickname": "にじAkyo",
       "avatarName": "niziakyo",
-      "category": "お大事に,状態,状態/囚われの身,状態/経年劣化,対応機種,対応機種/PC",
+      "category": "お大事に,状態,状態/囚われの身,状態/経年劣化,対応機種,対応機種/PC,色,色/虹色系",
       "comment": "かつては虹色に輝いていたその姿は、厄災の力に呑まれ今では封印されている。\n残された我々には、いつかの未来で再び人々に虹の輝きを与えてくれるはずだと信じることしかできない。",
       "author": "にじざかな",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f8751cb4-0326-41cb-afec-3b5dd4a6bc16",
