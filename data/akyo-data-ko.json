@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T06:05:40.300Z",
-  "count": 1015,
+  "updatedAt": "2026-10-02T06:10:48.391Z",
+  "count": 1016,
   "data": [
     {
       "id": "0001",
@@ -12463,6 +12463,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d30b7fc5-cbdb-42f9-89e2-b5d2847c0c5a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d30b7fc5-cbdb-42f9-89e2-b5d2847c0c5a",
       "urlUpdatedAt": "2026-10-02T06:05:40.147Z"
+    },
+    {
+      "id": "2032",
+      "entryType": "avatar",
+      "displaySerial": "0898",
+      "nickname": "シュノーケルAkyo",
+      "avatarName": "akyo_シュノーケル2",
+      "category": "지원 기기,지원 기기/PC,환경・날씨,환경・날씨/수역,초코민트류,기능・특성,기능・특성/산소결핍 내성,기능・특성/잠수,색상,색상/초록색 계열,색상/파란색 계열",
+      "comment": "潜れるのは水の中だけじゃない。\n君の心にもダイブする！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a6620642-be18-4fc9-a157-22db921a4063",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a6620642-be18-4fc9-a157-22db921a4063",
+      "urlUpdatedAt": "2026-10-02T06:10:48.234Z"
     }
   ]
 }
