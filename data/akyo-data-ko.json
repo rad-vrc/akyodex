@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T06:12:19.934Z",
-  "count": 1016,
+  "updatedAt": "2026-10-02T06:23:54.656Z",
+  "count": 1017,
   "data": [
     {
       "id": "0001",
@@ -12476,6 +12476,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a6620642-be18-4fc9-a157-22db921a4063",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a6620642-be18-4fc9-a157-22db921a4063",
       "urlUpdatedAt": "2026-10-02T06:10:48.234Z"
+    },
+    {
+      "id": "2033",
+      "entryType": "avatar",
+      "displaySerial": "0899",
+      "nickname": "ふとんきつねAkyo",
+      "avatarName": "akyo__huton",
+      "category": "지원 기기,지원 기기/PC,동물,동물/여우,색상,색상/노랑,기관,기관/귀,기관/꼬리,기능・특성,기능・특성/추위 내성,가전・가구,가전・가구/이불",
+      "comment": "あったかいふとんでねむるんだろな♪",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_119eae24-6d91-414a-a943-c3caf6658fe9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_119eae24-6d91-414a-a943-c3caf6658fe9",
+      "urlUpdatedAt": "2026-10-02T06:23:54.487Z"
     }
   ]
 }

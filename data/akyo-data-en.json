@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-02T06:12:19.900Z",
-  "count": 1016,
+  "updatedAt": "2026-10-02T06:23:54.605Z",
+  "count": 1017,
   "data": [
     {
       "id": "0001",
@@ -11775,6 +11775,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a6620642-be18-4fc9-a157-22db921a4063",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a6620642-be18-4fc9-a157-22db921a4063",
       "urlUpdatedAt": "2026-10-02T06:10:48.234Z"
+    },
+    {
+      "id": "2033",
+      "entryType": "avatar",
+      "displaySerial": "0899",
+      "nickname": "ふとんきつねAkyo",
+      "avatarName": "akyo__huton",
+      "category": "Supported Platform,Supported Platform/PC,Animal,Animal/Fox,Color,Color/Yellow,Body Part,Body Part/Ear,Body Part/Tail,Skill・Trait,Skill・Trait/Cold Resistance,Appliances・Furniture,Appliances・Furniture/Futon",
+      "comment": "あったかいふとんでねむるんだろな♪",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_119eae24-6d91-414a-a943-c3caf6658fe9",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_119eae24-6d91-414a-a943-c3caf6658fe9",
+      "urlUpdatedAt": "2026-10-02T06:23:54.487Z"
     }
   ]
 }
