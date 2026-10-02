@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T07:16:43.728Z",
-  "count": 1018,
+  "updatedAt": "2026-10-02T11:04:48.320Z",
+  "count": 1019,
   "data": [
     {
       "id": "0001",
@@ -12502,6 +12502,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_887b61a7-977d-49c2-8e73-e6f254261770",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_887b61a7-977d-49c2-8e73-e6f254261770",
       "urlUpdatedAt": "2026-10-02T07:16:43.575Z"
+    },
+    {
+      "id": "2035",
+      "entryType": "avatar",
+      "displaySerial": "0901",
+      "nickname": "西鉄電車Akyo",
+      "avatarName": "Akyo train NNR",
+      "category": "지원 기기,지원 기기/PC,탈것,탈것/육상,초코민트류,색상,색상/초록색 계열,색상/파란색 계열,기믹・특수,기믹・특수/분신",
+      "comment": "アッキョッポッポ～！",
+      "author": "D․Na⁄だな＠QDD",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8805f474-38ac-4dc9-b455-be6ce0c98068",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8805f474-38ac-4dc9-b455-be6ce0c98068",
+      "urlUpdatedAt": "2026-10-02T11:04:48.163Z"
     }
   ]
 }
