@@ -107,13 +107,16 @@ test('API errors never include upstream bodies or request credentials', async ()
   });
 });
 
-test('sync reserves before inference and never retries an uncertain AI request', async () => {
+test('sync reserves before inference and never retries an uncertain AI request', async t => {
+  const warnings = t.mock.method(console, 'warn', () => {});
+  let reservationId;
   let aiCalls = 0;
   let settlements = 0;
   let allow = true;
   const api = client(async (url, init) => {
     if (new URL(url).pathname.endsWith('/query')) {
       const { sql, params } = JSON.parse(init.body);
+      if (sql.startsWith('INSERT')) reservationId = params[0];
       if (sql.startsWith('UPDATE')) settlements++;
       return success([{ success: true, results: allow ? [{ id: params[0] }] : [] }]);
     }
@@ -123,9 +126,16 @@ test('sync reserves before inference and never retries an uncertain AI request',
   await assert.rejects(api.embed([{ nickname: 'test' }]), /failed/);
   assert.equal(aiCalls, 1);
   assert.equal(settlements, 0);
+  const log = JSON.parse(warnings.mock.calls[0]?.arguments[0] ?? '{}');
+  assert.equal(log.event, 'ai_budget_hold');
+  assert.equal(log.reason, 'response_lost');
+  assert.equal(log.reservationId, reservationId);
+  assert.equal(log.units, 1);
+  assert.doesNotMatch(JSON.stringify(log), /fake-token|connection lost/);
   allow = false;
   await assert.rejects(api.embed([{ nickname: 'test' }]), /budget/);
   assert.equal(aiCalls, 1);
+  assert.equal(warnings.mock.calls.length, 1, 'budget denial is not a new uncertain inference');
 });
 
 test('sync settles complete HTTP errors, invalid JSON and invalid embeddings at full cost without retries', async () => {

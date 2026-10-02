@@ -1,5 +1,5 @@
 const { setTimeout: sleep } = require('node:timers/promises');
-const { EMBEDDING_MODEL, embeddingReservation, reserveBudget, finishBudget } = require('./ai-budget');
+const { EMBEDDING_MODEL, embeddingReservation, reserveBudget, finishBudget, reportBudgetHold } = require('./ai-budget');
 
 class CompletedRequestError extends Error {}
 
@@ -85,6 +85,7 @@ function createCloudflareClient({ accountId, token, databaseId, indexName, fetch
       try { result = await request(`/ai/run/${EMBEDDING_MODEL}`, { text }, 'POST', 0); }
       catch (error) {
         if (error instanceof CompletedRequestError) await finishBudget(query, id, units);
+        else reportBudgetHold(id, units, 'response_lost');
         throw error;
       }
       await finishBudget(query, id, units);

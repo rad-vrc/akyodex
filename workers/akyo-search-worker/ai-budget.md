@@ -30,7 +30,7 @@ All three production inference paths must use the ledger:
 
 Number, latest, exact-name and deterministic count/filter answers require no AI
 reservation and remain available. Exhausted discovery still returns D1 partial
-matches; only when none exist does it return `clarification` with `directAnswer`,
+matches with `budgetLimited: true`; only when none exist does it return `clarification` with `directAnswer`,
 consumed by the existing Dify direct-answer branch. The chat
 proxy returns a fixed completion (including SSE framing) without asking a model
 to explain the outage. Sync checks budget-table readiness before changing catalog
@@ -67,7 +67,12 @@ charge using the provider's validated token usage, rounded **up**. Missing or
 invalid usage retains 800. Only the fixed models are allowed; the proxy caps
 `max_completion_tokens`, fixes `n=1`, disallows tools/media, and limits requests
 to 64 KiB / 24 text messages. Public search rejects query/keyword strings over
-4,096 UTF-8 bytes and more than 24 keyword candidates, before querying D1 or AI.
+4,096 UTF-8 bytes **before or after NFKD normalization**, and more than 24 keyword
+candidates, before querying D1 or AI. Original text is still sent unchanged. The
+post-normalization cap prevents compatibility ligatures from inflating a short
+request's reservation. A maximum-length admitted term reserves at most 9 Neurons
+(at most three terms reach inference). This is not abuse/rate limiting: sustained
+public requests can still consume the shared allowance.
 The proxy buffers upstream completion before
 returning JSON or a final SSE chunk; it does not stream token-by-token.
 
@@ -99,7 +104,23 @@ Sources:
   Workers AI limits documentation supplies a one-hour inference deadline. We do
   not equate a client timeout with proof the provider stopped. Repeated lost
   responses can still require manual recovery; this remaining availability cost
-  must not be represented as solved. Ten lost chat responses can still fill 8,000.
+  must not be represented as solved. Ten lost chat responses can still fill 8,000
+  **cumulatively over months**, not just ten concurrent failures.
+- The Worker registers its request promise with `ctx.waitUntil` before awaiting
+  inference. The same promise includes reading the upstream body and settlement;
+  it does not launch inference a second time. Cloudflare allows up to 30 seconds
+  after caller disconnection, not unlimited execution. A longer inference or
+  terminated invocation can still leave a hold. See [context lifetime](https://developers.cloudflare.com/workers/runtime-apis/context/#waituntil).
+  A local workerd smoke test disconnects HTTP while a fake provider is blocked
+  and verifies subsequent settlement in real D1. That runtime also continued
+  without `waitUntil`, so the three route-level registration tests separately
+  detect its removal. Neither test proves hosted Cloudflare cancellation timing.
+- Caught transport/body losses log `ai_budget_hold` / `response_lost`; failed
+  settlements log `ai_budget_hold` / `settlement_failed`. Both include only the
+  random `reservationId` and `units`, never request text, tokens or upstream
+  exception contents. For settlement failures, `units` is the attempted charge;
+  the pending row can still hold the larger original reservation. Process kills
+  cannot reliably emit this warning: inspect pending rows as well as logs.
 - A failed settlement keeps the reservation. Repeating a successful settlement
   cannot lower the amount again or move its expiration.
 - The sync REST client does not automatically retry an uncertain AI call. A new
@@ -150,11 +171,57 @@ The old direct provider remains a bypass until step 5. Installation alone is not
 protection. Standard Cloudflare account alerts can supplement this mechanism but
 cannot replace any step above.
 
+If Dify compatibility fails, stop the cutover and keep generation paused while
+repairing the draft. Leaving its direct provider connected is **not** a protected
+fallback; search/sync protection alone does not satisfy the shared inference cap.
+
 The coordinated cutover still has a semantic/generation pause. Importing a
 verified conservative bound for earlier usage avoids a mandatory 24-hour wait;
 without that evidence, the wait remains necessary. This change does not promise
 zero-downtime introduction. Dify compatibility and buffered-answer UX still need
 draft verification before deployment/publication is approved.
+
+### Importing earlier usage before enabling
+
+Use this only for the **first** guarded cutover. Stop every unguarded caller and
+prove its outstanding calls have ended first. Obtain a rounded-up Neuron upper
+bound covering **all account inference during the preceding 24 hours**, including
+sync, Dify, Playground and other apps. A lagging dashboard sample alone is not
+proof that all usage is included. Keep the source/time window and allowance for
+unreported usage in the release record. If a reliable upper bound is unavailable,
+keep inference disabled for 24 hours after the last unguarded call ended instead.
+If the bound exceeds 8,000, do not clamp it: keep disabled until a later verified
+window fits or the full wait ends. A verified zero needs no imported row.
+
+For a positive bound of 1..8,000, copy `sql/ai-budget-carry.sql` to a local reviewed
+`ai-budget-carry.reviewed.sql` and replace `REPLACE_WITH_VERIFIED_NEURONS` with that integer. The
+unmodified file deliberately cannot execute. With the Worker directory as cwd:
+
+```powershell
+npx wrangler d1 execute akyo-database --remote --config wrangler.jsonc --file ./ai-budget-carry.reviewed.sql
+```
+
+The insert requires `enabled=0`. Verify it returns **one row** with ID
+`unguarded-cutover-v1`, units at least the reviewed bound, and a current
+`completed_at`. Zero returned rows means **stop**, not success. Repeating it uses
+the same ID, never lowers the charge, and conservatively restarts its full 24-hour
+retention. It never deletes or completes unrelated pending reservations. Do not
+reuse this ID for a later separate unguarded period; that needs separately reviewed
+accounting. Before enabling, run:
+
+```sql
+SELECT id, units, created_at, completed_at FROM ai_budget_reservations
+WHERE id = 'unguarded-cutover-v1';
+SELECT enabled, limit_neurons,
+       limit_neurons - (SELECT COALESCE(SUM(units), 0) FROM ai_budget_reservations
+         WHERE completed_at IS NULL OR completed_at > unixepoch() - 86400) AS remaining
+FROM ai_budget_config WHERE id = 1;
+```
+
+Confirm the carry row, any guarded verification usage, and other pending holds
+are all included. Only then perform step 6. A zero remaining allowance is a valid
+accounted state but will keep inference stopped until completed charges age out.
+Do not run unguarded test calls after recording the bound.
 
 ## Operations and recovery
 
@@ -168,6 +235,9 @@ FROM ai_budget_reservations
 WHERE completed_at IS NULL OR completed_at > unixepoch() - 86400;
 SELECT id, units, created_at FROM ai_budget_reservations
 WHERE completed_at IS NULL ORDER BY created_at;
+SELECT COUNT(*) AS pending_count, COALESCE(SUM(units), 0) AS pending_units,
+       MIN(created_at) AS oldest_pending
+FROM ai_budget_reservations WHERE completed_at IS NULL;
 ```
 
 To stop all covered inference immediately, set `enabled=0`. Do not delete charges
@@ -175,6 +245,11 @@ to restore availability. Investigate old pending reservations; only after provin
 the upstream has finished, mark them completed **at the current time retaining
 their full units**. They then remain charged for another 24h. If the ledger is
 unavailable, restore the database before enabling inference.
+
+Check pending totals during rollout and routine usage reviews, not only after a
+budget rejection. Logs make caught losses inspectable in Workers Logs (and sync
+Actions logs); this PR does not install an alert/notification monitor. Review
+Cloudflare's invocation-cancelled warnings too. Do not infer no holds from no logs.
 
 Rolling back to the old Worker or direct Dify provider removes protection. Prefer
 keeping the budget-aware version disabled while repairing it; do not claim the

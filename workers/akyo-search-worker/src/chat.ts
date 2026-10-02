@@ -45,7 +45,7 @@ function completion(content: string, stream: boolean, finishReason = "stop") {
   const base = { id: `chatcmpl-${crypto.randomUUID()}`, created: Math.floor(Date.now() / 1000), model: CHAT_MODEL };
   if (!stream) return Response.json({ ...base, object: "chat.completion",
     choices: [{ index: 0, message: { role: "assistant", content }, finish_reason: finishReason }] });
-  // Buffer upstream so usage is settled before returning even if Dify disconnects.
+  // Emit only after settlement. The entrypoint separately extends request lifetime.
   const event = (choices: unknown[]) => `data: ${JSON.stringify({ ...base, object: "chat.completion.chunk", choices })}\n\n`;
   return new Response(event([{ index: 0, delta: { role: "assistant", content }, finish_reason: null }]) +
     event([{ index: 0, delta: {}, finish_reason: finishReason }]) + "data: [DONE]\n\n", {
@@ -95,9 +95,9 @@ export async function handleChat(request: Request, env: Env): Promise<Response> 
   }
   try {
     // Never forward model, tools, n, stream or token limits unchecked.
-    const response = await env.AI.run(CHAT_MODEL, { ...sampling, messages, n: 1, stream: false,
-      max_completion_tokens: Math.min(requestedTokens, MAX_COMPLETION_TOKENS) }, { returnRawResponse: true });
-    const result = await readAIResponse(response, () => finishBudget(query, id, CHAT_RESERVATION));
+    const result = await readAIResponse(() => env.AI.run(CHAT_MODEL, { ...sampling, messages, n: 1, stream: false,
+      max_completion_tokens: Math.min(requestedTokens, MAX_COMPLETION_TOKENS) }, { returnRawResponse: true }),
+    () => finishBudget(query, id, CHAT_RESERVATION), { id, units: CHAT_RESERVATION });
     if (!isObject(result) || !Array.isArray(result.choices) || result.choices.length !== 1) {
       await finishBudget(query, id, CHAT_RESERVATION);
       throw new Error("Invalid completion");

@@ -90,6 +90,31 @@ describe("shared AI budget against real D1", () => {
     await reserveBudget(budgetQuery(db), 7970);
     await assert.rejects(reserveBudget(budgetQuery(db), 1), BudgetStoppedError);
   });
+
+  it("imports cutover usage only while disabled, never duplicates or reduces it", async () => {
+    const template = readFileSync(new URL("../sql/ai-budget-carry.sql", import.meta.url), "utf8");
+    await assert.rejects(run(template), "unreviewed placeholder must not import a guessed amount");
+    const carry = (units: number) => db.prepare(template.replace("REPLACE_WITH_VERIFIED_NEURONS", String(units)))
+      .all<{ id: string; units: number; completed_at: number }>();
+    assert.equal((await carry(137)).results?.length, 0, "enabled ledger refuses cutover imports");
+    await run("UPDATE ai_budget_config SET enabled = 0");
+    for (const bad of [0, -1, 8001, 1.5]) await assert.rejects(carry(bad));
+    const first = await carry(137);
+    assert.equal(first.results?.[0].units, 137);
+    assert.equal(typeof first.results?.[0].completed_at, "number");
+    await carry(137); await carry(99);
+    assert.equal(await total(), 137);
+    await carry(200);
+    assert.equal(await total(), 200);
+    await run("UPDATE ai_budget_reservations SET completed_at = unixepoch() - 86401");
+    await carry(137);
+    await run("UPDATE ai_budget_config SET enabled = 1");
+    await reserveBudget(budgetQuery(db), 7800);
+    await assert.rejects(reserveBudget(budgetQuery(db), 1), BudgetStoppedError);
+    await run("UPDATE ai_budget_config SET enabled = 0");
+    await run("UPDATE ai_budget_reservations SET completed_at = NULL WHERE id = 'unguarded-cutover-v1'");
+    assert.equal((await carry(200)).results?.length, 0, "never turn an uncertain hold into an expired charge");
+  });
   it("disabling the ledger or losing it blocks both model routes before invocation", async () => {
     await run("UPDATE ai_budget_config SET enabled = 0");
     await assert.rejects(embedBudgeted("test", env), BudgetStoppedError);
@@ -251,9 +276,10 @@ describe("shared AI budget against real D1", () => {
 
   it("keeps D1 partial matches when embedding is budget-limited", async () => {
     await reserveBudget(budgetQuery(db), 8000);
-    const body = await (await request("/search", { query: "Blue", language: "en" })).json() as { count: number; results: { id: string }[] };
+    const body = await (await request("/search", { query: "Blue", language: "en" })).json() as { count: number; results: { id: string }[]; budgetLimited?: boolean };
     assert.equal(body.count, 1);
     assert.equal(body.results[0].id, "2020");
+    assert.equal(body.budgetLimited, true);
     assert.equal(calls.length, 0);
   });
 
@@ -267,4 +293,81 @@ describe("shared AI budget against real D1", () => {
     assert.equal(calls.length, 1);
     assert.equal(await total(), embeddingReservation(["x".repeat(4096)]));
   });
+
+  it("bounds search after compatibility expansion without changing the text sent to AI", async () => {
+    const expanded = "\uFDFA".repeat(1364);
+    assert.ok(new TextEncoder().encode(expanded).length < 4096);
+    for (const body of [{ query: expanded }, { keywords: [expanded, expanded, expanded] }]) {
+      assert.equal((await request("/search", body)).status, 400);
+    }
+    assert.equal(calls.length, 0); assert.equal(await total(), 0);
+    const text = "\uFDFA".repeat(20);
+    assert.equal((await request("/search", { query: text })).status, 200);
+    assert.deepEqual(calls[0][1], { text });
+  });
+
+  it("does not mark an ordinary discovery result as budget-limited", async () => {
+    const body = await (await request("/search", { query: "Blue", language: "en" })).json() as { budgetLimited?: boolean };
+    assert.equal(body.budgetLimited, undefined);
+    assert.equal(calls.length, 1);
+  });
+
+  it("logs only uncertain holds with their ledger IDs, never input or upstream errors", async t => {
+    const warnings = t.mock.method(console, "warn", () => {});
+    for (const bodyLost of [false, true]) {
+      env.AI.run = async () => {
+        if (!bodyLost) throw new Error("PRIVATE_UPSTREAM");
+        return new Response(new ReadableStream({ start(controller) { controller.error(new Error("PRIVATE_BODY")); } }));
+      };
+      assert.equal((await chat({ messages: [{ role: "user", content: "PRIVATE_QUESTION" }] })).status, 502);
+      await assert.rejects(embedBudgeted("PRIVATE_CATALOG", env));
+    }
+    env.AI.run = async () => new Response("invalid JSON");
+    assert.equal((await chat()).status, 502);
+    await assert.rejects(embedBudgeted("test", env));
+    const logs = warnings.mock.calls.map(call => JSON.parse(String(call.arguments[0])) as { event: string; reason: string; reservationId: string; units: number });
+    assert.equal(logs.length, 4, "only transport/body loss keeps an uncertain hold");
+    const pending = await db.prepare("SELECT id, units FROM ai_budget_reservations WHERE completed_at IS NULL").all<{ id: string; units: number }>();
+    assert.deepEqual(logs.map(log => ({ id: log.reservationId, units: log.units })).sort((a, b) => a.id.localeCompare(b.id)),
+      pending.results!.sort((a, b) => a.id.localeCompare(b.id)));
+    for (const log of logs) {
+      assert.equal(log.event, "ai_budget_hold"); assert.equal(log.reason, "response_lost");
+    }
+    assert.doesNotMatch(JSON.stringify(logs), /PRIVATE_|fake-chat|fake-ingest/);
+  });
+
+  for (const path of ["/v1/chat/completions", "/search", "/insert-data"]) {
+    it(`keeps ${path} registered through inference and settlement after caller abort`, { timeout: 10000 }, async () => {
+      let release!: () => void;
+      let started!: () => void;
+      const gate = new Promise<void>(resolve => { release = resolve; });
+      const entered = new Promise<void>(resolve => { started = resolve; });
+      const original = env.AI.run;
+      env.AI.run = async (...args) => { started(); await gate; return original(...args); };
+      const controller = new AbortController();
+      const lifetime: Promise<unknown>[] = [];
+      const body = path === "/search" ? { query: "Blue", language: "en" }
+        : path === "/insert-data" ? { records: [{ id: "2", nickname: "New", language: "en" }] }
+        : { model: CHAT_MODEL, messages: [{ role: "user", content: "Hello" }] };
+      const response = worker.fetch(new Request(`https://test.invalid${path}`, { method: "POST", signal: controller.signal,
+        headers: { Authorization: `Bearer ${path === "/insert-data" ? "fake-ingest" : "fake-chat"}` }, body: JSON.stringify(body) }),
+      env, { waitUntil(promise: Promise<unknown>) { lifetime.push(promise); } });
+      let startupTimer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([entered, new Promise((_, reject) => {
+          startupTimer = setTimeout(() => reject(new Error("Inference did not start")), 5000);
+        })]);
+        clearTimeout(startupTimer);
+        assert.equal(lifetime.length, 1, "register before inference finishes, not just before the SQL write");
+        let settled = false;
+        void lifetime[0].then(() => { settled = true; });
+        controller.abort();
+        await Promise.resolve();
+        assert.equal(settled, false);
+      } finally { clearTimeout(startupTimer); release(); await response; await Promise.all(lifetime); }
+      assert.equal(calls.length, 1, "keeping a promise alive must not start inference twice");
+      assert.equal((await db.prepare("SELECT COUNT(*) AS n FROM ai_budget_reservations WHERE completed_at IS NULL").first<{ n: number }>())?.n, 0);
+      assert.equal(await total(), path === "/v1/chat/completions" ? 30 : 1);
+    });
+  }
 });

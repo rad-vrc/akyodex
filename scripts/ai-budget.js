@@ -31,6 +31,11 @@ function chatCharge(usage) {
 
 /** @typedef {(sql: string, params: unknown[]) => Promise<Array<Record<string, unknown>>>} BudgetQuery */
 
+/** @param {string} id @param {number} units @param {'response_lost' | 'settlement_failed'} reason */
+function reportBudgetHold(id, units, reason) {
+  console.warn(JSON.stringify({ event: 'ai_budget_hold', reason, reservationId: id, units }));
+}
+
 /** @param {BudgetQuery} query @param {number} units */
 async function reserveBudget(query, units) {
   if (!Number.isSafeInteger(units) || units <= 0 || units > 8000) throw new BudgetStoppedError();
@@ -61,7 +66,7 @@ async function finishBudget(query, id, units) {
       WHERE id = ? AND completed_at IS NULL AND units >= ? RETURNING id`, [units, id, units]);
   } catch {
     // A ledger outage must not refund a charge or discard a successful answer.
-    console.warn('AI budget settlement failed; reservation retained');
+    reportBudgetHold(id, units, 'settlement_failed');
   }
 }
 
@@ -77,4 +82,4 @@ async function assertBudgetReady(query) {
 }
 
 module.exports = { EMBEDDING_MODEL, CHAT_MODEL, CHAT_RESERVATION, MAX_COMPLETION_TOKENS,
-  BudgetStoppedError, embeddingReservation, chatCharge, reserveBudget, finishBudget, assertBudgetReady };
+  BudgetStoppedError, embeddingReservation, chatCharge, reserveBudget, finishBudget, assertBudgetReady, reportBudgetHold };

@@ -29,10 +29,14 @@ test('missing reservation or failed storage never authorizes inference', async (
   await assert.rejects(reserveBudget(async () => [{ id: 'wrong' }], 65), BudgetStoppedError);
 });
 
-test('settlement never releases an uncertain reservation or retries a failed write', async () => {
+test('settlement never releases an uncertain reservation or retries a failed write', async t => {
+  const warnings = t.mock.method(console, 'warn', () => {});
   let calls = 0;
   const query = async () => { calls++; throw new Error('private'); };
   await finishBudget(query, 'id', 65);
   assert.equal(calls, 1);
+  assert.deepEqual(JSON.parse(warnings.mock.calls[0].arguments[0]), {
+    event: 'ai_budget_hold', reason: 'settlement_failed', reservationId: 'id', units: 65,
+  });
   await assert.rejects(finishBudget(query, 'id', -1));
 });

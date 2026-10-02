@@ -503,7 +503,7 @@ export async function searchWithD1AndVectorize(
   language: Language,
   requestedTopK: unknown,
   env: Env
-): Promise<SearchResult[]> {
+): Promise<{ results: SearchResult[]; budgetLimited: boolean }> {
   const limit = normalizeTopK(requestedTopK);
   const terms = normalizeSearchTerms(undefined, rawTerms);
   const exactResults = new Map<string, SearchResult>();
@@ -522,7 +522,7 @@ export async function searchWithD1AndVectorize(
   }
 
   if (exactResults.size > 0) {
-    return sortAndLimit(exactResults.values(), limit);
+    return { results: sortAndLimit(exactResults.values(), limit), budgetLimited: false };
   }
 
   const fallbackResults = new Map<string, SearchResult>();
@@ -549,5 +549,5 @@ export async function searchWithD1AndVectorize(
   );
 
   if (budgetStopped && fallbackResults.size === 0) throw new BudgetStoppedError();
-  return sortAndLimit(fallbackResults.values(), limit);
+  return { results: sortAndLimit(fallbackResults.values(), limit), budgetLimited: budgetStopped };
 }
