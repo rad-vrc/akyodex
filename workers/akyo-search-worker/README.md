@@ -240,7 +240,9 @@ serve stale vectors during a later partial sync.
   discovery searches.
 - Ambiguous `Xを教えて` requests first try name lookup when appropriate. A name
   miss returns to ordinary discovery, preserving descriptive queries such as
-  `強そうなAkyoを教えて`. `Xについて教えて`, explicit supplied names and numeric
+  `強そうなAkyoを教えて`. The same rule covers `を知りたい` and `を説明して`,
+  including their polite forms, matching the suffixes removed by preprocessing.
+  `Xについて...`, explicit supplied names and numeric
   IDs stay strict on a miss. This is not general conversational reference resolution.
 - All languages, including Korean, use the populated shared index. There is no
   Korean-specific binding, and the empty JA/EN indexes remain reserved.

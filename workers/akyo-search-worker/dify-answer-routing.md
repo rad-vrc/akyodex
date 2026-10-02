@@ -98,7 +98,8 @@ searchMode が "specific-name" かつ nameMatch が false の場合、または 
   exact author counts and worlds. Unknown conditions ask for clarification only
   on counts. Lists containing any unsupported condition retain ordinary discovery
   without applying only the recognized subset or claiming an exact total.
-- An ambiguous `Xを教えて` name miss returns to discovery; `Xについて教えて`
+- An ambiguous `Xを教えて`, `Xを知りたい` or `Xを説明して` name miss returns to
+  discovery, including polite forms stripped by preprocessing; `Xについて...`
   and numeric IDs remain strict. Exact name matches still avoid semantic search.
 - Japanese aliases query the JA catalog and return `language: "ja"`, even if the
   caller requested another response language. They never compare Japanese category
@@ -161,6 +162,10 @@ not the relevance of live embeddings or the final Dify prose.
   strict-name result. Unsupported counts still ask for clarification.
 - Name-first requests cover query and keyword inputs, successful names, absent
   explicit subjects, numeric IDs, and the supplied-name follow-up form.
+  A suffix matrix additionally covers all three Japanese request verbs and their
+  polite forms through both query and keyword inputs: 36 exploratory requests
+  retain semantic candidates, 12 known-name requests avoid AI, and 24 missing
+  explicit-name/ID requests remain strict without semantic substitution.
 - Website questions do not ask which Akyo is meant. Unresolved references still do.
 - Author spelling misses and renamed/unused category aliases do not assert zero.
   Legitimate zero intersections and world-only authors remain valid zero results.

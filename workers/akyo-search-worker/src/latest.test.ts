@@ -315,6 +315,44 @@ test("ambiguous list names fall back only on misses; explicit names and IDs stay
   } finally { h.db.close(); }
 });
 
+test("all cleaned Japanese request suffixes preserve discovery without weakening explicit subjects", async () => {
+  const h = fixture(["0001"]);
+  const suffixes = ["教えて", "教えてください", "知りたい", "知りたいです", "説明して", "説明してください"];
+  const inputs = (query: string) => [{ query }, { keywords: [query] }];
+  try {
+    for (const suffix of suffixes) {
+      for (const body of inputs(`Item2030Akyoを${suffix}`)) {
+        const result = await search(h.env, body);
+        assert.equal(result.searchMode, "specific-name");
+        assert.deepEqual(result.results.map(r => r.id), ["2030"]);
+      }
+      for (const query of [`MissingXYZAkyoについて${suffix}`, `#4321のAkyoを${suffix}`]) {
+        for (const body of inputs(query)) {
+          const result = await search(h.env, body);
+          assert.equal(result.searchMode, "specific-name", query);
+          assert.deepEqual(result.results, [], query);
+        }
+      }
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+    const prefixes = ["強そうなAkyo", "うさぎのAkyo", "光るAkyo"];
+    for (const prefix of prefixes) {
+      for (const suffix of suffixes) {
+        const query = `${prefix}を${suffix}？`;
+        for (const body of inputs(query)) {
+          const result = await search(h.env, body);
+          assert.equal(result.searchMode, "discovery", query);
+          assert.deepEqual(result.results.map(r => r.id), ["0001"], query);
+          assert.equal(result.directAnswer, undefined);
+          assert.equal(h.aiInputs.at(-1), prefix, "keep the descriptive conditions in semantic input");
+        }
+      }
+    }
+    const requests = prefixes.length * suffixes.length * 2;
+    assert.deepEqual(h.counts(), { aiCalls: requests, vectorCalls: requests });
+  } finally { h.db.close(); }
+});
+
 test("demonstratives distinguish a missing subject from catalog questions and a supplied name", async () => {
   const h = fixture(["0001"]);
   try {

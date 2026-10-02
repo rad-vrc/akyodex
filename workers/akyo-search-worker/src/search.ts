@@ -130,10 +130,10 @@ function catalogIdCandidate(value: string): string | undefined {
 }
 
 export function allowsDiscoveryOnNameMiss(value: unknown): boolean {
-  // "Xを教えて" can describe a feature, whereas "Xについて教えて" and IDs
-  // identify a subject. Never replace a missing explicit subject with a guess.
+  // Match all three request suffixes stripped above. "Xを..." can describe a
+  // feature; "Xについて..." and IDs must not substitute a semantic guess.
   return typeof value === "string" && value.length <= 200
-    && /を教えて(?:ください)?[?？!！。]*$/u.test(value.trim())
+    && /を(?:教えて(?:ください)?|知りたい(?:です)?|説明して(?:ください)?)[?？!！。]*$/u.test(value.trim())
     && !catalogIdCandidate(cleanNaturalLanguageQuery(value));
 }
 
