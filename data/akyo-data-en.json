@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-02T12:12:47.275Z",
-  "count": 1021,
+  "updatedAt": "2026-10-02T13:23:47.500Z",
+  "count": 1022,
   "data": [
     {
       "id": "0001",
@@ -11840,6 +11840,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_42e50301-719f-4e99-86e0-3471a772c1ab",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_42e50301-719f-4e99-86e0-3471a772c1ab",
       "urlUpdatedAt": "2026-10-02T12:10:28.544Z"
+    },
+    {
+      "id": "2038",
+      "entryType": "avatar",
+      "displaySerial": "0903",
+      "nickname": "アキョミントアイスAkyo",
+      "avatarName": "16ice",
+      "category": "Supported Platform,Supported Platform/PC,Food,Food/Sweets,Mint Chocolate,Color,Color/Blue Tones,Color/Green Tones,Physique・Shape・Texture,Physique・Shape・Texture/Cold",
+      "comment": "シックスティーンアイスはいかが？",
+      "author": "City Tanuki",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_00e5d072-9f42-46d0-a79c-710e5f88b6ee",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_00e5d072-9f42-46d0-a79c-710e5f88b6ee",
+      "urlUpdatedAt": "2026-10-02T13:23:47.397Z"
     }
   ]
 }
