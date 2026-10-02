@@ -129,6 +129,14 @@ function catalogIdCandidate(value: string): string | undefined {
   return match?.[1].padStart(4, "0");
 }
 
+export function allowsDiscoveryOnNameMiss(value: unknown): boolean {
+  // "Xを教えて" can describe a feature, whereas "Xについて教えて" and IDs
+  // identify a subject. Never replace a missing explicit subject with a guess.
+  return typeof value === "string" && value.length <= 200
+    && /を教えて(?:ください)?[?？!！。]*$/u.test(value.trim())
+    && !catalogIdCandidate(cleanNaturalLanguageQuery(value));
+}
+
 export function isSpecificNameQuery(value: unknown): boolean {
   if (typeof value !== "string") {
     return false;

@@ -95,14 +95,22 @@ searchMode が "specific-name" かつ nameMatch が false の場合、または 
 
 - The Japanese question parser is intentionally bounded and not a general
   natural-language query engine. It supports explicit platform/color AND filters,
-  exact author counts and worlds. Unknown qualified conditions ask for clarification;
-  ordinary names and ordinary discovery queries retain their existing paths.
+  exact author counts and worlds. Unknown conditions ask for clarification only
+  on counts. Lists containing any unsupported condition retain ordinary discovery
+  without applying only the recognized subset or claiming an exact total.
+- An ambiguous `Xを教えて` name miss returns to discovery; `Xについて教えて`
+  and numeric IDs remain strict. Exact name matches still avoid semantic search.
 - Japanese aliases query the JA catalog and return `language: "ja"`, even if the
   caller requested another response language. They never compare Japanese category
   tokens against translated rows. Current synchronization is JA-only.
 - Category tokens are complete comma-separated tokens, not substring matches.
   Renaming the corresponding category requires updating the aliases; they do not
-  infer an old category's replacement. Counts describe synchronized data, not
+  infer an old category's replacement. A zero result triggers an existence check
+  for each condition across the whole JA catalog. Missing categories ask for
+  clarification on counts and revert to discovery on lists; missing authors ask
+  for the registered spelling. Existing conditions with an empty intersection
+  still report zero, as do known world-only authors when asked about avatars.
+  Counts describe synchronized data, not
   every Akyo or author on VRChat. World/avatar classification follows the existing
   search payload's URL-based contract.
 - Counts exclude worlds unless the question explicitly asks for worlds. `total`
@@ -111,6 +119,10 @@ searchMode が "specific-name" かつ nameMatch が false の場合、または 
 - Follow-up references deliberately ask for a name. Automatic resolution of
   conversation history before retrieval remains future work; it is not safe to
   answer about an unrelated semantic match or rely on old generated prose.
+  The guard requires a particle after the subject, so `このAkyo図鑑` is not
+  mistaken for an unresolved reference. The bounded `そのAkyoの名前はXです`
+  form uses a recognizable supplied name/ID via strict D1 lookup. It does not
+  recover history or ask an LLM to infer the missing subject.
 - Numeric lookup uses the existing internal ID contract. It does not add support
   for the website's separate `displaySerial` numbering.
 - After explicit approval: deploy the search Worker, publish the saved Dify
@@ -135,6 +147,28 @@ searchMode が "specific-name" かつ nameMatch が false の場合、または 
   draft still uses the production search URL; the new Worker is not deployed.
   Full direct-answer conversations therefore remain a post-deployment check.
 - No Dify publication, Worker deployment, merge or website activation was done.
+
+## Review regression checks
+
+The review found discovery regressions beyond the original ten questions. The
+local tests now exercise actual Worker routing and SQLite queries, with a fake
+AI/Vectorize candidate that must survive the discovery path. This proves routing,
+not the relevance of live embeddings or the final Dify prose.
+
+- Eighteen exploratory list questions cover unknown subjects/adjectives, requested
+  quantities, worlds, mixed known/unknown conditions, negation and OR. They retain
+  discovery instead of clarification, partial deterministic filtering or an empty
+  strict-name result. Unsupported counts still ask for clarification.
+- Name-first requests cover query and keyword inputs, successful names, absent
+  explicit subjects, numeric IDs, and the supplied-name follow-up form.
+- Website questions do not ask which Akyo is meant. Unresolved references still do.
+- Author spelling misses and renamed/unused category aliases do not assert zero.
+  Legitimate zero intersections and world-only authors remain valid zero results.
+- Common aliases for eleven color families use whole category tokens. Counts and
+  results for the real catalog still agree with independently filtered source rows.
+
+These changes preserve the four `directAnswer` modes and need no additional Dify
+graph edit. The draft remains unpublished; post-rollout chat checks are still required.
 
 ## Baseline conversation audit (2026-10-02)
 
