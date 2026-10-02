@@ -125,7 +125,7 @@ function isDescriptiveAkyoQuery(value: string): boolean {
 }
 
 function catalogIdCandidate(value: string): string | undefined {
-  const match = value.match(/^#?(?:avatar)?\s*0*(\d{1,4})(?:番)?(?:の(?:akyo|アキョ|あきょ))?$/iu);
+  const match = value.match(/^#?(?:avatar|world)?\s*0*(\d{1,4})(?:番)?(?:の(?:akyo|アキョ|あきょ|アバター|ワールド))?$/iu);
   return match?.[1].padStart(4, "0");
 }
 
@@ -527,6 +527,9 @@ export async function searchSpecificNameMatches(
 ): Promise<SearchResult[]> {
   const limit = 1;
   const terms = normalizeSearchTerms(undefined, rawTerms);
+  const id = terms.map(catalogIdCandidate).find(candidate => candidate !== undefined);
+  // An explicit ID must not become a name/substring match when the row is absent.
+  if (id) return findExactIdMatches(id, language, limit, env);
   const exactResults = new Map<string, SearchResult>();
 
   const exactMatches = await Promise.all(

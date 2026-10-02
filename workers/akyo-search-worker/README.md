@@ -195,8 +195,14 @@ serve stale vectors during a later partial sync.
 - `このAkyo図鑑` and `このAkyoずかん` do not trigger the follow-up guard.
   `そのAkyoの名前はMenmeAkyoです` uses the supplied name via strict D1 lookup;
   an unknown supplied name does not fall back to another semantic candidate.
-- Numbered phrases such as `#0001のAkyoについて教えて` use the existing internal
-  ID lookup. This does not introduce public display-number resolution.
+- Numbered phrases such as `#0001のAkyoについて教えて`,
+  `#0746のワールドについて教えて`, `746番のワールドを教えて`, and
+  `Tell me about #World0746` use only the exact internal ID lookup. A missing ID
+  returns zero results, never a same-looking name, partial name, generated keyword,
+  or semantic replacement. `のアバター` is accepted alongside `のAkyo`.
+  This does not introduce public display-number resolution or a type filter:
+  the stored row's `entryType` remains authoritative. Quantity requests and
+  descriptions such as `#0746のワールドに似た場所` are not single-ID requests.
 - Unqualified latest requests such as `最新のAkyoは？`, `What is the latest Akyo?`
   and `최근 추가된 Akyo 알려주세요` bypass name/vector search. Keyword-only
   requests like `["最新", "Akyo"]` are also recognized. An explicit query takes
