@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T11:26:22.412Z",
-  "count": 1020,
+  "updatedAt": "2026-10-02T12:10:28.692Z",
+  "count": 1021,
   "data": [
     {
       "id": "0001",
@@ -12528,6 +12528,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_f7117771-22a2-4be2-ab4d-d6784954134b",
       "avatarUrl": "https://vrchat.com/home/world/wrld_f7117771-22a2-4be2-ab4d-d6784954134b",
       "urlUpdatedAt": "2026-10-02T11:24:23.556Z"
+    },
+    {
+      "id": "2037",
+      "entryType": "avatar",
+      "displaySerial": "0902",
+      "nickname": "我々は所詮ポリゴンの集合体Akyo",
+      "avatarName": "我々は所詮ポリゴンの集合体なのさ",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/셰이더,초코민트류,색상,색상/파란색 계열,색상/초록색 계열",
+      "comment": "だが感じるぞ、その中にあるAkyo魂を・・・",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_42e50301-719f-4e99-86e0-3471a772c1ab",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_42e50301-719f-4e99-86e0-3471a772c1ab",
+      "urlUpdatedAt": "2026-10-02T12:10:28.544Z"
     }
   ]
 }
