@@ -5,6 +5,11 @@ import path from 'node:path';
 import test from 'node:test';
 
 interface WorkersWranglerConfig {
+  observability?: {
+    enabled?: boolean;
+    issues?: { enabled?: boolean };
+    logs?: { enabled?: boolean; invocation_logs?: boolean };
+  };
   name?: string;
   main?: string;
   workers_dev?: boolean;
@@ -33,6 +38,19 @@ interface WorkersWranglerConfig {
     bucket_name: string;
   }>;
 }
+
+test('Workers staging and production enable Issues alongside existing logs and Sentry', async () => {
+  for (const filename of ['wrangler.workers.jsonc', 'wrangler.workers.production.jsonc']) {
+    const config = JSON.parse(await readFile(path.join(process.cwd(), filename), 'utf8')) as WorkersWranglerConfig;
+    assert.equal(config.observability?.enabled, true, filename);
+    assert.equal(config.observability?.issues?.enabled, true, filename);
+    assert.equal(config.observability?.logs?.enabled, true, filename);
+    assert.equal(config.observability?.logs?.invocation_logs, true, filename);
+    assert.ok(config.vars?.SENTRY_ENVIRONMENT, filename);
+  }
+  const worker = await readFile(path.join(process.cwd(), 'cloudflare-worker.ts'), 'utf8');
+  assert.match(worker, /export default withSentry<WorkersRuntimeEnv>/);
+});
 
 test('Workers production config uses production data without exposing a route', async () => {
   const configPath = path.join(process.cwd(), 'wrangler.workers.production.jsonc');

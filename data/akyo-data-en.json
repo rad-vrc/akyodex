@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-02T07:16:43.684Z",
-  "count": 1018,
+  "updatedAt": "2026-10-02T11:26:22.368Z",
+  "count": 1020,
   "data": [
     {
       "id": "0001",
@@ -11801,6 +11801,32 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_887b61a7-977d-49c2-8e73-e6f254261770",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_887b61a7-977d-49c2-8e73-e6f254261770",
       "urlUpdatedAt": "2026-10-02T07:16:43.575Z"
+    },
+    {
+      "id": "2035",
+      "entryType": "avatar",
+      "displaySerial": "0901",
+      "nickname": "西鉄電車Akyo",
+      "avatarName": "Akyo train NNR",
+      "category": "Supported Platform,Supported Platform/PC,Vehicle,Vehicle/Land,Mint Chocolate,Color,Color/Green Tones,Color/Blue Tones,Gimmick・Special,Gimmick・Special/Clone",
+      "comment": "アッキョッポッポ～！",
+      "author": "D․Na⁄だな＠QDD",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8805f474-38ac-4dc9-b455-be6ce0c98068",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8805f474-38ac-4dc9-b455-be6ce0c98068",
+      "urlUpdatedAt": "2026-10-02T11:04:48.163Z"
+    },
+    {
+      "id": "2036",
+      "entryType": "world",
+      "displaySerial": "0119",
+      "nickname": "Sasanoki's Akyo Gallery 01 -ささのきAkyoギャラリー-",
+      "avatarName": "Sasanoki's Akyo Gallery 01 -ささのきAkyoギャラリー-",
+      "category": "World,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Supported Platform/iOS,World/Pedestal,Booth",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_f7117771-22a2-4be2-ab4d-d6784954134b",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_f7117771-22a2-4be2-ab4d-d6784954134b",
+      "urlUpdatedAt": "2026-10-02T11:24:23.556Z"
     }
   ]
 }
