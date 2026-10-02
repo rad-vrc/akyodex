@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T13:31:58.930Z",
-  "count": 1024,
+  "updatedAt": "2026-10-02T13:37:53.524Z",
+  "count": 1025,
   "data": [
     {
       "id": "0001",
@@ -12580,6 +12580,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f448b606-78da-4f7f-b265-3c7cbdfa1271",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f448b606-78da-4f7f-b265-3c7cbdfa1271",
       "urlUpdatedAt": "2026-10-02T13:31:58.774Z"
+    },
+    {
+      "id": "2041",
+      "entryType": "avatar",
+      "displaySerial": "0906",
+      "nickname": "カラフルバニラアイスAkyo",
+      "avatarName": "akyovanilla",
+      "category": "지원 기기,지원 기기/PC,색상,색상/흰색 계열,체격・형태・촉감,체격・형태・촉감/차가운,음식,음식/디저트,소재・원재료,소재・원재료/우유",
+      "comment": "定番のバニラ！こだわりのトッピングがきれいだね！",
+      "author": "City Tanuki",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_9d7608e8-24e5-494e-9696-98804423edb2",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_9d7608e8-24e5-494e-9696-98804423edb2",
+      "urlUpdatedAt": "2026-10-02T13:37:53.351Z"
     }
   ]
 }
