@@ -9,6 +9,8 @@ import type {
 } from "./types";
 import { normalizeEntryType } from "./types";
 import { createSubstringMatch } from "./sql-matching";
+import { embedBudgeted } from "./budgeted-ai";
+import { BudgetStoppedError } from "../../../scripts/ai-budget.js";
 
 export { escapeLikePattern } from "./sql-matching";
 
@@ -16,7 +18,6 @@ export const DEFAULT_TOP_K = 5;
 export const MAX_TOP_K = 8;
 export const MAX_KEYWORDS = 3;
 
-const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const MIN_SEMANTIC_SCORE = 0.35;
 const MAX_KEYWORD_CANDIDATES = 24;
 const GENERIC_SEARCH_TERMS = new Set([
@@ -400,7 +401,7 @@ async function findVectorMatches(
   env: Env
 ): Promise<SearchResult[]> {
   const index = selectVectorIndex(env);
-  const embeddings = await env.AI.run(EMBEDDING_MODEL, { text: keyword });
+  const embeddings = await embedBudgeted(keyword, env);
   const vector = embeddings.data[0];
   if (!vector) {
     return [];
@@ -502,7 +503,7 @@ export async function searchWithD1AndVectorize(
   language: Language,
   requestedTopK: unknown,
   env: Env
-): Promise<SearchResult[]> {
+): Promise<{ results: SearchResult[]; budgetLimited: boolean }> {
   const limit = normalizeTopK(requestedTopK);
   const terms = normalizeSearchTerms(undefined, rawTerms);
   const exactResults = new Map<string, SearchResult>();
@@ -521,15 +522,17 @@ export async function searchWithD1AndVectorize(
   }
 
   if (exactResults.size > 0) {
-    return sortAndLimit(exactResults.values(), limit);
+    return { results: sortAndLimit(exactResults.values(), limit), budgetLimited: false };
   }
 
   const fallbackResults = new Map<string, SearchResult>();
+  let budgetStopped = false;
   await Promise.all(
     terms.map(async (term) => {
       const partialPromise = findPartialMatches(term, language, limit, env);
       const vectorPromise = findVectorMatches(term, language, limit, env).catch(
         (error: unknown) => {
+          if (error instanceof BudgetStoppedError) { budgetStopped = true; return []; }
           console.error("Vector search failed; returning D1 matches only", error);
           return [];
         }
@@ -545,5 +548,6 @@ export async function searchWithD1AndVectorize(
     })
   );
 
-  return sortAndLimit(fallbackResults.values(), limit);
+  if (budgetStopped && fallbackResults.size === 0) throw new BudgetStoppedError();
+  return { results: sortAndLimit(fallbackResults.values(), limit), budgetLimited: budgetStopped };
 }

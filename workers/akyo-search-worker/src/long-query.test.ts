@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
 import { after, before, beforeEach, describe, it } from "node:test";
 
 import worker from "./index";
@@ -44,6 +45,10 @@ describe("long input against real local D1", () => {
       telemetry: { enabled: false },
     });
     db = await runtime.getD1Database("DB");
+    for (const sql of readFileSync(new URL("../sql/ai-budget.sql", import.meta.url), "utf8").split(";").filter(sql => sql.trim())) {
+      await db.prepare(sql).run();
+    }
+    await db.prepare("UPDATE ai_budget_config SET enabled = 1").run();
     await db.prepare(`CREATE TABLE akyos (
       id TEXT PRIMARY KEY, nickname TEXT NOT NULL, name TEXT, category TEXT,
       description TEXT, author TEXT, url TEXT, language TEXT DEFAULT 'ja'
@@ -51,7 +56,10 @@ describe("long input against real local D1", () => {
   });
 
   after(async () => { await runtime?.dispose(); });
-  beforeEach(async () => { await db.prepare("DELETE FROM akyos").run(); });
+  beforeEach(async () => {
+    await db.prepare("DELETE FROM akyos").run();
+    await db.prepare("DELETE FROM ai_budget_reservations").run();
+  });
 
   async function seed(id: string, fields: Partial<AkyoRecord> = {}) {
     const row = {
@@ -71,9 +79,10 @@ describe("long input against real local D1", () => {
       DB: db,
       AI: {
         async run(_model, input) {
+          assert.ok("text" in input);
           aiInputs.push(input.text);
           if (options.aiFailure) throw new Error("Local AI failure");
-          return { data: [[0.1, 0.2]] };
+          return Response.json({ data: [[0.1, 0.2]] });
         },
       },
       VECTORIZE: {
@@ -196,7 +205,8 @@ describe("long input against real local D1", () => {
     const body = await post("/search", { query: "ignored", keywords: [long, "short"] }, env);
     assert.deepEqual(body.keywords, [long, "short"]);
     assert.deepEqual(body.results.map(row => row.id), ["0001", "0002"]);
-    assert.deepEqual(aiInputs, [long, "short"]);
+    // Reservations race independently; invocation order is not result ordering.
+    assert.deepEqual([...aiInputs].sort(), [long, "short"].sort());
     const short = await post("/search", { query: long, keywords: ["short"] }, env);
     assert.deepEqual(short.results.map(row => row.id), ["0002"]);
   });

@@ -67,6 +67,8 @@ test("adversarial latest phrases finish without unbounded regex backtracking", (
 
 function fixture(semanticIds: string[] = []) {
   const db = new DatabaseSync(":memory:");
+  db.exec(readFileSync(new URL("../sql/ai-budget.sql", import.meta.url), "utf8"));
+  db.exec("UPDATE ai_budget_config SET enabled = 1");
   db.exec(`CREATE TABLE akyos (id TEXT PRIMARY KEY, nickname TEXT, name TEXT,
     category TEXT, description TEXT, author TEXT, url TEXT, language TEXT, urlUpdatedAt TEXT, publicId TEXT)`);
   const data = [
@@ -87,7 +89,7 @@ function fixture(semanticIds: string[] = []) {
     prepare(sql) {
       const statement = (values: unknown[]): D1PreparedStatement => ({
         bind: (...args) => statement(args),
-        all: async <T>() => ({ results: db.prepare(sql).all(...values) as T[] }),
+        all: async <T>() => ({ success: true, results: db.prepare(sql).all(...values) as T[] }),
         first: async <T>() => (db.prepare(sql).all(...values)[0] as T) ?? null,
         run: async () => db.prepare(sql).run(...values),
       });
@@ -96,7 +98,7 @@ function fixture(semanticIds: string[] = []) {
     batch: <T>(statements: D1PreparedStatement[]) => Promise.all(statements.map(s => s.all<T>())),
   };
   const env: Env = { DB: database,
-    AI: { async run(_model, input) { aiCalls++; aiInputs.push(input.text); return { data: [[1, 2]] }; } },
+    AI: { async run(_model, input) { assert.ok("text" in input); aiCalls++; aiInputs.push(input.text); return Response.json({ data: [[1, 2]] }); } },
     VECTORIZE: { async query() { vectorCalls++; return { matches: semanticIds.map(id => ({ id, score: 0.9 })) }; }, async upsert() {} },
   };
   return { db, env, data, aiInputs, counts: () => ({ aiCalls, vectorCalls }) };

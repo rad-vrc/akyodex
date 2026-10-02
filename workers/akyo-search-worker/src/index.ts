@@ -16,7 +16,9 @@ import {
   searchSpecificNameMatches,
   searchWithD1AndVectorize,
 } from "./search";
-import type { Env } from "./types";
+import type { Env, SearchResult } from "./types";
+import { handleChat, budgetNotice } from "./chat";
+import { BudgetStoppedError } from "../../../scripts/ai-budget.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -52,6 +54,13 @@ async function readJsonObject(request: Request): Promise<Record<string, unknown>
 
 async function handleSearch(request: Request, env: Env): Promise<Response> {
   const body = await readJsonObject(request);
+  const inputs = [body.query, ...(Array.isArray(body.keywords) ? body.keywords : [body.keywords])];
+  const encoder = new TextEncoder();
+  if ((Array.isArray(body.keywords) && body.keywords.length > 24) ||
+    inputs.some(value => typeof value === "string" && (encoder.encode(value).length > 4096 ||
+      encoder.encode(value.normalize("NFKD")).length > 4096))) {
+    return jsonResponse({ error: "Search accepts at most 24 keywords and 4096 UTF-8 bytes per query or keyword, before and after NFKD normalization" }, 400);
+  }
   const terms = normalizeSearchTerms(body.query, body.keywords);
   if (terms.length === 0) {
     return jsonResponse({ error: "query or keywords parameter is required" }, 400);
@@ -83,15 +92,22 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
   let specificNameQuery = question?.kind === "named" || isSpecificNameQuery(specificNameInput);
   const specificNameTerms =
     typeof specificNameInput === "string" ? [specificNameInput] : terms;
-  let results = specificNameQuery
-    ? await searchSpecificNameMatches(specificNameTerms, language, env)
-    : await searchWithD1AndVectorize(terms, language, topK, env);
-  // A partial name can also be a description. Only exact names may suppress
-  // discovery for ambiguous requests; explicit subjects keep lexical matching.
-  if (specificNameQuery && !results.some(result => result.matchType === "exact") && question?.kind !== "named"
-    && allowsDiscoveryOnNameMiss(specificNameInput)) {
-    specificNameQuery = false;
-    results = await searchWithD1AndVectorize(terms, language, topK, env);
+  let results: SearchResult[];
+  let budgetLimited = false;
+  try {
+    if (specificNameQuery) results = await searchSpecificNameMatches(specificNameTerms, language, env);
+    else ({ results, budgetLimited } = await searchWithD1AndVectorize(terms, language, topK, env));
+    // A partial name can also be a description. Only exact names may suppress
+    // discovery for ambiguous requests; explicit subjects keep lexical matching.
+    if (specificNameQuery && !results.some(result => result.matchType === "exact") && question?.kind !== "named"
+      && allowsDiscoveryOnNameMiss(specificNameInput)) {
+      specificNameQuery = false;
+      ({ results, budgetLimited } = await searchWithD1AndVectorize(terms, language, topK, env));
+    }
+  } catch (error) {
+    if (!(error instanceof BudgetStoppedError)) throw error;
+    return jsonResponse({ language, searchMode: "clarification", budgetLimited: true,
+      directAnswer: budgetNotice(language), results: [], count: 0 });
   }
 
   return jsonResponse({
@@ -100,6 +116,7 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
     language,
     searchMode: specificNameQuery ? "specific-name" : "discovery",
     nameMatch: specificNameQuery ? results.length > 0 : undefined,
+    budgetLimited: budgetLimited || undefined,
     results,
     count: results.length,
   });
@@ -152,37 +169,48 @@ async function handleInsertData(request: Request, env: Env): Promise<Response> {
   return jsonResponse({ ok: result.failed === 0, ...result });
 }
 
+async function handleRequest(request: Request, env: Env): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+
+  const url = new URL(request.url);
+  if (url.pathname === "/health" && request.method === "GET") {
+    return jsonResponse({ status: "ok" });
+  }
+
+  try {
+    if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
+      return await handleChat(request, env);
+    }
+    if (url.pathname === "/search" && request.method === "POST") {
+      return await handleSearch(request, env);
+    }
+    if (url.pathname === "/count" && request.method === "POST") {
+      return await handleCount(request, env);
+    }
+    if (url.pathname === "/insert-data" && request.method === "POST") {
+      return await handleInsertData(request, env);
+    }
+  } catch (error) {
+    const status = error instanceof BadRequestError ? 400
+      : error instanceof LatestCatalogNotReadyError || error instanceof PublicCatalogNotReadyError ? 503 : 500;
+    if (status === 500) {
+      console.error("Worker request failed", error);
+    }
+    return jsonResponse({ error: errorMessage(error) }, status);
+  }
+
+  return jsonResponse({ error: "Not Found" }, 404);
+}
+
 const worker = {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: CORS_HEADERS });
-    }
-
-    const url = new URL(request.url);
-    if (url.pathname === "/health" && request.method === "GET") {
-      return jsonResponse({ status: "ok" });
-    }
-
-    try {
-      if (url.pathname === "/search" && request.method === "POST") {
-        return await handleSearch(request, env);
-      }
-      if (url.pathname === "/count" && request.method === "POST") {
-        return await handleCount(request, env);
-      }
-      if (url.pathname === "/insert-data" && request.method === "POST") {
-        return await handleInsertData(request, env);
-      }
-    } catch (error) {
-      const status = error instanceof BadRequestError ? 400
-        : error instanceof LatestCatalogNotReadyError || error instanceof PublicCatalogNotReadyError ? 503 : 500;
-      if (status === 500) {
-        console.error("Worker request failed", error);
-      }
-      return jsonResponse({ error: errorMessage(error) }, status);
-    }
-
-    return jsonResponse({ error: "Not Found" }, 404);
+  fetch(request: Request, env: Env, ctx?: { waitUntil(promise: Promise<unknown>): void }): Promise<Response> {
+    // Register the same work before awaiting it, including upstream body and D1
+    // settlement. Disconnects get up to 30s extra, not an inference retry/refund.
+    const response = handleRequest(request, env);
+    ctx?.waitUntil(response.then(() => undefined, () => undefined));
+    return response;
   },
 };
 

@@ -1,8 +1,8 @@
 import { normalizeLanguage } from "./search";
+import { embedBudgeted } from "./budgeted-ai";
 import { normalizeEntryType } from "./types";
 import type { AkyoRecord, Env, Language, VectorizeVector } from "./types";
 
-const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const EMBEDDING_BATCH_SIZE = 20;
 const VECTOR_UPSERT_BATCH_SIZE = 100;
 const INSERT_RECORD_SQL = `
@@ -157,9 +157,7 @@ export async function ingestRecords(
 
   for (const batch of chunksOf(normalizedRecords, EMBEDDING_BATCH_SIZE)) {
     try {
-      const embeddings = await env.AI.run(EMBEDDING_MODEL, {
-        text: batch.map(embeddingText),
-      });
+      const embeddings = await embedBudgeted(batch.map(embeddingText), env);
       for (const [index, record] of batch.entries()) {
         const values = embeddings.data[index];
         if (!values) {

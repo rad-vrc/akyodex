@@ -12,6 +12,8 @@ function record(id, nickname = `Akyo ${id}`) {
 
 function harness(rows = [], vectors = rows) {
   const db = new DatabaseSync(':memory:');
+  db.exec(require('node:fs').readFileSync(require('node:path').resolve(__dirname, '../workers/akyo-search-worker/sql/ai-budget.sql'), 'utf8'));
+  db.exec('UPDATE ai_budget_config SET enabled = 1');
   db.exec('CREATE TABLE akyos (id TEXT PRIMARY KEY, nickname TEXT NOT NULL, name TEXT, category TEXT, description TEXT, author TEXT, url TEXT, language TEXT)');
   const columns = ['id', 'nickname', 'name', 'category', 'description', 'author', 'url', 'language'];
   for (const r of rows) db.prepare(`INSERT INTO akyos VALUES (${columns.map(() => '?').join(',')})`).run(...columns.map(k => r[k]));
@@ -100,6 +102,55 @@ test('dry run reads the remote inventories but neither writes nor generates embe
   } finally { h.db.close(); }
 });
 
+test('missing, disabled or exhausted budget stops an apply before any catalog mutation, but not a dry run', async () => {
+  for (const setup of ['DROP TABLE ai_budget_config', 'DROP TABLE ai_budget_reservations',
+    'UPDATE ai_budget_config SET enabled = 0', "INSERT INTO ai_budget_reservations (id, units) VALUES ('full', 8000)"]) {
+    const h = harness([record('0001')]);
+    try {
+      h.db.exec(setup);
+      const desired = [{ ...record('0001'), category: 'Culture' }];
+      assert.equal((await reconcileCatalog(desired, h.api, { dryRun: true })).vectorsUpdated, 1);
+      await assert.rejects(reconcileCatalog(desired, h.api), /budget/);
+      assert.equal(h.calls.writes, 0);
+      assert.equal(h.calls.embeddings.length, 0);
+      assert.equal(h.calls.upserts.length, 0);
+      assert.equal(h.index.get('0001').metadata.category, 'Animal');
+      assert.equal(h.db.prepare('SELECT category FROM akyos').get().category, 'Animal');
+    } finally { h.db.close(); }
+  }
+});
+
+test('150 category edits and a full catalog rebuild fit the ledger through the real embedding client', async () => {
+  const catalog = buildPayload(require('../data/akyo-data-ja.json'));
+  for (const mode of ['category-edit', 'rebuild']) {
+    const original = mode === 'category-edit' ? catalog.slice(0, 150) : [];
+    const desired = mode === 'category-edit' ? original.map(r => ({ ...r, category: `${r.category},Culture` })) : catalog;
+    const h = harness(original);
+    let inferences = 0;
+    const api = createCloudflareClient({ accountId: 'test', token: 'fake', databaseId: 'test', indexName: 'test',
+      retryDelayMs: 0, fetchImpl: async (url, init) => {
+        const body = JSON.parse(init.body);
+        if (new URL(url).pathname.endsWith('/query')) {
+          return Response.json({ success: true, result: [{ success: true, results: await h.api.query(body.sql, body.params) }] });
+        }
+        assert.ok(String(url).endsWith('/bge-m3'));
+        inferences++;
+        return Response.json({ success: true, result: { data: body.text.map(() => [1, 2, 3]) } });
+      } });
+    h.api.embed = api.embed;
+    try {
+      const result = await reconcileCatalog(desired, h.api);
+      assert.equal(result.vectorsUpdated, desired.length);
+      assert.equal(inferences, Math.ceil(desired.length / 20));
+      const { units, pending } = h.db.prepare('SELECT SUM(units) AS units, SUM(completed_at IS NULL) AS pending FROM ai_budget_reservations').get();
+      assert.ok(units < 8000 - 800, `budget must retain room for generation after ${mode}: ${units}`);
+      assert.equal(pending, 0);
+      assert.equal((await reconcileCatalog(desired, h.api)).vectorsUpdated, 0);
+      assert.equal(inferences, Math.ceil(desired.length / 20), 'a repeated sync must not infer again');
+    } finally { h.db.close(); }
+  }
+});
+
 test('rejects empty, duplicate, non-JA and malformed catalogs before touching the remote state', async () => {
   for (const input of [[], [record('0001'), record('0001')], [{ ...record('0001'), language: 'en' }],
     [{ ...record('0001'), nickname: '' }], [{ ...record('0001'), category: 123 }],
@@ -147,6 +198,9 @@ test('does not delete any records when a vector update fails', async () => {
 
 test('reconciles the catalog through the real REST client and SQL, including retry and orphan cleanup', async () => {
   const h = harness([record('0001'), record('0002')]);
+  h.db.exec(require('node:fs').readFileSync(require('node:path').join(__dirname,
+    '../workers/akyo-search-worker/sql/ai-budget.sql'), 'utf8'));
+  h.db.exec('UPDATE ai_budget_config SET enabled = 1');
   let failOnce = true;
   const api = createCloudflareClient({ accountId: 'account', token: 'fake', databaseId: 'db', indexName: 'index', retryDelayMs: 0,
     fetchImpl: async (url, init) => {

@@ -46,6 +46,9 @@ class FakeStatement implements D1PreparedStatement {
   }
 
   async all<T>(): Promise<D1Result<T>> {
+    if (this.query.includes("ai_budget_reservations")) {
+      return { success: true, results: [{ id: this.values[this.query.startsWith("INSERT") ? 0 : 1] }] as T[] };
+    }
     if (this.query.includes("INSERT INTO")) {
       this.database.runCalls += 1;
       return { results: [] };
@@ -122,15 +125,15 @@ class FakeAi implements AiBinding {
   async run(
     _model: string,
     input: { text: string | string[] }
-  ): Promise<{ data: number[][] }> {
+  ): Promise<Response> {
     this.calls.push(input.text);
     if (this.failure) {
       throw this.failure;
     }
     const count = Array.isArray(input.text) ? input.text.length : 1;
-    return {
+    return Response.json({
       data: Array.from({ length: count }, () => [0.1, 0.2, 0.3]),
-    };
+    });
   }
 }
 
@@ -258,7 +261,7 @@ test("semantic results use D1 language and fields even when legacy vector metada
     { id: '0002', score: 0.9, metadata: { id: '0002', language: 'ja' } },
     { id: '0003', score: 0.9, metadata: { id: '0003', nickname: 'Deleted Akyo' } },
   ];
-  const results = await searchWithD1AndVectorize(['colorful'], 'ja', 5,
+  const { results } = await searchWithD1AndVectorize(['colorful'], 'ja', 5,
     fakeEnv({ database, vectorize: new FakeVectorize(matches) }));
   assert.deepEqual(results.map(result => result.id), ['0001']);
   assert.equal(results[0].category, 'Current category');
@@ -341,7 +344,7 @@ test("returns an exact D1 match without invoking Workers AI", async () => {
   const ai = new FakeAi();
   const vectorizeJa = new FakeVectorize(vectorMatches(20));
 
-  const results = await searchWithD1AndVectorize(
+  const { results } = await searchWithD1AndVectorize(
     ["たなばたAkyoについて教えて"],
     "ja",
     5,
@@ -368,7 +371,7 @@ test("labels exact world results without requiring a D1 schema migration", async
     }),
   ];
 
-  const results = await searchWithD1AndVectorize(
+  const { results } = await searchWithD1AndVectorize(
     ["Akyoつりぼりについて教えて"],
     "ja",
     5,
@@ -442,7 +445,7 @@ test("does not let a generic Akyo exact match hide a specific keyword", async ()
     row({ match_score: 0.85, matched_field: "nickname" }),
   ];
 
-  const results = await searchWithD1AndVectorize(
+  const { results } = await searchWithD1AndVectorize(
     ["たなばた", "akyo", "AKYO"],
     "ja",
     5,
@@ -466,7 +469,7 @@ test("uses only specific terms for fallback search", async () => {
   ];
   const ai = new FakeAi();
 
-  const results = await searchWithD1AndVectorize(
+  const { results } = await searchWithD1AndVectorize(
     ["たなばた", "Akyo", "キャラクター"],
     "ja",
     5,
@@ -492,7 +495,7 @@ test("keeps a generic Akyo exact match for a single keyword", async () => {
   ];
   const ai = new FakeAi();
 
-  const results = await searchWithD1AndVectorize(
+  const { results } = await searchWithD1AndVectorize(
     ["Akyo"],
     "ja",
     5,
@@ -510,7 +513,7 @@ test("ordinary name/discovery lookup never treats a keyword as an internal ID", 
   database.exactRows = [row({ id: "0504", language: "ja" })];
   const ai = new FakeAi();
 
-  const results = await searchWithD1AndVectorize(
+  const { results } = await searchWithD1AndVectorize(
     ["0504"],
     "en",
     5,
@@ -530,7 +533,7 @@ test("globally limits merged results and uses the populated shared index", async
   const fallbackIndex = new FakeVectorize(vectorMatches(20));
   const japaneseIndex = new FakeVectorize(vectorMatches(20));
 
-  const results = await searchWithD1AndVectorize(
+  const { results } = await searchWithD1AndVectorize(
     ["七夕っぽいアバター"],
     "ja",
     5,
@@ -565,7 +568,7 @@ test("falls back to D1 results when semantic search fails", async () => {
   const originalConsoleError = console.error;
   console.error = () => undefined;
   try {
-    const results = await searchWithD1AndVectorize(
+    const { results } = await searchWithD1AndVectorize(
       ["たなばた"],
       "ja",
       5,

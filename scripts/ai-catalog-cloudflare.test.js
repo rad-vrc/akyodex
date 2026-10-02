@@ -32,7 +32,11 @@ test('uses the Cloudflare D1, AI and Vectorize request contracts including multi
     const path = new URL(url).pathname;
     paths.push(path);
     if (path.endsWith('/query')) {
-      assert.deepEqual(JSON.parse(init.body), { sql: 'SELECT * FROM akyos WHERE id = ?', params: ['2030'] });
+      const body = JSON.parse(init.body);
+      if (body.sql.includes('ai_budget_reservations')) {
+        return success([{ success: true, results: [{ id: body.params[body.sql.startsWith('INSERT') ? 0 : 1] }] }]);
+      }
+      assert.deepEqual(body, { sql: 'SELECT * FROM akyos WHERE id = ?', params: ['2030'] });
       return success([{ success: true, results: [{ id: '2030' }] }]);
     }
     if (path.endsWith('/bge-m3')) {
@@ -55,7 +59,7 @@ test('uses the Cloudflare D1, AI and Vectorize request contracts including multi
   await api.upsert([vector]);
   assert.deepEqual(await api.getVectors(['2030']), [vector]);
   await api.remove(['2030']);
-  assert.equal(paths.length, 5);
+  assert.equal(paths.length, 7);
 });
 
 test('bounds retries, retries transient failures and refuses false success or unacknowledged writes', async () => {
@@ -83,7 +87,7 @@ test('one request deadline also covers a body that never finishes', async () => 
   try {
     const api = client(async (_url, init) => {
       calls++;
-      return { ok: true, status: 200, json: () => new Promise((_, reject) => {
+      return { ok: true, status: 200, text: () => new Promise((_, reject) => {
         if (init.signal.aborted) reject(init.signal.reason);
         else init.signal.addEventListener('abort', () => reject(init.signal.reason), { once: true });
       }) };
@@ -101,4 +105,70 @@ test('API errors never include upstream bodies or request credentials', async ()
     assert.doesNotMatch(error.message, /PRIVATE_BODY_CANARY|CATALOG_TEXT_CANARY|fake-token/);
     return true;
   });
+});
+
+test('sync reserves before inference and never retries an uncertain AI request', async t => {
+  const warnings = t.mock.method(console, 'warn', () => {});
+  let reservationId;
+  let aiCalls = 0;
+  let settlements = 0;
+  let allow = true;
+  const api = client(async (url, init) => {
+    if (new URL(url).pathname.endsWith('/query')) {
+      const { sql, params } = JSON.parse(init.body);
+      if (sql.startsWith('INSERT')) reservationId = params[0];
+      if (sql.startsWith('UPDATE')) settlements++;
+      return success([{ success: true, results: allow ? [{ id: params[0] }] : [] }]);
+    }
+    aiCalls++;
+    throw new Error('connection lost after inference started');
+  });
+  await assert.rejects(api.embed([{ nickname: 'test' }]), /failed/);
+  assert.equal(aiCalls, 1);
+  assert.equal(settlements, 0);
+  const log = JSON.parse(warnings.mock.calls[0]?.arguments[0] ?? '{}');
+  assert.equal(log.event, 'ai_budget_hold');
+  assert.equal(log.reason, 'response_lost');
+  assert.equal(log.reservationId, reservationId);
+  assert.equal(log.units, 1);
+  assert.doesNotMatch(JSON.stringify(log), /fake-token|connection lost/);
+  allow = false;
+  await assert.rejects(api.embed([{ nickname: 'test' }]), /budget/);
+  assert.equal(aiCalls, 1);
+  assert.equal(warnings.mock.calls.length, 1, 'budget denial is not a new uncertain inference');
+});
+
+test('sync settles complete HTTP errors, invalid JSON and invalid embeddings at full cost without retries', async () => {
+  for (const response of [() => Response.json({ success: false }, { status: 503 }),
+    () => new Response('bad JSON'), () => success({ data: [] })]) {
+    let aiCalls = 0;
+    const settlements = [];
+    const api = client(async (url, init) => {
+      if (new URL(url).pathname.endsWith('/query')) {
+        const { sql, params } = JSON.parse(init.body);
+        if (sql.startsWith('UPDATE')) settlements.push(params);
+        return success([{ success: true, results: [{ id: params[0] }] }]);
+      }
+      aiCalls++;
+      return response();
+    });
+    await assert.rejects(api.embed([{ nickname: 'test' }]));
+    assert.equal(aiCalls, 1);
+    assert.equal(settlements.length, 1);
+    assert.equal(settlements[0][0], 1);
+  }
+});
+
+test('sync keeps a pending reservation when headers arrive but the response body is lost', async () => {
+  let settlements = 0;
+  const api = client(async (url, init) => {
+    if (new URL(url).pathname.endsWith('/query')) {
+      const { sql, params } = JSON.parse(init.body);
+      if (sql.startsWith('UPDATE')) settlements++;
+      return success([{ success: true, results: [{ id: params[0] }] }]);
+    }
+    return new Response(new ReadableStream({ start(controller) { controller.error(new Error('body lost')); } }));
+  });
+  await assert.rejects(api.embed([{ nickname: 'test' }]), /failed/);
+  assert.equal(settlements, 0);
 });

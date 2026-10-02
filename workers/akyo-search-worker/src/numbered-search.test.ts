@@ -42,7 +42,7 @@ async function harness(inRuntime = false) {
   let vectorCalls = 0;
   const env: Env = {
     DB: db,
-    AI: { async run() { aiCalls++; return { data: [[0.1, 0.2]] }; } },
+    AI: { async run() { aiCalls++; return Response.json({ data: [[0.1, 0.2]] }); } },
     VECTORIZE: {
       async query() { vectorCalls++; return { matches: [] }; },
       async upsert() { throw new Error("Unexpected vector write"); },
