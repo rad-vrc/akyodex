@@ -68,7 +68,7 @@ test("adversarial latest phrases finish without unbounded regex backtracking", (
 function fixture(semanticIds: string[] = []) {
   const db = new DatabaseSync(":memory:");
   db.exec(`CREATE TABLE akyos (id TEXT PRIMARY KEY, nickname TEXT, name TEXT,
-    category TEXT, description TEXT, author TEXT, url TEXT, language TEXT, urlUpdatedAt TEXT)`);
+    category TEXT, description TEXT, author TEXT, url TEXT, language TEXT, urlUpdatedAt TEXT, publicId TEXT)`);
   const data = [
     { id: "2030", urlUpdatedAt: "2026-10-01T00:00:00Z" },
     { id: "0917", urlUpdatedAt: "2026-09-01T00:00:00Z" },
@@ -77,8 +77,9 @@ function fixture(semanticIds: string[] = []) {
     { id: "9999", urlUpdatedAt: "invalid" },
     { id: "9998", urlUpdatedAt: "2027" },
   ];
-  for (const row of data) db.prepare("INSERT INTO akyos VALUES (?, ?, '', '', '', '', ?, 'ja', ?)")
-    .run(row.id, `Item${row.id}Akyo`, row.id === "0002" ? "https://vrchat.com/home/world/wrld-example" : "", row.urlUpdatedAt);
+  for (const row of data) db.prepare("INSERT INTO akyos VALUES (?, ?, '', '', '', '', ?, 'ja', ?, ?)")
+    .run(row.id, `Item${row.id}Akyo`, row.id === "0002" ? "https://vrchat.com/home/world/wrld-example" : "", row.urlUpdatedAt,
+      row.id === "0002" ? "World0002" : row.id === "2030" ? "Avatar0896" : `Avatar${row.id}`);
   let aiCalls = 0;
   const aiInputs: (string | string[])[] = [];
   let vectorCalls = 0;
@@ -132,7 +133,7 @@ test("latest requests follow the same timestamp/internal-ID order as the catalog
   } finally { h.db.close(); }
 });
 
-test("numbered natural-language questions resolve the exact ID, not a semantic substitute", async () => {
+test("numbered natural-language questions use synchronized public numbers, not semantic substitutes", async () => {
   const h = fixture();
   try {
     for (const query of ["#0001のAkyoについて教えて", "#0001", "0001番のAkyoについて教えて", "#Avatar0001"]) {
@@ -328,7 +329,7 @@ test("ambiguous partial names retain discovery while exact names and explicit su
       }
     }
     assert.deepEqual(h.counts(), { aiCalls: 12, vectorCalls: 12 });
-    for (const query of ["とても強そうなAkyoを教えて", "強そうなAkyoについて教えて", "#2030のAkyoを教えて", "そのAkyoの名前は強そうなAkyoです"]) {
+    for (const query of ["とても強そうなAkyoを教えて", "強そうなAkyoについて教えて", "#Avatar0896を教えて", "そのAkyoの名前は強そうなAkyoです"]) {
       const result = await search(h.env, { query });
       assert.equal(result.searchMode, "specific-name", query);
       assert.deepEqual(result.results.map(r => r.id), ["2030"]);
@@ -476,8 +477,8 @@ test("real catalog questions agree with direct filtering of the synchronized sou
   const blue = (row: AkyoRecord) => row.category.split(",").includes("色/青色系");
   try {
     h.db.exec("DELETE FROM akyos");
-    for (const row of rows) h.db.prepare("INSERT INTO akyos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(row.id, row.nickname, row.name, row.category, row.description, row.author, row.url, row.language, row.urlUpdatedAt ?? "");
+    for (const row of rows) h.db.prepare("INSERT INTO akyos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(row.id, row.nickname, row.name, row.category, row.description, row.author, row.url, row.language, row.urlUpdatedAt ?? "", row.publicId ?? "");
     for (const [query, expected, limit] of [
       ["Quest対応のAkyoは何体ありますか？", rows.filter(r => avatar(r) && quest(r)), 8],
       ["Holimondさんが作ったAkyoは何体ありますか？", rows.filter(r => avatar(r) && r.author === "Holimond"), 8],

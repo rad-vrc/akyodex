@@ -19,6 +19,7 @@ export interface AkyoRecord {
   url: string;
   language: Language;
   urlUpdatedAt?: string;
+  publicId?: string;
 }
 
 export interface SearchResult extends AkyoRecord {

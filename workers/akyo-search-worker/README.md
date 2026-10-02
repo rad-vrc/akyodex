@@ -128,6 +128,36 @@ partially completed initial timestamp backfill is not the final catalog order.
 The column is additive, so ordinary name/discovery searches keep working on the
 old Worker during sync. Rollback of the Worker does not require dropping it.
 
+### Public-number rollout
+
+The synchronizer also stores `publicId` (for example `World0001` or `Avatar0896`)
+in D1, using the catalog's display serial and type. Legacy records without an
+explicit serial use the same serial fallback as the website. The internal `id`
+remains the stable storage/vector key, never the interpretation of a visitor's
+number. Public IDs must be valid, type-consistent and unique before any remote
+access or write. They are row-only data: changing a display number does not
+regenerate embeddings or alter vector metadata.
+
+BOOTH-only entries (`Booth0001`, etc.) are not supported by this sync yet. None
+are in the current catalog, and support is deferred. Add support before the first
+BOOTH-only registration: one such entry currently fails validation for the entire
+AI sync and the all-catalog Worker test. Do not bypass public-ID validation or
+silently omit those entries as a workaround.
+
+Automatic AI sync is already enabled. Merging can therefore allow the next
+catalog edit to add/backfill the column without a manual dispatch. To guarantee
+a dry run before any production write, disable `AI_CATALOG_SYNC_ENABLED` before
+merge, then re-enable it only after the approved manual sync and verification.
+Changing that production variable requires release approval.
+
+After merge, inspect a dry run, apply the sync and verify a zero-diff dry run
+**before deploying this Worker**. The column is additive and the old Worker can
+continue running during sync. New numbered searches return 503 when the column
+is absent or any row has no public ID; an incomplete backfill must not resolve
+an ambiguous bare number to the one row that happened to finish first. Existing
+ingest updates preserve the sync-owned public ID, and newly ingested rows wait
+for sync. A Worker rollback does not require dropping the column.
+
 ### Rollout and recovery
 
 After review and explicit production approval:
@@ -195,8 +225,25 @@ serve stale vectors during a later partial sync.
 - `このAkyo図鑑` and `このAkyoずかん` do not trigger the follow-up guard.
   `そのAkyoの名前はMenmeAkyoです` uses the supplied name via strict D1 lookup;
   an unknown supplied name does not fall back to another semantic candidate.
-- Numbered phrases such as `#0001のAkyoについて教えて` use the existing internal
-  ID lookup. This does not introduce public display-number resolution.
+- Numbered requests use only **public display numbers**, never internal IDs.
+  `#World0001について教えて`, `1番のワールドを教えて` and
+  `#0001のワールドについて教えて` resolve the site's `World0001`.
+  `#Avatar0896`, `896番のアバターを教えて` and `#0896のAkyoを教えて`
+  resolve `Avatar0896`. A prefixed ID can also be followed by `のAkyo`,
+  `のアバター` or `のワールド`; the prefix still determines the public series.
+  For unprefixed numbers, `のAkyo` selects avatars. English introductions and full-width letters/digits are
+  supported. The response keeps the stable internal `id` for data consumers and
+  adds the resolved `publicId`; `matchedField` is `publicId`.
+- A bare `#0896` (also `896` / `896番`) searches both public series. One result
+  is returned only when unique. If both exist, `searchMode: "clarification"`
+  and `directAnswer` ask the visitor to resend the full `#Avatar...` or `#World...` number, with
+  no candidate presented as the answer. Missing numbers return zero results,
+  with no name/substring/semantic substitution. An explicit query takes priority
+  over generated keywords; a single keyword-only public-number request works too.
+- Quantity requests, comparisons, years such as `2025のアバターを教えて`, and
+  descriptions such as `#World0001に似た場所` are not single-number requests.
+  Typed Japanese numbers require `#` or `番` to avoid treating years as IDs.
+  This is bounded phrase recognition, not a general reference resolver.
 - Unqualified latest requests such as `最新のAkyoは？`, `What is the latest Akyo?`
   and `최근 추가된 Akyo 알려주세요` bypass name/vector search. Keyword-only
   requests like `["最新", "Akyo"]` are also recognized. An explicit query takes

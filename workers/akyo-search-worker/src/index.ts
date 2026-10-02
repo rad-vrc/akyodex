@@ -1,6 +1,7 @@
 import { countByAuthor, countByKeyword } from "./count";
 import { answerCatalogQuestion, parseCatalogQuestion } from "./catalog-question";
 import { isLatestRequest, LatestCatalogNotReadyError, searchLatest } from "./latest";
+import { answerPublicNumber, parsePublicNumber, PublicCatalogNotReadyError } from "./public-number";
 import {
   MAX_INGEST_RECORDS,
   ingestRecords,
@@ -58,6 +59,11 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
 
   const language = normalizeLanguage(body.language, terms.join(" "));
   const topK = normalizeTopK(body.topK);
+  const numberInput = typeof body.query === "string" && body.query.trim() ? body.query
+    : Array.isArray(body.keywords) && body.keywords.length === 1 ? body.keywords[0] : undefined;
+  const publicNumber = parsePublicNumber(numberInput);
+  if (publicNumber) return jsonResponse({ query: body.query,
+    ...await answerPublicNumber(publicNumber, normalizeLanguage(body.language, String(numberInput)), env) });
   if (isLatestRequest(body.query, body.keywords)) {
     const results = await searchLatest(language, topK, env);
     return jsonResponse({ query: body.query, language, searchMode: "latest",
@@ -168,7 +174,8 @@ const worker = {
         return await handleInsertData(request, env);
       }
     } catch (error) {
-      const status = error instanceof BadRequestError ? 400 : error instanceof LatestCatalogNotReadyError ? 503 : 500;
+      const status = error instanceof BadRequestError ? 400
+        : error instanceof LatestCatalogNotReadyError || error instanceof PublicCatalogNotReadyError ? 503 : 500;
       if (status === 500) {
         console.error("Worker request failed", error);
       }

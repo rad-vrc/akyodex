@@ -100,7 +100,7 @@ searchMode が "specific-name" かつ nameMatch が false の場合、または 
   without applying only the recognized subset or claiming an exact total.
 - An ambiguous `Xを教えて`, `Xを知りたい` or `Xを説明して` name miss returns to
   discovery, including polite forms stripped by preprocessing; `Xについて...`
-  and numeric IDs remain strict. Exact name matches still avoid semantic search.
+  and public display numbers remain strict. Exact name matches still avoid semantic search.
   A partial-name match alone does not suppress discovery for these ambiguous
   requests: ordinary discovery retains both lexical and semantic candidates.
 - Japanese aliases query the JA catalog and return `language: "ja"`, even if the
@@ -124,13 +124,21 @@ searchMode が "specific-name" かつ nameMatch が false の場合、または 
   answer about an unrelated semantic match or rely on old generated prose.
   The guard requires a particle after the subject, so `このAkyo図鑑` is not
   mistaken for an unresolved reference. The bounded `そのAkyoの名前はXです`
-  form uses a recognizable supplied name/ID via strict D1 lookup. It does not
+  form uses a recognizable supplied name via strict D1 lookup. It does not
   recover history or ask an LLM to infer the missing subject.
-- Numeric lookup uses the existing internal ID contract. It does not add support
-  for the website's separate `displaySerial` numbering.
-- After explicit approval: deploy the search Worker, publish the saved Dify
-  graph and prompt, then repeat the real conversation tests. These are separate operations
-  from the website's activate workflow. No D1 migration or re-embedding is needed.
+- Numeric lookup uses the website's public display numbers, never internal IDs.
+  `#Avatar0896` and `#Avatar0896のAkyoについて教えて` both refer to the
+  site's Avatar0896. `#World0001` refers to the site's World0001. Bare numbers
+  shared by both series return `clarification` with a `directAnswer` instructing
+  the visitor to resend a full prefixed number. The Worker does not remember a
+  previous question, so replying only `アバター` is insufficient. The Code node
+  must pass this direct answer through unchanged; test this path in the draft.
+- After explicit approval: sync the additive D1 `publicId` column, verify a
+  zero-diff dry run, deploy the search Worker, test the saved Dify draft, then
+  publish and repeat the real conversation tests. The public-number sync is
+  row-only and needs no re-embedding. Automatic sync is enabled: to require a
+  dry run before writes, disable `AI_CATALOG_SYNC_ENABLED` before merge (with
+  release approval). These operations are separate from website activation.
 - To roll back, restore the previous Dify published version/graph and the recorded
   Worker version. The original graph connects HTTP directly to LLM, with no Code,
   IF/ELSE or Answer 2 node. The old Context selection is HTTP `body`.

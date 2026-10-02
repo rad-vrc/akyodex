@@ -7,7 +7,7 @@ const { buildPayload } = require('./generate-vectorize-payload');
 const { createCloudflareClient } = require('./ai-catalog-cloudflare');
 
 const COLUMNS = ['id', 'nickname', 'name', 'category', 'description', 'author', 'url', 'language'];
-const ROW_COLUMNS = [...COLUMNS, 'urlUpdatedAt'];
+const ROW_COLUMNS = [...COLUMNS, 'urlUpdatedAt', 'publicId'];
 const MAX_RECORDS = 10_000;
 const MAX_AUTO_DELETIONS = 20;
 const MAX_AUTO_DELETION_PERCENT = 5;
@@ -25,7 +25,8 @@ function sameRecord(left, right) {
 }
 
 function sameRow(left, right) {
-  return sameRecord(left, right) && (left.urlUpdatedAt ?? '') === (right.urlUpdatedAt ?? '');
+  return sameRecord(left, right) && (left.urlUpdatedAt ?? '') === (right.urlUpdatedAt ?? '') &&
+    (left.publicId ?? '') === (right.publicId ?? '');
 }
 
 function validateCatalog(records) {
@@ -33,6 +34,7 @@ function validateCatalog(records) {
     throw new Error('Expected a non-empty Japanese catalog of at most 10000 records');
   }
   const ids = new Set();
+  const publicIds = new Set();
   return records.map(record => {
     if (!record || COLUMNS.some(key => typeof record[key] !== 'string') ||
       !/^\d{4}$/.test(record.id) || !record.nickname.trim() || record.language !== 'ja' ||
@@ -40,12 +42,19 @@ function validateCatalog(records) {
       throw new Error('Invalid or duplicate Japanese catalog record');
     }
     ids.add(record.id);
+    const publicId = record.publicId;
+    if (typeof publicId !== 'string' || !/^(Avatar|World)\d{4}$/.test(publicId) ||
+      publicId.endsWith('0000') || publicIds.has(publicId) ||
+      !publicId.startsWith(record.entryType === 'world' ? 'World' : 'Avatar')) {
+      throw new Error('Invalid or duplicate catalog publicId');
+    }
+    publicIds.add(publicId);
     const urlUpdatedAt = record.urlUpdatedAt ?? '';
     if (typeof urlUpdatedAt !== 'string' || (urlUpdatedAt.trim() &&
       (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(urlUpdatedAt.trim()) || !Number.isFinite(Date.parse(urlUpdatedAt))))) {
       throw new Error('Invalid catalog urlUpdatedAt');
     }
-    return { ...canonical(record), entryType: record.entryType, urlUpdatedAt: urlUpdatedAt.trim() };
+    return { ...canonical(record), entryType: record.entryType, urlUpdatedAt: urlUpdatedAt.trim(), publicId };
   });
 }
 
@@ -71,7 +80,8 @@ async function reconcileCatalog(input, api, options = {}) {
   const desired = new Map(records.map(record => [record.id, record]));
   const columns = await api.query('PRAGMA table_info(akyos)');
   const hasTimestamp = columns.some(column => column.name === 'urlUpdatedAt');
-  const rows = await api.query(`SELECT ${COLUMNS.join(', ')}, ${hasTimestamp ? 'urlUpdatedAt' : "'' AS urlUpdatedAt"} FROM akyos`);
+  const hasPublicId = columns.some(column => column.name === 'publicId');
+  const rows = await api.query(`SELECT ${COLUMNS.join(', ')}, ${hasTimestamp ? 'urlUpdatedAt' : "'' AS urlUpdatedAt"}, ${hasPublicId ? 'publicId' : "'' AS publicId"} FROM akyos`);
   if (!Array.isArray(rows) || rows.some(row => row.language !== 'ja' || !/^\d{4}$/.test(row.id))) {
     throw new Error('Expected only Japanese rows in the existing search database');
   }
@@ -104,6 +114,7 @@ async function reconcileCatalog(input, api, options = {}) {
   // Additive migration is inside the enabled apply path, after all inventories
   // and deletion guards. Dry runs work against both schemas without writing.
   if (!hasTimestamp) await api.query("ALTER TABLE akyos ADD COLUMN urlUpdatedAt TEXT NOT NULL DEFAULT ''");
+  if (!hasPublicId) await api.query("ALTER TABLE akyos ADD COLUMN publicId TEXT NOT NULL DEFAULT ''");
   for (const batch of chunks(changedRows, 10)) {
     await api.query(`INSERT OR REPLACE INTO akyos (${ROW_COLUMNS.join(', ')}) VALUES ${batch.map(() => `(${ROW_COLUMNS.map(() => '?').join(', ')})`).join(', ')}`,
       batch.flatMap(record => ROW_COLUMNS.map(key => record[key])));
