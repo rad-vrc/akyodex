@@ -96,7 +96,7 @@ export function normalizeLanguage(value: unknown, text: string): Language {
   return detectLanguage(text);
 }
 
-function cleanNaturalLanguageQuery(value: string): string {
+export function cleanNaturalLanguageQuery(value: string): string {
   let cleaned = value.trim().replace(/[?？!！。]+$/gu, "").trim();
 
   cleaned = cleaned
@@ -124,17 +124,12 @@ function isDescriptiveAkyoQuery(value: string): boolean {
   return DESCRIPTIVE_AKYO_MODIFIERS.has(match[1].trim().toLowerCase());
 }
 
-function catalogIdCandidate(value: string): string | undefined {
-  const match = value.match(/^#?(?:avatar|world)?\s*0*(\d{1,4})(?:番)?(?:の(?:akyo|アキョ|あきょ|アバター|ワールド))?$/iu);
-  return match?.[1].padStart(4, "0");
-}
-
 export function allowsDiscoveryOnNameMiss(value: unknown): boolean {
   // Match all three request suffixes stripped above. "Xを..." can describe a
-  // feature; "Xについて..." and IDs must not substitute a semantic guess.
+  // feature; "Xについて..." must not substitute a semantic guess. Public
+  // numbers are resolved by the handler before entering name/discovery search.
   return typeof value === "string" && value.length <= 200
-    && /を(?:教えて(?:ください)?|知りたい(?:です)?|説明して(?:ください)?)[?？!！。]*$/u.test(value.trim())
-    && !catalogIdCandidate(cleanNaturalLanguageQuery(value));
+    && /を(?:教えて(?:ください)?|知りたい(?:です)?|説明して(?:ください)?)[?？!！。]*$/u.test(value.trim());
 }
 
 export function isSpecificNameQuery(value: unknown): boolean {
@@ -145,10 +140,6 @@ export function isSpecificNameQuery(value: unknown): boolean {
   const candidate = cleanNaturalLanguageQuery(value);
   if (!candidate || GENERIC_SEARCH_TERMS.has(candidate.toLowerCase())) {
     return false;
-  }
-
-  if (catalogIdCandidate(candidate)) {
-    return true;
   }
 
   if (/akyo$/iu.test(candidate)) {
@@ -168,15 +159,6 @@ export function exactCandidates(value: string): string[] {
   for (const candidate of [cleaned, original]) {
     if (candidate && !candidates.some((item) => item.toLowerCase() === candidate.toLowerCase())) {
       candidates.push(candidate);
-    }
-  }
-
-  for (const candidate of [...candidates]) {
-    const id = catalogIdCandidate(candidate);
-    if (id) {
-      if (!candidates.includes(id)) {
-        candidates.unshift(id);
-      }
     }
   }
 
@@ -256,18 +238,16 @@ async function findExactMatches(
   const result = await env.DB.prepare(`
     SELECT id, nickname, name, category, description, author, url, language,
       CASE
-        WHEN id = ? THEN 1.0
         WHEN nickname = ? COLLATE NOCASE THEN 0.99
         ELSE 0.98
       END AS match_score,
       CASE
-        WHEN id = ? THEN 'id'
         WHEN nickname = ? COLLATE NOCASE THEN 'nickname'
         ELSE 'name'
       END AS matched_field
     FROM akyos
     WHERE
-      id = ? OR nickname = ? COLLATE NOCASE OR name = ? COLLATE NOCASE
+      nickname = ? COLLATE NOCASE OR name = ? COLLATE NOCASE
     ORDER BY
       match_score DESC,
       CASE
@@ -283,54 +263,12 @@ async function findExactMatches(
       candidate,
       candidate,
       candidate,
-      candidate,
-      candidate,
-      candidate,
       language,
       limit
     )
     .all<SearchRow>();
 
   return (result.results ?? []).map((row) => toSearchResult(row, candidate));
-}
-
-async function findExactIdMatches(
-  id: string,
-  preferredLanguage: Language,
-  limit: number,
-  env: Env
-): Promise<SearchResult[]> {
-  const result = await env.DB.prepare(`
-    SELECT id, nickname, name, category, description, author, url, language,
-      1.0 AS match_score,
-      'id' AS matched_field
-    FROM akyos
-    WHERE id = ?
-    ORDER BY
-      CASE
-        WHEN language = ? THEN 0
-        WHEN language = 'ja' THEN 1
-        ELSE 2
-      END,
-      id ASC
-    LIMIT ?
-  `)
-    .bind(id, preferredLanguage, limit)
-    .all<SearchRow>();
-
-  return (result.results ?? []).map((row) => toSearchResult(row, id));
-}
-
-function findExactCandidateMatches(
-  candidate: string,
-  language: Language,
-  limit: number,
-  env: Env
-): Promise<SearchResult[]> {
-  if (/^\d{4}$/u.test(candidate)) {
-    return findExactIdMatches(candidate, language, limit, env);
-  }
-  return findExactMatches(candidate, language, limit, env);
 }
 
 async function findPartialMatches(
@@ -527,15 +465,12 @@ export async function searchSpecificNameMatches(
 ): Promise<SearchResult[]> {
   const limit = 1;
   const terms = normalizeSearchTerms(undefined, rawTerms);
-  const id = terms.map(catalogIdCandidate).find(candidate => candidate !== undefined);
-  // An explicit ID must not become a name/substring match when the row is absent.
-  if (id) return findExactIdMatches(id, language, limit, env);
   const exactResults = new Map<string, SearchResult>();
 
   const exactMatches = await Promise.all(
     terms.flatMap((term) =>
       exactCandidates(term).map((candidate) =>
-        findExactCandidateMatches(candidate, language, limit, env)
+        findExactMatches(candidate, language, limit, env)
       )
     )
   );
@@ -575,7 +510,7 @@ export async function searchWithD1AndVectorize(
   const exactMatches = await Promise.all(
     terms.flatMap((term) =>
       exactCandidates(term).map((candidate) =>
-        findExactCandidateMatches(candidate, language, limit, env)
+        findExactMatches(candidate, language, limit, env)
       )
     )
   );

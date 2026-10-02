@@ -7,7 +7,7 @@ const { buildPayload } = require('./generate-vectorize-payload');
 
 function record(id, nickname = `Akyo ${id}`) {
   return { id, nickname, name: '', category: 'Animal', description: '', author: 'author',
-    url: '', language: 'ja', entryType: 'avatar' };
+    url: '', language: 'ja', entryType: 'avatar', publicId: `Avatar${id}` };
 }
 
 function harness(rows = [], vectors = rows) {
@@ -102,7 +102,9 @@ test('dry run reads the remote inventories but neither writes nor generates embe
 
 test('rejects empty, duplicate, non-JA and malformed catalogs before touching the remote state', async () => {
   for (const input of [[], [record('0001'), record('0001')], [{ ...record('0001'), language: 'en' }],
-    [{ ...record('0001'), nickname: '' }], [{ ...record('0001'), category: 123 }]]) {
+    [{ ...record('0001'), nickname: '' }], [{ ...record('0001'), category: 123 }],
+    [{ ...record('0001'), publicId: '' }], [{ ...record('0001'), publicId: 'World0001' }],
+    [record('0001'), { ...record('0002'), publicId: 'Avatar0001' }]]) {
     let accessed = false;
     await assert.rejects(reconcileCatalog(input, { query() { accessed = true; } }));
     assert.equal(accessed, false);
@@ -206,6 +208,33 @@ test('bounds D1 parameters, embedding batches and vector lookups across multiple
 function catalog(count) {
   return Array.from({ length: count }, (_, i) => record(String(i + 1).padStart(4, '0')));
 }
+
+test('public numbers migrate as row-only data, update without embedding, and reject collisions', async () => {
+  const old = record('2030', 'MenmeAkyo');
+  const h = harness([old]);
+  const desired = [{ ...old, publicId: 'Avatar0896' }];
+  try {
+    const dry = await reconcileCatalog(desired, h.api, { dryRun: true });
+    assert.equal(dry.rowsUpdated, 1);
+    assert.equal(dry.vectorsUpdated, 0);
+    assert.equal(h.calls.writes, 0);
+    await reconcileCatalog(desired, h.api);
+    assert.equal(h.db.prepare('SELECT publicId FROM akyos').get().publicId, 'Avatar0896');
+    assert.equal(h.calls.embeddings.length, 0);
+    desired[0].publicId = 'Avatar0897';
+    await reconcileCatalog(desired, h.api);
+    assert.equal(h.db.prepare('SELECT publicId FROM akyos').get().publicId, 'Avatar0897');
+    assert.equal(h.calls.embeddings.length, 0);
+    const writes = h.calls.writes;
+    await reconcileCatalog(desired, h.api);
+    assert.equal(h.calls.writes, writes);
+    for (const publicId of ['', '2030', 'World0897', 'Avatar0000']) {
+      await assert.rejects(reconcileCatalog([{ ...old, publicId }], h.api), /publicId/);
+    }
+    await assert.rejects(reconcileCatalog([old, { ...record('0001'), publicId: old.publicId }], h.api), /publicId/);
+    assert.equal(h.calls.writes, writes);
+  } finally { h.db.close(); }
+});
 
 test('latest timestamps migrate only on apply and update D1 without re-embedding unchanged content', async () => {
   const old = record('2030', 'MenmeAkyo');

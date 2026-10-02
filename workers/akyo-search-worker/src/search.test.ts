@@ -90,14 +90,7 @@ class FakeDatabase implements D1Database {
     if (query.includes('WHERE id IN (')) {
       return (this.semanticRows ?? []).filter(row => values.includes(row.id));
     }
-    if (query.includes("1.0 AS match_score") && query.includes("WHERE id = ?")) {
-      this.exactCandidates.push(String(values[0] ?? ""));
-      const candidate = String(values[0] ?? "");
-      return this.exactRows.filter(
-        (row) => row.id.toLowerCase() === candidate.toLowerCase()
-      );
-    }
-    if (query.includes("WHEN id = ?")) {
+    if (query.includes("WHEN nickname = ?")) {
       this.exactCandidates.push(String(values[0] ?? ""));
       const candidate = String(values[0] ?? "");
       const requestedLanguage = query.includes("WHERE language = ?")
@@ -106,8 +99,7 @@ class FakeDatabase implements D1Database {
       return this.exactRows.filter(
         (row) =>
           (!requestedLanguage || row.language === requestedLanguage) &&
-          (row.id.toLowerCase() === candidate.toLowerCase() ||
-            row.nickname.toLowerCase() === candidate.toLowerCase() ||
+          (row.nickname.toLowerCase() === candidate.toLowerCase() ||
             row.name.toLowerCase() === candidate.toLowerCase())
       );
     }
@@ -325,7 +317,7 @@ test("extracts exact avatar candidates from natural-language questions", () => {
     "たなばたAkyo",
     "たなばたAkyoについて教えて",
   ]);
-  assert.deepEqual(exactCandidates("#Avatar0504"), ["0504", "#Avatar0504"]);
+  assert.deepEqual(exactCandidates("#Avatar0504"), ["#Avatar0504"]);
 });
 
 test("distinguishes specific Akyo names from discovery queries", () => {
@@ -333,7 +325,7 @@ test("distinguishes specific Akyo names from discovery queries", () => {
   assert.equal(isSpecificNameQuery("Akyoつりぼりについて教えて"), true);
   assert.equal(isSpecificNameQuery("Tell me about Sand Fox Akyo"), true);
   assert.equal(isSpecificNameQuery("모래여우Akyo에 대해 알려줘"), true);
-  assert.equal(isSpecificNameQuery("#Avatar0504"), true);
+  assert.equal(isSpecificNameQuery("#Avatar0504"), false, "public numbers are routed before name search");
   assert.equal(isSpecificNameQuery("かわいいAkyoを教えて"), false);
   assert.equal(isSpecificNameQuery("cute Akyo"), false);
   assert.equal(isSpecificNameQuery("かわいいAkyo"), false);
@@ -513,7 +505,7 @@ test("keeps a generic Akyo exact match for a single keyword", async () => {
   assert.deepEqual(ai.calls, []);
 });
 
-test("finds a numeric avatar ID across languages", async () => {
+test("ordinary name/discovery lookup never treats a keyword as an internal ID", async () => {
   const database = new FakeDatabase();
   database.exactRows = [row({ id: "0504", language: "ja" })];
   const ai = new FakeAi();
@@ -525,11 +517,8 @@ test("finds a numeric avatar ID across languages", async () => {
     fakeEnv({ database, ai })
   );
 
-  assert.equal(results.length, 1);
-  assert.equal(results[0].id, "0504");
-  assert.equal(results[0].language, "ja");
-  assert.equal(results[0].matchType, "exact");
-  assert.deepEqual(ai.calls, []);
+  assert.equal(results.length, 0);
+  assert.deepEqual(ai.calls, ["0504"]);
 });
 
 test("globally limits merged results and uses the populated shared index", async () => {

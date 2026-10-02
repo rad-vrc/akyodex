@@ -34,6 +34,8 @@ function buildPayload(parsed) {
 
   return items.map((item) => ({
     id: item.id,
+    // Match the site's displayed number, including its legacy serial fallback.
+    publicId: `${item.entryType === 'world' || /\/world\//iu.test(item.avatarUrl || '') ? 'World' : 'Avatar'}${item.displaySerial?.trim() || item.id}`,
     entryType:
       item.entryType === 'world' || /\/world\//iu.test(item.avatarUrl || '')
         ? 'world'
