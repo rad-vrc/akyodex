@@ -125,15 +125,15 @@ class FakeAi implements AiBinding {
   async run(
     _model: string,
     input: { text: string | string[] }
-  ): Promise<{ data: number[][] }> {
+  ): Promise<Response> {
     this.calls.push(input.text);
     if (this.failure) {
       throw this.failure;
     }
     const count = Array.isArray(input.text) ? input.text.length : 1;
-    return {
+    return Response.json({
       data: Array.from({ length: count }, () => [0.1, 0.2, 0.3]),
-    };
+    });
   }
 }
 

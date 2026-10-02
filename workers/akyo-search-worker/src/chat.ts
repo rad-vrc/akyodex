@@ -1,6 +1,6 @@
 import { CHAT_MODEL, CHAT_RESERVATION, MAX_COMPLETION_TOKENS, BudgetStoppedError,
   reserveBudget, finishBudget, chatCharge } from "../../../scripts/ai-budget.js";
-import { budgetQuery } from "./budgeted-ai";
+import { budgetQuery, readAIResponse } from "./budgeted-ai";
 import { isAuthorizedForIngest } from "./ingest";
 import { normalizeLanguage } from "./search";
 import type { Env, Language } from "./types";
@@ -95,16 +95,23 @@ export async function handleChat(request: Request, env: Env): Promise<Response> 
   }
   try {
     // Never forward model, tools, n, stream or token limits unchecked.
-    const result = await env.AI.run(CHAT_MODEL, { ...sampling, messages, n: 1, stream: false,
-      max_completion_tokens: Math.min(requestedTokens, MAX_COMPLETION_TOKENS) });
-    if (!isObject(result) || !Array.isArray(result.choices) || result.choices.length !== 1) throw new Error("Invalid completion");
+    const response = await env.AI.run(CHAT_MODEL, { ...sampling, messages, n: 1, stream: false,
+      max_completion_tokens: Math.min(requestedTokens, MAX_COMPLETION_TOKENS) }, { returnRawResponse: true });
+    const result = await readAIResponse(response, () => finishBudget(query, id, CHAT_RESERVATION));
+    if (!isObject(result) || !Array.isArray(result.choices) || result.choices.length !== 1) {
+      await finishBudget(query, id, CHAT_RESERVATION);
+      throw new Error("Invalid completion");
+    }
     const choice: unknown = result.choices[0];
     if (!isObject(choice) || !isObject(choice.message) || typeof choice.message.content !== "string" || !choice.message.content.trim() ||
-      !["stop", "length"].includes(String(choice.finish_reason))) throw new Error("Invalid completion");
+      !["stop", "length"].includes(String(choice.finish_reason))) {
+      await finishBudget(query, id, CHAT_RESERVATION);
+      throw new Error("Invalid completion");
+    }
     await finishBudget(query, id, chatCharge(result.usage));
     return completion(choice.message.content, stream, String(choice.finish_reason));
   } catch {
-    // No refund and no hidden retry: the upstream may have consumed its whole reservation.
+    // No refund or hidden retry. Complete errors age out; lost responses stay held.
     return errorResponse("AI generation failed; please try again later", 502);
   }
 }

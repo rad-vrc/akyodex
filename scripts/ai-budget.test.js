@@ -3,8 +3,13 @@ const test = require('node:test');
 const { embeddingReservation, chatCharge, CHAT_RESERVATION, BudgetStoppedError,
   reserveBudget, finishBudget } = require('./ai-budget');
 
-test('reserves the published full model context, not an average token estimate', () => {
-  assert.equal(embeddingReservation(['one', 'two']), 130);
+test('reserves normalized input bounds per batch instead of a full context per short text', () => {
+  assert.equal(embeddingReservation(['one', 'two']), 1);
+  assert.equal(embeddingReservation(Array(20).fill('one')), 1, 'round once per batch, not per text');
+  assert.equal(embeddingReservation(['x'.repeat(1000)]), 3);
+  assert.equal(embeddingReservation(['x'.repeat(65536)]), 65, 'full context remains the ultimate bound');
+  // U+FDFA is three UTF-8 bytes but compatibility-expands to 18 characters.
+  assert.equal(embeddingReservation(['\uFDFA'.repeat(100)]), 4);
   assert.ok(CHAT_RESERVATION >= Math.ceil(131072 * 5500 / 1e6 + 1024 * 36400 / 1e6));
   assert.throws(() => embeddingReservation([]));
   assert.throws(() => embeddingReservation(Array(21).fill('x')));

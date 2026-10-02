@@ -87,7 +87,7 @@ test('one request deadline also covers a body that never finishes', async () => 
   try {
     const api = client(async (_url, init) => {
       calls++;
-      return { ok: true, status: 200, json: () => new Promise((_, reject) => {
+      return { ok: true, status: 200, text: () => new Promise((_, reject) => {
         if (init.signal.aborted) reject(init.signal.reason);
         else init.signal.addEventListener('abort', () => reject(init.signal.reason), { once: true });
       }) };
@@ -126,4 +126,39 @@ test('sync reserves before inference and never retries an uncertain AI request',
   allow = false;
   await assert.rejects(api.embed([{ nickname: 'test' }]), /budget/);
   assert.equal(aiCalls, 1);
+});
+
+test('sync settles complete HTTP errors, invalid JSON and invalid embeddings at full cost without retries', async () => {
+  for (const response of [() => Response.json({ success: false }, { status: 503 }),
+    () => new Response('bad JSON'), () => success({ data: [] })]) {
+    let aiCalls = 0;
+    const settlements = [];
+    const api = client(async (url, init) => {
+      if (new URL(url).pathname.endsWith('/query')) {
+        const { sql, params } = JSON.parse(init.body);
+        if (sql.startsWith('UPDATE')) settlements.push(params);
+        return success([{ success: true, results: [{ id: params[0] }] }]);
+      }
+      aiCalls++;
+      return response();
+    });
+    await assert.rejects(api.embed([{ nickname: 'test' }]));
+    assert.equal(aiCalls, 1);
+    assert.equal(settlements.length, 1);
+    assert.equal(settlements[0][0], 1);
+  }
+});
+
+test('sync keeps a pending reservation when headers arrive but the response body is lost', async () => {
+  let settlements = 0;
+  const api = client(async (url, init) => {
+    if (new URL(url).pathname.endsWith('/query')) {
+      const { sql, params } = JSON.parse(init.body);
+      if (sql.startsWith('UPDATE')) settlements++;
+      return success([{ success: true, results: [{ id: params[0] }] }]);
+    }
+    return new Response(new ReadableStream({ start(controller) { controller.error(new Error('body lost')); } }));
+  });
+  await assert.rejects(api.embed([{ nickname: 'test' }]), /failed/);
+  assert.equal(settlements, 0);
 });

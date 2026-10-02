@@ -82,7 +82,7 @@ describe("long input against real local D1", () => {
           assert.ok("text" in input);
           aiInputs.push(input.text);
           if (options.aiFailure) throw new Error("Local AI failure");
-          return { data: [[0.1, 0.2]] };
+          return Response.json({ data: [[0.1, 0.2]] });
         },
       },
       VECTORIZE: {

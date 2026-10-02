@@ -526,12 +526,13 @@ export async function searchWithD1AndVectorize(
   }
 
   const fallbackResults = new Map<string, SearchResult>();
+  let budgetStopped = false;
   await Promise.all(
     terms.map(async (term) => {
       const partialPromise = findPartialMatches(term, language, limit, env);
       const vectorPromise = findVectorMatches(term, language, limit, env).catch(
         (error: unknown) => {
-          if (error instanceof BudgetStoppedError) throw error;
+          if (error instanceof BudgetStoppedError) { budgetStopped = true; return []; }
           console.error("Vector search failed; returning D1 matches only", error);
           return [];
         }
@@ -547,5 +548,6 @@ export async function searchWithD1AndVectorize(
     })
   );
 
+  if (budgetStopped && fallbackResults.size === 0) throw new BudgetStoppedError();
   return sortAndLimit(fallbackResults.values(), limit);
 }

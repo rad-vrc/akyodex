@@ -58,8 +58,9 @@ export interface AiBinding {
       top_p?: number;
       frequency_penalty?: number;
       presence_penalty?: number;
-    }
-  ): Promise<unknown>;
+    },
+    options: { returnRawResponse: true }
+  ): Promise<Response>;
 }
 
 export interface VectorizeMetadata extends Partial<AkyoRecord> {

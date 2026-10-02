@@ -9,17 +9,34 @@ export function budgetQuery(db: D1Database) {
   };
 }
 
+// A complete response (even an HTTP error or invalid JSON) is terminal. A lost
+// connection/body is uncertain: retain that hold, never release it on a timer.
+export async function readAIResponse(response: Response, onCompleted: () => Promise<void>): Promise<unknown> {
+  const body = await response.text();
+  if (!response.ok) {
+    await onCompleted();
+    throw new Error("AI upstream returned an error");
+  }
+  try { return JSON.parse(body); }
+  catch {
+    await onCompleted();
+    throw new Error("Invalid AI response JSON");
+  }
+}
+
 export async function embedBudgeted(text: string | string[], env: Env): Promise<{ data: number[][] }> {
   const texts = typeof text === "string" ? [text] : text;
   const units = embeddingReservation(texts);
   const query = budgetQuery(env.DB);
   const id = await reserveBudget(query, units);
-  const result = await env.AI.run(EMBEDDING_MODEL, { text });
+  const response = await env.AI.run(EMBEDDING_MODEL, { text }, { returnRawResponse: true });
+  const result = await readAIResponse(response, () => finishBudget(query, id, units));
+  // Complete but unusable responses are charged too, and age out normally.
+  await finishBudget(query, id, units);
   if (!result || typeof result !== "object" || !("data" in result) || !Array.isArray(result.data) ||
     result.data.length !== texts.length || result.data.some(vector => !Array.isArray(vector) ||
       vector.length === 0 || vector.some(value => typeof value !== "number" || !Number.isFinite(value)))) {
     throw new Error("Invalid embedding response");
   }
-  await finishBudget(query, id, units);
   return { data: result.data };
 }

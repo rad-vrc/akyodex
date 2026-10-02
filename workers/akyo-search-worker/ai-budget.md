@@ -29,32 +29,55 @@ All three production inference paths must use the ledger:
 | Dify's remaining LLM answers | Authenticated `/v1/chat/completions` proxy; no direct Cloudflare provider/fallback |
 
 Number, latest, exact-name and deterministic count/filter answers require no AI
-reservation and remain available. Exhausted discovery returns `clarification`
-with `directAnswer`, consumed by the existing Dify direct-answer branch. The chat
+reservation and remain available. Exhausted discovery still returns D1 partial
+matches; only when none exist does it return `clarification` with `directAnswer`,
+consumed by the existing Dify direct-answer branch. The chat
 proxy returns a fixed completion (including SSE framing) without asking a model
-to explain the outage. Sync stops before inference and before any later deletion;
-already-written catalog rows remain and the next permitted sync can resume.
+to explain the outage. Sync checks budget-table readiness before changing catalog
+rows, and reserves again before each inference. If another caller exhausts the
+budget after that check, already-written rows remain; no later deletion runs, and
+the next permitted sync can resume.
 
 ## Bounds (checked 2026-10-03)
 
 | Model | Maximum used for reservation | Reserved Neurons |
 | --- | --- | --- |
-| `@cf/baai/bge-m3` | 60,000 input tokens at 1,075/M | 65 per text; at most 20 texts/batch |
+| `@cf/baai/bge-m3` | Input-specific tokenizer bound at 1,075/M, capped at 60,000 tokens/text | Round up once per batch of at most 20 texts |
 | `@cf/zai-org/glm-4.7-flash` | 131,072 input tokens at 5,500/M plus 1,024 output at 36,400/M | 800 per call |
 
-No character/token heuristic is used to lower the reservation. Embeddings retain
-their full conservative charge. A complete, valid chat response may reduce its
+The embedding bound is `min(60000, 2 * text.normalize('NFKD').length + 2)` per
+text. Sum those bounds, multiply by `1075 / 1000000`, then round up once per
+request (minimum 1 Neuron). This is not the unsafe claim that original UTF-8 bytes
+always bound tokens: U+FDFA, for example, compatibility-expands to 18 characters.
+
+The bound assumes the published BGE M3 XLM-R tokenizer: compatibility normalization,
+Unigram with no byte fallback, Metaspace prefixes, and two sequence special tokens.
+NFKD decomposes at least as far as NFKC; UTF-16 length bounds code points. Doubling
+also covers a prefix for each segment, including segments separated by literal
+special tokens. The input sent to AI is unchanged; this normalization is for
+accounting only, so existing vectors do not need rebuilding. The published
+[tokenizer at revision 31e47391fcbda65be526abe98e646b3c6cd845a8](https://huggingface.co/BAAI/bge-m3/blob/31e47391fcbda65be526abe98e646b3c6cd845a8/tokenizer.json)
+was checked locally against all 1,112,064 Unicode scalar normalizations and the
+1,025 catalog records plus adversarial special-token/Unicode strings. No bound
+violations occurred. Cloudflare's hosted tokenizer is an external assumption;
+recheck the bound if its model implementation changes.
+
+Embeddings retain their input-specific conservative charge. A complete, valid chat response may reduce its
 charge using the provider's validated token usage, rounded **up**. Missing or
 invalid usage retains 800. Only the fixed models are allowed; the proxy caps
 `max_completion_tokens`, fixes `n=1`, disallows tools/media, and limits requests
-to 64 KiB / 24 text messages. The proxy buffers upstream completion before
+to 64 KiB / 24 text messages. Public search rejects query/keyword strings over
+4,096 UTF-8 bytes and more than 24 keyword candidates, before querying D1 or AI.
+The proxy buffers upstream completion before
 returning JSON or a final SSE chunk; it does not stream token-by-token.
 
 Model limits and prices are external assumptions, not immutable contracts.
-Re-audit these bounds before model/price changes. The full-context embedding
-reservation is deliberately conservative: 8,000 permits at most 123 embedding
-texts/day if no chat runs, not an unlimited whole-catalog re-embedding. A large
-rebuild must be staged across days or separately reviewed; do not bypass the cap.
+Re-audit these bounds before model/price changes. With the current 1,025-row
+catalog, a full rebuild reserves 241 Neurons and the first 150 rows with an added
+category reserve 34. A short search reserves 1, not 65. Real local D1 tests perform
+500 short embeddings and then generation, without reaching the 8,000 cap. These
+are ledger charges, not measured Cloudflare billing. Long texts and future
+catalogs can cost more; do not bypass the ceiling for a larger rebuild.
 
 Sources:
 - [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/)
@@ -66,8 +89,17 @@ Sources:
 
 - Completed charges age out 24 hours after **completion**, not request start or
   local midnight. In-flight usage stays reserved across the UTC reset boundary.
-- Failed, disconnected, malformed or uncertain upstream calls keep their entire
-  **pending** reservation indefinitely. A timeout does not prove inference stopped.
+- A complete HTTP error, invalid JSON, empty completion or invalid embedding is
+  **settled at the full reservation** at response completion. It therefore ages
+  out after 24 hours, without refunding potentially billed inference. The binding
+  uses `returnRawResponse: true` to distinguish HTTP errors from transport loss.
+- A rejected transport call, truncated/lost body, disconnected request whose
+  handler was terminated, or unacknowledged ledger write is still **pending**.
+  These uncertain holds do not auto-expire: neither Worker HTTP duration nor the
+  Workers AI limits documentation supplies a one-hour inference deadline. We do
+  not equate a client timeout with proof the provider stopped. Repeated lost
+  responses can still require manual recovery; this remaining availability cost
+  must not be represented as solved. Ten lost chat responses can still fill 8,000.
 - A failed settlement keeps the reservation. Repeating a successful settlement
   cannot lower the amount again or move its expiration.
 - The sync REST client does not automatically retry an uncertain AI call. A new
@@ -78,8 +110,12 @@ Sources:
 
 ## Coordinated rollout (separate approval required)
 
-1. Save the deployed Worker version and Dify export. Pause automatic AI catalog
-   sync (`AI_CATALOG_SYNC_ENABLED=false`) and wait for active syncs to finish.
+1. **Before merging**, save the deployed Worker version and Dify export. Pause
+   automatic AI catalog sync (`AI_CATALOG_SYNC_ENABLED=false`) and wait for active
+   syncs to finish. This PR also adds a separate `AI_BUDGET_READY=true` opt-in:
+   absent/false means automatic jobs skip and manual apply is rejected; manual
+   dry run remains available. Merging alone must never start an unready writer.
+   Catalog edits remain usable while paused, but AI indexing waits for resumption.
 2. Apply `sql/ai-budget.sql` to `akyo-database` with Wrangler's **remote** D1
    execute command after reviewing the SQL. It creates independent budget tables
    with **enabled=0**, changes no catalog rows, and is idempotent. Never reset or
@@ -101,7 +137,8 @@ Sources:
    has run for a full 24h. Do not enable a fresh zero balance in the middle of an
    already-used day and call that a strict free-tier guarantee.
 6. Enable with `UPDATE ai_budget_config SET enabled = 1 WHERE id = 1;` only after
-   the cutover accounting is verified. Re-enable catalog sync, run dry-run/apply,
+   the cutover accounting is verified. Set `AI_BUDGET_READY=true` and re-enable
+   catalog sync, run dry-run/apply,
    and check the shared ledger. Confirm a small-limit staging test stops inference
    under concurrent traffic while ordinary lookups continue. Do not exhaust the
    production account just to test this.
@@ -112,6 +149,12 @@ Sources:
 The old direct provider remains a bypass until step 5. Installation alone is not
 protection. Standard Cloudflare account alerts can supplement this mechanism but
 cannot replace any step above.
+
+The coordinated cutover still has a semantic/generation pause. Importing a
+verified conservative bound for earlier usage avoids a mandatory 24-hour wait;
+without that evidence, the wait remains necessary. This change does not promise
+zero-downtime introduction. Dify compatibility and buffered-answer UX still need
+draft verification before deployment/publication is approved.
 
 ## Operations and recovery
 

@@ -1,5 +1,4 @@
-// Neurons, rounded up. Bounds use the pinned models' full context windows,
-// not a character/token estimate. Review these with any model or price change.
+// Neurons, rounded up per request. Re-audit with any model/tokenizer/price change.
 const EMBEDDING_MODEL = '@cf/baai/bge-m3';
 const CHAT_MODEL = '@cf/zai-org/glm-4.7-flash';
 const CHAT_RESERVATION = 800;
@@ -14,7 +13,12 @@ function embeddingReservation(texts) {
     typeof text !== 'string' || !text.trim() || new TextEncoder().encode(text).length > 65536)) {
     throw new Error('Invalid embedding input');
   }
-  return texts.length * 65; // 60,000 tokens * 1,075 Neurons / million, per input.
+  // BGE M3: XLM-R Unigram, no byte fallback, NFKC normalization, Metaspace,
+  // and two special tokens. NFKD cannot be shorter than NFKC; UTF-16 length
+  // bounds code points. Allow one extra prefix per character (including
+  // segments split by literal special tokens), not an average tokens/word ratio.
+  const tokens = texts.reduce((sum, text) => sum + Math.min(60000, 2 * text.normalize('NFKD').length + 2), 0);
+  return Math.max(1, Math.ceil(tokens * 1075 / 1e6));
 }
 
 function chatCharge(usage) {
@@ -61,5 +65,16 @@ async function finishBudget(query, id, units) {
   }
 }
 
+/** Check rollout readiness before modifying catalog rows; reservations still enforce the cap. */
+async function assertBudgetReady(query) {
+  try {
+    const rows = await query(`SELECT enabled, limit_neurons - (
+      SELECT COALESCE(SUM(units), 0) FROM ai_budget_reservations
+      WHERE completed_at IS NULL OR completed_at > unixepoch() - 86400
+    ) AS remaining FROM ai_budget_config WHERE id = 1`, []);
+    if (rows.length !== 1 || rows[0].enabled !== 1 || !(Number(rows[0].remaining) > 0)) throw new BudgetStoppedError();
+  } catch { throw new BudgetStoppedError(); }
+}
+
 module.exports = { EMBEDDING_MODEL, CHAT_MODEL, CHAT_RESERVATION, MAX_COMPLETION_TOKENS,
-  BudgetStoppedError, embeddingReservation, chatCharge, reserveBudget, finishBudget };
+  BudgetStoppedError, embeddingReservation, chatCharge, reserveBudget, finishBudget, assertBudgetReady };

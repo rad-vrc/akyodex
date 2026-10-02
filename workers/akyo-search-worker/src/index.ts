@@ -54,6 +54,11 @@ async function readJsonObject(request: Request): Promise<Record<string, unknown>
 
 async function handleSearch(request: Request, env: Env): Promise<Response> {
   const body = await readJsonObject(request);
+  const inputs = [body.query, ...(Array.isArray(body.keywords) ? body.keywords : [body.keywords])];
+  if ((Array.isArray(body.keywords) && body.keywords.length > 24) ||
+    inputs.some(value => typeof value === "string" && new TextEncoder().encode(value).length > 4096)) {
+    return jsonResponse({ error: "Search accepts at most 24 keywords and 4096 UTF-8 bytes per query or keyword" }, 400);
+  }
   const terms = normalizeSearchTerms(body.query, body.keywords);
   if (terms.length === 0) {
     return jsonResponse({ error: "query or keywords parameter is required" }, 400);

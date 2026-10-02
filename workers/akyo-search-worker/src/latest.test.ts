@@ -98,7 +98,7 @@ function fixture(semanticIds: string[] = []) {
     batch: <T>(statements: D1PreparedStatement[]) => Promise.all(statements.map(s => s.all<T>())),
   };
   const env: Env = { DB: database,
-    AI: { async run(_model, input) { assert.ok("text" in input); aiCalls++; aiInputs.push(input.text); return { data: [[1, 2]] }; } },
+    AI: { async run(_model, input) { assert.ok("text" in input); aiCalls++; aiInputs.push(input.text); return Response.json({ data: [[1, 2]] }); } },
     VECTORIZE: { async query() { vectorCalls++; return { matches: semanticIds.map(id => ({ id, score: 0.9 })) }; }, async upsert() {} },
   };
   return { db, env, data, aiInputs, counts: () => ({ aiCalls, vectorCalls }) };

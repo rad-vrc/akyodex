@@ -5,6 +5,7 @@ const { resolve } = require('node:path');
 const { setTimeout: sleep } = require('node:timers/promises');
 const { buildPayload } = require('./generate-vectorize-payload');
 const { createCloudflareClient } = require('./ai-catalog-cloudflare');
+const { assertBudgetReady } = require('./ai-budget');
 
 const COLUMNS = ['id', 'nickname', 'name', 'category', 'description', 'author', 'url', 'language'];
 const ROW_COLUMNS = [...COLUMNS, 'urlUpdatedAt', 'publicId'];
@@ -109,6 +110,8 @@ async function reconcileCatalog(input, api, options = {}) {
       `Vectorize ${removedVectors.length}/${vectorIds.length}). Review a dry run and explicitly approve a manual apply.`);
   }
 
+  if (changedVectors.length) await assertBudgetReady(api.query);
+
   // D1 serves current fields for all search results. Semantic ranking can use an
   // older embedding until Vectorize catches up, without returning its stale text.
   // Additive migration is inside the enabled apply path, after all inventories
@@ -163,8 +166,8 @@ function parseRunOptions(args, env = process.env) {
     throw new Error('Large-deletion approval is only accepted with a manual workflow_dispatch --apply');
   }
   if (apply && (env.GITHUB_ACTIONS !== 'true' || env.GITHUB_REF !== 'refs/heads/main' ||
-    env.AI_CATALOG_SYNC_ENABLED !== 'true')) {
-    throw new Error('Apply requires the enabled, serialized main-branch Sync AI Catalog workflow');
+    env.AI_CATALOG_SYNC_ENABLED !== 'true' || env.AI_BUDGET_READY !== 'true')) {
+    throw new Error('Apply requires the enabled, budget-ready, serialized main-branch Sync AI Catalog workflow');
   }
   return { dryRun: !apply, allowLargeDeletion };
 }

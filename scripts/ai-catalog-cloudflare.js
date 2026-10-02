@@ -1,6 +1,8 @@
 const { setTimeout: sleep } = require('node:timers/promises');
 const { EMBEDDING_MODEL, embeddingReservation, reserveBudget, finishBudget } = require('./ai-budget');
 
+class CompletedRequestError extends Error {}
+
 function createCloudflareClient({ accountId, token, databaseId, indexName, fetchImpl = fetch,
   retryDelayMs = 1000, timeoutMs = 30_000 }) {
   if (!accountId || !token || !databaseId || !indexName) throw new Error('Cloudflare search sync credentials/configuration are missing');
@@ -16,8 +18,12 @@ function createCloudflareClient({ accountId, token, databaseId, indexName, fetch
           body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
           signal: AbortSignal.timeout(timeoutMs), redirect: 'error',
         });
-        payload = await response.json();
-      } catch {
+        // Separate transport/body failure from a complete but unusable response.
+        const contents = await response.text();
+        try { payload = JSON.parse(contents); }
+        catch { throw new CompletedRequestError(`Cloudflare API failed (HTTP ${response.status}; invalid JSON)`); }
+      } catch (error) {
+        if (error instanceof CompletedRequestError && attempt >= retries) throw error;
         if (response && response.status >= 400 && response.status < 500 && response.status !== 429) {
           throw new Error(`Cloudflare API failed (HTTP ${response.status})`);
         }
@@ -31,7 +37,7 @@ function createCloudflareClient({ accountId, token, databaseId, indexName, fetch
         continue;
       }
       // Do not log raw server bodies, request headers, credentials or catalog text.
-      throw new Error(`Cloudflare API failed (HTTP ${response.status}; codes ${(Array.isArray(payload?.errors) ? payload.errors : []).map(e => e.code).join(',')})`);
+      throw new CompletedRequestError(`Cloudflare API failed (HTTP ${response.status}; codes ${(Array.isArray(payload?.errors) ? payload.errors : []).map(e => e.code).join(',')})`);
     }
   }
   async function mutation(path, body) {
@@ -75,12 +81,17 @@ function createCloudflareClient({ accountId, token, databaseId, indexName, fetch
       const units = embeddingReservation(text);
       const id = await reserveBudget(query, units);
       // Do not retry a possibly billed request against a single reservation.
-      const result = await request(`/ai/run/${EMBEDDING_MODEL}`, { text }, 'POST', 0);
+      let result;
+      try { result = await request(`/ai/run/${EMBEDDING_MODEL}`, { text }, 'POST', 0); }
+      catch (error) {
+        if (error instanceof CompletedRequestError) await finishBudget(query, id, units);
+        throw error;
+      }
+      await finishBudget(query, id, units);
       if (!Array.isArray(result?.data) || result.data.length !== text.length || result.data.some(vector =>
         !Array.isArray(vector) || vector.length === 0 || vector.some(value => typeof value !== 'number' || !Number.isFinite(value)))) {
         throw new Error('Invalid embedding response');
       }
-      await finishBudget(query, id, units);
       return result.data;
     },
     async upsert(vectors) {

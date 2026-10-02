@@ -28,13 +28,16 @@ test('sync is serialized, uses current main, and runs only after successful trus
   assert.match(workflow, /run: npm run data:convert/);
   assert.match(workflow, /AI_CATALOG_SYNC_ENABLED: \$\{\{ vars.AI_CATALOG_SYNC_ENABLED \}\}/);
   const condition = workflow.match(/if: >-\s+([\s\S]*?)\s+runs-on:/)[1];
-  function runs(overrides = {}, enabled = 'true') {
+  function runs(overrides = {}, enabled = 'true', ready = 'true') {
     const github = { ref: 'refs/heads/main', repository: 'owner/repo', event_name: 'workflow_run',
       event: { workflow_run: { conclusion: 'success', head_repository: { full_name: 'owner/repo' } } }, ...overrides };
-    return runInNewContext(condition, { github, vars: { AI_CATALOG_SYNC_ENABLED: enabled } });
+    return runInNewContext(condition, { github, vars: { AI_CATALOG_SYNC_ENABLED: enabled, AI_BUDGET_READY: ready } });
   }
   assert.equal(runs(), true);
   assert.equal(runs({}, ''), false, 'automatic writes must be explicitly enabled');
+  assert.equal(runs({}, 'true', ''), false, 'merging must not start a writer before budget installation');
+  assert.equal(runs({ event_name: 'workflow_dispatch', event: {} }, 'true', ''), true, 'dry runs remain available before budget installation');
+  assert.match(workflow, /AI_BUDGET_READY: \$\{\{ vars.AI_BUDGET_READY \}\}/);
   assert.equal(runs({ event_name: 'workflow_dispatch', event: {} }, ''), true, 'read-only rollout check stays available');
   assert.equal(runs({ ref: 'refs/heads/topic' }), false);
   assert.equal(runs({ event: { workflow_run: { conclusion: 'failure' } } }), false);
@@ -62,9 +65,10 @@ test('automatic runs cannot grant a large-deletion override and deploy credentia
 
 test('CLI defaults reject implicit writes and permit large deletion only with a manual apply', () => {
   const env = { GITHUB_ACTIONS: 'true', GITHUB_REF: 'refs/heads/main', AI_CATALOG_SYNC_ENABLED: 'true',
-    GITHUB_EVENT_NAME: 'workflow_dispatch' };
+    AI_BUDGET_READY: 'true', GITHUB_EVENT_NAME: 'workflow_dispatch' };
   assert.deepEqual(parseRunOptions(['--dry-run'], {}), { dryRun: true, allowLargeDeletion: false });
   assert.deepEqual(parseRunOptions(['--apply'], env), { dryRun: false, allowLargeDeletion: false });
+  assert.throws(() => parseRunOptions(['--apply'], { ...env, AI_BUDGET_READY: '' }), /budget-ready/);
   assert.deepEqual(parseRunOptions(['--apply', '--allow-large-deletion'], env), { dryRun: false, allowLargeDeletion: true });
   for (const args of [[], ['--apply', '--dry-run'], ['--apply', '--apply'], ['--unknown'], ['--allow-large-deletion']]) {
     assert.throws(() => parseRunOptions(args, env), /Use --dry-run or --apply/);
