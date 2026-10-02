@@ -991,6 +991,10 @@
     "en": "Skill・Trait/Quadruped",
     "ko": "기능・특성/네발걸음"
   },
+  "技能・特性/寒さ耐性": {
+    "en": "Skill・Trait/Cold Resistance",
+    "ko": "기능・특성/추위 내성"
+  },
   "技能・特性/演奏": {
     "en": "Skill・Trait/Musical Performance",
     "ko": "기능・특성/연주"
