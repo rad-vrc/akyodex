@@ -46,6 +46,9 @@ class FakeStatement implements D1PreparedStatement {
   }
 
   async all<T>(): Promise<D1Result<T>> {
+    if (this.query.includes("ai_budget_reservations")) {
+      return { success: true, results: [{ id: this.values[this.query.startsWith("INSERT") ? 0 : 1] }] as T[] };
+    }
     if (this.query.includes("INSERT INTO")) {
       this.database.runCalls += 1;
       return { results: [] };

@@ -16,7 +16,9 @@ import {
   searchSpecificNameMatches,
   searchWithD1AndVectorize,
 } from "./search";
-import type { Env } from "./types";
+import type { Env, SearchResult } from "./types";
+import { handleChat, budgetNotice } from "./chat";
+import { BudgetStoppedError } from "../../../scripts/ai-budget.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -83,15 +85,22 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
   let specificNameQuery = question?.kind === "named" || isSpecificNameQuery(specificNameInput);
   const specificNameTerms =
     typeof specificNameInput === "string" ? [specificNameInput] : terms;
-  let results = specificNameQuery
-    ? await searchSpecificNameMatches(specificNameTerms, language, env)
-    : await searchWithD1AndVectorize(terms, language, topK, env);
-  // A partial name can also be a description. Only exact names may suppress
-  // discovery for ambiguous requests; explicit subjects keep lexical matching.
-  if (specificNameQuery && !results.some(result => result.matchType === "exact") && question?.kind !== "named"
-    && allowsDiscoveryOnNameMiss(specificNameInput)) {
-    specificNameQuery = false;
-    results = await searchWithD1AndVectorize(terms, language, topK, env);
+  let results: SearchResult[];
+  try {
+    results = specificNameQuery
+      ? await searchSpecificNameMatches(specificNameTerms, language, env)
+      : await searchWithD1AndVectorize(terms, language, topK, env);
+    // A partial name can also be a description. Only exact names may suppress
+    // discovery for ambiguous requests; explicit subjects keep lexical matching.
+    if (specificNameQuery && !results.some(result => result.matchType === "exact") && question?.kind !== "named"
+      && allowsDiscoveryOnNameMiss(specificNameInput)) {
+      specificNameQuery = false;
+      results = await searchWithD1AndVectorize(terms, language, topK, env);
+    }
+  } catch (error) {
+    if (!(error instanceof BudgetStoppedError)) throw error;
+    return jsonResponse({ language, searchMode: "clarification", budgetLimited: true,
+      directAnswer: budgetNotice(language), results: [], count: 0 });
   }
 
   return jsonResponse({
@@ -164,6 +173,9 @@ const worker = {
     }
 
     try {
+      if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
+        return await handleChat(request, env);
+      }
       if (url.pathname === "/search" && request.method === "POST") {
         return await handleSearch(request, env);
       }

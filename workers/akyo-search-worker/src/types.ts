@@ -49,8 +49,17 @@ export interface D1Database {
 export interface AiBinding {
   run(
     model: string,
-    input: { text: string | string[] }
-  ): Promise<{ data: number[][] }>;
+    input: { text: string | string[] } | {
+      messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+      max_completion_tokens: number;
+      stream: false;
+      n: 1;
+      temperature?: number;
+      top_p?: number;
+      frequency_penalty?: number;
+      presence_penalty?: number;
+    }
+  ): Promise<unknown>;
 }
 
 export interface VectorizeMetadata extends Partial<AkyoRecord> {
@@ -84,6 +93,7 @@ export interface Env {
   VECTORIZE_EN?: VectorizeIndex;
   VECTORIZE_JA?: VectorizeIndex;
   INGEST_TOKEN?: string;
+  CHAT_TOKEN?: string;
 }
 
 export interface CountResult {

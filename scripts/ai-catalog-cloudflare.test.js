@@ -32,7 +32,11 @@ test('uses the Cloudflare D1, AI and Vectorize request contracts including multi
     const path = new URL(url).pathname;
     paths.push(path);
     if (path.endsWith('/query')) {
-      assert.deepEqual(JSON.parse(init.body), { sql: 'SELECT * FROM akyos WHERE id = ?', params: ['2030'] });
+      const body = JSON.parse(init.body);
+      if (body.sql.includes('ai_budget_reservations')) {
+        return success([{ success: true, results: [{ id: body.params[body.sql.startsWith('INSERT') ? 0 : 1] }] }]);
+      }
+      assert.deepEqual(body, { sql: 'SELECT * FROM akyos WHERE id = ?', params: ['2030'] });
       return success([{ success: true, results: [{ id: '2030' }] }]);
     }
     if (path.endsWith('/bge-m3')) {
@@ -55,7 +59,7 @@ test('uses the Cloudflare D1, AI and Vectorize request contracts including multi
   await api.upsert([vector]);
   assert.deepEqual(await api.getVectors(['2030']), [vector]);
   await api.remove(['2030']);
-  assert.equal(paths.length, 5);
+  assert.equal(paths.length, 7);
 });
 
 test('bounds retries, retries transient failures and refuses false success or unacknowledged writes', async () => {
@@ -101,4 +105,25 @@ test('API errors never include upstream bodies or request credentials', async ()
     assert.doesNotMatch(error.message, /PRIVATE_BODY_CANARY|CATALOG_TEXT_CANARY|fake-token/);
     return true;
   });
+});
+
+test('sync reserves before inference and never retries an uncertain AI request', async () => {
+  let aiCalls = 0;
+  let settlements = 0;
+  let allow = true;
+  const api = client(async (url, init) => {
+    if (new URL(url).pathname.endsWith('/query')) {
+      const { sql, params } = JSON.parse(init.body);
+      if (sql.startsWith('UPDATE')) settlements++;
+      return success([{ success: true, results: allow ? [{ id: params[0] }] : [] }]);
+    }
+    aiCalls++;
+    throw new Error('connection lost after inference started');
+  });
+  await assert.rejects(api.embed([{ nickname: 'test' }]), /failed/);
+  assert.equal(aiCalls, 1);
+  assert.equal(settlements, 0);
+  allow = false;
+  await assert.rejects(api.embed([{ nickname: 'test' }]), /budget/);
+  assert.equal(aiCalls, 1);
 });

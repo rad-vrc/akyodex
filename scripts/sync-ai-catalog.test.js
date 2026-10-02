@@ -147,6 +147,9 @@ test('does not delete any records when a vector update fails', async () => {
 
 test('reconciles the catalog through the real REST client and SQL, including retry and orphan cleanup', async () => {
   const h = harness([record('0001'), record('0002')]);
+  h.db.exec(require('node:fs').readFileSync(require('node:path').join(__dirname,
+    '../workers/akyo-search-worker/sql/ai-budget.sql'), 'utf8'));
+  h.db.exec('UPDATE ai_budget_config SET enabled = 1');
   let failOnce = true;
   const api = createCloudflareClient({ accountId: 'account', token: 'fake', databaseId: 'db', indexName: 'index', retryDelayMs: 0,
     fetchImpl: async (url, init) => {

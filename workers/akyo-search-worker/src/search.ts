@@ -9,6 +9,8 @@ import type {
 } from "./types";
 import { normalizeEntryType } from "./types";
 import { createSubstringMatch } from "./sql-matching";
+import { embedBudgeted } from "./budgeted-ai";
+import { BudgetStoppedError } from "../../../scripts/ai-budget.js";
 
 export { escapeLikePattern } from "./sql-matching";
 
@@ -16,7 +18,6 @@ export const DEFAULT_TOP_K = 5;
 export const MAX_TOP_K = 8;
 export const MAX_KEYWORDS = 3;
 
-const EMBEDDING_MODEL = "@cf/baai/bge-m3";
 const MIN_SEMANTIC_SCORE = 0.35;
 const MAX_KEYWORD_CANDIDATES = 24;
 const GENERIC_SEARCH_TERMS = new Set([
@@ -400,7 +401,7 @@ async function findVectorMatches(
   env: Env
 ): Promise<SearchResult[]> {
   const index = selectVectorIndex(env);
-  const embeddings = await env.AI.run(EMBEDDING_MODEL, { text: keyword });
+  const embeddings = await embedBudgeted(keyword, env);
   const vector = embeddings.data[0];
   if (!vector) {
     return [];
@@ -530,6 +531,7 @@ export async function searchWithD1AndVectorize(
       const partialPromise = findPartialMatches(term, language, limit, env);
       const vectorPromise = findVectorMatches(term, language, limit, env).catch(
         (error: unknown) => {
+          if (error instanceof BudgetStoppedError) throw error;
           console.error("Vector search failed; returning D1 matches only", error);
           return [];
         }

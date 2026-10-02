@@ -1,11 +1,12 @@
 const { setTimeout: sleep } = require('node:timers/promises');
+const { EMBEDDING_MODEL, embeddingReservation, reserveBudget, finishBudget } = require('./ai-budget');
 
 function createCloudflareClient({ accountId, token, databaseId, indexName, fetchImpl = fetch,
   retryDelayMs = 1000, timeoutMs = 30_000 }) {
   if (!accountId || !token || !databaseId || !indexName) throw new Error('Cloudflare search sync credentials/configuration are missing');
   const base = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}`;
   const index = `/vectorize/v2/indexes/${encodeURIComponent(indexName)}`;
-  async function request(path, body, method = 'POST') {
+  async function request(path, body, method = 'POST', retries = 3) {
     for (let attempt = 0; ; attempt++) {
       let response;
       let payload;
@@ -20,12 +21,12 @@ function createCloudflareClient({ accountId, token, databaseId, indexName, fetch
         if (response && response.status >= 400 && response.status < 500 && response.status !== 429) {
           throw new Error(`Cloudflare API failed (HTTP ${response.status})`);
         }
-        if (attempt >= 3) throw new Error('Cloudflare request failed or timed out');
+        if (attempt >= retries) throw new Error('Cloudflare request failed or timed out');
         await sleep(retryDelayMs * 2 ** attempt);
         continue;
       }
       if (response.ok && payload?.success === true) return payload.result;
-      if (attempt < 3 && (response.status === 429 || response.status >= 500)) {
+      if (attempt < retries && (response.status === 429 || response.status >= 500)) {
         await sleep(retryDelayMs * 2 ** attempt);
         continue;
       }
@@ -37,14 +38,15 @@ function createCloudflareClient({ accountId, token, databaseId, indexName, fetch
     const result = await request(`${index}${path}`, body);
     if (!result?.mutationId) throw new Error('Vectorize mutation was not acknowledged');
   }
+  async function query(sql, params = []) {
+    const result = await request(`/d1/database/${encodeURIComponent(databaseId)}/query`, { sql, params });
+    if (!Array.isArray(result) || result.length !== 1 || result[0].success !== true || !Array.isArray(result[0].results)) {
+      throw new Error('Invalid or failed D1 query response');
+    }
+    return result[0].results;
+  }
   return {
-    async query(sql, params = []) {
-      const result = await request(`/d1/database/${encodeURIComponent(databaseId)}/query`, { sql, params });
-      if (!Array.isArray(result) || result.length !== 1 || result[0].success !== true || !Array.isArray(result[0].results)) {
-        throw new Error('Invalid or failed D1 query response');
-      }
-      return result[0].results;
-    },
+    query,
     async listIds() {
       const ids = [];
       const cursors = new Set();
@@ -69,9 +71,17 @@ function createCloudflareClient({ accountId, token, databaseId, indexName, fetch
     },
     getVectors: ids => request(`${index}/get_by_ids`, { ids }),
     async embed(records) {
-      const result = await request('/ai/run/@cf/baai/bge-m3', { text: records.map(r =>
-        [r.nickname, r.name, r.category, r.description, r.author].filter(Boolean).join(' ')) });
-      return result?.data;
+      const text = records.map(r => [r.nickname, r.name, r.category, r.description, r.author].filter(Boolean).join(' '));
+      const units = embeddingReservation(text);
+      const id = await reserveBudget(query, units);
+      // Do not retry a possibly billed request against a single reservation.
+      const result = await request(`/ai/run/${EMBEDDING_MODEL}`, { text }, 'POST', 0);
+      if (!Array.isArray(result?.data) || result.data.length !== text.length || result.data.some(vector =>
+        !Array.isArray(vector) || vector.length === 0 || vector.some(value => typeof value !== 'number' || !Number.isFinite(value)))) {
+        throw new Error('Invalid embedding response');
+      }
+      await finishBudget(query, id, units);
+      return result.data;
     },
     async upsert(vectors) {
       const body = new FormData();

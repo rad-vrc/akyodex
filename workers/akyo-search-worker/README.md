@@ -1,5 +1,8 @@
 # Akyo Search Worker
 
+AI inference requires the [shared budget ledger](./ai-budget.md). Deployment,
+catalog sync and Dify must be cut over together; merge alone does not enable the cap.
+
 This directory is the source of `akyo-search-worker.dorado1031.workers.dev`.
 It was recovered from the deployed Cloudflare bundle and split back into
 maintainable TypeScript modules.
