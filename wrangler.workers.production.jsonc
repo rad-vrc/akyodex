@@ -100,6 +100,9 @@
   ],
   "observability": {
     "enabled": true,
+    "issues": {
+      "enabled": true
+    },
     "logs": {
       "enabled": true,
       "invocation_logs": true
