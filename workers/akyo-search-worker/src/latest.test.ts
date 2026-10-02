@@ -315,6 +315,28 @@ test("ambiguous list names fall back only on misses; explicit names and IDs stay
   } finally { h.db.close(); }
 });
 
+test("ambiguous partial names retain discovery while exact names and explicit subjects stay strict", async () => {
+  const h = fixture(["0001"]);
+  try {
+    h.db.exec("UPDATE akyos SET nickname = 'とても強そうなAkyo' WHERE id = '2030'");
+    for (const suffix of ["教えて", "教えてください", "知りたい", "知りたいです", "説明して", "説明してください"]) {
+      const query = `強そうなAkyoを${suffix}`;
+      for (const body of [{ query }, { keywords: [query] }]) {
+        const result = await search(h.env, { ...body, topK: 8 });
+        assert.equal(result.searchMode, "discovery", query);
+        assert.deepEqual(result.results.map(r => r.id), ["2030", "0001"], "keep lexical and semantic candidates");
+      }
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 12, vectorCalls: 12 });
+    for (const query of ["とても強そうなAkyoを教えて", "強そうなAkyoについて教えて", "#2030のAkyoを教えて", "そのAkyoの名前は強そうなAkyoです"]) {
+      const result = await search(h.env, { query });
+      assert.equal(result.searchMode, "specific-name", query);
+      assert.deepEqual(result.results.map(r => r.id), ["2030"]);
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 12, vectorCalls: 12 }, "strict subjects must not add semantic guesses");
+  } finally { h.db.close(); }
+});
+
 test("all cleaned Japanese request suffixes preserve discovery without weakening explicit subjects", async () => {
   const h = fixture(["0001"]);
   const suffixes = ["教えて", "教えてください", "知りたい", "知りたいです", "説明して", "説明してください"];

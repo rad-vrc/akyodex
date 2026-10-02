@@ -80,7 +80,9 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
   let results = specificNameQuery
     ? await searchSpecificNameMatches(specificNameTerms, language, env)
     : await searchWithD1AndVectorize(terms, language, topK, env);
-  if (specificNameQuery && results.length === 0 && question?.kind !== "named"
+  // A partial name can also be a description. Only exact names may suppress
+  // discovery for ambiguous requests; explicit subjects keep lexical matching.
+  if (specificNameQuery && !results.some(result => result.matchType === "exact") && question?.kind !== "named"
     && allowsDiscoveryOnNameMiss(specificNameInput)) {
     specificNameQuery = false;
     results = await searchWithD1AndVectorize(terms, language, topK, env);

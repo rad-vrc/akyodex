@@ -101,6 +101,8 @@ searchMode が "specific-name" かつ nameMatch が false の場合、または 
 - An ambiguous `Xを教えて`, `Xを知りたい` or `Xを説明して` name miss returns to
   discovery, including polite forms stripped by preprocessing; `Xについて...`
   and numeric IDs remain strict. Exact name matches still avoid semantic search.
+  A partial-name match alone does not suppress discovery for these ambiguous
+  requests: ordinary discovery retains both lexical and semantic candidates.
 - Japanese aliases query the JA catalog and return `language: "ja"`, even if the
   caller requested another response language. They never compare Japanese category
   tokens against translated rows. Current synchronization is JA-only.
