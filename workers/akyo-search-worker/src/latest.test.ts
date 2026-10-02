@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { selectLatestEntries } from "../../../src/lib/akyo-entry";
 import worker from "./index";
 import { ingestRecords } from "./ingest";
 import { isLatestRequest } from "./latest";
-import type { D1Database, D1PreparedStatement, Env } from "./types";
+import { parseCatalogQuestion } from "./catalog-question";
+import type { AkyoRecord, D1Database, D1PreparedStatement, Env } from "./types";
 
 interface SqliteDatabase {
   exec(sql: string): void;
@@ -63,7 +65,7 @@ test("adversarial latest phrases finish without unbounded regex backtracking", (
   assert.equal(result.status, 0, result.stderr);
 });
 
-function fixture() {
+function fixture(semanticIds: string[] = []) {
   const db = new DatabaseSync(":memory:");
   db.exec(`CREATE TABLE akyos (id TEXT PRIMARY KEY, nickname TEXT, name TEXT,
     category TEXT, description TEXT, author TEXT, url TEXT, language TEXT, urlUpdatedAt TEXT)`);
@@ -94,7 +96,7 @@ function fixture() {
   };
   const env: Env = { DB: database,
     AI: { async run(_model, input) { aiCalls++; aiInputs.push(input.text); return { data: [[1, 2]] }; } },
-    VECTORIZE: { async query() { vectorCalls++; return { matches: [] }; }, async upsert() {} },
+    VECTORIZE: { async query() { vectorCalls++; return { matches: semanticIds.map(id => ({ id, score: 0.9 })) }; }, async upsert() {} },
   };
   return { db, env, data, aiInputs, counts: () => ({ aiCalls, vectorCalls }) };
 }
@@ -104,7 +106,7 @@ async function search(env: Env, body: object) {
     method: "POST", body: JSON.stringify(body),
   }), env);
   assert.equal(response.status, 200);
-  return response.json() as Promise<{ searchMode: string; count: number;
+  return response.json() as Promise<{ searchMode: string; count: number; total?: number; directAnswer?: string;
     query?: string;
     results: { id: string; entryType: string; language: string; urlUpdatedAt?: string }[] }>;
 }
@@ -114,6 +116,8 @@ test("latest requests follow the same timestamp/internal-ID order as the catalog
   try {
     for (const body of [
       { query: "最新のakyoは？" }, { query: "最近追加されたAkyoを教えて" },
+      { query: "最新のAkyoについて教えて" }, { query: "新着のAkyoを見せて" },
+      { query: "新しいAkyoは？" }, { query: "最も新しいAkyoについて知りたい" },
       { query: "What is the latest Akyo?", language: "en" },
       { query: "최근 추가된 Akyo 알려주세요", language: "ko" },
       { keywords: ["最新", "Akyo"] }, { keywords: ["latest"] },
@@ -128,6 +132,85 @@ test("latest requests follow the same timestamp/internal-ID order as the catalog
   } finally { h.db.close(); }
 });
 
+test("numbered natural-language questions resolve the exact ID, not a semantic substitute", async () => {
+  const h = fixture();
+  try {
+    for (const query of ["#0001のAkyoについて教えて", "#0001", "0001番のAkyoについて教えて", "#Avatar0001"]) {
+      const result = await search(h.env, { query, keywords: ["Akyo"] });
+      assert.equal(result.searchMode, "specific-name", query);
+      assert.deepEqual(result.results.map(r => r.id), ["0001"], query);
+    }
+    assert.deepEqual((await search(h.env, { query: "#4321のAkyoについて教えて" })).results, []);
+    assert.deepEqual((await search(h.env, { query: "Item2030Akyoを教えて" })).results.map(r => r.id), ["2030"]);
+    assert.deepEqual((await search(h.env, { query: "MissingXYZAkyoについて教えて" })).results, []);
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+  } finally { h.db.close(); }
+});
+
+test("catalog questions count and intersect exact conditions instead of returning semantic guesses", async () => {
+  const h = fixture();
+  try {
+    h.db.exec("UPDATE akyos SET category = '色/青色系,対応機種/Quest(Android)', author = 'Holimond' WHERE id IN ('0001', '2030')");
+    h.db.exec("UPDATE akyos SET category = '色/青色系' WHERE id = '0917'");
+    h.db.exec("UPDATE akyos SET category = '対応機種/Quest(Android)', author = 'Holimond' WHERE id = '0002'");
+    const request = async (query: string) => {
+      const response = await worker.fetch(new Request("https://worker.test/search", {
+        method: "POST", body: JSON.stringify({ query, language: "ja", topK: 1 }),
+      }), h.env);
+      assert.equal(response.status, 200);
+      return response.json() as Promise<{ searchMode: string; total?: number; count: number; results: { id: string }[] }>;
+    };
+    for (const query of ["Quest対応のAkyoは何体ありますか？", "Holimondさんが作ったAkyoは何体ありますか？"]) {
+      const result = await request(query);
+      assert.equal(result.searchMode, "count", query);
+      assert.equal(result.total, 2, "total is not the limited result count and excludes worlds");
+      assert.equal(result.count, 1);
+    }
+    const combined = await request("青色でQuest対応のAkyoを3体教えて");
+    assert.equal(combined.searchMode, "filtered");
+    assert.deepEqual(combined.results.map(r => r.id), ["0001", "2030"]);
+    assert.equal(combined.total, 2);
+    const worlds = await request("Akyoのいるワールドを3つ教えて");
+    assert.equal(worlds.searchMode, "filtered");
+    assert.deepEqual(worlds.results.map(r => r.id), ["0002"]);
+    for (const query of ["Quest非対応のAkyoは何体？", "青色か赤色のAkyoは何体？", "最新の青色のAkyoは何体？"]) {
+      assert.equal((await request(query)).searchMode, "clarification", query);
+    }
+    assert.equal((await request("そのAkyoはQuestでも使えますか？")).searchMode, "needs-context");
+    assert.equal((await request("Missingさんが作ったAkyoは何体ありますか？")).searchMode, "clarification");
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+  } finally { h.db.close(); }
+});
+
+test("catalog answers render totals and exact records without asking an LLM to count examples", async () => {
+  const h = fixture();
+  try {
+    h.db.exec("UPDATE akyos SET category = '色/青色系,対応機種/Quest(Android)', author = 'Holimond' WHERE id IN ('0001', '2030')");
+    const request = async (query: string) => {
+      const response = await worker.fetch(new Request("https://worker.test/search", {
+        method: "POST", body: JSON.stringify({ query, topK: 1 }),
+      }), h.env);
+      return response.json() as Promise<{ directAnswer: string }>;
+    };
+    assert.equal((await request("Quest対応のAkyoは何体ありますか？")).directAnswer,
+      "条件: 対応機種/Quest(Android)\n図鑑の該当するアバターは2体です。");
+    assert.match((await request("Missingさんが作ったAkyoは何体ありますか？")).directAnswer,
+      /作者名「Missing」は.*見つかりませんでした/);
+    const list = (await request("青色でQuest対応のAkyoを3体教えて")).directAnswer;
+    assert.match(list, /該当するアバターは2体です。うち2体を紹介します/);
+    assert.match(list, /1\. Item0001Akyo/);
+    assert.match(list, /2\. Item2030Akyo/);
+    assert.doesNotMatch(list, /Item0917|Item0002/);
+    const worlds = (await request("Akyoのいるワールドを3つ教えて")).directAnswer;
+    assert.match(worlds, /ワールドは1件/);
+    assert.match(worlds, /https:\/\/vrchat.com\/home\/world\/wrld-example/);
+    assert.doesNotMatch(worlds, /アバター/);
+    assert.match((await request("そのAkyoはQuestでも使えますか？")).directAnswer, /どのAkyo/);
+    assert.match((await request("Quest非対応のAkyoは何体？")).directAnswer, /条件を正確に読み取れません/);
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+  } finally { h.db.close(); }
+});
+
 test("the latest guard leaves long queries intact for ordinary search", async () => {
   const h = fixture();
   try {
@@ -138,6 +221,281 @@ test("the latest guard leaves long queries intact for ordinary search", async ()
     assert.deepEqual(h.aiInputs, [query], "ordinary semantic search receives the full query");
     const keywordsOnly = await search(h.env, { keywords: ["latest", `${" ".repeat(57)}Akyo`] });
     assert.notEqual(keywordsOnly.searchMode, "latest");
+  } finally { h.db.close(); }
+});
+
+test("catalog question parser is bounded and never discards unknown or negative conditions", () => {
+  for (const query of [undefined, null, 42, "Quest対応のAkyoは何体ありますか？" + " ".repeat(200)]) {
+    assert.equal(parseCatalogQuestion(query), undefined);
+  }
+  for (const query of ["青色でQuest非対応のAkyoを3体教えて", "青色で小さいAkyoを3体教えて", "青色または赤色のAkyoを3体教えて"]) {
+    assert.equal(parseCatalogQuestion(query), undefined, query);
+    assert.equal(parseCatalogQuestion(query.replace("を3体教えて", "は何体？"))?.kind, "clarification", query);
+  }
+  for (const query of ["MenmeAkyoを教えて", "かわいいAkyoを教えて", "不存在Akyoを教えて"]) {
+    assert.equal(parseCatalogQuestion(query), undefined, query);
+  }
+});
+
+test("catalog counts use whole category tokens, exact bound author values and the Japanese catalog", async () => {
+  const h = fixture();
+  try {
+    h.db.exec("UPDATE akyos SET category = '色/青色系,対応機種/Quest(Android)' WHERE id = '0001'");
+    h.db.exec("UPDATE akyos SET category = '色/青色系/水色,対応機種/Quest(Android)' WHERE id = '0917'");
+    h.db.exec("UPDATE akyos SET category = '色/青色系,対応機種/Quest(Android)旧名' WHERE id = '2030'");
+    h.db.exec("UPDATE akyos SET category = 'Color/Blue,Platform/Quest', language = 'en' WHERE id = '9999'");
+    const author = "O'Reilly_%";
+    h.db.prepare("UPDATE akyos SET author = ? WHERE id = '0001'").run(author);
+    h.db.prepare("UPDATE akyos SET author = ? WHERE id = '0917'").run(`${author} extra`);
+    for (const [query, total, ids] of [
+      ["青色でQuest対応のAkyoを3体教えて", 1, ["0001"]],
+      [`${author}さんが作ったAkyoは何体ありますか？`, 1, ["0001"]],
+      ["Quest対応のAkyoは何体ありますか？", 2, ["0001", "0917"]],
+    ] as const) {
+      const response = await worker.fetch(new Request("https://worker.test/search", {
+        method: "POST", body: JSON.stringify({ query, language: "en", topK: 8 }),
+      }), h.env);
+      assert.equal(response.status, 200);
+      const result = await response.json() as { language: string; total: number; results: { id: string }[] };
+      assert.equal(result.language, "ja");
+      assert.equal(result.total, total);
+      assert.deepEqual(result.results.map(r => r.id), ids);
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+  } finally { h.db.close(); }
+});
+
+test("exploratory lists retain semantic candidates instead of clarification or empty name matches", async () => {
+  const h = fixture(["2030"]);
+  try {
+    h.db.exec("UPDATE akyos SET category = '色/青色系,対応機種/Quest(Android)' WHERE id = '0001'");
+    const queries = [
+      "うさぎのAkyoを教えて", "動物のAkyoを3体教えて", "おすすめのAkyoを教えて",
+      "ハロウィンのAkyoを教えて", "かわいいAkyoを3体教えて", "釣りができるワールドを教えて",
+      "強そうなAkyoを教えて", "光るAkyoを教えて", "珍しいAkyoを教えて", "うさぎっぽいAkyoを教えて",
+      "かわいいAkyoを教えて", "うさぎのAkyoはいますか？", "動物のAkyoを見せてください",
+      "青色で小さいAkyoを3体教えて", "Quest非対応のAkyoを教えて", "青色か赤色のAkyoを教えて",
+      "最新の青色のAkyoを教えて", "青色または赤色のAkyoを3体教えて",
+    ];
+    for (const query of queries) {
+      const result = await search(h.env, { query });
+      assert.equal(result.searchMode, "discovery", query);
+      assert.deepEqual(result.results.map(r => r.id), ["2030"], query);
+      assert.equal(result.directAnswer, undefined, "discovery must not claim exact filtering");
+      assert.equal(result.total, undefined);
+    }
+    assert.deepEqual(h.counts(), { aiCalls: queries.length, vectorCalls: queries.length });
+    assert.ok(h.aiInputs.includes("青色で小さいAkyoを3体"), "do not discard the unknown qualifier");
+  } finally { h.db.close(); }
+});
+
+test("ambiguous list names fall back only on misses; explicit names and IDs stay strict", async () => {
+  const h = fixture(["0001"]);
+  try {
+    for (const body of [
+      { query: "Item2030Akyoを教えて" }, { keywords: ["Item2030Akyoを教えて"] },
+      { query: "そのAkyoの名前はItem2030Akyoです" },
+    ]) {
+      const result = await search(h.env, body);
+      assert.equal(result.searchMode, "specific-name");
+      assert.deepEqual(result.results.map(r => r.id), ["2030"]);
+    }
+    for (const query of ["MissingXYZAkyoについて教えて", "#4321のAkyoを教えて", "そのAkyoの名前はMissingXYZAkyoです"]) {
+      const result = await search(h.env, { query });
+      assert.equal(result.searchMode, "specific-name", query);
+      assert.deepEqual(result.results, [], query);
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+    for (const body of [{ query: "強そうなAkyoを教えて" }, { keywords: ["強そうなAkyoを教えて"] }]) {
+      const result = await search(h.env, body);
+      assert.equal(result.searchMode, "discovery");
+      assert.deepEqual(result.results.map(r => r.id), ["0001"]);
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 2, vectorCalls: 2 });
+  } finally { h.db.close(); }
+});
+
+test("ambiguous partial names retain discovery while exact names and explicit subjects stay strict", async () => {
+  const h = fixture(["0001"]);
+  try {
+    h.db.exec("UPDATE akyos SET nickname = 'とても強そうなAkyo' WHERE id = '2030'");
+    for (const suffix of ["教えて", "教えてください", "知りたい", "知りたいです", "説明して", "説明してください"]) {
+      const query = `強そうなAkyoを${suffix}`;
+      for (const body of [{ query }, { keywords: [query] }]) {
+        const result = await search(h.env, { ...body, topK: 8 });
+        assert.equal(result.searchMode, "discovery", query);
+        assert.deepEqual(result.results.map(r => r.id), ["2030", "0001"], "keep lexical and semantic candidates");
+      }
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 12, vectorCalls: 12 });
+    for (const query of ["とても強そうなAkyoを教えて", "強そうなAkyoについて教えて", "#2030のAkyoを教えて", "そのAkyoの名前は強そうなAkyoです"]) {
+      const result = await search(h.env, { query });
+      assert.equal(result.searchMode, "specific-name", query);
+      assert.deepEqual(result.results.map(r => r.id), ["2030"]);
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 12, vectorCalls: 12 }, "strict subjects must not add semantic guesses");
+  } finally { h.db.close(); }
+});
+
+test("all cleaned Japanese request suffixes preserve discovery without weakening explicit subjects", async () => {
+  const h = fixture(["0001"]);
+  const suffixes = ["教えて", "教えてください", "知りたい", "知りたいです", "説明して", "説明してください"];
+  const inputs = (query: string) => [{ query }, { keywords: [query] }];
+  try {
+    for (const suffix of suffixes) {
+      for (const body of inputs(`Item2030Akyoを${suffix}`)) {
+        const result = await search(h.env, body);
+        assert.equal(result.searchMode, "specific-name");
+        assert.deepEqual(result.results.map(r => r.id), ["2030"]);
+      }
+      for (const query of [`MissingXYZAkyoについて${suffix}`, `#4321のAkyoを${suffix}`]) {
+        for (const body of inputs(query)) {
+          const result = await search(h.env, body);
+          assert.equal(result.searchMode, "specific-name", query);
+          assert.deepEqual(result.results, [], query);
+        }
+      }
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+    const prefixes = ["強そうなAkyo", "うさぎのAkyo", "光るAkyo"];
+    for (const prefix of prefixes) {
+      for (const suffix of suffixes) {
+        const query = `${prefix}を${suffix}？`;
+        for (const body of inputs(query)) {
+          const result = await search(h.env, body);
+          assert.equal(result.searchMode, "discovery", query);
+          assert.deepEqual(result.results.map(r => r.id), ["0001"], query);
+          assert.equal(result.directAnswer, undefined);
+          assert.equal(h.aiInputs.at(-1), prefix, "keep the descriptive conditions in semantic input");
+        }
+      }
+    }
+    const requests = prefixes.length * suffixes.length * 2;
+    assert.deepEqual(h.counts(), { aiCalls: requests, vectorCalls: requests });
+  } finally { h.db.close(); }
+});
+
+test("demonstratives distinguish a missing subject from catalog questions and a supplied name", async () => {
+  const h = fixture(["0001"]);
+  try {
+    for (const query of ["このAkyo図鑑って何？", "このAkyoずかんの使い方を教えて", "そのアバター図鑑の使い方を教えて"]) {
+      assert.equal(parseCatalogQuestion(query), undefined, query);
+      assert.equal((await search(h.env, { query })).searchMode, "discovery", query);
+    }
+    for (const query of ["そのAkyoはQuestでも使えますか？", "このAkyoの作者は？", "そのAkyoが欲しい", "そのAkyoを教えて", "そのAkyoも青いですか？", "そのAkyoの名前は何ですか？"]) {
+      const result = await search(h.env, { query });
+      assert.equal(result.searchMode, "needs-context", query);
+      assert.match(result.directAnswer!, /どのAkyo/);
+    }
+    for (const query of ["そのAkyoの名前はItem2030Akyoです", "このアキョの名前はItem2030Akyo", "さっきのアバターの名前はItem2030Akyoです。"]) {
+      const result = await search(h.env, { query });
+      assert.equal(result.searchMode, "specific-name", query);
+      assert.deepEqual(result.results.map(r => r.id), ["2030"]);
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 3, vectorCalls: 3 });
+  } finally { h.db.close(); }
+});
+
+test("unknown authors are not reported as zero, while known world-only authors can have zero avatars", async () => {
+  const h = fixture();
+  try {
+    h.db.exec("UPDATE akyos SET author = 'WorldOnly' WHERE id = '0002'");
+    h.db.exec("UPDATE akyos SET author = 'Mint Extra' WHERE id = '0001'");
+    h.db.exec("UPDATE akyos SET author = 'OnlyEnglish', language = 'en' WHERE id = '9999'");
+    for (const author of ["Mint", "OnlyEnglish", "O'Reilly_%"]) {
+      for (const suffix of ["は何体？", "を教えて"]) {
+        const result = await search(h.env, { query: `${author}さん作のAkyo${suffix}` });
+        assert.equal(result.searchMode, "clarification");
+        assert.equal(result.total, undefined);
+        assert.match(result.directAnswer!, /作者名.*見つかりませんでした/);
+        assert.doesNotMatch(result.directAnswer!, /0体/);
+      }
+    }
+    const known = await search(h.env, { query: "worldonlyさん作のAkyoは何体？" });
+    assert.equal(known.searchMode, "count");
+    assert.equal(known.total, 0);
+    assert.match(known.directAnswer!, /0体/);
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+  } finally { h.db.close(); }
+});
+
+test("renamed or unused alias categories cannot produce a confident zero count", async () => {
+  const h = fixture(["2030"]);
+  try {
+    h.db.exec("UPDATE akyos SET category = '色/青色系' WHERE id = '0001'");
+    h.db.exec("UPDATE akyos SET category = '対応機種/Quest(Android)' WHERE id = '0917'");
+    const query = "青色でQuest対応のAkyoは何体？";
+    assert.equal((await search(h.env, { query })).total, 0, "known conditions can have an empty intersection");
+    h.db.exec("UPDATE akyos SET category = '色/青色系/水色' WHERE id = '0001'");
+    h.db.exec("UPDATE akyos SET category = '色/青色系', language = 'en' WHERE id = '9999'");
+    const missing = await search(h.env, { query });
+    assert.equal(missing.searchMode, "clarification");
+    assert.equal(missing.total, undefined);
+    assert.match(missing.directAnswer!, /色\/青色系.*確認できません/);
+    const list = await search(h.env, { query: "青色でQuest対応のAkyoを3体教えて" });
+    assert.equal(list.searchMode, "discovery");
+    assert.deepEqual(list.results.map(r => r.id), ["2030"]);
+    h.db.exec("UPDATE akyos SET category = '色/青色系' WHERE id = '0001'");
+    assert.equal((await search(h.env, { query })).total, 0, "no persistent missing-category cache");
+    assert.deepEqual(h.counts(), { aiCalls: 1, vectorCalls: 1 });
+  } finally { h.db.close(); }
+});
+
+test("common color wording selects exact canonical tokens rather than hard-coded totals", async () => {
+  const h = fixture();
+  try {
+    for (const [category, phrases] of [
+      ["色/青色系", ["青", "青色", "青い"]], ["色/赤色系", ["赤", "赤色", "赤い"]],
+      ["色/緑色系", ["緑", "緑色"]], ["色/白色系", ["白", "白色", "白い"]],
+      ["色/黒色系", ["黒", "黒色", "黒い"]], ["色/黄色系", ["黄", "黄色", "黄色い"]],
+      ["色/ピンク色系", ["ピンク", "ピンク色"]], ["色/紫色系", ["紫", "紫色"]],
+      ["色/茶色系", ["茶", "茶色", "茶色い"]], ["色/虹色系", ["虹色"]],
+      ["色/無彩色系", ["無彩色"]],
+    ] as const) {
+      h.db.prepare("UPDATE akyos SET category = ? WHERE id = '0001'").run(category);
+      h.db.prepare("UPDATE akyos SET category = ? WHERE id = '2030'").run(`${category}旧名`);
+      for (const phrase of phrases) {
+        const result = await search(h.env, { query: `${phrase}のAkyoを教えて` });
+        assert.equal(result.searchMode, "filtered", phrase);
+        assert.equal(result.total, 1, phrase);
+        assert.deepEqual(result.results.map(r => r.id), ["0001"], phrase);
+      }
+    }
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
+  } finally { h.db.close(); }
+});
+
+test("real catalog questions agree with direct filtering of the synchronized source", async t => {
+  const h = fixture();
+  const { buildPayload } = createRequire(import.meta.url)("../../../scripts/generate-vectorize-payload.js") as {
+    buildPayload(input: unknown): AkyoRecord[];
+  };
+  const rows = buildPayload(JSON.parse(readFileSync(new URL("../../../data/akyo-data-ja.json", import.meta.url), "utf8")));
+  const avatar = (row: AkyoRecord) => row.entryType === "avatar";
+  const quest = (row: AkyoRecord) => row.category.split(",").includes("対応機種/Quest(Android)");
+  const blue = (row: AkyoRecord) => row.category.split(",").includes("色/青色系");
+  try {
+    h.db.exec("DELETE FROM akyos");
+    for (const row of rows) h.db.prepare("INSERT INTO akyos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(row.id, row.nickname, row.name, row.category, row.description, row.author, row.url, row.language, row.urlUpdatedAt ?? "");
+    for (const [query, expected, limit] of [
+      ["Quest対応のAkyoは何体ありますか？", rows.filter(r => avatar(r) && quest(r)), 8],
+      ["Holimondさんが作ったAkyoは何体ありますか？", rows.filter(r => avatar(r) && r.author === "Holimond"), 8],
+      ["青色でQuest対応のAkyoを3体教えて", rows.filter(r => avatar(r) && blue(r) && quest(r)), 3],
+      ["Akyoのいるワールドを3つ教えて", rows.filter(r => r.entryType === "world"), 3],
+    ] as const) {
+      const response = await worker.fetch(new Request("https://worker.test/search", {
+        method: "POST", body: JSON.stringify({ query, topK: 8 }),
+      }), h.env);
+      assert.equal(response.status, 200);
+      const result = await response.json() as { total: number; results: { id: string }[] };
+      assert.equal(result.total, expected.length);
+      assert.deepEqual(result.results.map(r => r.id), expected.map(r => r.id).sort().slice(0, limit));
+      t.diagnostic(`${query}: total=${result.total}, returned=${result.results.map(r => r.id).join(",")}`);
+    }
+    const latest = await search(h.env, { query: "最新のAkyoについて教えて", topK: 8 });
+    assert.deepEqual(latest.results.map(r => r.id), selectLatestEntries(rows, 8).map(r => r.id));
+    assert.deepEqual(h.counts(), { aiCalls: 0, vectorCalls: 0 });
   } finally { h.db.close(); }
 });
 

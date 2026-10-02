@@ -14,7 +14,7 @@ function isLatestPhrase(value: string): boolean {
   const text = value.replace(/\s+/gu, " ").trim().replace(/[?？!！。.]+$/gu, "").trim();
   // Only unqualified catalog requests: do not turn "latest blue Akyo" or a
   // named item's latest news into a different, global-catalog question.
-  return /^(?:最新|一番新しい|いちばん新しい|最近(?:追加|登録)された|最近の)(?:の)?\s*(?:akyo|アキョ|あきょ)?\s*(?:は|を)?\s*(?:何|どれ)?\s*(?:ですか|教えて(?:ください)?|知りたい(?:です)?)?$/iu.test(text)
+  return /^(?:最新|新着|新しい|最も新しい|一番新しい|いちばん新しい|最近(?:追加|登録)された|最近の)(?:の)?\s*(?:akyo|アキョ|あきょ)?\s*(?:について|は|を)?\s*(?:何|どれ)?\s*(?:ですか|教えて(?:ください)?|見せて(?:ください)?|知りたい(?:です)?)?$/iu.test(text)
     || /^(?:(?:what(?:'s| is)|show me|tell me about)\s+)?(?:the\s+)?(?:latest|newest|recently added)(?:\s+akyo(?:s)?)?$/iu.test(text)
     || /^(?:최신|가장 새로운|최근 추가된)\s*(?:akyo|아쿄)?\s*(?:는|를)?\s*(?:뭐야|알려\s*줘|알려\s*주세요)?$/iu.test(text);
 }

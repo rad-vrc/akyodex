@@ -1,4 +1,5 @@
 import { countByAuthor, countByKeyword } from "./count";
+import { answerCatalogQuestion, parseCatalogQuestion } from "./catalog-question";
 import { isLatestRequest, LatestCatalogNotReadyError, searchLatest } from "./latest";
 import {
   MAX_INGEST_RECORDS,
@@ -6,6 +7,7 @@ import {
   isAuthorizedForIngest,
 } from "./ingest";
 import {
+  allowsDiscoveryOnNameMiss,
   isSpecificNameQuery,
   normalizeLanguage,
   normalizeSearchTerms,
@@ -61,18 +63,30 @@ async function handleSearch(request: Request, env: Env): Promise<Response> {
     return jsonResponse({ query: body.query, language, searchMode: "latest",
       latestBasis: "urlUpdatedAt-desc-then-internal-id-desc", results, count: results.length });
   }
-  const specificNameInput =
+  const question = parseCatalogQuestion(body.query);
+  if (question && question.kind !== "named") {
+    const answer = await answerCatalogQuestion(question, topK, env);
+    if (answer) return jsonResponse({ query: body.query, ...answer });
+  }
+  const specificNameInput = question?.kind === "named" ? question.name :
     typeof body.query === "string" && body.query.trim()
       ? body.query
       : Array.isArray(body.keywords) && body.keywords.length === 1
         ? body.keywords[0]
         : undefined;
-  const specificNameQuery = isSpecificNameQuery(specificNameInput);
+  let specificNameQuery = question?.kind === "named" || isSpecificNameQuery(specificNameInput);
   const specificNameTerms =
     typeof specificNameInput === "string" ? [specificNameInput] : terms;
-  const results = specificNameQuery
+  let results = specificNameQuery
     ? await searchSpecificNameMatches(specificNameTerms, language, env)
     : await searchWithD1AndVectorize(terms, language, topK, env);
+  // A partial name can also be a description. Only exact names may suppress
+  // discovery for ambiguous requests; explicit subjects keep lexical matching.
+  if (specificNameQuery && !results.some(result => result.matchType === "exact") && question?.kind !== "named"
+    && allowsDiscoveryOnNameMiss(specificNameInput)) {
+    specificNameQuery = false;
+    results = await searchWithD1AndVectorize(terms, language, topK, env);
+  }
 
   return jsonResponse({
     query: typeof body.query === "string" ? body.query : undefined,

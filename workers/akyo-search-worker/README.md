@@ -173,6 +173,30 @@ serve stale vectors during a later partial sync.
 
 ## Search behavior
 
+- Japanese count/list questions for explicit platform/color AND conditions, an
+  exact author, or worlds use D1 filtering rather than semantic ranking. `total`
+  is the complete matching count; `count` remains the length of `results`.
+  These queries explicitly use the synchronized JA catalog. Unsupported **count**
+  conditions return `clarification`; unsupported **list** conditions retain ordinary
+  discovery with the whole search terms, never an exact answer from partial filters.
+  Unresolved follow-ups return `needs-context`
+  instead of substituting another record. See [Dify answer routing](dify-answer-routing.md)
+  for supported scope, the corresponding Dify graph/prompt change, audit and
+  rollout steps. The four new modes include a deterministic `directAnswer` so
+  Dify can display totals/results without another model interpreting them.
+- Before reporting zero, verify each requested author/category exists somewhere
+  in the JA D1 catalog. Missing exact authors ask for the registered spelling.
+  Missing category aliases (including renamed or unused categories) ask for
+  clarification on counts and fall back to discovery on lists. Known conditions
+  whose intersection is empty still report zero; a world-only author can have
+  zero avatars. The aliases do not automatically infer renamed categories.
+- Color aliases include the current 11 color families and common wording such
+  as `青の`, `黒い`, `黄色の` and `ピンクの`. No count is hard-coded.
+- `このAkyo図鑑` and `このAkyoずかん` do not trigger the follow-up guard.
+  `そのAkyoの名前はMenmeAkyoです` uses the supplied name via strict D1 lookup;
+  an unknown supplied name does not fall back to another semantic candidate.
+- Numbered phrases such as `#0001のAkyoについて教えて` use the existing internal
+  ID lookup. This does not introduce public display-number resolution.
 - Unqualified latest requests such as `最新のAkyoは？`, `What is the latest Akyo?`
   and `최근 추가된 Akyo 알려주세요` bypass name/vector search. Keyword-only
   requests like `["最新", "Akyo"]` are also recognized. An explicit query takes
@@ -214,6 +238,12 @@ serve stale vectors during a later partial sync.
   as the named one. A request with no `query` is treated the same way when
   `keywords` contains exactly one name; multiple keyword-only requests remain
   discovery searches.
+- Ambiguous `Xを教えて` requests first try name lookup when appropriate. A name
+  miss returns to ordinary discovery, preserving descriptive queries such as
+  `強そうなAkyoを教えて`. The same rule covers `を知りたい` and `を説明して`,
+  including their polite forms, matching the suffixes removed by preprocessing.
+  `Xについて...`, explicit supplied names and numeric
+  IDs stay strict on a miss. This is not general conversational reference resolution.
 - All languages, including Korean, use the populated shared index. There is no
   Korean-specific binding, and the empty JA/EN indexes remain reserved.
 - Semantic failures fall back to D1 results instead of returning an HTTP 500.
@@ -252,8 +282,9 @@ are separate work and are not implemented by this long-query fix.
 `POST /search` accepts a JSON object with `query` or `keywords`, plus optional
 `language` (`ja`, `en`, or `ko`) and `topK`. It returns the detected language,
 matching records, and `count`.
-`searchMode` is `latest`, `specific-name` for a named Akyo lookup, or `discovery`
-for a general search. Specific-name responses also include `nameMatch`; when it is
+`searchMode` is `latest`, `specific-name` for a named Akyo lookup, `discovery`
+for a general search, or `count`, `filtered`, `needs-context`, `clarification`
+for the deterministic question path. Specific-name responses also include `nameMatch`; when it is
 `false`, `results` is empty even if Vectorize found semantically similar items.
 Consumers must use each result's `entryType` to label it as an avatar or world;
 world results should use `nickname` as the world name and label `url` as the
