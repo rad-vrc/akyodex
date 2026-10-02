@@ -971,10 +971,6 @@
     "en": "Skill・Trait",
     "ko": "기능・특성"
   },
-  "技能・特性/せんすい": {
-    "en": "Skill・Trait/Diving",
-    "ko": "기능・특성/잠수"
-  },
   "技能・特性/ひこう": {
     "en": "Skill・Trait/Flying",
     "ko": "기능・특성/비행"
@@ -998,6 +994,10 @@
   "技能・特性/演奏": {
     "en": "Skill・Trait/Musical Performance",
     "ko": "기능・특성/연주"
+  },
+  "技能・特性/潜水": {
+    "en": "Skill・Trait/Diving",
+    "ko": "기능・특성/잠수"
   },
   "技能・特性/無重力耐性": {
     "en": "Skill・Trait/Zero-G Resistance",
