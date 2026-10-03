@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-03T09:52:44.726Z",
-  "count": 1030,
+  "updatedAt": "2026-10-03T09:58:17.131Z",
+  "count": 1031,
   "data": [
     {
       "id": "0001",
@@ -12658,6 +12658,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3dc07c93-61fa-4f95-bd9a-8b90d2ff2393",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3dc07c93-61fa-4f95-bd9a-8b90d2ff2393",
       "urlUpdatedAt": "2026-10-03T09:52:44.580Z"
+    },
+    {
+      "id": "2047",
+      "entryType": "avatar",
+      "displaySerial": "0912",
+      "nickname": "夜空Akyo",
+      "avatarName": "夜空_Akyo",
+      "category": "지원 기기,지원 기기/PC,색상,색상/무지개",
+      "comment": "あの夜空に輝く星々が全部Akyoだったら・・・",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_62bbf77d-5c0c-448b-922d-0c12ac6451e7",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_62bbf77d-5c0c-448b-922d-0c12ac6451e7",
+      "urlUpdatedAt": "2026-10-03T09:58:16.986Z"
     }
   ]
 }
