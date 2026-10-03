@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-03T10:03:10.897Z",
-  "count": 1031,
+  "updatedAt": "2026-10-03T17:49:10.195Z",
+  "count": 1032,
   "data": [
     {
       "id": "0001",
@@ -12671,6 +12671,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_62bbf77d-5c0c-448b-922d-0c12ac6451e7",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_62bbf77d-5c0c-448b-922d-0c12ac6451e7",
       "urlUpdatedAt": "2026-10-03T09:58:16.986Z"
+    },
+    {
+      "id": "2048",
+      "entryType": "avatar",
+      "displaySerial": "0913",
+      "nickname": "サイクロプスヒューマノイドAkyo",
+      "avatarName": "Cyclops Akyo Stub",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),색상,색상/흰색 계열,색상/무채색 계열,색상/검은색 계열,기관,기관/팔,기관/귀,가상의 존재,가상의 존재/몬스터,謎多き存在,동물,동물/인간",
+      "comment": "これだけ大きな目があれば、Akyoを見つけるのも簡単だね！",
+      "author": "'-Crims-",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_54ccd2b9-5daa-42c9-b2f4-1a21c0828021",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_54ccd2b9-5daa-42c9-b2f4-1a21c0828021",
+      "urlUpdatedAt": "2026-10-03T17:49:10.036Z"
     }
   ]
 }
