@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-03T09:02:52.196Z",
-  "count": 1029,
+  "updatedAt": "2026-10-03T09:52:44.634Z",
+  "count": 1030,
   "data": [
     {
       "id": "0001",
@@ -11946,6 +11946,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f94396ce-2374-4d20-a305-fca287f9eb1e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f94396ce-2374-4d20-a305-fca287f9eb1e",
       "urlUpdatedAt": "2026-10-03T09:02:52.143Z"
+    },
+    {
+      "id": "2046",
+      "entryType": "avatar",
+      "displaySerial": "0911",
+      "nickname": "プリズムAkyo",
+      "avatarName": "Prism_Akyo",
+      "category": "対応機種,対応機種/PC,色,色/虹色系",
+      "comment": "プリズムのように輝くAkyoを見たことがあるかい？",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3dc07c93-61fa-4f95-bd9a-8b90d2ff2393",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3dc07c93-61fa-4f95-bd9a-8b90d2ff2393",
+      "urlUpdatedAt": "2026-10-03T09:52:44.580Z"
     }
   ]
 }
