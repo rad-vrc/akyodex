@@ -995,6 +995,10 @@
     "en": "Skill・Trait/Cold Resistance",
     "ko": "기능・특성/추위 내성"
   },
+  "技能・特性/時間干渉": {
+    "en": "Skill・Trait/Time Manipulation",
+    "ko": "기능・특성/시간 조작"
+  },
   "技能・特性/演奏": {
     "en": "Skill・Trait/Musical Performance",
     "ko": "기능・특성/연주"
