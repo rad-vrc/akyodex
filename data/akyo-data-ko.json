@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-02T13:59:11.921Z",
-  "count": 1025,
+  "updatedAt": "2026-10-03T00:17:12.949Z",
+  "count": 1026,
   "data": [
     {
       "id": "0001",
@@ -12593,6 +12593,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_9d7608e8-24e5-494e-9696-98804423edb2",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_9d7608e8-24e5-494e-9696-98804423edb2",
       "urlUpdatedAt": "2026-10-02T13:37:53.351Z"
+    },
+    {
+      "id": "2042",
+      "entryType": "avatar",
+      "displaySerial": "0907",
+      "nickname": "スピリットAkyo",
+      "avatarName": "akyo spirit",
+      "category": "지원 기기,지원 기기/PC,에너지,기믹・특수,기믹・특수/셰이더",
+      "comment": "これがAkyoのスピリット......いわば\"Akyo魂\"か",
+      "author": "ᴡaffle",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3c818d4a-450f-4715-9355-a9402481081b",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3c818d4a-450f-4715-9355-a9402481081b",
+      "urlUpdatedAt": "2026-10-03T00:17:12.797Z"
     }
   ]
 }
