@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-03T00:41:51.789Z",
-  "count": 1027,
+  "updatedAt": "2026-10-03T01:17:31.537Z",
+  "count": 1028,
   "data": [
     {
       "id": "0001",
@@ -12619,6 +12619,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_074c3f48-1812-42f3-b9e6-400033676ed6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_074c3f48-1812-42f3-b9e6-400033676ed6",
       "urlUpdatedAt": "2026-10-03T00:32:06.466Z"
+    },
+    {
+      "id": "2044",
+      "entryType": "avatar",
+      "displaySerial": "0909",
+      "nickname": "Nopakyo",
+      "avatarName": "Nopakyo Dance Mode",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/애니메이션,기믹・특수/댄스,기믹・특수/비행,색상,색상/초록색 계열,색상/파란색 계열,동물,동물/고양이,기관,기관/꼬리,기관/귀",
+      "comment": "しろもちっていうアバターとAkyoのミックスなんだね！\nもちろんPublic化はどちらも許可されてるよ！",
+      "author": "ChonkyCot",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_062770d2-5b6f-4ca2-a3b6-1be4bc9a2042",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_062770d2-5b6f-4ca2-a3b6-1be4bc9a2042",
+      "urlUpdatedAt": "2026-10-03T01:17:31.394Z"
     }
   ]
 }
