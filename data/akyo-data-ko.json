@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-03T00:17:12.949Z",
-  "count": 1026,
+  "updatedAt": "2026-10-03T00:32:06.581Z",
+  "count": 1027,
   "data": [
     {
       "id": "0001",
@@ -12606,6 +12606,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3c818d4a-450f-4715-9355-a9402481081b",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3c818d4a-450f-4715-9355-a9402481081b",
       "urlUpdatedAt": "2026-10-03T00:17:12.797Z"
+    },
+    {
+      "id": "2043",
+      "entryType": "avatar",
+      "displaySerial": "0908",
+      "nickname": "ゴースト・オブ・Akyo",
+      "avatarName": "Ghost of Akyo",
+      "category": "지원 기기,지원 기기/PC,가상의 존재,가상의 존재/요괴・유령,謎多き存在,색상,색상/검은색 계열,지원 기기/Quest(Android)",
+      "comment": "説明文にあるsoulessがsoul lessって意味なら、この人が同時期に出しているスピリットAkyoの対になる存在なのかな？",
+      "author": "ᴡaffle",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_074c3f48-1812-42f3-b9e6-400033676ed6",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_074c3f48-1812-42f3-b9e6-400033676ed6",
+      "urlUpdatedAt": "2026-10-03T00:32:06.466Z"
     }
   ]
 }
