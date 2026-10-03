@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-03T09:00:47.821Z",
-  "count": 1028,
+  "updatedAt": "2026-10-03T09:02:52.283Z",
+  "count": 1029,
   "data": [
     {
       "id": "0001",
@@ -12632,6 +12632,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_062770d2-5b6f-4ca2-a3b6-1be4bc9a2042",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_062770d2-5b6f-4ca2-a3b6-1be4bc9a2042",
       "urlUpdatedAt": "2026-10-03T01:17:31.394Z"
+    },
+    {
+      "id": "2045",
+      "entryType": "avatar",
+      "displaySerial": "0910",
+      "nickname": "ロブランダーAkyo",
+      "avatarName": "ロブランダーakyo",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),색상,색상/흰색 계열,패러디,패러디/VRChat,기관,기관/뿔,패션・장비,패션・장비/헤일로,색상/무채색 계열,색상/검은색 계열,기능・특성,기능・특성/마법,기능・특성/현실 조작,기관/팔,패션・장비/모자,기믹・특수,기믹・특수/애니메이션,기믹・특수/댄스,최강 전사,기능・특성/시간 조작",
+      "comment": "このAkyoに捕まったらどうなるの！？",
+      "author": "あん田さん",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_f94396ce-2374-4d20-a305-fca287f9eb1e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f94396ce-2374-4d20-a305-fca287f9eb1e",
+      "urlUpdatedAt": "2026-10-03T09:02:52.143Z"
     }
   ]
 }

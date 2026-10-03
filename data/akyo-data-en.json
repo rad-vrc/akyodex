@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-03T09:00:47.776Z",
-  "count": 1028,
+  "updatedAt": "2026-10-03T09:02:52.238Z",
+  "count": 1029,
   "data": [
     {
       "id": "0001",
@@ -11933,6 +11933,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_062770d2-5b6f-4ca2-a3b6-1be4bc9a2042",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_062770d2-5b6f-4ca2-a3b6-1be4bc9a2042",
       "urlUpdatedAt": "2026-10-03T01:17:31.394Z"
+    },
+    {
+      "id": "2045",
+      "entryType": "avatar",
+      "displaySerial": "0910",
+      "nickname": "ロブランダーAkyo",
+      "avatarName": "ロブランダーakyo",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Color,Color/White Tones,Parody,Parody/VRChat,Body Part,Body Part/Horn,Fashion・Equipment,Fashion・Equipment/Halo,Color/Achromatic Colors,Color/Black Tones,Skill・Trait,Skill・Trait/Magic,Skill・Trait/Reality Warping,Body Part/Arm,Fashion・Equipment/Hat,Gimmick・Special,Gimmick・Special/Animation,Gimmick・Special/Dance,Strongest Warrior,Skill・Trait/Time Manipulation",
+      "comment": "このAkyoに捕まったらどうなるの！？",
+      "author": "あん田さん",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_f94396ce-2374-4d20-a305-fca287f9eb1e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f94396ce-2374-4d20-a305-fca287f9eb1e",
+      "urlUpdatedAt": "2026-10-03T09:02:52.143Z"
     }
   ]
 }
