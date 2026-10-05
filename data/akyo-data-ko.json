@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-05T03:58:14.721Z",
-  "count": 1033,
+  "updatedAt": "2026-10-05T04:01:20.276Z",
+  "count": 1034,
   "data": [
     {
       "id": "0001",
@@ -12697,6 +12697,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ecf30722-e670-4568-98d6-8525e8cf26ea",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ecf30722-e670-4568-98d6-8525e8cf26ea",
       "urlUpdatedAt": "2026-10-05T03:44:05.110Z"
+    },
+    {
+      "id": "2050",
+      "entryType": "avatar",
+      "displaySerial": "0915",
+      "nickname": "ichigata式ハロウィンAkyo",
+      "avatarName": "HelloweenAkyo",
+      "category": "지원 기기,지원 기기/PC,행사・문화,행사・문화/할로윈,음식,음식/채소,색상,색상/주황색 계열,초코민트류,색상/초록색 계열,색상/파란색 계열,패션・장비,패션・장비/코스프레",
+      "comment": "みかんちゃんみたいなかぼちゃだね！",
+      "author": "ichigata",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
+      "urlUpdatedAt": "2026-10-05T04:01:20.163Z"
     }
   ]
 }

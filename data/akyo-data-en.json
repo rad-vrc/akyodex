@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-05T03:58:14.687Z",
-  "count": 1033,
+  "updatedAt": "2026-10-05T04:01:20.239Z",
+  "count": 1034,
   "data": [
     {
       "id": "0001",
@@ -11998,6 +11998,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_ecf30722-e670-4568-98d6-8525e8cf26ea",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_ecf30722-e670-4568-98d6-8525e8cf26ea",
       "urlUpdatedAt": "2026-10-05T03:44:05.110Z"
+    },
+    {
+      "id": "2050",
+      "entryType": "avatar",
+      "displaySerial": "0915",
+      "nickname": "ichigata式ハロウィンAkyo",
+      "avatarName": "HelloweenAkyo",
+      "category": "Supported Platform,Supported Platform/PC,Event・Culture,Event・Culture/Halloween,Food,Food/Vegetable,Color,Color/Orange Tones,Mint Chocolate,Color/Green Tones,Color/Blue Tones,Fashion・Equipment,Fashion・Equipment/Roleplay",
+      "comment": "みかんちゃんみたいなかぼちゃだね！",
+      "author": "ichigata",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
+      "urlUpdatedAt": "2026-10-05T04:01:20.163Z"
     }
   ]
 }
