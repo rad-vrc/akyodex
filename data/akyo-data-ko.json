@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-03T17:49:10.195Z",
-  "count": 1032,
+  "updatedAt": "2026-10-05T03:44:05.196Z",
+  "count": 1033,
   "data": [
     {
       "id": "0001",
@@ -12684,6 +12684,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_54ccd2b9-5daa-42c9-b2f4-1a21c0828021",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_54ccd2b9-5daa-42c9-b2f4-1a21c0828021",
       "urlUpdatedAt": "2026-10-03T17:49:10.036Z"
+    },
+    {
+      "id": "2049",
+      "entryType": "avatar",
+      "displaySerial": "0914",
+      "nickname": "軽石Akyo",
+      "avatarName": "軽石Akyo",
+      "category": "지원 기기,지원 기기/PC,소재・원재료,자연,자연/암석,색상,색상/흰색 계열,체격・형태・촉감,체격・형태・촉감/단단한",
+      "comment": "マグマAkyoと仲良さそう！",
+      "author": "ichigata",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_ecf30722-e670-4568-98d6-8525e8cf26ea",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_ecf30722-e670-4568-98d6-8525e8cf26ea",
+      "urlUpdatedAt": "2026-10-05T03:44:05.110Z"
     }
   ]
 }
