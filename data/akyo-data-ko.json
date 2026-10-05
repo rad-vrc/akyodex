@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-05T04:01:20.276Z",
-  "count": 1034,
+  "updatedAt": "2026-10-05T12:06:59.042Z",
+  "count": 1035,
   "data": [
     {
       "id": "0001",
@@ -12710,6 +12710,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
       "urlUpdatedAt": "2026-10-05T04:01:20.163Z"
+    },
+    {
+      "id": "2051",
+      "entryType": "avatar",
+      "displaySerial": "0916",
+      "nickname": "おばけまめAkyo",
+      "avatarName": "obake_mameakyo",
+      "category": "지원 기기,지원 기기/PC,마메Akyo,마메,가상의 존재,가상의 존재/요괴・유령,색상,색상/흰색 계열,패션・장비,패션・장비/헤일로,체격・형태・촉감,체격・형태・촉감/풍만,패션・장비/코스프레",
+      "comment": "うらめしや？\nあきょまめしや～～～！！！",
+      "author": "黒兎com",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_924def86-ae81-4711-bf3b-081b02a7da5c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_924def86-ae81-4711-bf3b-081b02a7da5c",
+      "urlUpdatedAt": "2026-10-05T12:06:58.895Z"
     }
   ]
 }

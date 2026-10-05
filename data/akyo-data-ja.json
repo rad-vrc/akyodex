@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-05T04:01:20.206Z",
-  "count": 1034,
+  "updatedAt": "2026-10-05T12:06:58.950Z",
+  "count": 1035,
   "data": [
     {
       "id": "0001",
@@ -12011,6 +12011,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_259e0f0e-f09f-4f30-96b5-996b72d5a0d6",
       "urlUpdatedAt": "2026-10-05T04:01:20.163Z"
+    },
+    {
+      "id": "2051",
+      "entryType": "avatar",
+      "displaySerial": "0916",
+      "nickname": "おばけまめAkyo",
+      "avatarName": "obake_mameakyo",
+      "category": "対応機種,対応機種/PC,まめAkyo,まめ,架空の存在,架空の存在/妖怪・おばけ,色,色/白色系,ファッション・装備,ファッション・装備/ヘイロー,体格・形状・触り心地,体格・形状・触り心地/豊満,ファッション・装備/なりきり・仮装",
+      "comment": "うらめしや？\nあきょまめしや～～～！！！",
+      "author": "黒兎com",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_924def86-ae81-4711-bf3b-081b02a7da5c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_924def86-ae81-4711-bf3b-081b02a7da5c",
+      "urlUpdatedAt": "2026-10-05T12:06:58.895Z"
     }
   ]
 }
