@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-06T04:35:59.160Z",
+  "updatedAt": "2026-10-06T04:37:48.231Z",
   "count": 1038,
   "data": [
     {
@@ -6875,9 +6875,10 @@
     {
       "id": "0605",
       "entryType": "avatar",
+      "displaySerial": "0605",
       "nickname": "Axolotl Akyo",
       "avatarName": "akyo uparupa",
-      "category": "Animal,Animal/Amphibian,Booth,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Animal,Animal/Amphibian,Booth,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Body Part,Body Part/Tail,Skill・Trait,Skill・Trait/Diving,Color,Color/Pink Tones",
       "comment": "Often found along the banks of the Japan Street",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_34be8863-c67f-4860-89e1-2cef623725ab",
