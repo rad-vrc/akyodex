@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-06T04:31:51.393Z",
-  "count": 1037,
+  "updatedAt": "2026-10-06T04:35:59.112Z",
+  "count": 1038,
   "data": [
     {
       "id": "0001",
@@ -12050,6 +12050,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2aa74542-06aa-409d-9bea-de81b68152c1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_2aa74542-06aa-409d-9bea-de81b68152c1",
       "urlUpdatedAt": "2026-10-06T04:31:51.346Z"
+    },
+    {
+      "id": "2054",
+      "entryType": "avatar",
+      "displaySerial": "0919",
+      "nickname": "ハラペーニョAkyo",
+      "avatarName": "harape-nyo akyo",
+      "category": "対応機種,対応機種/PC,色,色/緑色系,食べ物,食べ物/野菜",
+      "comment": "食べたことないかも！どんな味なんだろう？",
+      "author": "hajimata",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_8d5b6249-b0e8-4cf9-ad23-ff848321f2cb",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_8d5b6249-b0e8-4cf9-ad23-ff848321f2cb",
+      "urlUpdatedAt": "2026-10-06T04:35:59.054Z"
     }
   ]
 }
