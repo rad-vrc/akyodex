@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-06T04:59:55.278Z",
+  "updatedAt": "2026-10-06T05:09:09.961Z",
   "count": 1039,
   "data": [
     {
@@ -1207,9 +1207,10 @@
     {
       "id": "0107",
       "entryType": "avatar",
+      "displaySerial": "0107",
       "nickname": "Salamander Akyo",
       "avatarName": "SalamanderAkyo",
-      "category": "Fictional Being,Fictional Being/Mythical Beast・Spirit,Supported Platform,Supported Platform/PC",
+      "category": "Supported Platform,Supported Platform/PC,Animal,Animal/Amphibian,Body Part,Body Part/Tail,Skill・Trait,Skill・Trait/Diving,Color,Color/Green Tones",
       "comment": "うぱAkyoと呼んだりもする",
       "author": "SauAu",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_44fec38a-0008-4421-98aa-9dfdc4030c44",
