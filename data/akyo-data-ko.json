@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-06T03:54:44.297Z",
-  "count": 1036,
+  "updatedAt": "2026-10-06T04:31:51.488Z",
+  "count": 1037,
   "data": [
     {
       "id": "0001",
@@ -12736,6 +12736,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c4029c1a-ab74-40c2-9538-4113612f1d60",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_c4029c1a-ab74-40c2-9538-4113612f1d60",
       "urlUpdatedAt": "2026-10-06T03:54:44.154Z"
+    },
+    {
+      "id": "2053",
+      "entryType": "avatar",
+      "displaySerial": "0918",
+      "nickname": "mugineko式ウーパールーパーAkyo",
+      "avatarName": "Upa_Akyo",
+      "category": "지원 기기,지원 기기/PC,동물,동물/양서류,기관,기관/꼬리,색상,색상/분홍색 계열,기능・특성,기능・특성/잠수",
+      "comment": "こんなところにもうぱAkyoがいたんだね！",
+      "author": "mugineko",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_2aa74542-06aa-409d-9bea-de81b68152c1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2aa74542-06aa-409d-9bea-de81b68152c1",
+      "urlUpdatedAt": "2026-10-06T04:31:51.346Z"
     }
   ]
 }

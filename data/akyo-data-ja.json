@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-06T03:54:44.211Z",
-  "count": 1036,
+  "updatedAt": "2026-10-06T04:31:51.393Z",
+  "count": 1037,
   "data": [
     {
       "id": "0001",
@@ -12037,6 +12037,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c4029c1a-ab74-40c2-9538-4113612f1d60",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_c4029c1a-ab74-40c2-9538-4113612f1d60",
       "urlUpdatedAt": "2026-10-06T03:54:44.154Z"
+    },
+    {
+      "id": "2053",
+      "entryType": "avatar",
+      "displaySerial": "0918",
+      "nickname": "mugineko式ウーパールーパーAkyo",
+      "avatarName": "Upa_Akyo",
+      "category": "対応機種,対応機種/PC,動物,動物/両生類,器官,器官/しっぽ,色,色/ピンク色系,技能・特性,技能・特性/潜水",
+      "comment": "こんなところにもうぱAkyoがいたんだね！",
+      "author": "mugineko",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_2aa74542-06aa-409d-9bea-de81b68152c1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2aa74542-06aa-409d-9bea-de81b68152c1",
+      "urlUpdatedAt": "2026-10-06T04:31:51.346Z"
     }
   ]
 }
