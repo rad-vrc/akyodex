@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-06T15:23:23.833Z",
-  "count": 1039,
+  "updatedAt": "2026-10-07T06:06:09.290Z",
+  "count": 1040,
   "data": [
     {
       "id": "0001",
@@ -12078,6 +12078,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_42f54075-9b15-4dfd-aa06-9f7e22a72c2a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_42f54075-9b15-4dfd-aa06-9f7e22a72c2a",
       "urlUpdatedAt": "2026-10-06T04:59:55.166Z"
+    },
+    {
+      "id": "2056",
+      "entryType": "avatar",
+      "displaySerial": "0921",
+      "nickname": "節分Akyo",
+      "avatarName": "節分Akyo",
+      "category": "対応機種,対応機種/PC,色,色/黄色系,行事・文化,行事・文化/節分,対応機種/Quest(Android),まめAkyo,まめ,チョコミント類,国,国/日本",
+      "comment": "ちょっとこのAkyoセンスありすぎじゃない！？",
+      "author": "さいまん",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_37ec7d4f-f1ff-4915-b171-9027deafae9e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_37ec7d4f-f1ff-4915-b171-9027deafae9e",
+      "urlUpdatedAt": "2026-10-07T06:06:09.230Z"
     }
   ]
 }
