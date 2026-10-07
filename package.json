@@ -59,7 +59,7 @@
     "@sentry/react": "10.66.0",
     "csv-parse": "^7.0.2",
     "csv-stringify": "^6.6.0",
-    "next": "16.3.3",
+    "next": "16.3.8",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sanitize-html": "^2.17.7"
@@ -97,6 +97,6 @@
     "terser": "5.49.0",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
-    "wrangler": "^4.134.0"
+    "wrangler": "^4.147.0"
   }
 }
