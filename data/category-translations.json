@@ -359,6 +359,10 @@
     "en": "Fashion・Equipment/Halo",
     "ko": "패션・장비/헤일로"
   },
+  "ファッション・装備/ヘッドフォン": {
+    "en": "Fashion・Equipment/Headphones",
+    "ko": "패션・장비/헤드폰"
+  },
   "ファッション・装備/マスク": {
     "en": "Fashion・Equipment/Mask",
     "ko": "패션・장비/마스크"
@@ -863,13 +867,57 @@
     "en": "Country",
     "ko": "나라"
   },
+  "国/アメリカ": {
+    "en": "Country/United States",
+    "ko": "나라/미국"
+  },
+  "国/イギリス": {
+    "en": "Country/United Kingdom",
+    "ko": "나라/영국"
+  },
+  "国/イタリア": {
+    "en": "Country/Italy",
+    "ko": "나라/이탈리아"
+  },
   "国/エジプト": {
     "en": "Country/Egypt",
     "ko": "나라/이집트"
   },
+  "国/オランダ": {
+    "en": "Country/Netherlands",
+    "ko": "나라/네덜란드"
+  },
+  "国/ギリシャ": {
+    "en": "Country/Greece",
+    "ko": "나라/그리스"
+  },
   "国/タイ王国": {
     "en": "Country/Thailand",
     "ko": "나라/태국"
+  },
+  "国/フランス": {
+    "en": "Country/France",
+    "ko": "나라/프랑스"
+  },
+  "国/ベルギー": {
+    "en": "Country/Belgium",
+    "ko": "나라/벨기에"
+  },
+  "国/ポーランド": {
+    "en": "Country/Poland",
+    "ko": "나라/폴란드"
+  },
+  "国/メキシコ": {
+    "en": "Country/Mexico",
+    "ko": "나라/멕시코"
+  },
+  "国/ロシア": {
+    "en": "Country/Russia",
+    "ko": "나라/러시아"
+  },
+  "国/中国": {
+    "en": "Country/China",
+    "ko": "나라/중국"
   },
   "国/日本": {
     "en": "Country/Japan",
