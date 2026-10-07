@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-07T06:03:32.950Z",
-  "count": 1039,
+  "updatedAt": "2026-10-07T06:06:09.340Z",
+  "count": 1040,
   "data": [
     {
       "id": "0001",
@@ -12078,6 +12078,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_42f54075-9b15-4dfd-aa06-9f7e22a72c2a",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_42f54075-9b15-4dfd-aa06-9f7e22a72c2a",
       "urlUpdatedAt": "2026-10-06T04:59:55.166Z"
+    },
+    {
+      "id": "2056",
+      "entryType": "avatar",
+      "displaySerial": "0921",
+      "nickname": "節分Akyo",
+      "avatarName": "節分Akyo",
+      "category": "Supported Platform,Supported Platform/PC,Color,Color/Yellow,Event・Culture,Event・Culture/Setsubun,Supported Platform/Quest(Android),Bean Akyo,Bean,Mint Chocolate,Country,Country/Japan",
+      "comment": "ちょっとこのAkyoセンスありすぎじゃない！？",
+      "author": "さいまん",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_37ec7d4f-f1ff-4915-b171-9027deafae9e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_37ec7d4f-f1ff-4915-b171-9027deafae9e",
+      "urlUpdatedAt": "2026-10-07T06:06:09.230Z"
     }
   ]
 }
