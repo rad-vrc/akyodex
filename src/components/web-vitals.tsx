@@ -6,6 +6,7 @@ import {
 } from '@/lib/sentry-browser';
 import {
   createWebVitalDistribution,
+  createInpDiagnostics,
   getWorkerVersionFromNavigation,
 } from '@/lib/web-vitals-reporting';
 import { useReportWebVitals } from 'next/web-vitals';
@@ -29,10 +30,11 @@ const reportWebVitals: ReportWebVitalsCallback = (metric) => {
     return;
   }
 
+  const workerVersion = getWorkerVersionFromNavigation(performance);
   const distribution = createWebVitalDistribution(metric, {
     language: document.documentElement.lang,
     pathname: window.location.pathname,
-    workerVersion: getWorkerVersionFromNavigation(performance),
+    workerVersion,
   });
   if (distribution) {
     captureDistributionSafely(distribution.name, distribution.value, {
@@ -52,6 +54,8 @@ const reportWebVitals: ReportWebVitalsCallback = (metric) => {
       extra: {
         value: metric.value,
         navigationType: metric.navigationType,
+        ...(workerVersion ? { workerVersion } : {}),
+        ...createInpDiagnostics(metric),
       },
     });
   }
