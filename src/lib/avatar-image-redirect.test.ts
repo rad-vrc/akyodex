@@ -23,6 +23,7 @@ function loadRoute(
   fetchFn: typeof fetch,
   getAkyoById: AkyoLookup = async () => null,
   timers: { setTimeout?: typeof setTimeout } = {},
+  log: (...args: unknown[]) => void = () => {},
 ) {
   const exports: { GET?: (request: Request) => Promise<Response> } = {};
   const dependencies: Record<string, unknown> = {
@@ -51,7 +52,7 @@ function loadRoute(
     exports, URL, Request, Response, AbortController, clearTimeout,
     setTimeout: timers.setTimeout ?? setTimeout,
     process: { env: { NODE_ENV: 'production' } },
-    console: { log() {}, warn() {}, error() {} },
+    console: { log, warn() {}, error() {} },
     fetch: fetchFn,
     require: (name: string) => {
       assert.ok(Object.hasOwn(dependencies, name), `Unexpected import: ${name}`);
@@ -195,6 +196,26 @@ function isVrchatHost(url: string): boolean {
   const { hostname } = new URL(url);
   return hostname === 'vrchat.com' || hostname.endsWith('.vrchat.com') || hostname.endsWith('.vrchat.cloud');
 }
+
+test('R2 failures log structured data with a constant format and escaped line breaks', async () => {
+  const logs: unknown[][] = [];
+  const GET = loadRoute(
+    async () => { throw new Error('upstream %s\r\nforged log'); },
+    async () => null,
+    {},
+    (...args) => logs.push(args),
+  );
+  const response = await GET(new Request('https://akyodex.com/api/avatar-image?id=3'));
+  assert.equal(response.ok, false);
+  const failure = logs.find(args => String(args[0]).includes('R2 fetch failed'))!;
+  assert.equal(failure[0], '[avatar-image] R2 fetch failed; trying VRChat fallback');
+  assert.equal(failure.length, 2);
+  assert.equal(typeof failure[1], 'string');
+  assert.doesNotMatch(failure[1] as string, /[\r\n]/);
+  assert.deepEqual(JSON.parse(failure[1] as string), {
+    id: '0003', error: 'Error: upstream %s\r\nforged log',
+  });
+});
 
 function isCsvOnImageHost(url: string): boolean {
   const { hostname, pathname } = new URL(url);

@@ -28,7 +28,6 @@
  */
 
 import { readFile, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 import { realPlatformsOf } from "./record.mjs";
@@ -236,7 +235,13 @@ export async function main({
   const targets = await collectIds(csvPath);
   await preflight(targets, fetch1);
 
-  const results = existsSync(outPath) ? JSON.parse(await readFile(outPath, "utf8")) : {};
+  let results;
+  try {
+    results = JSON.parse(await readFile(outPath, "utf8"));
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    results = {};
+  }
   const todo = selectTargets(targets, results, { refresh });
 
   console.log(`対象 ${targets.length} 件（アバター ${targets.filter((t) => t.kind === "avatar").length} / ワールド ${targets.filter((t) => t.kind === "world").length}）`);

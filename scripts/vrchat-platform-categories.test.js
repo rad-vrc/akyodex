@@ -224,6 +224,29 @@ const okBuild = (platforms) => ({
 /** クッキーが切れたときのワールドの応答。401 ではなく 200 ＋ 空で返る。 */
 const emptyBuild = { ...okBuild([]), packageCount: 0 };
 
+test("checkpoint reads only treat ENOENT as a new run and preserve invalid existing files", async () => {
+  const { main: fetchMain } = await load("fetch-platforms.mjs");
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "akyo-checkpoint-"));
+  try {
+    const csvPath = path.join(dir, "catalog.csv");
+    const outPath = path.join(dir, "platforms.json");
+    await fs.writeFile(csvPath, csvWith(""));
+    const options = { csvPath, outPath, gap: () => 0,
+      fetcher: async () => okBuild(["standalonewindows"]) };
+    await quiet(() => fetchMain(options));
+    assert.deepEqual(Object.keys(JSON.parse(await fs.readFile(outPath, "utf8"))).sort(), [PROBE, SUBJECT]);
+
+    const invalid = "{invalid-json";
+    await fs.writeFile(outPath, invalid);
+    await assert.rejects(quiet(() => fetchMain(options)), SyntaxError);
+    assert.equal(await fs.readFile(outPath, "utf8"), invalid);
+    await assert.rejects(quiet(() => fetchMain({ ...options, outPath: dir })), { code: "EISDIR" });
+    assert.ok((await fs.stat(dir)).isDirectory());
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("a refresh that comes back unjudged keeps hand-entered tags and is retried next run", async () => {
   const { main: fetchMain } = await load("fetch-platforms.mjs");
   const { main: applyMain } = await load("apply-platform-categories.mjs");

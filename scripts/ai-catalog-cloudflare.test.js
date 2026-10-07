@@ -30,6 +30,8 @@ test('uses the Cloudflare D1, AI and Vectorize request contracts including multi
   const vector = { id: '2030', values: [1, 2], metadata: { nickname: 'MenmeAkyo' } };
   const api = client(async (url, init) => {
     const path = new URL(url).pathname;
+    assert.equal(new URL(url).origin, 'https://api.cloudflare.com');
+    assert.equal(init.redirect, 'error', 'catalog uploads must not follow redirects with credentials');
     paths.push(path);
     if (path.endsWith('/query')) {
       const body = JSON.parse(init.body);

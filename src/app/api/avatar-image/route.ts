@@ -157,7 +157,8 @@ export async function GET(request: Request) {
         }
       } catch (error) {
         failureKind = 'upstream-error';
-        console.log(`[avatar-image] R2 fetch failed for ${id}, trying VRChat fallback:`, error);
+        console.log('[avatar-image] R2 fetch failed; trying VRChat fallback',
+          JSON.stringify({ id: normalizedId, error: String(error) }));
       }
     }
 
