@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-07T06:06:09.290Z",
-  "count": 1040,
+  "updatedAt": "2026-10-07T08:35:13.871Z",
+  "count": 1041,
   "data": [
     {
       "id": "0001",
@@ -12091,6 +12091,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_37ec7d4f-f1ff-4915-b171-9027deafae9e",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_37ec7d4f-f1ff-4915-b171-9027deafae9e",
       "urlUpdatedAt": "2026-10-07T06:06:09.230Z"
+    },
+    {
+      "id": "2057",
+      "entryType": "avatar",
+      "displaySerial": "0922",
+      "nickname": "metaa式ボクセルAkyo",
+      "avatarName": "boxel_akyo",
+      "category": "対応機種,対応機種/PC,ギミック・特殊,ギミック・特殊/シェーダー,色,色/青色系,作風・スタイル,作風・スタイル/レトロ",
+      "comment": "ボクセルでできた世界にも、Akyoはいるだろう。",
+      "author": "metaaa",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_2054c1b3-befc-4040-bd8f-dae5ae8c6068",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2054c1b3-befc-4040-bd8f-dae5ae8c6068",
+      "urlUpdatedAt": "2026-10-07T08:35:13.837Z"
     }
   ]
 }
