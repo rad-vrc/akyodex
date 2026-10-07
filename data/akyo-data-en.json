@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-07T09:03:01.149Z",
-  "count": 1042,
+  "updatedAt": "2026-10-07T11:09:19.034Z",
+  "count": 1043,
   "data": [
     {
       "id": "0001",
@@ -12117,6 +12117,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_afbe314b-0a86-4b07-84b6-37e5b723d1c7",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_afbe314b-0a86-4b07-84b6-37e5b723d1c7",
       "urlUpdatedAt": "2026-10-07T09:03:01.038Z"
+    },
+    {
+      "id": "2059",
+      "entryType": "avatar",
+      "displaySerial": "0924",
+      "nickname": "炒飯Akyo",
+      "avatarName": "akyo_cha-han_public",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "comment": "作者さんの自作炒飯なんだって！",
+      "author": "silky-akt",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_7f152915-d631-4b67-8d4e-ef83a277f40c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_7f152915-d631-4b67-8d4e-ef83a277f40c",
+      "urlUpdatedAt": "2026-10-07T11:09:18.929Z"
     }
   ]
 }
