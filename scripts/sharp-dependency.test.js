@@ -18,7 +18,8 @@ test('every locked sharp copy includes the librsvg security fix', () => {
 });
 
 test('root and Miniflare sharp can decode SVG and encode card image formats', async () => {
-  const fromMiniflare = createRequire(require.resolve('miniflare'));
+  const fromWrangler = createRequire(require.resolve('wrangler/package.json'));
+  const fromMiniflare = createRequire(fromWrangler.resolve('miniflare'));
   for (const sharp of [require('sharp'), fromMiniflare('sharp')]) {
     assertPatched(sharp.versions.sharp);
     const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="red"/></svg>');
