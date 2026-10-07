@@ -66,6 +66,7 @@
   },
   "overrides": {
     "minimatch": "10.2.4",
+    "sharp": "$sharp",
     "router": {
       "path-to-regexp": "8.4.2"
     },
