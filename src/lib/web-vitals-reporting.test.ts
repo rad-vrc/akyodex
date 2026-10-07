@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
+import * as reporting from "./web-vitals-reporting";
+import { createInpDiagnostics } from "./web-vitals-reporting";
 
 const reportingModulePath = path.join(
   process.cwd(),
@@ -9,6 +13,87 @@ const reportingModulePath = path.join(
   "lib",
   "web-vitals-reporting.ts",
 );
+
+test("INP diagnostics report event phases without text, selectors or input values", () => {
+  const entry = { entryType: "event", name: "click", interactionId: 7,
+    startTime: 100, processingStart: 300, processingEnd: 650, duration: 752,
+    target: { tagName: "BUTTON", id: "private-id", textContent: "private text", value: "private search" } };
+  const result = createInpDiagnostics({ name: "INP", entries: [entry] });
+  assert.deepEqual(result, { inp_events: [{
+    event_type: "click", interaction_id: 7, target_tag: "button",
+    start_time_ms: 100, duration_ms: 752, input_delay_ms: 200,
+    handler_duration_ms: 350, presentation_delay_ms: 202,
+  }] });
+  assert.doesNotMatch(JSON.stringify(result), /private/);
+});
+
+test("INP diagnostics handle removed targets and rounded durations without negative phases", () => {
+  assert.deepEqual(createInpDiagnostics({ name: "INP", entries: [
+    { entryType: "event", name: "keydown", interactionId: 14,
+      startTime: 50, processingStart: 52, processingEnd: 68, duration: 16, target: null },
+  ] }), { inp_events: [{
+    event_type: "keydown", interaction_id: 14, target_tag: "unknown",
+    start_time_ms: 50, duration_ms: 16, input_delay_ms: 2,
+    handler_duration_ms: 16, presentation_delay_ms: 0,
+  }] });
+});
+
+test("INP diagnostics are bounded, retain event order and ignore unsupported entries", () => {
+  const entry = { entryType: "event", name: "pointerdown", interactionId: 1,
+    startTime: 100, processingStart: 110, processingEnd: 130, duration: 40,
+    target: { tagName: "USER-PRIVATE-COMPONENT" } };
+  assert.equal(createInpDiagnostics({ name: "LCP", entries: [entry] }), undefined);
+  assert.equal(createInpDiagnostics({ name: "INP" }), undefined);
+  assert.equal(createInpDiagnostics({ name: "INP", entries: [null, {},
+    { ...entry, duration: NaN }, { ...entry, processingEnd: 99 }] }), undefined);
+  const result = createInpDiagnostics({ name: "INP", entries: Array.from({ length: 20 },
+    (_, i) => ({ ...entry, startTime: 100 + i })) })!;
+  assert.equal(result.inp_events.length, 8);
+  assert.equal(result.inp_events[0].target_tag, "other");
+  assert.equal(result.inp_events[7].start_time_ms, 107);
+});
+
+test("the production WebVitals callback attaches phases to the existing poor alert only", () => {
+  const messages: { message: string; options: { extra: Record<string, unknown> } }[] = [];
+  const distributions: unknown[][] = [];
+  let report: (metric: Record<string, unknown>) => void = () => assert.fail("callback not registered");
+  const exports: { WebVitals?: () => void } = {};
+  const source = readFileSync(path.join(process.cwd(), "src/components/web-vitals.tsx"), "utf8");
+  const dependencies: Record<string, unknown> = {
+    "@/lib/web-vitals-reporting": reporting,
+    "@/lib/sentry-browser": {
+      captureMessageSafely: (message: string, options: { extra: Record<string, unknown> }) => messages.push({ message, options }),
+      captureDistributionSafely: (...args: unknown[]) => distributions.push(args),
+    },
+    "next/web-vitals": { useReportWebVitals: (callback: typeof report) => { report = callback; } },
+  };
+  runInNewContext(ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText, {
+    exports, process: { env: { NODE_ENV: "production" } },
+    document: { documentElement: { lang: "ja" } }, window: { location: { pathname: "/zukan" } },
+    performance: { getEntriesByType: () => [{ serverTiming: [{ name: "akyodex-version", description: "test-sha" }] }] },
+    require: (name: string) => {
+      assert.ok(Object.hasOwn(dependencies, name), `Unexpected import: ${name}`);
+      return dependencies[name];
+    },
+  });
+  exports.WebVitals!();
+  const metric = { name: "INP", value: 752, rating: "poor", navigationType: "navigate",
+    entries: [{ entryType: "event", name: "click", interactionId: 1,
+      startTime: 0, processingStart: 200, processingEnd: 400, duration: 752, target: null }] };
+  report(metric);
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].message, "Web Vitals degraded: INP");
+  assert.equal(messages[0].options.extra.workerVersion, "test-sha");
+  assert.deepEqual(messages[0].options.extra.inp_events, createInpDiagnostics(metric)!.inp_events);
+  report({ ...metric, rating: "good" });
+  assert.equal(messages.length, 1, "good interactions must not create extra issues");
+  report({ ...metric, name: "LCP" });
+  assert.equal(messages.length, 2);
+  assert.equal(messages[1].options.extra.inp_events, undefined);
+  assert.equal(distributions.length, 3, "distribution reporting is unchanged");
+});
 
 test("creates Sentry distributions for Core Web Vitals", async () => {
   assert.equal(
