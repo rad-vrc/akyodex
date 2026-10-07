@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-07T08:35:13.923Z",
-  "count": 1041,
+  "updatedAt": "2026-10-07T09:03:01.195Z",
+  "count": 1042,
   "data": [
     {
       "id": "0001",
@@ -12801,6 +12801,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2054c1b3-befc-4040-bd8f-dae5ae8c6068",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_2054c1b3-befc-4040-bd8f-dae5ae8c6068",
       "urlUpdatedAt": "2026-10-07T08:35:13.837Z"
+    },
+    {
+      "id": "2058",
+      "entryType": "avatar",
+      "displaySerial": "0923",
+      "nickname": "ノーマルスクロールAkyo",
+      "avatarName": "Akyo_NormalScroll",
+      "category": "지원 기기,지원 기기/PC,초코민트류,기믹・특수,기믹・특수/셰이더,색상,색상/초록색 계열,색상/파란색 계열",
+      "comment": "Akyoの流れのように～♪",
+      "author": "metaaa",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_afbe314b-0a86-4b07-84b6-37e5b723d1c7",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_afbe314b-0a86-4b07-84b6-37e5b723d1c7",
+      "urlUpdatedAt": "2026-10-07T09:03:01.038Z"
     }
   ]
 }

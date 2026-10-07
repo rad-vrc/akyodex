@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-07T08:35:13.899Z",
-  "count": 1041,
+  "updatedAt": "2026-10-07T09:03:01.149Z",
+  "count": 1042,
   "data": [
     {
       "id": "0001",
@@ -12104,6 +12104,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2054c1b3-befc-4040-bd8f-dae5ae8c6068",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_2054c1b3-befc-4040-bd8f-dae5ae8c6068",
       "urlUpdatedAt": "2026-10-07T08:35:13.837Z"
+    },
+    {
+      "id": "2058",
+      "entryType": "avatar",
+      "displaySerial": "0923",
+      "nickname": "ノーマルスクロールAkyo",
+      "avatarName": "Akyo_NormalScroll",
+      "category": "Supported Platform,Supported Platform/PC,Mint Chocolate,Gimmick・Special,Gimmick・Special/Shader,Color,Color/Green Tones,Color/Blue Tones",
+      "comment": "Akyoの流れのように～♪",
+      "author": "metaaa",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_afbe314b-0a86-4b07-84b6-37e5b723d1c7",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_afbe314b-0a86-4b07-84b6-37e5b723d1c7",
+      "urlUpdatedAt": "2026-10-07T09:03:01.038Z"
     }
   ]
 }
