@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-07T23:32:17.943Z",
-  "count": 1043,
+  "updatedAt": "2026-10-07T23:37:50.995Z",
+  "count": 1044,
   "data": [
     {
       "id": "0001",
@@ -12827,6 +12827,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_7f152915-d631-4b67-8d4e-ef83a277f40c",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_7f152915-d631-4b67-8d4e-ef83a277f40c",
       "urlUpdatedAt": "2026-10-07T11:09:18.929Z"
+    },
+    {
+      "id": "2060",
+      "entryType": "avatar",
+      "displaySerial": "0925",
+      "nickname": "クリスマスいぬAkyo",
+      "avatarName": "AKYO",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),행사・문화,행사・문화/크리스마스,패션・장비,패션・장비/모자,패션・장비/목도리,동물,동물/개,기능・특성,기능・특성/추위 내성,계절,계절/겨울,기관,기관/꼬리",
+      "comment": "ねえ知ってる？\nささのきさんの販売Akyoは改変してPublic化することも許可されてるよ！",
+      "author": "Lexіcon",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_a63f0bc8-f01b-49df-8884-d977ddaa8d8e",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_a63f0bc8-f01b-49df-8884-d977ddaa8d8e",
+      "urlUpdatedAt": "2026-10-07T23:37:50.879Z"
     }
   ]
 }
