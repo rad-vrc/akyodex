@@ -206,7 +206,8 @@ test("catalog answers render totals and exact records without asking an LLM to c
     assert.doesNotMatch(list, /Item0917|Item0002/);
     const worlds = (await request("Akyoのいるワールドを3つ教えて")).directAnswer;
     assert.match(worlds, /ワールドは1件/);
-    assert.match(worlds, /https:\/\/vrchat.com\/home\/world\/wrld-example/);
+    assert.equal(worlds.split("\n").find(line => line.startsWith("URL: ")),
+      "URL: <https://vrchat.com/home/world/wrld-example>");
     assert.doesNotMatch(worlds, /アバター/);
     assert.match((await request("そのAkyoはQuestでも使えますか？")).directAnswer, /どのAkyo/);
     assert.match((await request("Quest非対応のAkyoは何体？")).directAnswer, /条件を正確に読み取れません/);
