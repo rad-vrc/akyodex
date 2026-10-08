@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-08T11:46:33.982Z",
-  "count": 1045,
+  "updatedAt": "2026-10-08T13:15:53.137Z",
+  "count": 1046,
   "data": [
     {
       "id": "0001",
@@ -12156,6 +12156,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_822405b4-32d1-417d-aa6b-60b0d4b901f3",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_822405b4-32d1-417d-aa6b-60b0d4b901f3",
       "urlUpdatedAt": "2026-10-08T11:46:33.934Z"
+    },
+    {
+      "id": "2062",
+      "entryType": "world",
+      "displaySerial": "0120",
+      "nickname": "夜景と自然を",
+      "avatarName": "夜景と自然を",
+      "category": "ワールド,対応機種,対応機種/PC",
+      "comment": "",
+      "author": "ねむたいねこ",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_f582a8aa-c165-4378-b6e2-064f2b024ef6",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_f582a8aa-c165-4378-b6e2-064f2b024ef6",
+      "urlUpdatedAt": "2026-10-08T13:15:53.077Z"
     }
   ]
 }
