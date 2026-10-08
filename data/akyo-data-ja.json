@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-08T13:15:53.137Z",
+  "updatedAt": "2026-10-08T22:52:01.746Z",
   "count": 1046,
   "data": [
     {
@@ -7900,13 +7900,16 @@
     {
       "id": "0696",
       "entryType": "avatar",
+      "displaySerial": "0696",
       "nickname": "おおかみセーターAkyo",
       "avatarName": "akyo_おおかみセーター",
-      "category": "ファッション・装備,ファッション・装備/厚着,季節,季節/冬,動物,動物/おおかみ,ファッション・装備/ぼうし,ファッション・装備/手袋,対応機種,対応機種/PC,対応機種/Quest(Android)",
+      "category": "ファッション・装備,ファッション・装備/厚着,季節,季節/冬,動物,動物/おおかみ,ファッション・装備/ぼうし,ファッション・装備/手袋,対応機種,対応機種/PC,対応機種/Quest(Android),Booth",
       "comment": "もこもこセーターを着たおおかみakyo。これで寒い日も安心！",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a",
+      "boothUrl": "https://sasanoki.booth.pm/items/8957627",
+      "urlUpdatedAt": "2026-10-08T22:52:01.685Z"
     },
     {
       "id": "0697",

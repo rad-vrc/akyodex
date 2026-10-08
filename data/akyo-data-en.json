@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-08T13:15:53.182Z",
+  "updatedAt": "2026-10-08T22:52:01.790Z",
   "count": 1046,
   "data": [
     {
@@ -7900,13 +7900,16 @@
     {
       "id": "0696",
       "entryType": "avatar",
+      "displaySerial": "0696",
       "nickname": "Wolf Sweater Akyo",
       "avatarName": "akyo_おおかみセーター",
-      "category": "Fashion・Equipment,Fashion・Equipment/Warm Clothing,Season,Season/Winter,Animal,Animal/Wolf,Fashion・Equipment/Hat,Fashion・Equipment/Gloves,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android)",
+      "category": "Fashion・Equipment,Fashion・Equipment/Warm Clothing,Season,Season/Winter,Animal,Animal/Wolf,Fashion・Equipment/Hat,Fashion・Equipment/Gloves,Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Booth",
       "comment": "A wolf Akyo wearing a fluffy sweater. Now it's ready for cold days!",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a",
+      "boothUrl": "https://sasanoki.booth.pm/items/8957627",
+      "urlUpdatedAt": "2026-10-08T22:52:01.685Z"
     },
     {
       "id": "0697",

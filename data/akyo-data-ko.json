@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-08T13:15:53.228Z",
+  "updatedAt": "2026-10-08T22:52:01.834Z",
   "count": 1046,
   "data": [
     {
@@ -8552,11 +8552,13 @@
       "displaySerial": "0696",
       "nickname": "늑대 스웨터 Akyo",
       "avatarName": "akyo_おおかみセーター",
-      "category": "패션・장비,패션・장비/두꺼운 옷,계절,계절/겨울,동물,동물/늑대,패션・장비/모자,패션・장비/장갑,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "category": "패션・장비,패션・장비/두꺼운 옷,계절,계절/겨울,동물,동물/늑대,패션・장비/모자,패션・장비/장갑,지원 기기,지원 기기/PC,지원 기기/Quest(Android),Booth",
       "comment": "보슬보슬 스웨터를 입은 늑대 Akyo. 이제 추운 날도 안심!",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2d77ad59-9699-47b7-adae-0ebcf7d94e0a",
+      "boothUrl": "https://sasanoki.booth.pm/items/8957627",
+      "urlUpdatedAt": "2026-10-08T22:52:01.685Z"
     },
     {
       "id": "0697",
