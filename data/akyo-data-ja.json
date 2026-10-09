@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-09T11:32:05.170Z",
-  "count": 1047,
+  "updatedAt": "2026-10-09T13:22:37.689Z",
+  "count": 1048,
   "data": [
     {
       "id": "0001",
@@ -12185,6 +12185,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_d023ff27-a5cf-46db-ac0b-6daccc7a6a8d",
       "avatarUrl": "https://vrchat.com/home/world/wrld_d023ff27-a5cf-46db-ac0b-6daccc7a6a8d",
       "urlUpdatedAt": "2026-10-09T11:29:16.820Z"
+    },
+    {
+      "id": "2064",
+      "entryType": "avatar",
+      "displaySerial": "0927",
+      "nickname": "インベードAkyo",
+      "avatarName": "InvadeAkyo",
+      "category": "対応機種,対応機種/PC,チョコミント類,色,色/青色系,色/緑色系,乗り物,乗り物/陸上,器官,器官/腕,危険物,ファッション・装備,ファッション・装備/武器,身分・役割,身分・役割/兵士,機械",
+      "comment": "近代的な戦い方だね！強さにも様々な形がある・・・",
+      "author": "Yushid",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_14dd239b-fca9-4d17-ba0d-3bfdb20ff960",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_14dd239b-fca9-4d17-ba0d-3bfdb20ff960",
+      "urlUpdatedAt": "2026-10-09T13:22:37.625Z"
     }
   ]
 }

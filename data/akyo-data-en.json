@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-09T11:32:05.214Z",
-  "count": 1047,
+  "updatedAt": "2026-10-09T13:22:37.735Z",
+  "count": 1048,
   "data": [
     {
       "id": "0001",
@@ -12185,6 +12185,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_d023ff27-a5cf-46db-ac0b-6daccc7a6a8d",
       "avatarUrl": "https://vrchat.com/home/world/wrld_d023ff27-a5cf-46db-ac0b-6daccc7a6a8d",
       "urlUpdatedAt": "2026-10-09T11:29:16.820Z"
+    },
+    {
+      "id": "2064",
+      "entryType": "avatar",
+      "displaySerial": "0927",
+      "nickname": "インベードAkyo",
+      "avatarName": "InvadeAkyo",
+      "category": "Supported Platform,Supported Platform/PC,Mint Chocolate,Color,Color/Blue Tones,Color/Green Tones,Vehicle,Vehicle/Land,Body Part,Body Part/Arm,Hazardous Material,Fashion・Equipment,Fashion・Equipment/Weapon,Role・Status,Role・Status/Soldier,Machine",
+      "comment": "近代的な戦い方だね！強さにも様々な形がある・・・",
+      "author": "Yushid",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_14dd239b-fca9-4d17-ba0d-3bfdb20ff960",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_14dd239b-fca9-4d17-ba0d-3bfdb20ff960",
+      "urlUpdatedAt": "2026-10-09T13:22:37.625Z"
     }
   ]
 }
