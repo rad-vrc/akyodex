@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-08T22:52:01.834Z",
-  "count": 1046,
+  "updatedAt": "2026-10-09T11:29:16.966Z",
+  "count": 1047,
   "data": [
     {
       "id": "0001",
@@ -12868,6 +12868,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_f582a8aa-c165-4378-b6e2-064f2b024ef6",
       "avatarUrl": "https://vrchat.com/home/world/wrld_f582a8aa-c165-4378-b6e2-064f2b024ef6",
       "urlUpdatedAt": "2026-10-08T13:15:53.077Z"
+    },
+    {
+      "id": "2063",
+      "entryType": "world",
+      "displaySerial": "0121",
+      "nickname": "Sasanoki's Akyo Gallery 02 -ささのきAkyoギャラリー-",
+      "avatarName": "Sasanoki's Akyo Gallery 02 -ささのきAkyoギャラリー-",
+      "category": "월드,지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS,월드/페데스탈",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_d023ff27-a5cf-46db-ac0b-6daccc7a6a8d",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_d023ff27-a5cf-46db-ac0b-6daccc7a6a8d",
+      "urlUpdatedAt": "2026-10-09T11:29:16.820Z"
     }
   ]
 }
