@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-09T13:22:37.689Z",
-  "count": 1048,
+  "updatedAt": "2026-10-10T08:17:12.245Z",
+  "count": 1049,
   "data": [
     {
       "id": "0001",
@@ -12198,6 +12198,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_14dd239b-fca9-4d17-ba0d-3bfdb20ff960",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_14dd239b-fca9-4d17-ba0d-3bfdb20ff960",
       "urlUpdatedAt": "2026-10-09T13:22:37.625Z"
+    },
+    {
+      "id": "2065",
+      "entryType": "avatar",
+      "displaySerial": "0928",
+      "nickname": "クリスマスの妖精Akyo",
+      "avatarName": "Xmas Fairy Akyo",
+      "category": "対応機種,対応機種/PC,架空の存在,架空の存在/幻獣・精霊,体格・形状・触り心地,体格・形状・触り心地/小さい,おくりもの,ファッション・装備,ファッション・装備/ぼうし,色,色/青色系,色/緑色系,チョコミント類,レア,季節,季節/冬,行事・文化,行事・文化/クリスマス,身分・役割,身分・役割/サービス業従事者,願い事",
+      "comment": "今年のクリスマスは、妖精Akyoにまかせて！",
+      "author": "Holimond․jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_43327c39-1dea-4ba5-82b2-1af73b73babb",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_43327c39-1dea-4ba5-82b2-1af73b73babb",
+      "urlUpdatedAt": "2026-10-10T08:17:12.196Z"
     }
   ]
 }
