@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-10T08:17:12.324Z",
-  "count": 1049,
+  "updatedAt": "2026-10-10T08:26:42.312Z",
+  "count": 1050,
   "data": [
     {
       "id": "0001",
@@ -12907,6 +12907,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_43327c39-1dea-4ba5-82b2-1af73b73babb",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_43327c39-1dea-4ba5-82b2-1af73b73babb",
       "urlUpdatedAt": "2026-10-10T08:17:12.196Z"
+    },
+    {
+      "id": "2066",
+      "entryType": "avatar",
+      "displaySerial": "0929",
+      "nickname": "あ今日",
+      "avatarName": "あ今日",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/셰이더,기능・특성,기능・특성/시간 조작,초코민트류,색상,색상/초록색 계열,색상/파란색 계열",
+      "comment": "時間の波をつかまえて♪\nいーじゃん！いーじゃん！あ今日じゃん！",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_10b86e71-6411-407e-b66c-b30635589010",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_10b86e71-6411-407e-b66c-b30635589010",
+      "urlUpdatedAt": "2026-10-10T08:26:42.163Z"
     }
   ]
 }
