@@ -367,7 +367,7 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
 
       {/* 編集リスト */}
       <div className="border border-gray-200 rounded-lg">
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+        <div className="admin-edit-scroll overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full">
             <thead className="bg-gray-50 sticky top-0">
               <tr>

@@ -139,6 +139,17 @@ body::after {
   z-index: -1;
 }
 
+/* Software rendering: avoid full-viewport blending and background blur.
+   Capability detection is local; all content and controls stay available. */
+html[data-reduced-effects='true'] body::before,
+html[data-reduced-effects='true'] body::after {
+  display: none;
+}
+
+html[data-reduced-effects='true'] * {
+  backdrop-filter: none !important;
+}
+
 /* ヘッダーのデザイン */
 header {
   background: linear-gradient(135deg,

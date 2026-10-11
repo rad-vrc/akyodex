@@ -1,5 +1,10 @@
 /* Admin route specific styles */
 
+/* Keep the clipped table on its own scroll surface, including software compositing. */
+.admin-edit-scroll {
+  will-change: transform;
+}
+
 .bg-purple-600,
 .bg-purple-500 {
   background: linear-gradient(135deg, var(--primary-pink), var(--primary-orange)) !important;

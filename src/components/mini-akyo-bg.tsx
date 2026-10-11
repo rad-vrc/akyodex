@@ -14,6 +14,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useReducedEffects } from '@/components/rendering-mode';
 
 // Frequency boost (1.5x from original)
 const FREQ_BOOST = 1.5;
@@ -124,6 +125,7 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
   // 以前は CSS で animation:none + opacity 0.08 にしていたが、ほぼ見えない要素を
   // 目標密度ぶん（最大42枚）抱えたまま setInterval が回り続けるだけだった。
   // このコンポーネントは dynamic(ssr:false) で読まれるため window は常に存在する。
+  const reducedEffects = useReducedEffects();
   const [reducedMotion, setReducedMotion] = useState<boolean>(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   );
@@ -133,6 +135,8 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
+
+  const decorationsDisabled = reducedMotion || reducedEffects;
 
   // Low-discrepancy sequence for balanced placement
   const nextUniform = useCallback(() => {
@@ -282,12 +286,12 @@ export function MiniAkyoBg({ className = '' }: MiniAkyoProps) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-    // reducedMotion が切り替わったら cleanup → 再init する。true になった側では
+    // 削減設定が切り替わったら cleanup → 再init する。true になった側では
     // return null で container が消えるので init は何もしない（interval は cleanup で止まる）。
-  }, [spawnOne, reducedMotion]);
+  }, [spawnOne, decorationsDisabled]);
 
   // フックはすべて上で呼び終えているので、ここでの早期returnは安全
-  if (reducedMotion) return null;
+  if (decorationsDisabled) return null;
 
   return (
     <>
