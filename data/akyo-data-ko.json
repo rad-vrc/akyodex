@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-11T02:07:53.408Z",
-  "count": 1050,
+  "updatedAt": "2026-10-11T02:43:29.962Z",
+  "count": 1051,
   "data": [
     {
       "id": "0001",
@@ -12920,6 +12920,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_10b86e71-6411-407e-b66c-b30635589010",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_10b86e71-6411-407e-b66c-b30635589010",
       "urlUpdatedAt": "2026-10-10T08:26:42.163Z"
+    },
+    {
+      "id": "2067",
+      "entryType": "avatar",
+      "displaySerial": "0930",
+      "nickname": "Akyoクロース",
+      "avatarName": "Akyo Claus",
+      "category": "지원 기기,지원 기기/PC,선물,기믹・특수,기믹・특수/파티클,기믹・특수/월드 고정,초코민트류,패션・장비,패션・장비/후드,레어,계절,계절/겨울,색상,색상/초록색 계열,색상/파란색 계열,행사・문화,행사・문화/크리스마스,신분・역할,신분・역할/서비스업 종사자,소원",
+      "comment": "Akyoの袋詰め欲しい！！",
+      "author": "Holimond․jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_f2d4d45b-e07e-49d8-9d29-ee0d66826507",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f2d4d45b-e07e-49d8-9d29-ee0d66826507",
+      "urlUpdatedAt": "2026-10-11T02:43:29.834Z"
     }
   ]
 }

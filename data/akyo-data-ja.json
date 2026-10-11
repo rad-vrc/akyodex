@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-11T02:07:53.320Z",
-  "count": 1050,
+  "updatedAt": "2026-10-11T02:43:29.881Z",
+  "count": 1051,
   "data": [
     {
       "id": "0001",
@@ -12224,6 +12224,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_10b86e71-6411-407e-b66c-b30635589010",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_10b86e71-6411-407e-b66c-b30635589010",
       "urlUpdatedAt": "2026-10-10T08:26:42.163Z"
+    },
+    {
+      "id": "2067",
+      "entryType": "avatar",
+      "displaySerial": "0930",
+      "nickname": "Akyoクロース",
+      "avatarName": "Akyo Claus",
+      "category": "対応機種,対応機種/PC,おくりもの,ギミック・特殊,ギミック・特殊/パーティクル,ギミック・特殊/ワールド固定,チョコミント類,ファッション・装備,ファッション・装備/フード,レア,季節,季節/冬,色,色/緑色系,色/青色系,行事・文化,行事・文化/クリスマス,身分・役割,身分・役割/サービス業従事者,願い事",
+      "comment": "Akyoの袋詰め欲しい！！",
+      "author": "Holimond․jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_f2d4d45b-e07e-49d8-9d29-ee0d66826507",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_f2d4d45b-e07e-49d8-9d29-ee0d66826507",
+      "urlUpdatedAt": "2026-10-11T02:43:29.834Z"
     }
   ]
 }
