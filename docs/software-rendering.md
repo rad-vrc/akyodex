@@ -16,8 +16,10 @@ software rendering. An available context with an unknown renderer retains the
 normal appearance. A hard reload checks again; there is no permanent device
 classification or polling loop.
 
-Reduced effects remove only the two fixed decorative background surfaces and
-background blur, across public and admin routes. The animated Mini Akyo component
+Reduced effects retain the static `body::before` background image, with its
+existing fixed position and sizing. Only the translucent `body::after` overlay
+and background blur are removed, across public and admin routes. The animated
+Mini Akyo component
 returns no DOM and does not start its image probe, maintenance timer or resize
 listener. Content images, search, categories, editing, pending updates and modal
 dialogs remain available. Existing reduced-motion handling is preserved.
@@ -90,7 +92,7 @@ gesture; it can exceed wall-clock time. Do not add nested trace-event durations 
 interpret these numbers as API wait times. Absolute thresholds are deliberately
 not used as CI assertions.
 
-## Measured Result (2026-10-11)
+## Initial Measured Result (PR #602, 2026-10-11)
 
 Local production build, installed Chrome 154.0.8037.98 with GPU disabled,
 4800x2700 CSS pixels / DPR 0.8. Three alternating-order rounds, using the
@@ -104,6 +106,9 @@ rounds are shown below; these are not field-user measurements.
 | Editor RasterTask total per down/up scroll | 6,607.4 ms | 7.6 ms |
 | Editor median frame interval | 16.7 ms | 16.7 ms |
 
+These initial measurements used the PR #602 fallback without either background
+layer. The subsequent static-background check below covers the retained image.
+
 The editor already met the frame interval on this test machine; the improvement
 is reduced raster work, not a measured FPS gain. The catalog improvement includes
 removing the fixed decorative backgrounds and animated images, so its fallback
@@ -113,6 +118,29 @@ An additional GPU-enabled Chrome control retained the normal background and all
 42 animated decorations. Its catalog median frame interval was 8.3 ms in both
 variants. Chromium reported GPU compositing and rasterization enabled for that
 control, and disabled/software for the three software-rendering rounds.
+
+## Retaining the Static Background (2026-10-11)
+
+The static image is retained at the user's request. A follow-up local comparison
+used the same Chrome version, software compositor, viewport and scale above.
+Only the `body::before` display rule changed between the two variants; animated
+Mini Akyo, the translucent overlay and backdrop blur stayed disabled in both.
+Three alternating-order rounds on the PR #602 production build gave these
+medians (the CSS change was injected to isolate its effect):
+
+| Measurement | No background image | Static image retained |
+| --- | ---: | ---: |
+| Catalog median / p95 frame interval | 16.7 / 16.7 ms | 16.7 / 16.7 ms |
+| Editor median / p95 frame interval | 16.7 / 16.8 ms | 16.7 / 16.8 ms |
+| Editor RasterTask total per down/up scroll | 37.5 ms | 38.3 ms |
+
+Each direction lasted approximately three seconds. The catalog's available
+scroll range at this viewport was 367px; the editor scrolled 1800px. These are
+not the initial table's identical scroll workload, so compare the two columns
+within this follow-up, not its raster totals against the initial measurements.
+No frame-pacing regression was observed in this test; this is not a guarantee
+for every device or a field-user measurement. Background positioning and sizing
+remain unchanged, and no extra layer-promotion hint was needed.
 
 ## References
 

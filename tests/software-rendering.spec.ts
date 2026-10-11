@@ -24,6 +24,7 @@ test('software-rendered editor keeps its scroll surface, sticky headings and pen
   });
   await page.goto('/admin');
   await expect(page.locator('html')).toHaveAttribute('data-reduced-effects', 'true');
+  expect(await page.evaluate(() => getComputedStyle(document.body, '::before').display)).toBe('block');
   await page.getByRole('button', { name: '編集・削除', exact: true }).click();
   const table = page.locator('table');
   const scrollport = table.locator('..');
@@ -51,14 +52,21 @@ test('software-rendered editor keeps its scroll surface, sticky headings and pen
   await expect(page.getByText('保留 1件', { exact: true })).toBeVisible();
 });
 
-test('unavailable graphics automatically remove decorative surfaces across routes', async ({ page }) => {
+test('unavailable graphics keep the static background but remove moving effects across routes', async ({ page }) => {
   await page.route('**/*', route => {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(route.request().method())) return route.abort();
     return route.fallback();
   });
   await page.goto('/zukan');
   await expect(page.locator('html')).toHaveAttribute('data-reduced-effects', 'true');
-  await expect.poll(() => page.evaluate(() => getComputedStyle(document.body, '::before').display)).toBe('none');
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.body, '::before').display)).toBe('block');
+  const background = await page.evaluate(() => {
+    const style = getComputedStyle(document.body, '::before');
+    return { image: style.backgroundImage, position: style.position, animation: style.animationName };
+  });
+  expect(background.image).toContain('/images/akyo-bg.webp');
+  expect(background.position).toBe('fixed');
+  expect(background.animation).toBe('none');
   await expect.poll(() => page.evaluate(() => getComputedStyle(document.body, '::after').display)).toBe('none');
   await page.waitForTimeout(4000); // Past the deferred decoration activation.
   await expect(page.locator('#miniAkyoBg')).toHaveCount(0);
@@ -69,7 +77,7 @@ test('unavailable graphics automatically remove decorative surfaces across route
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.locator('html')).toHaveAttribute('data-spa-fixture', 'preserved');
   await expect(page.locator('html')).toHaveAttribute('data-reduced-effects', 'true');
-  expect(await page.evaluate(() => getComputedStyle(document.body, '::before').display)).toBe('none');
+  expect(await page.evaluate(() => getComputedStyle(document.body, '::before').display)).toBe('block');
 });
 
 test('a usable non-software context preserves the normal background and animation', async ({ page }) => {
@@ -102,6 +110,7 @@ for (const locale of ['ja-JP', 'en-US', 'ko-KR']) {
       });
       await page.goto('/zukan');
       await expect(page.locator('html')).toHaveAttribute('data-reduced-effects', 'true');
+      expect(await page.evaluate(() => getComputedStyle(document.body, '::before').display)).toBe('block');
       const search = page.locator('input.search-input');
       await expect(search).toBeEnabled();
       await search.fill('0001');

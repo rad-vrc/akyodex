@@ -139,9 +139,8 @@ body::after {
   z-index: -1;
 }
 
-/* Software rendering: avoid full-viewport blending and background blur.
+/* Keep the static background image; skip the translucent overlay and blur.
    Capability detection is local; all content and controls stay available. */
-html[data-reduced-effects='true'] body::before,
 html[data-reduced-effects='true'] body::after {
   display: none;
 }
