@@ -127,7 +127,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Strategy 2a: Image Proxy API routes → treat as images (SWR)
-  const IMAGE_API_PATHS = new Set(['/api/avatar-image', '/api/vrc-avatar-image']);
+  const IMAGE_API_PATHS = new Set(['/api/avatar-image', '/api/vrc-avatar-image', '/api/vrc-world-image']);
   if (IMAGE_API_PATHS.has(url.pathname)) {
     event.respondWith(handleImageRequest(event, request));
     return;
@@ -391,8 +391,15 @@ async function handleImageRequest(event, request) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(request);
 
+  // World thumbnails refresh from VRChat; never pin an ancient or undated copy.
+  const isWorld = new URL(request.url).pathname === '/api/vrc-world-image';
+  const fetchedAt = Number(cached?.headers.get('X-World-Image-Fetched-At'));
+  const worldAge = Date.now() - fetchedAt;
+  // Match the server's 30-day recheck interval plus seven-day failure grace.
+  const usable = !isWorld || (fetchedAt > 0 && worldAge >= 0 && worldAge < 37 * 24 * 60 * 60 * 1000);
+
   // If we have cache, return it immediately and refresh in background
-  if (cached) {
+  if (cached && usable) {
     event.waitUntil(
       fetch(request)
         .then(async (resp) => {

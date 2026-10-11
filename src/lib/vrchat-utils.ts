@@ -35,7 +35,8 @@ export const VRCHAT_USER_AGENT = 'akyodex/1.0 (+https://akyodex.com)';
  */
 export async function fetchVRChatEntityPage(
   entryType: 'avatar' | 'world',
-  id: string
+  id: string,
+  options: { signal?: AbortSignal; revalidate?: number } = {},
 ): Promise<string> {
   const trimmedId = id.trim();
   if (!isValidVRChatEntityId(entryType, trimmedId)) {
@@ -63,11 +64,9 @@ export async function fetchVRChatEntityPage(
         'User-Agent': VRCHAT_USER_AGENT,
         'Accept': 'text/html',
       },
-      signal: controller.signal,
-      next: { revalidate: 21600 }, // Cache for 6 hours
+      signal: options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal,
+      next: { revalidate: options.revalidate ?? 21600 }, // Cache for 6 hours unless refreshed explicitly
     } as RequestInit);
-
-    clearTimeout(timeoutId);
 
     if (!pageResponse.ok) {
       throw new Error(`VRChat page returned ${pageResponse.status}`);
@@ -75,11 +74,12 @@ export async function fetchVRChatEntityPage(
 
     return await pageResponse.text();
   } catch (error) {
-    clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
       throw new Error('Request timeout (30 seconds)');
     }
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -101,8 +101,11 @@ export async function fetchVRChatPage(avtr: string): Promise<string> {
  * @returns A promise that resolves to the HTML content of the world page
  * @throws Error if the world ID is invalid, the request fails, or the request times out
  */
-export async function fetchVRChatWorldPage(wrld: string): Promise<string> {
-  return fetchVRChatEntityPage('world', wrld);
+export async function fetchVRChatWorldPage(
+  wrld: string,
+  options: { signal?: AbortSignal; revalidate?: number } = {},
+): Promise<string> {
+  return fetchVRChatEntityPage('world', wrld, options);
 }
 
 /**

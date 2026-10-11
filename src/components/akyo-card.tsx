@@ -187,7 +187,7 @@ function AkyoCardComponent({
     ? apiImageSrc
     : getCatalogAvatarCardImageSrc(akyo);
   const placeholderImageSrc = "/images/placeholder.webp";
-  // ワールドの場合はVRChat APIから最新のサムネイルを取得する（R2には古い画像が残っている可能性があるため）
+  // ワールドAPIも取得済み画像をR2から返す。登録時の画像とは別に更新する。
   const [imageSrc, setImageSrc] = useState(initialImageSrc);
   const detailButtonRef = useRef<HTMLButtonElement | null>(null);
 

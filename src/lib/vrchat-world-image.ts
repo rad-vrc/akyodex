@@ -143,6 +143,7 @@ async function fetchVRChatWorldImageAttempt(args: {
   format: CloudflareImageFormat | null;
   fetchFn: typeof fetch;
   timeoutMs: number;
+  signal?: AbortSignal;
 }): Promise<Response> {
   const { imageUrl, width, format, fetchFn, timeoutMs } = args;
   const controller = new AbortController();
@@ -154,7 +155,7 @@ async function fetchVRChatWorldImageAttempt(args: {
       createVRChatWorldImageFetchInit({
         width,
         format,
-        signal: controller.signal,
+        signal: args.signal ? AbortSignal.any([controller.signal, args.signal]) : controller.signal,
       })
     );
   } finally {
@@ -168,6 +169,7 @@ export async function fetchVRChatWorldImageWithFallback(args: {
   format: CloudflareImageFormat | null;
   fetchFn?: typeof fetch;
   timeoutMs?: number;
+  signal?: AbortSignal;
 }): Promise<VRChatWorldImageFetchResult> {
   const {
     imageUrl,
@@ -187,6 +189,7 @@ export async function fetchVRChatWorldImageWithFallback(args: {
         format,
         fetchFn,
         timeoutMs: remainingTimeout(),
+        signal: args.signal,
       });
       if (
         transformedResponse.ok &&
@@ -200,12 +203,14 @@ export async function fetchVRChatWorldImageWithFallback(args: {
     }
   }
 
+  args.signal?.throwIfAborted();
   const response = await fetchVRChatWorldImageAttempt({
     imageUrl,
     width,
     format: null,
     fetchFn,
     timeoutMs: remainingTimeout(),
+    signal: args.signal,
   });
   return { response, transformed: false };
 }
