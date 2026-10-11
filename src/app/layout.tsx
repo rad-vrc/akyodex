@@ -1,4 +1,5 @@
 import { RuntimeFeatures } from '@/components/runtime-features';
+import { RenderingMode } from '@/components/rendering-mode';
 import { StructuredData } from '@/components/structured-data';
 import { mPlus2, mPlus2Chip } from '@/app/fonts';
 import { resolveCatalogLanguage } from '@/app/zukan/catalog-language';
@@ -91,6 +92,7 @@ export default async function RootLayout({
     <html lang={lang} suppressHydrationWarning>
       <head suppressHydrationWarning />
       <body className={`antialiased ${mPlus2.variable} ${mPlus2Chip.variable}`}>
+        <RenderingMode />
         {children}
 
         {/* Dynamic features and metadata */}
