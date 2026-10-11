@@ -91,7 +91,7 @@ test('world images use the image cache, refresh in background, and reject ancien
     });
     return { response, tasks };
   }
-  cached = image('saved', now - 6 * 3_600_000);
+  cached = image('saved', now - (37 * 24 * 3_600_000 - 1));
   const warm = dispatch('/api/vrc-world-image?wrld=wrld_test');
   assert.equal(await (await warm.response).text(), 'saved', 'must respond before the pending network request');
   assert.equal(networkCalls, 1);
@@ -99,7 +99,7 @@ test('world images use the image cache, refresh in background, and reject ancien
   await Promise.all(warm.tasks);
   assert.equal(await cached.clone().text(), 'updated');
 
-  for (const stamp of [undefined, now - 7 * 24 * 3_600_000, now + 1000]) {
+  for (const stamp of [undefined, now - 37 * 24 * 3_600_000, now + 1000]) {
     cached = image('ancient', stamp);
     const expired = dispatch('/api/vrc-world-image?wrld=wrld_test');
     await new Promise(resolve => setImmediate(resolve));

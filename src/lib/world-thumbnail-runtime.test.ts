@@ -35,7 +35,7 @@ test('workerd returns stale R2 bytes before upstream completes and conditionally
   try {
     const bucket = await runtime.getR2Bucket('CACHE');
     await bucket.put(key, 'version-7', { httpMetadata: { contentType: 'image/avif' },
-      customMetadata: { fetchedAt: String(Date.now() - 6 * 3_600_000 - 1000), transformed: 'true' },
+      customMetadata: { fetchedAt: String(Date.now() - 30 * 24 * 3_600_000 - 1000), transformed: 'true' },
     });
     const url = await runtime.ready;
     const old = await fetch(url, { signal: AbortSignal.timeout(3000) });

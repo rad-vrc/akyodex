@@ -1,8 +1,8 @@
 import type { R2ObjectBody, R2PutOptions } from '@cloudflare/workers-types';
 import { getVRChatWorldImageResponseHeaders, type CloudflareImageFormat } from './vrchat-world-image';
 
-const FRESH_MS = 6 * 60 * 60 * 1000;
-const MAX_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+const FRESH_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_STALE_MS = FRESH_MS + 7 * 24 * 60 * 60 * 1000;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 const IMAGE_TYPE = /^image\/(avif|webp|png|jpeg|gif)$/i;
 

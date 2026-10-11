@@ -81,7 +81,7 @@ test('actual world route reads R2 first, refreshes current OGP versions, and lea
   assert.equal(await (await GET(request())).text(), 'version-7');
   assert.equal(calls.length, 2, 'warm cache must skip both upstream requests');
   version = 8;
-  now += 6 * 3_600_000;
+  now += 30 * 24 * 3_600_000;
   assert.equal(await (await GET(request())).text(), 'version-7');
   assert.equal(calls.length, 2, 'stale response does not wait for VRChat');
   await tasks.shift()!();

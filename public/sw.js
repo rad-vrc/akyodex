@@ -395,7 +395,8 @@ async function handleImageRequest(event, request) {
   const isWorld = new URL(request.url).pathname === '/api/vrc-world-image';
   const fetchedAt = Number(cached?.headers.get('X-World-Image-Fetched-At'));
   const worldAge = Date.now() - fetchedAt;
-  const usable = !isWorld || (fetchedAt > 0 && worldAge >= 0 && worldAge < 7 * 24 * 60 * 60 * 1000);
+  // Match the server's 30-day recheck interval plus seven-day failure grace.
+  const usable = !isWorld || (fetchedAt > 0 && worldAge >= 0 && worldAge < 37 * 24 * 60 * 60 * 1000);
 
   // If we have cache, return it immediately and refresh in background
   if (cached && usable) {

@@ -887,20 +887,22 @@ private `NEXT_INC_CACHE_R2_BUCKET` stores successful VRChat fetches under
 `world-thumbnails/v1/`, separately for world ID, size, and negotiated format.
 Registration-time uploads in `AKYO_BUCKET` are neither read nor overwritten.
 
-- Under six hours old: return R2 bytes without a VRChat request.
-- Six hours to seven days old: return R2 bytes immediately; Next `after()` fetches
+- Under 30 days old: return R2 bytes without a VRChat request.
+- From 30 to 37 days old: return R2 bytes immediately; Next `after()` fetches
   current OGP HTML and refreshes the image after responding. Refresh is on demand,
-  not a scheduled job. Conditional R2 writes prevent a late response from replacing
+  not a scheduled monthly job. Successful refreshes start the next 30-day interval.
+  Conditional R2 writes prevent a late response from replacing
   a newer image; simultaneous stale requests may still duplicate the upstream work.
   The real VRChat file version is preserved, never forced to `1`.
-- Failed refreshes preserve the previous bytes and acquisition timestamp. After
-  seven days the old copy is no longer served; fetch live or return an error.
+- Failed refreshes preserve the previous bytes and acquisition timestamp and can
+  retry on subsequent access. After the seven-day grace period (37 days total),
+  the old copy is no longer served; fetch live or return an error.
 - A new world/size/format's first request still needs the live fetch. R2 metadata
   and body reads each have a one-second fallback deadline; live HTML plus image
   headers/body share twenty seconds. Only nonempty images up to 4 MiB are accepted.
 - Browser HTTP freshness is at most one hour (stale responses: one minute).
   Service Worker image SWR also handles this route, but refuses undated or
-  seven-day-old world entries. `X-World-Image-Fetched-At` retains the acquisition
+  37-day-old world entries. `X-World-Image-Fetched-At` retains the acquisition
   time; `X-World-Image-Cache` reports HIT / STALE / MISS / BYPASS.
 
 No bucket creation, data sync, or modification to existing uploaded thumbnails is

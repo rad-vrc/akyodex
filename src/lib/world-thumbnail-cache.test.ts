@@ -4,6 +4,7 @@ import type { R2PutOptions } from '@cloudflare/workers-types';
 import { serveWorldThumbnail, type WorldThumbnailStore } from './world-thumbnail-cache';
 
 const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
 const START = Date.UTC(2026, 9, 11);
 const request = { wrld: 'wrld_test', width: 512, format: 'avif' as const };
 const image = (text = 'version-7') => new Response(text, { headers: {
@@ -59,11 +60,24 @@ test('a saved world thumbnail is returned without consulting VRChat', async () =
   assert.match(f.writes[0], /^world-thumbnails\/v1\/wrld_test\/512\/avif$/);
 });
 
-test('six-hour-old images display immediately and update to the next version in the background', async () => {
+test('images younger than 30 days never recheck VRChat', async () => {
+  for (const age of [6 * HOUR, 7 * DAY, 30 * DAY - 1]) {
+    const f = fixture();
+    await f.serve(async () => image());
+    await f.flush();
+    f.advance(age);
+    const cached = await f.serve(async () => { assert.fail('must not recheck before 30 days'); });
+    assert.equal(cached.headers.get('X-World-Image-Cache'), 'HIT');
+    assert.equal(await cached.text(), 'version-7');
+    assert.equal(f.tasks.length, 0, 'must not schedule an early background recheck');
+  }
+});
+
+test('30-day-old images display immediately and update to the next version in the background', async () => {
   const f = fixture();
   await f.serve(async () => image());
   await f.flush();
-  f.advance(6 * HOUR);
+  f.advance(30 * DAY);
   let called = false;
   const stale = await f.serve(async () => { called = true; return image('version-8'); });
   assert.equal(await stale.text(), 'version-7');
@@ -79,12 +93,16 @@ test('failed refreshes keep the good image without resetting its age', async () 
   const f = fixture();
   await f.serve(async () => image());
   await f.flush();
-  f.advance(6 * HOUR);
+  f.advance(30 * DAY);
   assert.equal(await (await f.serve(async () => new Response('failure', { status: 502 }))).text(), 'version-7');
   await f.flush();
   assert.equal(f.writes.length, 1);
   assert.equal(f.warnings.length, 1);
-  f.advance(7 * 24 * HOUR);
+  f.advance(7 * DAY - 1);
+  assert.equal(await (await f.serve(async () => new Response('failure', { status: 502 }))).text(), 'version-7');
+  await f.flush();
+  assert.equal(f.writes.length, 1, 'failed checks must not extend the seven-day grace period');
+  f.advance(1);
   const expired = await f.serve(async () => new Response('failure', { status: 502 }));
   assert.equal(expired.status, 502, 'never keep serving the original indefinitely');
   assert.equal(expired.headers.get('Cache-Control'), 'no-store');
@@ -94,7 +112,7 @@ test('late refreshes cannot overwrite a newer stored image', async () => {
   const f = fixture();
   await f.serve(async () => image());
   await f.flush();
-  f.advance(6 * HOUR);
+  f.advance(30 * DAY);
   await f.serve(async () => image('version-8'));
   await f.serve(async () => image('version-9'));
   const [older, newer] = f.tasks.splice(0);
