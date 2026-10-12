@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-11T12:32:02.971Z",
-  "count": 1051,
+  "updatedAt": "2026-10-12T10:06:48.956Z",
+  "count": 1052,
   "data": [
     {
       "id": "0001",
@@ -12933,6 +12933,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_f2d4d45b-e07e-49d8-9d29-ee0d66826507",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_f2d4d45b-e07e-49d8-9d29-ee0d66826507",
       "urlUpdatedAt": "2026-10-11T02:43:29.834Z"
+    },
+    {
+      "id": "2068",
+      "entryType": "avatar",
+      "displaySerial": "0931",
+      "nickname": "オブジェクト設置Akyo",
+      "avatarName": "ObjectPut Akyo",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/월드 고정,초코민트류,색상,색상/파란색 계열,색상/초록색 계열,건물",
+      "comment": "建築士の資格はあるのかな？",
+      "author": "Holimond․jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
+      "urlUpdatedAt": "2026-10-12T10:06:48.806Z"
     }
   ]
 }
