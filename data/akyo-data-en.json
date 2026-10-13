@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-12T10:06:48.910Z",
-  "count": 1052,
+  "updatedAt": "2026-10-13T08:03:48.773Z",
+  "count": 1053,
   "data": [
     {
       "id": "0001",
@@ -12250,6 +12250,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
       "urlUpdatedAt": "2026-10-12T10:06:48.806Z"
+    },
+    {
+      "id": "2069",
+      "entryType": "avatar",
+      "displaySerial": "0932",
+      "nickname": "アーミーAkyo",
+      "avatarName": "Army Akyo",
+      "category": "Supported Platform,Supported Platform/PC,Gimmick・Special,Gimmick・Special/World Lock,Gimmick・Special/Animation,Color,Color/Green Tones,Vehicle,Vehicle/Land,Hazardous Material,Hazardous Material/Explosive,Machine,Role・Status,Role・Status/Soldier,Fashion・Equipment,Fashion・Equipment/Camouflage,Fashion・Equipment/Hat",
+      "comment": "Akyoの世界を守るため日々鍛錬を続けているかもしれないし、何もしていないかもしれない。",
+      "author": "Holimond․jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_1ccf87c6-088b-40d0-88fd-2c2c193be0f0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1ccf87c6-088b-40d0-88fd-2c2c193be0f0",
+      "urlUpdatedAt": "2026-10-13T08:03:48.669Z"
     }
   ]
 }

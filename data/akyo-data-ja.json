@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-12T10:06:48.865Z",
-  "count": 1052,
+  "updatedAt": "2026-10-13T08:03:48.730Z",
+  "count": 1053,
   "data": [
     {
       "id": "0001",
@@ -12250,6 +12250,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
       "urlUpdatedAt": "2026-10-12T10:06:48.806Z"
+    },
+    {
+      "id": "2069",
+      "entryType": "avatar",
+      "displaySerial": "0932",
+      "nickname": "アーミーAkyo",
+      "avatarName": "Army Akyo",
+      "category": "対応機種,対応機種/PC,ギミック・特殊,ギミック・特殊/ワールド固定,ギミック・特殊/アニメーション,色,色/緑色系,乗り物,乗り物/陸上,危険物,危険物/爆発物,機械,身分・役割,身分・役割/兵士,ファッション・装備,ファッション・装備/迷彩,ファッション・装備/ぼうし",
+      "comment": "Akyoの世界を守るため日々鍛錬を続けているかもしれないし、何もしていないかもしれない。",
+      "author": "Holimond․jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_1ccf87c6-088b-40d0-88fd-2c2c193be0f0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1ccf87c6-088b-40d0-88fd-2c2c193be0f0",
+      "urlUpdatedAt": "2026-10-13T08:03:48.669Z"
     }
   ]
 }

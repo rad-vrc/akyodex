@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-12T10:06:48.956Z",
-  "count": 1052,
+  "updatedAt": "2026-10-13T08:03:48.818Z",
+  "count": 1053,
   "data": [
     {
       "id": "0001",
@@ -12946,6 +12946,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3b8c14cc-ed13-4455-ba15-cadcd36c76b1",
       "urlUpdatedAt": "2026-10-12T10:06:48.806Z"
+    },
+    {
+      "id": "2069",
+      "entryType": "avatar",
+      "displaySerial": "0932",
+      "nickname": "아미 Akyo",
+      "avatarName": "Army Akyo",
+      "category": "지원 기기,지원 기기/PC,기믹・특수,기믹・특수/월드 고정,기믹・특수/애니메이션,색상,색상/초록색 계열,탈것,탈것/육상,위험물,위험물/폭발물,기계,신분・역할,신분・역할/병사,패션・장비,패션・장비/위장,패션・장비/모자",
+      "comment": "Akyoの世界を守るため日々鍛錬を続けているかもしれないし、何もしていないかもしれない。",
+      "author": "Holimond․jp",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_1ccf87c6-088b-40d0-88fd-2c2c193be0f0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_1ccf87c6-088b-40d0-88fd-2c2c193be0f0",
+      "urlUpdatedAt": "2026-10-13T08:03:48.669Z"
     }
   ]
 }
