@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-13T08:03:48.730Z",
+  "updatedAt": "2026-10-14T09:39:42.269Z",
   "count": 1053,
   "data": [
     {
@@ -7925,13 +7925,16 @@
     {
       "id": "0698",
       "entryType": "avatar",
+      "displaySerial": "0698",
       "nickname": "セーターぞうAkyo",
       "avatarName": "akyo_ぞうセーター",
-      "category": "ファッション・装備,ファッション・装備/ぼうし,ファッション・装備/厚着,季節,季節/冬,動物,動物/ぞう,技能・特性,技能・特性/四足歩行,器官,器官/鼻,対応機種,対応機種/PC",
+      "category": "ファッション・装備,ファッション・装備/ぼうし,ファッション・装備/厚着,季節,季節/冬,動物,動物/ぞう,技能・特性,技能・特性/四足歩行,器官,器官/鼻,対応機種,対応機種/PC,Booth",
       "comment": "セーターを着た冬仕様のぞうakyo。あったかいぞう",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51",
+      "boothUrl": "https://sasanoki.booth.pm/items/8970472",
+      "urlUpdatedAt": "2026-10-14T09:39:42.193Z"
     },
     {
       "id": "0699",
@@ -8189,13 +8192,16 @@
     {
       "id": "0722",
       "entryType": "avatar",
+      "displaySerial": "0722",
       "nickname": "電気ヒーターAkyo",
       "avatarName": "akyo_電気ヒーター",
-      "category": "家電・家具,エネルギー,エネルギー/電気,エネルギー/熱,器官,器官/しっぽ,季節,季節/冬,対応機種,対応機種/PC",
+      "category": "家電・家具,エネルギー,エネルギー/電気,エネルギー/熱,器官,器官/しっぽ,季節,季節/冬,対応機種,対応機種/PC,Booth",
       "comment": "（ささのきの手記）\n温めてくれるakyo。プラグは差していなくても平気なようだ。錆びてしまうので水が苦手。",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e",
+      "boothUrl": "https://sasanoki.booth.pm/items/8988623",
+      "urlUpdatedAt": "2026-10-14T09:39:42.193Z"
     },
     {
       "id": "0723",

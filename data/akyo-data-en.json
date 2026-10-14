@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-13T08:03:48.773Z",
+  "updatedAt": "2026-10-14T09:39:42.319Z",
   "count": 1053,
   "data": [
     {
@@ -7925,13 +7925,16 @@
     {
       "id": "0698",
       "entryType": "avatar",
+      "displaySerial": "0698",
       "nickname": "Sweater Elephant Akyo",
       "avatarName": "akyo_ぞうセーター",
-      "category": "Fashion・Equipment,Fashion・Equipment/Hat,Fashion・Equipment/Warm Clothing,Season,Season/Winter,Animal,Animal/Elephant,Skill・Trait,Skill・Trait/Quadruped,Body Part,Body Part/Nose,Supported Platform,Supported Platform/PC",
+      "category": "Fashion・Equipment,Fashion・Equipment/Hat,Fashion・Equipment/Warm Clothing,Season,Season/Winter,Animal,Animal/Elephant,Skill・Trait,Skill・Trait/Quadruped,Body Part,Body Part/Nose,Supported Platform,Supported Platform/PC,Booth",
       "comment": "A winter-ready elephant Akyo wearing a sweater. Nice and warm.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51",
+      "boothUrl": "https://sasanoki.booth.pm/items/8970472",
+      "urlUpdatedAt": "2026-10-14T09:39:42.193Z"
     },
     {
       "id": "0699",
@@ -8189,13 +8192,16 @@
     {
       "id": "0722",
       "entryType": "avatar",
+      "displaySerial": "0722",
       "nickname": "Electric Heater Akyo",
       "avatarName": "akyo_電気ヒーター",
-      "category": "Appliances・Furniture,Energy,Energy/Electricity,Energy/Heat,Body Part,Body Part/Tail,Season,Season/Winter,Supported Platform,Supported Platform/PC",
+      "category": "Appliances・Furniture,Energy,Energy/Electricity,Energy/Heat,Body Part,Body Part/Tail,Season,Season/Winter,Supported Platform,Supported Platform/PC,Booth",
       "comment": "(Sasanoki's notes)\nAn Akyo that keeps you warm. It seems fine even without being plugged in. It dislikes water because it rusts.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e",
+      "boothUrl": "https://sasanoki.booth.pm/items/8988623",
+      "urlUpdatedAt": "2026-10-14T09:39:42.193Z"
     },
     {
       "id": "0723",

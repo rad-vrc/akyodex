@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-13T08:03:48.818Z",
+  "updatedAt": "2026-10-14T09:39:42.365Z",
   "count": 1053,
   "data": [
     {
@@ -8578,11 +8578,13 @@
       "displaySerial": "0698",
       "nickname": "스웨터 코끼리 Akyo",
       "avatarName": "akyo_ぞうセーター",
-      "category": "패션・장비,패션・장비/모자,패션・장비/두꺼운 옷,계절,계절/겨울,동물,동물/코끼리,기능・특성,기능・특성/네발걸음,기관,기관/코,지원 기기,지원 기기/PC",
+      "category": "패션・장비,패션・장비/모자,패션・장비/두꺼운 옷,계절,계절/겨울,동물,동물/코끼리,기능・특성,기능・특성/네발걸음,기관,기관/코,지원 기기,지원 기기/PC,Booth",
       "comment": "스웨터를 입은 겨울 사양 코끼리 Akyo. 따뜻하~다",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_22a5fa0e-e92d-426e-83a9-e6a9a7549f51",
+      "boothUrl": "https://sasanoki.booth.pm/items/8970472",
+      "urlUpdatedAt": "2026-10-14T09:39:42.193Z"
     },
     {
       "id": "0699",
@@ -8866,11 +8868,13 @@
       "displaySerial": "0722",
       "nickname": "전기히터 Akyo",
       "avatarName": "akyo_電気ヒーター",
-      "category": "가전・가구,에너지,에너지/전기,에너지/열,기관,기관/꼬리,계절,계절/겨울,지원 기기,지원 기기/PC",
+      "category": "가전・가구,에너지,에너지/전기,에너지/열,기관,기관/꼬리,계절,계절/겨울,지원 기기,지원 기기/PC,Booth",
       "comment": "(사사노키의 수기)\n따뜻하게 해주는 Akyo. 플러그를 꽂지 않아도 괜찮은 듯하다. 녹이 슬어서 물을 싫어한다.",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c6c8782f-be01-43fe-9cb3-5edd2e3d265e",
+      "boothUrl": "https://sasanoki.booth.pm/items/8988623",
+      "urlUpdatedAt": "2026-10-14T09:39:42.193Z"
     },
     {
       "id": "0723",
