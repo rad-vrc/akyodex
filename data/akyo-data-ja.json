@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-17T11:59:41.252Z",
-  "count": 1055,
+  "updatedAt": "2026-10-18T07:59:55.582Z",
+  "count": 1056,
   "data": [
     {
       "id": "0001",
@@ -12295,6 +12295,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_c267ef56-4ee1-462f-a8d9-544d4fa6bdff",
       "avatarUrl": "https://vrchat.com/home/world/wrld_c267ef56-4ee1-462f-a8d9-544d4fa6bdff",
       "urlUpdatedAt": "2026-10-17T11:59:41.194Z"
+    },
+    {
+      "id": "2072",
+      "entryType": "avatar",
+      "displaySerial": "0934",
+      "nickname": "ルックAkyoズ",
+      "avatarName": "LookAkyos",
+      "category": "対応機種,対応機種/PC,ギミック・特殊,ギミック・特殊/分身,チョコミント類,色,色/緑色系,色/青色系",
+      "comment": "Akyo、ぼくのことどう見えてるの？",
+      "author": "NEET ENGINEER",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_482d6628-a2fd-429d-8291-b11753084d08",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_482d6628-a2fd-429d-8291-b11753084d08",
+      "urlUpdatedAt": "2026-10-18T07:59:55.518Z"
     }
   ]
 }
