@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const { readFile, writeFile, mkdtemp, rm } = require('node:fs/promises');
+const { createRequire } = require('node:module');
 const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -7,7 +8,8 @@ const test = require('node:test');
 const { pipeToNodeResponse } = require('next/dist/server/pipe-readable');
 const { patchSource, patchFile } = require('./fix-opennext-response-cancellation');
 
-const upstreamPath = require.resolve('@opennextjs/aws/overrides/wrappers/cloudflare-node.js');
+const requireFromOpenNext = createRequire(require.resolve('@opennextjs/cloudflare'));
+const upstreamPath = requireFromOpenNext.resolve('@opennextjs/aws/overrides/wrappers/cloudflare-node.js');
 
 async function fixture(t, { status = 200, signal, initialChunk = '<html>' } = {}) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'opennext-cancel-'));
@@ -16,7 +18,7 @@ async function fixture(t, { status = 200, signal, initialChunk = '<html>' } = {}
   const source = patchSource(await readFile(upstreamPath, 'utf8'));
   await writeFile(file, source);
   const { default: adapter } = await import(pathToFileURL(file).href);
-  const { OpenNextNodeResponse } = await import('@opennextjs/aws/http/index.js');
+  const { OpenNextNodeResponse } = await import(pathToFileURL(requireFromOpenNext.resolve('@opennextjs/aws/http/index.js')).href);
   const promises = [];
   let nodeResponse;
   let streamCreator;

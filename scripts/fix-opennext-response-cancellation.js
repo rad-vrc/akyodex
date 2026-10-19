@@ -1,5 +1,6 @@
 const { createHash } = require('node:crypto');
 const { readFileSync, writeFileSync } = require('node:fs');
+const { createRequire } = require('node:module');
 
 // OpenNext AWS 4.1.1: fail closed when an upgrade changes the adapter.
 const ORIGINAL_SHA256 = '6a5521bf7978d433b92827e1a472468a7187cfc334f29930e4672d21a5b79a17';
@@ -41,7 +42,9 @@ function patchFile(file) {
 
 if (require.main === module) {
   try {
-    const file = require.resolve('@opennextjs/aws/overrides/wrappers/cloudflare-node.js');
+    // Patch Cloudflare's dependency even when npm does not hoist it to the root.
+    const requireFromOpenNext = createRequire(require.resolve('@opennextjs/cloudflare'));
+    const file = requireFromOpenNext.resolve('@opennextjs/aws/overrides/wrappers/cloudflare-node.js');
     const changed = patchFile(file);
     console.log(`[fix-opennext-response-cancellation] ${changed ? 'applied' : 'already applied'}`);
   } catch (error) {
