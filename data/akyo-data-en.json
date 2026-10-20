@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-18T07:59:55.625Z",
-  "count": 1056,
+  "updatedAt": "2026-10-20T09:29:26.582Z",
+  "count": 1057,
   "data": [
     {
       "id": "0001",
@@ -12308,6 +12308,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_482d6628-a2fd-429d-8291-b11753084d08",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_482d6628-a2fd-429d-8291-b11753084d08",
       "urlUpdatedAt": "2026-10-18T07:59:55.518Z"
+    },
+    {
+      "id": "2073",
+      "entryType": "world",
+      "displaySerial": "0123",
+      "nickname": "Spring Avenu⁄春の通り",
+      "avatarName": "Spring Avenu⁄春の通り",
+      "category": "World,Supported Platform,Supported Platform/PC",
+      "comment": "",
+      "author": "柚子なの",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_7bc4587b-b009-478a-b0e0-7aec180385f1",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_7bc4587b-b009-478a-b0e0-7aec180385f1",
+      "urlUpdatedAt": "2026-10-20T09:29:26.477Z"
     }
   ]
 }
