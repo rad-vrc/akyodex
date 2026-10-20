@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-20T09:29:26.582Z",
-  "count": 1057,
+  "updatedAt": "2026-10-20T12:06:52.549Z",
+  "count": 1058,
   "data": [
     {
       "id": "0001",
@@ -12321,6 +12321,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_7bc4587b-b009-478a-b0e0-7aec180385f1",
       "avatarUrl": "https://vrchat.com/home/world/wrld_7bc4587b-b009-478a-b0e0-7aec180385f1",
       "urlUpdatedAt": "2026-10-20T09:29:26.477Z"
+    },
+    {
+      "id": "2074",
+      "entryType": "avatar",
+      "displaySerial": "0935",
+      "nickname": "真珠の耳飾りのきつねAkyo",
+      "avatarName": "akyo_きつねみみかざり",
+      "category": "Supported Platform,Supported Platform/PC,Animal,Animal/Fox,Art,Art/Painting・Illustration,Body Part,Body Part/Arm,Body Part/Ear,Body Part/Tail,Color,Color/Yellow,Fashion・Equipment,Fashion・Equipment/Roleplay",
+      "comment": "【ささのきの手記】\n真珠の耳飾りを付けたきつねakyo。ターバンの鮮やかな青が良く映える",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_2f0caac3-ac12-48c2-b4e7-a1c3e227429c",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_2f0caac3-ac12-48c2-b4e7-a1c3e227429c",
+      "urlUpdatedAt": "2026-10-20T12:06:52.455Z"
     }
   ]
 }
