@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-20T12:06:52.549Z",
+  "updatedAt": "2026-10-21T05:40:38.282Z",
   "count": 1058,
   "data": [
     {
@@ -9467,11 +9467,13 @@
       "displaySerial": "0758",
       "nickname": "Sushi Chef Fox Akyo",
       "avatarName": "板前きつねakyo",
-      "category": "Animal,Animal/Fox,Role・Status,Role・Status/Service Worker,Role・Status/Artisan,Supported Platform,Supported Platform/PC,Country,Country/Japan",
+      "category": "Animal,Animal/Fox,Role・Status,Role・Status/Service Worker,Role・Status/Artisan,Supported Platform,Supported Platform/PC,Country,Country/Japan,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_5a716670-989d-4dcd-aaff-01deefee4945",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5a716670-989d-4dcd-aaff-01deefee4945"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_5a716670-989d-4dcd-aaff-01deefee4945",
+      "boothUrl": "https://sasanoki.booth.pm/items/5932432",
+      "urlUpdatedAt": "2026-10-21T05:40:38.195Z"
     },
     {
       "id": "0830",
