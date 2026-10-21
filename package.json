@@ -54,13 +54,13 @@
     "categories:colors": "tsx scripts/freeze-category-colors.ts"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "1.20.3",
+    "@opennextjs/cloudflare": "1.20.12",
     "@sentry/cloudflare": "^10.66.0",
     "@sentry/nextjs": "^10.66.0",
     "@sentry/react": "10.66.0",
     "csv-parse": "^7.0.2",
     "csv-stringify": "^6.6.0",
-    "next": "16.3.8",
+    "next": "16.4.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sanitize-html": "^2.17.7"
@@ -70,6 +70,9 @@
     "sharp": "$sharp",
     "router": {
       "path-to-regexp": "8.4.2"
+    },
+    "@node-minify/core": {
+      "glob": "10.5.0"
     },
     "eslint": {
       "ajv": "6.14.0"
@@ -100,6 +103,6 @@
     "terser": "5.49.0",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
-    "wrangler": "^4.147.0"
+    "wrangler": "^4.151.3"
   }
 }
