@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-21T05:40:38.317Z",
+  "updatedAt": "2026-10-22T14:03:04.192Z",
   "count": 1058,
   "data": [
     {
@@ -5660,11 +5660,13 @@
       "displaySerial": "0458",
       "nickname": "코타츠 여우 Akyo",
       "avatarName": "akyo_きつねこたつ",
-      "category": "동물,동물/여우,가전・가구,행사・문화,행사・문화/설날,지원 기기,지원 기기/PC,지원 기기/Quest(Android),나라,나라/일본",
+      "category": "동물,동물/여우,가전・가구,행사・문화,행사・문화/설날,지원 기기,지원 기기/PC,지원 기기/Quest(Android),나라,나라/일본,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_cf0aabab-d449-469c-9f2c-ae49663c78d1",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_cf0aabab-d449-469c-9f2c-ae49663c78d1"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_cf0aabab-d449-469c-9f2c-ae49663c78d1",
+      "boothUrl": "https://sasanoki.booth.pm/items/9027248",
+      "urlUpdatedAt": "2026-10-22T14:03:04.094Z"
     },
     {
       "id": "0459",

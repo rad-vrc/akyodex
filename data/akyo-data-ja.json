@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-21T05:40:38.246Z",
+  "updatedAt": "2026-10-22T14:03:04.133Z",
   "count": 1058,
   "data": [
     {
@@ -5236,13 +5236,16 @@
     {
       "id": "0458",
       "entryType": "avatar",
+      "displaySerial": "0458",
       "nickname": "こたつきつねAkyo",
       "avatarName": "akyo_きつねこたつ",
-      "category": "動物,動物/きつね,家電・家具,行事・文化,行事・文化/お正月,対応機種,対応機種/PC,対応機種/Quest(Android),国,国/日本",
+      "category": "動物,動物/きつね,家電・家具,行事・文化,行事・文化/お正月,対応機種,対応機種/PC,対応機種/Quest(Android),国,国/日本,Booth",
       "comment": "",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_cf0aabab-d449-469c-9f2c-ae49663c78d1",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_cf0aabab-d449-469c-9f2c-ae49663c78d1"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_cf0aabab-d449-469c-9f2c-ae49663c78d1",
+      "boothUrl": "https://sasanoki.booth.pm/items/9027248",
+      "urlUpdatedAt": "2026-10-22T14:03:04.094Z"
     },
     {
       "id": "0459",
