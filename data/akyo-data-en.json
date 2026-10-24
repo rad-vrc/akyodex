@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-24T15:00:59.855Z",
-  "count": 1059,
+  "updatedAt": "2026-10-24T15:09:28.082Z",
+  "count": 1060,
   "data": [
     {
       "id": "0001",
@@ -12352,6 +12352,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_1d125f07-0ea9-4caa-ac07-9dc22db58a94",
       "avatarUrl": "https://vrchat.com/home/world/wrld_1d125f07-0ea9-4caa-ac07-9dc22db58a94",
       "urlUpdatedAt": "2026-10-24T15:00:59.777Z"
+    },
+    {
+      "id": "2076",
+      "entryType": "world",
+      "displaySerial": "0125",
+      "nickname": "Beach at Sunset",
+      "avatarName": "Beach at Sunset",
+      "category": "World,Supported Platform,Supported Platform/PC",
+      "comment": "",
+      "author": "龍津（りゅうつ）",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_85621fa0-2259-4c47-8340-0ec37943f88a",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_85621fa0-2259-4c47-8340-0ec37943f88a",
+      "urlUpdatedAt": "2026-10-24T15:09:27.981Z"
     }
   ]
 }
