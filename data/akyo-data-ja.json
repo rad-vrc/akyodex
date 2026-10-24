@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-22T14:03:04.133Z",
-  "count": 1058,
+  "updatedAt": "2026-10-24T15:00:59.822Z",
+  "count": 1059,
   "data": [
     {
       "id": "0001",
@@ -12339,6 +12339,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_2f0caac3-ac12-48c2-b4e7-a1c3e227429c",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_2f0caac3-ac12-48c2-b4e7-a1c3e227429c",
       "urlUpdatedAt": "2026-10-20T12:06:52.455Z"
+    },
+    {
+      "id": "2075",
+      "entryType": "world",
+      "displaySerial": "0124",
+      "nickname": "限界激狭Akyoハウス",
+      "avatarName": "限界激狭Akyoハウス",
+      "category": "ワールド,対応機種,対応機種/PC,対応機種/Quest(Android),対応機種/iOS",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_1d125f07-0ea9-4caa-ac07-9dc22db58a94",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_1d125f07-0ea9-4caa-ac07-9dc22db58a94",
+      "urlUpdatedAt": "2026-10-24T15:00:59.777Z"
     }
   ]
 }
