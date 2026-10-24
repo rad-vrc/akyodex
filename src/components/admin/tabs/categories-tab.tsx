@@ -158,17 +158,6 @@ export function CategoriesTab({
     setSelected([]);
     setAssignMessageShown(false);
   }, []);
-  const handleAssignCommitted = useCallback(
-    (rows: AkyoData[], originals: AkyoEditFields[]) => {
-      onRowsCommitted?.(rows, originals);
-      setAssignMessageShown(true);
-      // main moved: the list counts and `revision` are now older than the branch.
-      void load();
-    },
-    // `load` is defined below with an empty dependency list, so this stays stable.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onRowsCommitted],
-  );
   const [entries, setEntries] = useState<CategoryEntry[]>([]);
   const [colors, setColors] = useState<Record<string, string>>({});
   // Version of the category inputs the list was read from. Sent with every change so the
@@ -240,6 +229,18 @@ export function CategoriesTab({
       setLoading(false);
     }
   }, []);
+
+  // `load` より後に置く。前に置くと宣言前の参照になり、react-hooks/immutability が止める
+  // （`load` は依存が空で変わらないので、依存配列に入れても再生成は増えない）
+  const handleAssignCommitted = useCallback(
+    (rows: AkyoData[], originals: AkyoEditFields[]) => {
+      onRowsCommitted?.(rows, originals);
+      setAssignMessageShown(true);
+      // main moved: the list counts and `revision` are now older than the branch.
+      void load();
+    },
+    [onRowsCommitted, load],
+  );
 
   // The tab stays mounted so held changes survive a tab switch, so it no longer refetches by
   // remounting: reload whenever it becomes visible again. `revision` and the list would

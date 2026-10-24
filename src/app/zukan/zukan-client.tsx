@@ -297,7 +297,7 @@ export function ZukanClient({
   const requestCoordinatorRef = useRef<CatalogRequestCoordinator | null>(null);
   /** 自動の取り直しを最後に投げた時刻。復帰のたびに投げ直さないための下限に使う */
   const lastAutoResumeAtRef = useRef<number | null>(null);
-  if (!requestCoordinatorRef.current) {
+  if (requestCoordinatorRef.current === null) {
     requestCoordinatorRef.current = new CatalogRequestCoordinator();
   }
   const tickingRef = useRef(false);
