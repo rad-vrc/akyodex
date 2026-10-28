@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-24T15:09:28.126Z",
-  "count": 1060,
+  "updatedAt": "2026-10-28T00:01:27.062Z",
+  "count": 1061,
   "data": [
     {
       "id": "0001",
@@ -13058,6 +13058,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_85621fa0-2259-4c47-8340-0ec37943f88a",
       "avatarUrl": "https://vrchat.com/home/world/wrld_85621fa0-2259-4c47-8340-0ec37943f88a",
       "urlUpdatedAt": "2026-10-24T15:09:27.981Z"
+    },
+    {
+      "id": "2077",
+      "entryType": "avatar",
+      "displaySerial": "0936",
+      "nickname": "宝箱まめAkyo",
+      "avatarName": "treasure bean akyo",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS,마메,마메Akyo,체격・형태・촉감,체격・형태・촉감/풍만,체격・형태・촉감/단단한,색상,색상/노랑,소재・원재료,소재・원재료/금속",
+      "comment": "まめAkyoの宝箱や～～～！！！",
+      "author": "（Ｋ）けーちゃん",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e4ca0526-881f-4c8c-bdd8-78f10135f9e0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e4ca0526-881f-4c8c-bdd8-78f10135f9e0",
+      "urlUpdatedAt": "2026-10-28T00:01:26.906Z"
     }
   ]
 }
