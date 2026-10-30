@@ -112,7 +112,11 @@ export function EditTab({ userRole, akyoData, attributes, onDataChange, onPendin
   // prop, and without this the edit tab would keep staging pre-commit snapshots (guaranteed
   // 409). Rows held here are kept even when they are gone remotely, as on refresh.
   const pendingRef = useRef(pending);
-  pendingRef.current = pending;
+  // 描画中には書かない（react-hooks/refs）。レイアウト副作用は下の通常の副作用より先に
+  // 走るので、akyoData と pending が同時に変わっても下の取り込みは新しい pending を見る
+  useLayoutEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
   useEffect(() => {
     setCatalogData((previous) => {
       const ids = new Set(akyoData.map((item) => item.id));
