@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-28T00:01:27.019Z",
-  "count": 1061,
+  "updatedAt": "2026-10-30T22:28:02.352Z",
+  "count": 1062,
   "data": [
     {
       "id": "0001",
@@ -12378,6 +12378,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e4ca0526-881f-4c8c-bdd8-78f10135f9e0",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e4ca0526-881f-4c8c-bdd8-78f10135f9e0",
       "urlUpdatedAt": "2026-10-28T00:01:26.906Z"
+    },
+    {
+      "id": "2078",
+      "entryType": "avatar",
+      "displaySerial": "0937",
+      "nickname": "やきいもAkyo2",
+      "avatarName": "akyo_やきいもv2",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Food,Food/Dish,Season,Season/Autumn,Food/Sweets",
+      "comment": "【ささのきの手記】\nほっかほかに焼き上げられたさつまいもakyo。香ばしくも甘い香りがたまらない！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_31805f9f-e375-4732-bc13-4c2c8a9a57d6",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_31805f9f-e375-4732-bc13-4c2c8a9a57d6",
+      "urlUpdatedAt": "2026-10-30T22:28:02.245Z"
     }
   ]
 }
