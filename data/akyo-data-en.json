@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-10-31T00:56:00.918Z",
-  "count": 1063,
+  "updatedAt": "2026-10-31T22:55:02.329Z",
+  "count": 1064,
   "data": [
     {
       "id": "0001",
@@ -12404,6 +12404,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_d190f89f-a5a7-4dd0-a1b0-49efba63f6f7",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_d190f89f-a5a7-4dd0-a1b0-49efba63f6f7",
       "urlUpdatedAt": "2026-10-31T00:56:00.812Z"
+    },
+    {
+      "id": "2080",
+      "entryType": "avatar",
+      "displaySerial": "0939",
+      "nickname": "はなおばけAkyo",
+      "avatarName": "はなおばけあきょ",
+      "category": "Supported Platform,Supported Platform/PC,Supported Platform/Quest(Android),Fictional Being,Fictional Being/Yokai・Ghost,Nature,Nature/Plant,Event・Culture,Event・Culture/Halloween,Season,Season/Winter,Color,Color/White Tones",
+      "comment": "雨でしおしおになっちゃったみたい！",
+      "author": "ky_chan",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_c9811597-da80-4e33-88f8-92f40b99d2a3",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_c9811597-da80-4e33-88f8-92f40b99d2a3",
+      "urlUpdatedAt": "2026-10-31T22:55:02.247Z"
     }
   ]
 }
