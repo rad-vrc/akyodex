@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-10-30T22:29:17.839Z",
-  "count": 1062,
+  "updatedAt": "2026-10-31T00:56:00.963Z",
+  "count": 1063,
   "data": [
     {
       "id": "0001",
@@ -13084,6 +13084,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_31805f9f-e375-4732-bc13-4c2c8a9a57d6",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_31805f9f-e375-4732-bc13-4c2c8a9a57d6",
       "urlUpdatedAt": "2026-10-30T22:28:02.245Z"
+    },
+    {
+      "id": "2079",
+      "entryType": "avatar",
+      "displaySerial": "0938",
+      "nickname": "サンタワーAkyo",
+      "avatarName": "SunTowerAkyo",
+      "category": "지원 기기,지원 기기/PC,색상,색상/흰색 계열,예술,예술/건축,건물,나라,나라/일본",
+      "comment": "もうひとつの太陽の塔！",
+      "author": "Nagisa_Imawari",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_d190f89f-a5a7-4dd0-a1b0-49efba63f6f7",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_d190f89f-a5a7-4dd0-a1b0-49efba63f6f7",
+      "urlUpdatedAt": "2026-10-31T00:56:00.812Z"
     }
   ]
 }
