@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-11-05T05:29:58.065Z",
-  "count": 1065,
+  "updatedAt": "2026-11-05T05:31:54.202Z",
+  "count": 1066,
   "data": [
     {
       "id": "0001",
@@ -12430,6 +12430,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_b67d58be-f3f6-4880-bb5d-231a26ec8d78",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_b67d58be-f3f6-4880-bb5d-231a26ec8d78",
       "urlUpdatedAt": "2026-11-05T05:19:37.538Z"
+    },
+    {
+      "id": "2082",
+      "entryType": "avatar",
+      "displaySerial": "0941",
+      "nickname": "ニットAkyo",
+      "avatarName": "ニットあきょ",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),チョコミント類,色,色/緑色系,色/青色系,素材・原材料,素材・原材料/糸",
+      "comment": "あったかそう！",
+      "author": "ky_chan",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_6ef27588-7746-4b96-bc6f-fcc4961e1110",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_6ef27588-7746-4b96-bc6f-fcc4961e1110",
+      "urlUpdatedAt": "2026-11-05T05:31:54.138Z"
     }
   ]
 }
