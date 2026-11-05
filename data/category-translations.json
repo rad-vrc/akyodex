@@ -1251,6 +1251,10 @@
     "en": "Material・Raw Material/Stone",
     "ko": "소재・원재료/돌"
   },
+  "素材・原材料/糸": {
+    "en": "Material・Raw Material/Thread",
+    "ko": "소재・원재료/실"
+  },
   "素材・原材料/金属": {
     "en": "Material・Raw Material/Metal",
     "ko": "소재・원재료/금속"
