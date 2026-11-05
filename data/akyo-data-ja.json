@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-10-31T22:55:02.295Z",
-  "count": 1064,
+  "updatedAt": "2026-11-05T05:19:37.611Z",
+  "count": 1065,
   "data": [
     {
       "id": "0001",
@@ -12417,6 +12417,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_c9811597-da80-4e33-88f8-92f40b99d2a3",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_c9811597-da80-4e33-88f8-92f40b99d2a3",
       "urlUpdatedAt": "2026-10-31T22:55:02.247Z"
+    },
+    {
+      "id": "2081",
+      "entryType": "avatar",
+      "displaySerial": "0940",
+      "nickname": "セーラーあきょ",
+      "avatarName": "セーラーあきょ",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),色,色/緑色系,色/青色系,チョコミント類,身分・役割,身分・役割/学生,ギミック・特殊,ギミック・特殊/色変え,ファッション・装備,ファッション・装備/ぼうし,学校",
+      "comment": "選べる4色カラーリング！",
+      "author": "ky_chan",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_b67d58be-f3f6-4880-bb5d-231a26ec8d78",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_b67d58be-f3f6-4880-bb5d-231a26ec8d78",
+      "urlUpdatedAt": "2026-11-05T05:19:37.538Z"
     }
   ]
 }
