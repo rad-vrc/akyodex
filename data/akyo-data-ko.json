@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-05T05:31:54.290Z",
-  "count": 1066,
+  "updatedAt": "2026-11-05T05:42:24.101Z",
+  "count": 1067,
   "data": [
     {
       "id": "0001",
@@ -13136,6 +13136,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_6ef27588-7746-4b96-bc6f-fcc4961e1110",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_6ef27588-7746-4b96-bc6f-fcc4961e1110",
       "urlUpdatedAt": "2026-11-05T05:31:54.138Z"
+    },
+    {
+      "id": "2083",
+      "entryType": "world",
+      "displaySerial": "0126",
+      "nickname": "JUST赤飯",
+      "avatarName": "JUST赤飯",
+      "category": "월드,지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS",
+      "comment": "",
+      "author": "yuwa1027",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_4fbbf1a1-655f-4276-b330-424d473f17e0",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_4fbbf1a1-655f-4276-b330-424d473f17e0",
+      "urlUpdatedAt": "2026-11-05T05:42:23.997Z"
     }
   ]
 }
