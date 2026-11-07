@@ -8,14 +8,14 @@
  *      ファイルの名前は `app:///_next/static/...`。ブラウザーの SDK がスタックの場所を
  *      `<origin>/_next/...` → `app:///_next/...` に書き換えて送るので（sentry-client-init.ts）、その名前に合わせる。
  *      Debug ID 方式は配信する JS に短いコードを足すので使わず、リリース名とファイルの場所で対応づける。
- *   2. 配信物から .map を消し、.js・.css の末尾の sourceMappingURL のコメントも消す。
- *      配信する JS・CSS は、ソースマップを作らないときと同じ大きさになる。
- *   3. .map と sourceMappingURL が 1 つも残っていないことを確かめる。残っていれば失敗する（ソースを公開しないため）。
+ *   2. 配信物から .map を消す。.js・.css の最後の行がまるごと参照のコメント（このビルドの .map を指すもの）なら、
+ *      その行も消す（配信する大きさを、ソースマップを作らないときに近づけるため）。
+ *   3. ソースが漏れる形（.map と、最後の行のインラインのソースマップ）が残っていれば失敗する。
  *
  * Sentry への送信に失敗しても（トークンがない・権限が足りないなど）デプロイは止めず、GitHub Actions の
  * 警告を出す。2・3 は必ず行う。
  *
- * 使い方: node scripts/sentry-browser-sourcemaps.js --release <git のコミット> [--assets .open-next/assets]
+ * 使い方: node scripts/sentry-browser-sourcemaps.js --release <git のコミット> [--assets .open-next/assets] [--require-maps]
  * Sentry へ送るには SENTRY_AUTH_TOKEN・SENTRY_ORG・SENTRY_PROJECT が要る（sentry-cli が環境変数から読む）。
  */
 
@@ -26,11 +26,15 @@ const { spawnSync } = require('node:child_process');
 
 const URL_PREFIX = 'app:///_next/static';
 const GIT_SHA = /^[0-9a-f]{40}$/;
-// ファイルの最後にある参照のコメントだけを消す（途中のものは触らない。位置がずれないように末尾だけ）。
-// コメントは行の先頭から始まり、URL に空白や引用符を含まないものだけを対象にする。
-// `const x="//# sourceMappingURL=foo";` のような文字列を切り落とさないため。`//@` は古い書き方
-const TRAILING_JS_SOURCEMAP_COMMENT = /(?:^|\r?\n)\/\/[#@] sourceMappingURL=[^\s'"`]+[ \t]*(?:\r?\n)*$/;
-const TRAILING_CSS_SOURCEMAP_COMMENT = /(?:^|\r?\n)\/\*[#@] sourceMappingURL=[^\s'"*]+[ \t]*\*\/[ \t]*(?:\r?\n)*$/;
+// 参照のコメントを消すのは、最後の行がまるごとそのコメントで、指す先がこのビルドで作られた .map のときだけ。
+// 正しい JS・CSS では、最後の行がまるごと文字列やテンプレートの途中になることはない（閉じる記号が後ろに要る）ので、
+// 文字列を切り落とさない。途中の行は触らない（位置がずれないように）。`//@` は古い書き方
+const JS_REFERENCE_LINE = /^\/\/[#@] sourceMappingURL=([^\s'"`]+)$/;
+const CSS_REFERENCE_LINE = /^\/\*[#@] sourceMappingURL=([^\s'"*]+) ?\*\/$/;
+// ソースが漏れるのは .map と、インラインのソースマップ（data: に元のソースを入れられる）だけ。
+// 参照のコメントが残っても、消した .map を指すだけで中身は出ない。インラインのソースマップは最後の行に置かれる
+// （同じ行のコードの後ろでも）ので、最後の行を見る。コードの途中の文字列は見ない
+const INLINE_SOURCE_MAP = /sourceMappingURL\s*=\s*data:/;
 
 function walkFiles(dir) {
   const found = [];
@@ -107,49 +111,55 @@ function assertStillParses(before, after, file) {
   }
 }
 
-/** .map を消し、.js・.css の末尾の参照のコメントを消す */
+const isScriptFile = (file) => /\.(?:js|mjs|cjs)$/.test(file);
+const isStyleFile = (file) => file.endsWith('.css');
+
+/** 末尾の空白を除いた最後の行と、その前の部分（改行は \n・\r\n・\r のどれでも） */
+function splitLastLine(text) {
+  const body = text.replace(/\s+$/, '');
+  const index = Math.max(body.lastIndexOf('\n'), body.lastIndexOf('\r'));
+  return { head: body.slice(0, index + 1), last: body.slice(index + 1) };
+}
+
+/**
+ * 最後の行がまるごと参照のコメントで、指す先が mapPaths（このビルドで作られた .map の絶対パス）にあれば、
+ * その行を落とした中身を返す。そうでなければ null（触らない）
+ */
+function withoutReferenceLine(text, file, mapPaths) {
+  const pattern = isScriptFile(file) ? JS_REFERENCE_LINE : isStyleFile(file) ? CSS_REFERENCE_LINE : null;
+  if (!pattern) return null;
+  const { head, last } = splitLastLine(text);
+  const match = last.match(pattern);
+  if (!match || !mapPaths.has(path.resolve(path.dirname(file), match[1]))) return null;
+  // 参照の行の前の空行も落とし、改行 1 つで終える
+  const code = head.replace(/\s+$/, '');
+  return code === '' ? '' : `${code}\n`;
+}
+
+/** .js・.css の最後の参照のコメントを消してから、.map を消す */
 function removeSourceMaps(assetsDir) {
-  let removedMaps = 0;
+  const files = walkFiles(assetsDir);
+  const mapPaths = new Set(files.filter((file) => file.endsWith('.map')).map((file) => path.resolve(file)));
   let strippedComments = 0;
-  for (const file of walkFiles(assetsDir)) {
-    if (file.endsWith('.map')) {
-      fs.rmSync(file);
-      removedMaps++;
-      continue;
-    }
-    const pattern = /\.(?:js|mjs|cjs)$/.test(file)
-      ? TRAILING_JS_SOURCEMAP_COMMENT
-      : file.endsWith('.css')
-        ? TRAILING_CSS_SOURCEMAP_COMMENT
-        : null;
-    if (!pattern) continue;
+  for (const file of files) {
+    if (!isScriptFile(file) && !isStyleFile(file)) continue;
     const text = fs.readFileSync(file, 'utf8');
-    if (!pattern.test(text)) continue;
-    const stripped = text.replace(pattern, '');
-    if (pattern === TRAILING_JS_SOURCEMAP_COMMENT) assertStillParses(text, stripped, file);
+    const stripped = withoutReferenceLine(text, path.resolve(file), mapPaths);
+    if (stripped === null) continue;
+    if (isScriptFile(file)) assertStillParses(text, stripped, file);
     fs.writeFileSync(file, stripped);
     strippedComments++;
   }
-  return { removedMaps, strippedComments };
+  for (const map of mapPaths) fs.rmSync(map);
+  return { removedMaps: mapPaths.size, strippedComments };
 }
 
-// 残りの判定は消す判定より広く取る（空白の数などが違う参照も見つけて失敗させる）。最後の行だけを見るのは、
-// コードの中に "sourceMappingURL=" という文字列を持つライブラリもあるため
-const LOOSE_JS_SOURCEMAP_LINE = /^\/\/\s*[#@]\s*sourceMappingURL\s*=/;
-const LOOSE_CSS_SOURCEMAP_LINE = /^\/\*\s*[#@]\s*sourceMappingURL\s*=/;
-
-function lastLine(text) {
-  const trimmed = text.replace(/\s+$/, '');
-  return trimmed.slice(trimmed.lastIndexOf('\n') + 1).trim();
-}
-
-/** 配信物に .map と参照のコメントが残っていないかを確かめる。残っているファイルの一覧を返す */
+/** 配信物にソースが漏れる形（.map と、最後の行のインラインのソースマップ）が残っていないかを確かめる */
 function findLeftoverSourceMaps(assetsDir) {
   return walkFiles(assetsDir).filter((file) => {
     if (file.endsWith('.map')) return true;
-    if (/\.(?:js|mjs|cjs)$/.test(file)) return LOOSE_JS_SOURCEMAP_LINE.test(lastLine(fs.readFileSync(file, 'utf8')));
-    if (file.endsWith('.css')) return LOOSE_CSS_SOURCEMAP_LINE.test(lastLine(fs.readFileSync(file, 'utf8')));
-    return false;
+    if (!isScriptFile(file) && !isStyleFile(file)) return false;
+    return INLINE_SOURCE_MAP.test(splitLastLine(fs.readFileSync(file, 'utf8')).last);
   });
 }
 
@@ -159,7 +169,8 @@ function main(argv, { env = process.env, run = runSentryCli, log = console } = {
   if (!fs.existsSync(staticDir)) {
     throw new Error(`${staticDir} がない。OpenNext のビルドの後に走らせる`);
   }
-  const mapCount = walkFiles(assets).filter((file) => file.endsWith('.map')).length;
+  // 数えるのは Sentry に上げる _next/static の中だけ（ほかの場所の .map は後片付けで消すが、上げる対象ではない）
+  const mapCount = walkFiles(staticDir).filter((file) => file.endsWith('.map')).length;
   if (mapCount === 0 && requireMaps) {
     throw new Error('ソースマップが 1 つもない（AKYODEX_BROWSER_SOURCEMAPS=1 でビルドしたか確かめる）');
   }
@@ -171,7 +182,7 @@ function main(argv, { env = process.env, run = runSentryCli, log = console } = {
   const { removedMaps, strippedComments } = removeSourceMaps(assets);
   const leftovers = findLeftoverSourceMaps(assets);
   if (leftovers.length > 0) {
-    throw new Error(`配信物にソースマップが残っている: ${leftovers.slice(0, 5).join(', ')}`);
+    throw new Error(`配信物にソースマップ（.map かインラインのもの）が残っている: ${leftovers.slice(0, 5).join(', ')}`);
   }
   log.log(
     `ソースマップ ${mapCount} 個（リリース ${release}）: Sentry に${uploaded ? '上げた' : '上げなかった'}。` +
