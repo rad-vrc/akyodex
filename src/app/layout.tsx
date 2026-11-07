@@ -3,6 +3,7 @@ import { RenderingMode } from '@/components/rendering-mode';
 import { StructuredData } from '@/components/structured-data';
 import { mPlus2, mPlus2Chip } from '@/app/fonts';
 import { resolveCatalogLanguage } from '@/app/zukan/catalog-language';
+import { readWorkerSentryRelease } from '@/lib/sentry-release-server';
 import type { Metadata, Viewport } from 'next';
 import { headers } from 'next/headers';
 import { connection } from 'next/server';
@@ -87,9 +88,11 @@ export default async function RootLayout({
   const nonce = headersList.get('x-nonce') || undefined;
   const lang = resolveCatalogLanguage(headersList.get('x-akyo-lang'));
   const difyToken = process.env.NEXT_PUBLIC_DIFY_CHATBOT_TOKEN;
+  // ブラウザーの Sentry のリリース名（Worker の版の印 = git のコミット）。instrumentation-client.ts が読む
+  const sentryRelease = readWorkerSentryRelease();
 
   return (
-    <html lang={lang} suppressHydrationWarning>
+    <html lang={lang} data-sentry-release={sentryRelease} suppressHydrationWarning>
       <head suppressHydrationWarning />
       <body className={`antialiased ${mPlus2.variable} ${mPlus2Chip.variable}`}>
         <RenderingMode />

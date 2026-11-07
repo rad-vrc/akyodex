@@ -3,6 +3,10 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 import { shouldApplyNextSentryBuildConfig } from "./src/lib/sentry-runtime";
 
 const nextConfig: NextConfig = {
+  // ブラウザー用のソースマップは、Sentry に上げる本番・ステージングのビルドでだけ作る。
+  // 上げたあと scripts/sentry-browser-sourcemaps.js が .map と参照のコメントを配信物から消すので、
+  // 配信する JS は作らないときと同じになる（Sentry はリリース名とファイルの場所で対応づける）
+  productionBrowserSourceMaps: process.env.AKYODEX_BROWSER_SOURCEMAPS === "1",
   // Cloudflare Pages compatibility settings
   images: {
     // Image optimization configuration

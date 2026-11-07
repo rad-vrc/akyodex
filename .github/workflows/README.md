@@ -19,9 +19,9 @@
 | ワークフロー | ファイル | トリガー | 主な役割 | 補足 |
 | ------------- | --------- | --------- | --------- | ---- |
 | CI | `ci.yml` | PR / push (`main`, `develop`) | 型チェック、Cloudflare Pages ビルド検証、Security Scan | ESLint は advisory |
-| Deploy Workers staging | `deploy-cloudflare-workers-staging.yml` | non-draft PR (`main`) | 最新PRを本番相当の共有Workers環境へデプロイ | `X-Akyodex-Worker-Tag`でSHAを照合、`/zukan`の実行されるscriptがCSPのnonceを持つか確認 |
+| Deploy Workers staging | `deploy-cloudflare-workers-staging.yml` | non-draft PR (`main`) | 最新PRを本番相当の共有Workers環境へデプロイ、ブラウザー用ソースマップをSentryへupload | `X-Akyodex-Worker-Tag`でSHAを照合、`/zukan`の実行されるscriptがCSPのnonceを持つか・`<html>`のSentryリリース名がSHAか確認 |
 | Lighthouse CI | `lighthouse-ci.yml` | PR (`main`) / manual | Lighthouse 13.4.1のモバイルsimulated計測を3回実行 | 中央値を記録し、重大な性能退行だけを予算で停止 |
-| Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / dispatch | 本番候補のupload、手動activate、フォント更新のガード付き自動activate、Worker rollback | `main` pushだけでは本番trafficを変更しない |
+| Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / dispatch | 本番候補のupload（ブラウザー用ソースマップのSentryへのuploadを含む）、手動activate、フォント更新のガード付き自動activate、Worker rollback | `main` pushだけでは本番trafficを変更しない。ソースマップはSentryへuploadしたあと配信物から消す |
 | Deploy Pages PR Preview | `deploy-cloudflare-pages-preview.yml` | non-draft same-repository PR (`main`) | PRごとの独立した読み取り専用Previewを作成 | Dependabotとfork PRは対象外 |
 | Conflict Check | `conflict-check.yml` | PR to `main`, push to `main` | `main` との競合をコメントで通知 | 競合解消時は古いコメントを削除 |
 | Sync JSON Data from CSV | `sync-json-data.yml` | `main` push (CSV / カテゴリ対訳変更時) / manual | JA→EN/KO CSV 再生成、CSV→JSON 変換、R2 アップロード、ISR 再検証 | GitHub へ自動コミットも行う |

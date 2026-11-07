@@ -1,4 +1,5 @@
 import { initBrowserSentry } from '@/lib/sentry-client-init';
+import { readBrowserSentryRelease } from '@/lib/sentry-release';
 import {
   forwardRouterTransitionStart,
   scheduleSentryTracingLoad,
@@ -16,6 +17,8 @@ const initialized = initBrowserSentry({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT,
   nodeEnv: process.env.NODE_ENV,
+  // サーバーが <html data-sentry-release> に書いた Worker の版の印。JS に埋め込まない理由は sentry-release.ts
+  release: readBrowserSentryRelease(typeof document === 'undefined' ? undefined : document),
 });
 
 if (initialized && typeof window !== 'undefined') {

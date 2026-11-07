@@ -84,6 +84,11 @@ test("resolveBrowserSentryOptions は従来の instrumentation-client と同じ�
   assert.equal(resolveBrowserSentryOptions({ dsn: "x", nodeEnv: "development" })?.tracesSampleRate, 1.0);
   assert.equal(resolveBrowserSentryOptions({ dsn: "x" })?.environment, "production");
 
+  // release: サーバーが <html data-sentry-release> に書いた Worker の版の印を渡す。渡さなければキーを置かない
+  assert.equal(Object.hasOwn(production, "release"), false);
+  const commit = "636be8fef64a182f553247ef311482f6fd17c335";
+  assert.equal(resolveBrowserSentryOptions({ dsn: "x", release: commit })?.release, commit);
+
   // 本番・プレビューでは送信フックを足さない（SDK 既定のまま送る）
   assert.equal(production.beforeSend, undefined);
   assert.equal(production.beforeSendTransaction, undefined);
