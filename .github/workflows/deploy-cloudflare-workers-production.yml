@@ -108,12 +108,20 @@ jobs:
 
       - name: Build production Workers artifact
         run: npm run build:workers:production
+        env:
+          # ブラウザー用のソースマップを作る（次の段で Sentry に上げてから配信物から消す）
+          AKYODEX_BROWSER_SOURCEMAPS: '1'
 
       - name: Verify Workers build output
         run: |
           set -euo pipefail
           test -f .open-next/worker.js
           test -d .open-next/assets
+
+      # リリース名は Worker の版の印と同じ git のコミット（ブラウザー・Worker の SDK も同じ名前を使う）。
+      # Sentry への送信に失敗してもデプロイは止めず警告だけ出す。配信物の .map は必ず消し、残れば失敗する
+      - name: Upload browser source maps to Sentry and remove them from the assets
+        run: node scripts/sentry-browser-sourcemaps.js --release "${GITHUB_SHA}"
 
       - name: Identify the generated font in the built assets
         id: font-asset

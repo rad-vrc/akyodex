@@ -2,6 +2,7 @@ import { withSentry } from '@sentry/cloudflare';
 import openNextWorker from './.open-next/worker.js';
 import { withWorkerResponseHeaders } from './src/lib/worker-version-headers';
 import { withCatalogWorkerTiming } from './src/lib/catalog-diagnostics';
+import { workerSentryOptions } from './src/lib/sentry-worker-options';
 
 export { DOQueueHandler } from './.open-next/worker.js';
 
@@ -30,15 +31,5 @@ const handler = {
   },
 } satisfies CloudflareWorkerHandler<WorkersRuntimeEnv>;
 
-export default withSentry<WorkersRuntimeEnv>(
-  (env) =>
-    env.SENTRY_DSN
-      ? {
-          dsn: env.SENTRY_DSN,
-          environment: env.SENTRY_ENVIRONMENT,
-          sendDefaultPii: false,
-          tracesSampleRate: 0.1,
-        }
-      : undefined,
-  handler
-);
+// リリース名は Worker の版の印（git のコミット）。ブラウザーと同じ名前にする（src/lib/sentry-worker-options.ts）
+export default withSentry<WorkersRuntimeEnv>((env) => workerSentryOptions(env), handler);

@@ -5,6 +5,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import * as diagnostics from "./catalog-diagnostics";
 import * as versionHeaders from "./worker-version-headers";
+import * as sentryWorkerOptions from "./sentry-worker-options";
 
 const source = readFileSync(new URL("../../cloudflare-worker.ts", import.meta.url), "utf8");
 const env = {
@@ -14,13 +15,21 @@ const env = {
 const context = {};
 type WorkerFetch = (request: Request, runtimeEnv: typeof env, ctx: typeof context) => Promise<Response>;
 
+let lastSentryOptions: ((runtimeEnv: unknown) => unknown) | undefined;
+
 function loadWorker(fetch: WorkerFetch) {
   const exports: { default?: { fetch: WorkerFetch } } = {};
   const dependencies: Record<string, unknown> = {
-    "@sentry/cloudflare": { withSentry: (_options: unknown, handler: unknown) => handler },
+    "@sentry/cloudflare": {
+      withSentry: (options: (runtimeEnv: unknown) => unknown, handler: unknown) => {
+        lastSentryOptions = options;
+        return handler;
+      },
+    },
     "./.open-next/worker.js": { default: { fetch }, DOQueueHandler: class {} },
     "./src/lib/worker-version-headers": versionHeaders,
     "./src/lib/catalog-diagnostics": diagnostics,
+    "./src/lib/sentry-worker-options": sentryWorkerOptions,
   };
   // Evaluate the real entrypoint, keeping both response wrappers real.
   runInNewContext(ts.transpileModule(source, {
@@ -86,4 +95,25 @@ test("actual Worker entry leaves other routes and methods free of catalog timing
     assert.equal(response.headers.get("X-Akyodex-Worker-Tag"), "test-revision");
     assert.equal(await response.text(), "unchanged");
   }
+});
+
+test("actual Worker entry gives Sentry the Worker version tag (git commit) as the release", () => {
+  loadWorker(async () => new Response("ok"));
+  assert.ok(lastSentryOptions);
+  const commit = "636be8fef64a182f553247ef311482f6fd17c335";
+  assert.deepEqual(
+    lastSentryOptions({
+      SENTRY_DSN: "https://public@example.invalid/1",
+      SENTRY_ENVIRONMENT: "production",
+      CF_VERSION_METADATA: { id: "a1dbf644-0ba2-467d-8b6e-216f1ecadef6", tag: commit },
+    }),
+    {
+      dsn: "https://public@example.invalid/1",
+      environment: "production",
+      sendDefaultPii: false,
+      tracesSampleRate: 0.1,
+      release: commit,
+    }
+  );
+  assert.equal(lastSentryOptions({}), undefined);
 });

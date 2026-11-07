@@ -13,8 +13,9 @@
  *   - /404 と名前が確定しなかった app router トランザクションの span を無視（ignoreSpans）
  *   - Turbopack ビルドのタグ
  * 再現していないもの: SDK メタデータ名（sentry.javascript.nextjs → react）、tunnelRoute（未使用）、
- * release の自動注入（withSentryConfig を Cloudflare ビルドでは適用しておらず、従来も未設定）、
  * ISR/SSG ページの sentry-trace meta 除去（tracing 側の処理で、対象ルートも無い）。
+ * release は withSentryConfig の自動注入（Cloudflare ビルドでは適用していない）ではなく、
+ * サーバーが <html data-sentry-release> に書いた Worker の版の印を渡す（sentry-release.ts）。
  */
 import * as Sentry from '@sentry/react';
 
@@ -75,6 +76,8 @@ export interface BrowserSentryEnv {
   dsn?: string;
   environment?: string;
   nodeEnv?: string;
+  /** Worker の版の印（git のコミット）。Sentry に上げたソースマップと同じ名前で、これがないと対応づかない */
+  release?: string;
 }
 
 /**
@@ -89,6 +92,8 @@ export function resolveBrowserSentryOptions(env: BrowserSentryEnv): Sentry.Brows
   return {
     dsn: env.dsn,
     environment,
+    // 渡さないときはキーごと置かない（SDK は undefined の release を「未設定」として扱うが、念のため）
+    ...(env.release ? { release: env.release } : {}),
     // Lighthouse CI などの合成トラフィックでは SDK を本番どおり初期化したまま送信だけ捨てる
     ...telemetryOptionsFor(environment),
     enableMetrics: true,
