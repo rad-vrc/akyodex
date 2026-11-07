@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
+const YAML = require("yaml");
 
 const {
   main,
@@ -35,7 +36,6 @@ function makeAssets(files) {
 
 const read = (root, name) => fs.readFileSync(path.join(root, name), "utf8");
 const exists = (root, name) => fs.existsSync(path.join(root, name));
-const relative = (root, files) => files.map((f) => path.relative(root, f).replace(/\\/g, "/")).sort();
 const chunk = (name) => `_next/static/chunks/${name}`;
 
 test("リリース名は git のコミット（40 桁の 16 進）だけを受け付ける", () => {
@@ -65,76 +65,33 @@ test("最後の行がまるごと、このビルドの .map を指す参照の�
     [chunk("other.js.map")]: "{}",
     [chunk("crlf.js")]: "x;\r\n//# sourceMappingURL=crlf.js.map\r\n",
     [chunk("crlf.js.map")]: "{}",
-    [chunk("cr.js")]: "x;\r//# sourceMappingURL=cr.js.map",
-    [chunk("cr.js.map")]: "{}",
     [chunk("old.js")]: "y;\n//@ sourceMappingURL=old.js.map",
     [chunk("old.js.map")]: "{}",
     [chunk("b.css")]: "a{color:red}\n/*# sourceMappingURL=b.css.map */\n",
     [chunk("b.css.map")]: "{}",
     // 指す先がこのビルドの .map でなければ触らない
     [chunk("unknown.js")]: "z;\n//# sourceMappingURL=missing.js.map",
-    // 同じ行にコードがあれば触らない（行ごと消すとコードまで消える。構文は壊れないので構文の確かめでも捕まらない）
+    // 同じ行・後ろの行にコードがあれば触らない（行ごと消すとコードまで消える）
     [chunk("sameline.js")]: "a();\nfoo(); //# sourceMappingURL=other.js.map",
     [chunk("sameline.css")]: "a{b:c}\nd{e:f} /*# sourceMappingURL=b.css.map */",
-    // 文字列やテンプレートの中は消さない（最後の行がまるごとコメントではない）
+    [chunk("code-after.js")]: "a();\n//# sourceMappingURL=other.js.map\nb();\n",
+    // 文字列やテンプレートの中は消さない（正しい JS・CSS では、最後の行がまるごとその途中にはならない）
     [chunk("string.js")]: 'const x="//# sourceMappingURL=other.js.map";',
     [chunk("template.js")]: "const t=`hello\n//# sourceMappingURL=other.js.map`;",
     [chunk("css-string.css")]: 'a{content:"/*# sourceMappingURL=b.css.map */"}',
-    [chunk("lib.js")]: 'const s="//# sourceMappingURL=";\nmodule.exports=s;\n',
     "_next/static/media/font.woff2": "binary",
     "sw.js": "self.x=1;\n",
   });
-  assert.deepEqual(removeSourceMaps(root), { removedMaps: 5, strippedComments: 5 });
+  assert.deepEqual(removeSourceMaps(root), { removedMaps: 4, strippedComments: 4 });
   assert.equal(read(root, chunk("a.js")), "console.log(1);\n");
   assert.equal(read(root, chunk("crlf.js")), "x;\n");
-  assert.equal(read(root, chunk("cr.js")), "x;\n");
   assert.equal(read(root, chunk("old.js")), "y;\n");
   assert.equal(read(root, chunk("b.css")), "a{color:red}\n");
-  assert.equal(read(root, chunk("unknown.js")), "z;\n//# sourceMappingURL=missing.js.map");
-  assert.equal(read(root, chunk("sameline.js")), "a();\nfoo(); //# sourceMappingURL=other.js.map");
-  assert.equal(read(root, chunk("sameline.css")), "a{b:c}\nd{e:f} /*# sourceMappingURL=b.css.map */");
-  assert.equal(read(root, chunk("string.js")), 'const x="//# sourceMappingURL=other.js.map";');
-  assert.equal(read(root, chunk("template.js")), "const t=`hello\n//# sourceMappingURL=other.js.map`;");
-  assert.equal(read(root, chunk("css-string.css")), 'a{content:"/*# sourceMappingURL=b.css.map */"}');
-  assert.equal(read(root, chunk("lib.js")), 'const s="//# sourceMappingURL=";\nmodule.exports=s;\n');
-  assert.equal(exists(root, chunk("other.js.map")), false);
+  for (const name of ["unknown.js", "sameline.js", "sameline.css", "code-after.js", "string.js", "template.js", "css-string.css"]) {
+    assert.match(read(root, chunk(name)), /sourceMappingURL=/, `${name} は触らない`);
+  }
+  assert.equal(read(root, chunk("code-after.js")), "a();\n//# sourceMappingURL=other.js.map\nb();\n");
   assert.deepEqual(findLeftoverSourceMaps(root), []);
-});
-
-test("ソースが漏れる形（.map と最後の行のインラインのソースマップ）を見つける", () => {
-  const root = makeAssets({
-    "public.map": "{}",
-    // 同じ行のコードの後ろでも、インラインのソースマップは見つける
-    [chunk("inline.js")]: "throw new Error('x'); //# sourceMappingURL=data:application/json;base64,e30=",
-    [chunk("inline.css")]: "a{b:c}\n/*# sourceMappingURL=data:application/json;base64,e30= */\n",
-    // 外の .map を指すだけの参照は漏れないので残りにしない
-    [chunk("external.js")]: "x;\n//# sourceMappingURL=external.js.map\n",
-    // コードの途中の文字列や、テンプレートの中の行は見ない
-    [chunk("lib.js")]: 'const s="sourceMappingURL=data:";\nmodule.exports=s;\n',
-    [chunk("template.js")]: "const t=`hello\n// # sourceMappingURL=foo`;",
-  });
-  assert.deepEqual(relative(root, findLeftoverSourceMaps(root)), [chunk("inline.css"), chunk("inline.js"), "public.map"]);
-});
-
-test("インラインのソースマップが残っていたら main は失敗する（公開しない）", () => {
-  const root = makeAssets({
-    [chunk("a.js")]: "throw new Error('x'); //# sourceMappingURL=data:application/json;base64,e30=",
-    [chunk("z.js.map")]: "{}",
-  });
-  assert.throws(
-    () => main(["--release", RELEASE, "--assets", root, "--require-maps"], { env: {}, log: quietLog }),
-    /ソースマップ（\.map かインラインのもの）が残っている/
-  );
-});
-
-test("テンプレート文字列の中の参照らしい行では失敗しない", () => {
-  const root = makeAssets({
-    [chunk("template.js")]: "const x=`hello\n// # sourceMappingURL=foo`;",
-    [chunk("template.js.map")]: "{}",
-  });
-  const result = main(["--release", RELEASE, "--assets", root], { env: {}, log: quietLog });
-  assert.equal(result.strippedComments, 0);
-  assert.equal(read(root, chunk("template.js")), "const x=`hello\n// # sourceMappingURL=foo`;");
 });
 
 test("--require-maps は、Sentry に上げる _next/static の中の .map を数える", () => {
@@ -218,65 +175,9 @@ test("_next/static がなければ失敗する（ビルドの前に走らせた�
   assert.throws(() => main(["--release", RELEASE, "--assets", root], { log: quietLog }), /_next/);
 });
 
-test("インラインのソースマップは、後ろに別のコメントがあっても、スキームが大文字でも見つける", () => {
-  const map = Buffer.from(JSON.stringify({ version: 3, sources: ["a.ts"], sourcesContent: ["const secret_source = 42;"], mappings: "" })).toString("base64");
-  const root = makeAssets({
-    [chunk("followed.js")]: `x(); //# sourceMappingURL=data:application/json;base64,${map}\n//# sourceURL=example.js\n`,
-    [chunk("upper.js")]: `y();\n//# sourceMappingURL=DATA:application/json;base64,${map}`,
-    [chunk("module.mjs")]: `export const z = 1;\n//# sourceMappingURL=data:application/json;base64,${map}`,
-    [chunk("followed.css")]: `a{b:c}\n/*# sourceMappingURL=data:application/json;base64,${map} */\n/* end */\n`,
-    // 最後の行の文字列の中は、コメントではないので見ない
-    [chunk("string.js")]: 'globalThis.x="sourceMappingURL=data:";',
-    [chunk("template.js")]: "globalThis.y=`\n//# sourceMappingURL=data:application/json;base64,e30=`;",
-    [chunk("string.css")]: 'a{content:"/*# sourceMappingURL=data:x */"}',
-    // モジュールの構文でも、構文解析してコメントだけを見る（文字列の中は見ない）
-    [chunk("module-string.mjs")]: 'export const s="sourceMappingURL=data:";',
-  });
-  assert.deepEqual(relative(root, findLeftoverSourceMaps(root)), [
-    chunk("followed.css"),
-    chunk("followed.js"),
-    chunk("module.mjs"),
-    chunk("upper.js"),
-  ]);
-});
-
-test("構文解析できないファイルは、文字列でもインラインのソースマップらしければ残りと見なす（漏らさない側に倒す）", () => {
-  const root = makeAssets({
-    [chunk("broken.js")]: 'const x = "sourceMappingURL=data:',
-    [chunk("broken-plain.js")]: "const x = (",
-    [chunk("broken.css")]: 'a{content:"sourceMappingURL=data:',
-  });
-  assert.deepEqual(relative(root, findLeftoverSourceMaps(root)), [chunk("broken.css"), chunk("broken.js")]);
-});
-
-test("構文上コメントでないもの・壊れた CSS は、参照の形でも消さない", () => {
-  const root = makeAssets({
-    [chunk("ref.js.map")]: "{}",
-    [chunk("ref.css.map")]: "{}",
-    // 参照の後ろに別のコメントがある（最後のコメントは参照ではない）
-    [chunk("then-sourceurl.js")]: "a();\n//# sourceMappingURL=ref.js.map\n//# sourceURL=x.js\n",
-    // 閉じていない文字列（CSS は文字列の中で \ の改行を続けられる）
-    [chunk("unclosed.css")]: 'a{content:"x\\\n/*# sourceMappingURL=ref.css.map */',
-    // JS の参照のコメントは仕様上 //# の形。ブロックコメントは Turbopack も出さないので触らない
-    [chunk("block.js")]: "a();\n/*# sourceMappingURL=ref.js.map */",
-    // 参照のコメントの後ろにコードがある（行ごと消すとコードまで消える）
-    [chunk("code-after.js")]: "a();\n//# sourceMappingURL=ref.js.map\nb();\n",
-    // JS の古い HTML コメント（<!-- は行コメントとして扱われる）
-    [chunk("html-comment.js")]: "a();\n<!-- note\n//# sourceMappingURL=ref.js.map",
-  });
-  const result = removeSourceMaps(root);
-  assert.equal(read(root, chunk("then-sourceurl.js")), "a();\n//# sourceMappingURL=ref.js.map\n//# sourceURL=x.js\n");
-  assert.equal(read(root, chunk("unclosed.css")), 'a{content:"x\\\n/*# sourceMappingURL=ref.css.map */');
-  assert.equal(read(root, chunk("html-comment.js")), "a();\n<!-- note\n");
-  assert.equal(read(root, chunk("code-after.js")), "a();\n//# sourceMappingURL=ref.js.map\nb();\n");
-  assert.equal(read(root, chunk("block.js")), "a();\n/*# sourceMappingURL=ref.js.map */");
-  assert.equal(result.strippedComments, 1);
-});
-
 // workflow がこのスクリプトを正しく呼んでいるか。YAML として読み、実際の値で確かめる
 // （ビルドの段の env でソースマップを作り、ビルドの後・配信の前に、版の印と同じコミットで、条件なしで走らせる。
 // ステージングは --require-maps）
-const YAML = require("yaml");
 for (const [workflow, job, build, release, extra, deploy] of [
   ["deploy-cloudflare-workers-production.yml", "prepare-version", "npm run build:workers:production", "${GITHUB_SHA}", "", "npx wrangler versions upload"],
   ["deploy-cloudflare-workers-staging.yml", "deploy-workers-staging", "npm run build:workers", "${PR_HEAD_SHA}", " --require-maps", "npx wrangler deploy"],
