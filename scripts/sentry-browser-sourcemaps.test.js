@@ -11,7 +11,6 @@ const {
   removeSourceMaps,
   findLeftoverSourceMaps,
   parseArgs,
-  assertStillParses,
 } = require("./sentry-browser-sourcemaps");
 
 const RELEASE = "636be8fef64a182f553247ef311482f6fd17c335";
@@ -138,13 +137,6 @@ test("テンプレート文字列の中の参照らしい行では失敗しな�
   assert.equal(read(root, chunk("template.js")), "const x=`hello\n// # sourceMappingURL=foo`;");
 });
 
-test("コメントを消して JS として読めなくなったら失敗する", () => {
-  assert.doesNotThrow(() => assertStillParses("x;\n//# sourceMappingURL=a.js.map", "x;\n", "a.js"));
-  assert.throws(() => assertStillParses('const x="a";', 'const x="', "a.js"), /読めなくなった/);
-  // 元から読めない（モジュールの構文など）ものは比べない
-  assert.doesNotThrow(() => assertStillParses("export const x=1;", "export const x=", "m.js"));
-});
-
 test("--require-maps は、Sentry に上げる _next/static の中の .map を数える", () => {
   // _next/static に .map がなく、別の場所にだけあるときも失敗する
   for (const files of [{ [chunk("a.js")]: "x;" }, { [chunk("a.js")]: "x;", "unrelated.map": "{}" }]) {
@@ -226,23 +218,88 @@ test("_next/static がなければ失敗する（ビルドの前に走らせた�
   assert.throws(() => main(["--release", RELEASE, "--assets", root], { log: quietLog }), /_next/);
 });
 
-// workflow がこのスクリプトを正しく呼んでいるか（ビルドでソースマップを作り、ビルドの後・配信の前に、
-// 版の印と同じコミットで走らせる。ステージングは --require-maps）
-for (const [workflow, build, release, extra, deploy] of [
-  ["deploy-cloudflare-workers-production.yml", "npm run build:workers:production", "${GITHUB_SHA}", "", "npx wrangler versions upload"],
-  ["deploy-cloudflare-workers-staging.yml", "npm run build:workers", "${PR_HEAD_SHA}", " --require-maps", "npx wrangler deploy"],
+test("インラインのソースマップは、後ろに別のコメントがあっても、スキームが大文字でも見つける", () => {
+  const map = Buffer.from(JSON.stringify({ version: 3, sources: ["a.ts"], sourcesContent: ["const secret_source = 42;"], mappings: "" })).toString("base64");
+  const root = makeAssets({
+    [chunk("followed.js")]: `x(); //# sourceMappingURL=data:application/json;base64,${map}\n//# sourceURL=example.js\n`,
+    [chunk("upper.js")]: `y();\n//# sourceMappingURL=DATA:application/json;base64,${map}`,
+    [chunk("module.mjs")]: `export const z = 1;\n//# sourceMappingURL=data:application/json;base64,${map}`,
+    [chunk("followed.css")]: `a{b:c}\n/*# sourceMappingURL=data:application/json;base64,${map} */\n/* end */\n`,
+    // 最後の行の文字列の中は、コメントではないので見ない
+    [chunk("string.js")]: 'globalThis.x="sourceMappingURL=data:";',
+    [chunk("template.js")]: "globalThis.y=`\n//# sourceMappingURL=data:application/json;base64,e30=`;",
+    [chunk("string.css")]: 'a{content:"/*# sourceMappingURL=data:x */"}',
+    // モジュールの構文でも、構文解析してコメントだけを見る（文字列の中は見ない）
+    [chunk("module-string.mjs")]: 'export const s="sourceMappingURL=data:";',
+  });
+  assert.deepEqual(relative(root, findLeftoverSourceMaps(root)), [
+    chunk("followed.css"),
+    chunk("followed.js"),
+    chunk("module.mjs"),
+    chunk("upper.js"),
+  ]);
+});
+
+test("構文解析できないファイルは、文字列でもインラインのソースマップらしければ残りと見なす（漏らさない側に倒す）", () => {
+  const root = makeAssets({
+    [chunk("broken.js")]: 'const x = "sourceMappingURL=data:',
+    [chunk("broken-plain.js")]: "const x = (",
+    [chunk("broken.css")]: 'a{content:"sourceMappingURL=data:',
+  });
+  assert.deepEqual(relative(root, findLeftoverSourceMaps(root)), [chunk("broken.css"), chunk("broken.js")]);
+});
+
+test("構文上コメントでないもの・壊れた CSS は、参照の形でも消さない", () => {
+  const root = makeAssets({
+    [chunk("ref.js.map")]: "{}",
+    [chunk("ref.css.map")]: "{}",
+    // 参照の後ろに別のコメントがある（最後のコメントは参照ではない）
+    [chunk("then-sourceurl.js")]: "a();\n//# sourceMappingURL=ref.js.map\n//# sourceURL=x.js\n",
+    // 閉じていない文字列（CSS は文字列の中で \ の改行を続けられる）
+    [chunk("unclosed.css")]: 'a{content:"x\\\n/*# sourceMappingURL=ref.css.map */',
+    // JS の参照のコメントは仕様上 //# の形。ブロックコメントは Turbopack も出さないので触らない
+    [chunk("block.js")]: "a();\n/*# sourceMappingURL=ref.js.map */",
+    // 参照のコメントの後ろにコードがある（行ごと消すとコードまで消える）
+    [chunk("code-after.js")]: "a();\n//# sourceMappingURL=ref.js.map\nb();\n",
+    // JS の古い HTML コメント（<!-- は行コメントとして扱われる）
+    [chunk("html-comment.js")]: "a();\n<!-- note\n//# sourceMappingURL=ref.js.map",
+  });
+  const result = removeSourceMaps(root);
+  assert.equal(read(root, chunk("then-sourceurl.js")), "a();\n//# sourceMappingURL=ref.js.map\n//# sourceURL=x.js\n");
+  assert.equal(read(root, chunk("unclosed.css")), 'a{content:"x\\\n/*# sourceMappingURL=ref.css.map */');
+  assert.equal(read(root, chunk("html-comment.js")), "a();\n<!-- note\n");
+  assert.equal(read(root, chunk("code-after.js")), "a();\n//# sourceMappingURL=ref.js.map\nb();\n");
+  assert.equal(read(root, chunk("block.js")), "a();\n/*# sourceMappingURL=ref.js.map */");
+  assert.equal(result.strippedComments, 1);
+});
+
+// workflow がこのスクリプトを正しく呼んでいるか。YAML として読み、実際の値で確かめる
+// （ビルドの段の env でソースマップを作り、ビルドの後・配信の前に、版の印と同じコミットで、条件なしで走らせる。
+// ステージングは --require-maps）
+const YAML = require("yaml");
+for (const [workflow, job, build, release, extra, deploy] of [
+  ["deploy-cloudflare-workers-production.yml", "prepare-version", "npm run build:workers:production", "${GITHUB_SHA}", "", "npx wrangler versions upload"],
+  ["deploy-cloudflare-workers-staging.yml", "deploy-workers-staging", "npm run build:workers", "${PR_HEAD_SHA}", " --require-maps", "npx wrangler deploy"],
 ]) {
   test(`${workflow} は、ソースマップを作ってビルドし、配信の前にこのスクリプトを走らせる`, () => {
-    const yaml = fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", workflow), "utf8").replace(/\r\n/g, "\n");
-    const buildAt = yaml.indexOf(`run: ${build}\n`);
-    assert.notEqual(buildAt, -1, "ビルドの段がない");
-    // ビルドの段の env に AKYODEX_BROWSER_SOURCEMAPS: '1'（次の段より前）
-    const afterBuild = yaml.slice(buildAt, yaml.indexOf("\n      - ", buildAt));
-    assert.match(afterBuild, /AKYODEX_BROWSER_SOURCEMAPS: '1'/);
-    const command = `run: node scripts/sentry-browser-sourcemaps.js --release "${release}"${extra}\n`;
-    const scriptAt = yaml.indexOf(command);
-    assert.notEqual(scriptAt, -1, `\`${command.trim()}\` の段がない`);
-    const deployAt = yaml.indexOf(deploy);
-    assert.ok(buildAt < scriptAt && scriptAt < deployAt, "ビルド → このスクリプト → 配信 の順になっていない");
+    const doc = YAML.parse(fs.readFileSync(path.join(__dirname, "..", ".github", "workflows", workflow), "utf8"));
+    const steps = doc.jobs[job].steps;
+    const indexOf = (predicate, label) => {
+      const index = steps.findIndex(predicate);
+      assert.notEqual(index, -1, `${label} の段がない`);
+      return index;
+    };
+    const buildIndex = indexOf((step) => step.run?.trim() === build, build);
+    assert.equal(String(steps[buildIndex].env?.AKYODEX_BROWSER_SOURCEMAPS), "1", "ビルドの段でソースマップを作っていない");
+    const command = `node scripts/sentry-browser-sourcemaps.js --release "${release}"${extra}`;
+    const scriptIndex = indexOf((step) => step.run?.trim() === command, command);
+    const deployIndex = indexOf((step) => step.run?.includes(deploy), deploy);
+    assert.ok(buildIndex < scriptIndex && scriptIndex < deployIndex, "ビルド → このスクリプト → 配信 の順になっていない");
+    // 段に条件などが付くと、走らない・失敗しても進む・別の場所で走る
+    for (const index of [buildIndex, scriptIndex]) {
+      for (const key of ["if", "continue-on-error", "working-directory", "shell"]) {
+        assert.equal(Object.hasOwn(steps[index], key), false, `${steps[index].name} に ${key} がある`);
+      }
+    }
   });
 }

@@ -8,9 +8,10 @@
  *      ファイルの名前は `app:///_next/static/...`。ブラウザーの SDK がスタックの場所を
  *      `<origin>/_next/...` → `app:///_next/...` に書き換えて送るので（sentry-client-init.ts）、その名前に合わせる。
  *      Debug ID 方式は配信する JS に短いコードを足すので使わず、リリース名とファイルの場所で対応づける。
- *   2. 配信物から .map を消す。.js・.css の最後の行がまるごと参照のコメント（このビルドの .map を指すもの）なら、
- *      その行も消す（配信する大きさを、ソースマップを作らないときに近づけるため）。
- *   3. ソースが漏れる形（.map と、最後の行のインラインのソースマップ）が残っていれば失敗する。
+ *   2. 配信物から .map を消す。.js・.css の最後のコメントが、行の先頭から始まる参照のコメント（このビルドの
+ *      .map を指すもの）なら、その行も消す（配信する大きさを、ソースマップを作らないときに近づけるため）。
+ *   3. ソースが漏れる形（.map と、インラインのソースマップのコメント）が残っていれば失敗する。
+ *   コメントは構文解析器（JS は acorn、CSS は postcss）で取り出し、文字列の中のそれらしい文字は見ない。
  *
  * Sentry への送信に失敗しても（トークンがない・権限が足りないなど）デプロイは止めず、GitHub Actions の
  * 警告を出す。2・3 は必ず行う。
@@ -21,20 +22,23 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 const { spawnSync } = require('node:child_process');
+const acorn = require('acorn');
+const postcss = require('postcss');
 
 const URL_PREFIX = 'app:///_next/static';
 const GIT_SHA = /^[0-9a-f]{40}$/;
-// 参照のコメントを消すのは、最後の行がまるごとそのコメントで、指す先がこのビルドで作られた .map のときだけ。
-// 正しい JS・CSS では、最後の行がまるごと文字列やテンプレートの途中になることはない（閉じる記号が後ろに要る）ので、
-// 文字列を切り落とさない。途中の行は触らない（位置がずれないように）。`//@` は古い書き方
-const JS_REFERENCE_LINE = /^\/\/[#@] sourceMappingURL=([^\s'"`]+)$/;
-const CSS_REFERENCE_LINE = /^\/\*[#@] sourceMappingURL=([^\s'"*]+) ?\*\/$/;
+// コメントは正規表現で探さず、構文解析器（JS は acorn、CSS は postcss）が取り出した本物のコメントだけを見る。
+// 文字列やテンプレートの中の「それらしい文字」を、消したり残りと見なしたりしないため。
+// 参照のコメント（コメントの中身。`//` や `/* */` を除いたもの）。`@` は古い書き方
+const REFERENCE_COMMENT = /^[#@] sourceMappingURL=([^\s'"`]+)\s*$/;
 // ソースが漏れるのは .map と、インラインのソースマップ（data: に元のソースを入れられる）だけ。
-// 参照のコメントが残っても、消した .map を指すだけで中身は出ない。インラインのソースマップは最後の行に置かれる
-// （同じ行のコードの後ろでも）ので、最後の行を見る。コードの途中の文字列は見ない
-const INLINE_SOURCE_MAP = /sourceMappingURL\s*=\s*data:/;
+// 参照のコメントが残っても、消した .map を指すだけで中身は出ない。URL のスキームは大文字小文字を区別しない
+const INLINE_SOURCE_MAP_COMMENT = /^\s*[#@]\s*sourceMappingURL\s*=\s*data:/i;
+const INLINE_SOURCE_MAP_ANYWHERE = /sourceMappingURL\s*=\s*data:/i;
+// postcss は既定で、CSS の中のインラインのソースマップを自分で読み込もうとする（読めないと例外）。
+// ここではコメントを取り出したいだけなので切る
+const POSTCSS_OPTIONS = { map: { prev: false } };
 
 function walkFiles(dir) {
   const found = [];
@@ -94,46 +98,89 @@ function uploadToSentry(release, staticDir, { env = process.env, run = runSentry
   return true;
 }
 
-function parsesAsScript(text) {
-  try {
-    // 実行はせず、構文だけを確かめる
-    new vm.Script(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** 元の JS がスクリプトとして読めたのに、コメントを消したあとに読めなくなったら失敗する（念のための守り） */
-function assertStillParses(before, after, file) {
-  if (parsesAsScript(before) && !parsesAsScript(after)) {
-    throw new Error(`参照のコメントを消したら JS として読めなくなった: ${file}`);
-  }
-}
-
 const isScriptFile = (file) => /\.(?:js|mjs|cjs)$/.test(file);
 const isStyleFile = (file) => file.endsWith('.css');
 
-/** 末尾の空白を除いた最後の行と、その前の部分（改行は \n・\r\n・\r のどれでも） */
-function splitLastLine(text) {
-  const body = text.replace(/\s+$/, '');
-  const index = Math.max(body.lastIndexOf('\n'), body.lastIndexOf('\r'));
-  return { head: body.slice(0, index + 1), last: body.slice(index + 1) };
+/**
+ * JS の本物のコメントを acorn で取り出す（{ type, value, start, end } の並び）。
+ * スクリプトとして読めなければモジュールとして読む。どちらでも読めなければ null
+ */
+function scriptComments(text) {
+  for (const sourceType of ['script', 'module']) {
+    const comments = [];
+    try {
+      acorn.parse(text, { ecmaVersion: 'latest', sourceType, allowHashBang: true, onComment: comments });
+      return comments;
+    } catch {
+      // 次の読み方を試す
+    }
+  }
+  return null;
+}
+
+/** CSS の本物のコメントを postcss で取り出す（中身の文字列の並び）。読めなければ null */
+function styleComments(text) {
+  try {
+    const comments = [];
+    postcss.parse(text, POSTCSS_OPTIONS).walkComments((comment) => {
+      comments.push(comment.text);
+    });
+    return comments;
+  } catch {
+    return null;
+  }
+}
+
+/** その位置から行の先頭までが空白だけなら、行の先頭の位置を返す。そうでなければ -1 */
+function lineStartIfOnlyWhitespaceBefore(text, index) {
+  const lineStart = Math.max(text.lastIndexOf('\n', index - 1), text.lastIndexOf('\r', index - 1)) + 1;
+  return text.slice(lineStart, index).trim() === '' ? lineStart : -1;
+}
+
+/** 消した後の中身を作る。参照の行の前の空行も落とし、改行 1 つで終える */
+function cutFrom(text, lineStart) {
+  const code = text.slice(0, lineStart).replace(/\s+$/, '');
+  return code === '' ? '' : `${code}\n`;
 }
 
 /**
- * 最後の行がまるごと参照のコメントで、指す先が mapPaths（このビルドで作られた .map の絶対パス）にあれば、
- * その行を落とした中身を返す。そうでなければ null（触らない）
+ * ファイルの最後のコメントが、行の先頭から始まる参照のコメントで、後ろに何もなく、指す先が mapPaths
+ * （このビルドで作られた .map の絶対パス）にあれば、その行を落とした中身を返す。そうでなければ null（触らない）。
+ * 同じ行にコードがあるときは触らない（行ごと消すとコードまで消える）
  */
-function withoutReferenceLine(text, file, mapPaths) {
-  const pattern = isScriptFile(file) ? JS_REFERENCE_LINE : isStyleFile(file) ? CSS_REFERENCE_LINE : null;
-  if (!pattern) return null;
-  const { head, last } = splitLastLine(text);
-  const match = last.match(pattern);
-  if (!match || !mapPaths.has(path.resolve(path.dirname(file), match[1]))) return null;
-  // 参照の行の前の空行も落とし、改行 1 つで終える
-  const code = head.replace(/\s+$/, '');
-  return code === '' ? '' : `${code}\n`;
+function withoutReferenceComment(text, file, mapPaths) {
+  const pointsToBuiltMap = (url) => mapPaths.has(path.resolve(path.dirname(file), url));
+
+  if (isScriptFile(file)) {
+    const last = scriptComments(text)?.at(-1);
+    if (!last || last.type !== 'Line' || text.slice(last.end).trim() !== '') return null;
+    const match = last.value.match(REFERENCE_COMMENT);
+    const lineStart = lineStartIfOnlyWhitespaceBefore(text, last.start);
+    if (!match || lineStart < 0 || !pointsToBuiltMap(match[1])) return null;
+    return cutFrom(text, lineStart);
+  }
+
+  if (isStyleFile(file)) {
+    // 最後の要素が本物のコメントであることを postcss で確かめてから、最後の行を消す
+    let root;
+    try {
+      root = postcss.parse(text, POSTCSS_OPTIONS);
+    } catch {
+      return null;
+    }
+    const last = root.last;
+    if (!last || last.type !== 'comment') return null;
+    // postcss の comment.text は /* */ と前後の空白を除いた中身
+    const match = last.text.match(/^[#@] sourceMappingURL=([^\s'"*]+)$/);
+    const body = text.replace(/\s+$/, '');
+    if (!match || !body.endsWith('*/')) return null;
+    const commentStart = body.lastIndexOf('/*');
+    const lineStart = lineStartIfOnlyWhitespaceBefore(text, commentStart);
+    if (lineStart < 0 || !pointsToBuiltMap(match[1])) return null;
+    return cutFrom(text, lineStart);
+  }
+
+  return null;
 }
 
 /** .js・.css の最後の参照のコメントを消してから、.map を消す */
@@ -144,9 +191,8 @@ function removeSourceMaps(assetsDir) {
   for (const file of files) {
     if (!isScriptFile(file) && !isStyleFile(file)) continue;
     const text = fs.readFileSync(file, 'utf8');
-    const stripped = withoutReferenceLine(text, path.resolve(file), mapPaths);
+    const stripped = withoutReferenceComment(text, path.resolve(file), mapPaths);
     if (stripped === null) continue;
-    if (isScriptFile(file)) assertStillParses(text, stripped, file);
     fs.writeFileSync(file, stripped);
     strippedComments++;
   }
@@ -154,12 +200,21 @@ function removeSourceMaps(assetsDir) {
   return { removedMaps: mapPaths.size, strippedComments };
 }
 
-/** 配信物にソースが漏れる形（.map と、最後の行のインラインのソースマップ）が残っていないかを確かめる */
+/** インラインのソースマップを含むか。コメントを取り出せないファイルは、文字列でも見つかれば含むと見なす（漏らさない側に倒す） */
+function hasInlineSourceMap(text, file) {
+  const comments = isScriptFile(file)
+    ? scriptComments(text)?.map((comment) => comment.value)
+    : styleComments(text);
+  if (comments === null || comments === undefined) return INLINE_SOURCE_MAP_ANYWHERE.test(text);
+  return comments.some((comment) => INLINE_SOURCE_MAP_COMMENT.test(comment));
+}
+
+/** 配信物にソースが漏れる形（.map と、インラインのソースマップのコメント）が残っていないかを確かめる */
 function findLeftoverSourceMaps(assetsDir) {
   return walkFiles(assetsDir).filter((file) => {
     if (file.endsWith('.map')) return true;
     if (!isScriptFile(file) && !isStyleFile(file)) return false;
-    return INLINE_SOURCE_MAP.test(splitLastLine(fs.readFileSync(file, 'utf8')).last);
+    return hasInlineSourceMap(fs.readFileSync(file, 'utf8'), file);
   });
 }
 
@@ -207,5 +262,4 @@ module.exports = {
   removeSourceMaps,
   findLeftoverSourceMaps,
   parseArgs,
-  assertStillParses,
 };
