@@ -28,11 +28,20 @@ test("@sentry/react と @sentry/nextjs は同じ版に解決され、@sentry の
 
   // どこかのパッケージ配下に別版の @sentry/* が nest していない（単一の core を共有する）。
   // @sentry/cli などが自分の依存（glob, which …）を nest させるのは対象外なので、
-  // 末尾のセグメントが @sentry/<name> のものだけを見る
+  // 末尾のセグメントが @sentry/<name> のものだけを見る。
+  // @sentry/webpack-plugin 配下の @sentry/bundler-plugins（@sentry/core を完全一致で要求する）と
+  // lighthouse 配下の @sentry/node は直接依存ではないので、package.json の overrides で同じ版に揃える。
+  // 見ているのは lockfile の解決結果だけなので、overrides を消しても lockfile が変わらなければ落ちない。
+  // 依存を解決し直して nest が出た時点で落ちる
   const nested = Object.keys(lock.packages).filter((key) => {
     const segments = key.split("node_modules/");
     const last = segments[segments.length - 1] ?? "";
     return segments.length > 2 && last.startsWith("@sentry/");
   });
-  assert.deepEqual(nested, [], "nest した @sentry パッケージがある: " + nested.join(", "));
+  assert.deepEqual(
+    nested,
+    [],
+    "nest した @sentry パッケージがある（@sentry/cloudflare・nextjs・react と overrides の 2 か所を同じ版に）: " +
+      nested.join(", "),
+  );
 });
