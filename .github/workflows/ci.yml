@@ -51,8 +51,13 @@ jobs:
       - name: Run TypeScript type check
         run: npx tsc --noEmit
 
+      # テストファイルが CI から漏れていないかを見る。下の glob の段に頼らず名指しで走らせる
+      # （"scripts/*.test.js" を外したときに、この見張りも一緒に外れないように）
+      - name: Check that every test file runs in CI
+        run: node --test scripts/ci-test-files.test.js
+
       - name: Run Node unit tests
-        run: npx tsx --test "src/**/*.test.ts" "scripts/*.test.ts" "scripts/*.test.js"
+        run: npx tsx --test "src/**/*.test.ts" "scripts/*.test.ts" "scripts/*.test.js" next.config.test.ts
 
       - name: Run reference image generator tests
         run: npm run test:reference-images
