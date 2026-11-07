@@ -145,6 +145,11 @@ jobs:
           echo "::error::Workers staging did not serve the expected revision or runtime responses."
           exit 1
 
+      # 上の段が最後に取得した /zukan（このコミットの Worker が返したもの）で、Next.js と OpenNext が
+      # CSP の nonce を実行される script に付けているかを見る。単体テストは middleware の CSP までしか見られない
+      - name: Verify CSP nonce on the deployed HTML
+        run: node scripts/verify-csp-nonce.js /tmp/zukan-headers /tmp/zukan-body
+
       - name: Publish staging summary
         if: always()
         run: |
