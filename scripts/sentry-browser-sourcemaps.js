@@ -21,13 +21,16 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const { spawnSync } = require('node:child_process');
 
 const URL_PREFIX = 'app:///_next/static';
 const GIT_SHA = /^[0-9a-f]{40}$/;
-// ファイルの最後にある参照のコメントだけを消す（途中のものは触らない。位置がずれないように末尾だけ）
-const TRAILING_JS_SOURCEMAP_COMMENT = /\n?\/\/# sourceMappingURL=[^\n]*\s*$/;
-const TRAILING_CSS_SOURCEMAP_COMMENT = /\n?\/\*# sourceMappingURL=[^*]*\*\/\s*$/;
+// ファイルの最後にある参照のコメントだけを消す（途中のものは触らない。位置がずれないように末尾だけ）。
+// コメントは行の先頭から始まり、URL に空白や引用符を含まないものだけを対象にする。
+// `const x="//# sourceMappingURL=foo";` のような文字列を切り落とさないため。`//@` は古い書き方
+const TRAILING_JS_SOURCEMAP_COMMENT = /(?:^|\r?\n)\/\/[#@] sourceMappingURL=[^\s'"`]+[ \t]*(?:\r?\n)*$/;
+const TRAILING_CSS_SOURCEMAP_COMMENT = /(?:^|\r?\n)\/\*[#@] sourceMappingURL=[^\s'"*]+[ \t]*\*\/[ \t]*(?:\r?\n)*$/;
 
 function walkFiles(dir) {
   const found = [];
@@ -47,6 +50,8 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--release') args.release = argv[++i];
     else if (argv[i] === '--assets') args.assets = argv[++i];
+    // ソースマップが 1 つもなければ失敗する（ビルドの設定の退行を捕まえる。PR の確認のステージングで使う）
+    else if (argv[i] === '--require-maps') args.requireMaps = true;
     else throw new Error(`知らない引数: ${argv[i]}`);
   }
   if (!GIT_SHA.test(args.release ?? '')) {
@@ -85,6 +90,23 @@ function uploadToSentry(release, staticDir, { env = process.env, run = runSentry
   return true;
 }
 
+function parsesAsScript(text) {
+  try {
+    // 実行はせず、構文だけを確かめる
+    new vm.Script(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** 元の JS がスクリプトとして読めたのに、コメントを消したあとに読めなくなったら失敗する（念のための守り） */
+function assertStillParses(before, after, file) {
+  if (parsesAsScript(before) && !parsesAsScript(after)) {
+    throw new Error(`参照のコメントを消したら JS として読めなくなった: ${file}`);
+  }
+}
+
 /** .map を消し、.js・.css の末尾の参照のコメントを消す */
 function removeSourceMaps(assetsDir) {
   let removedMaps = 0;
@@ -103,30 +125,44 @@ function removeSourceMaps(assetsDir) {
     if (!pattern) continue;
     const text = fs.readFileSync(file, 'utf8');
     if (!pattern.test(text)) continue;
-    fs.writeFileSync(file, text.replace(pattern, ''));
+    const stripped = text.replace(pattern, '');
+    if (pattern === TRAILING_JS_SOURCEMAP_COMMENT) assertStillParses(text, stripped, file);
+    fs.writeFileSync(file, stripped);
     strippedComments++;
   }
   return { removedMaps, strippedComments };
+}
+
+// 残りの判定は消す判定より広く取る（空白の数などが違う参照も見つけて失敗させる）。最後の行だけを見るのは、
+// コードの中に "sourceMappingURL=" という文字列を持つライブラリもあるため
+const LOOSE_JS_SOURCEMAP_LINE = /^\/\/\s*[#@]\s*sourceMappingURL\s*=/;
+const LOOSE_CSS_SOURCEMAP_LINE = /^\/\*\s*[#@]\s*sourceMappingURL\s*=/;
+
+function lastLine(text) {
+  const trimmed = text.replace(/\s+$/, '');
+  return trimmed.slice(trimmed.lastIndexOf('\n') + 1).trim();
 }
 
 /** 配信物に .map と参照のコメントが残っていないかを確かめる。残っているファイルの一覧を返す */
 function findLeftoverSourceMaps(assetsDir) {
   return walkFiles(assetsDir).filter((file) => {
     if (file.endsWith('.map')) return true;
-    // コードの中に "sourceMappingURL=" という文字列を持つライブラリもあるので、末尾のコメントの形だけを見る
-    if (/\.(?:js|mjs|cjs)$/.test(file)) return TRAILING_JS_SOURCEMAP_COMMENT.test(fs.readFileSync(file, 'utf8'));
-    if (file.endsWith('.css')) return TRAILING_CSS_SOURCEMAP_COMMENT.test(fs.readFileSync(file, 'utf8'));
+    if (/\.(?:js|mjs|cjs)$/.test(file)) return LOOSE_JS_SOURCEMAP_LINE.test(lastLine(fs.readFileSync(file, 'utf8')));
+    if (file.endsWith('.css')) return LOOSE_CSS_SOURCEMAP_LINE.test(lastLine(fs.readFileSync(file, 'utf8')));
     return false;
   });
 }
 
 function main(argv, { env = process.env, run = runSentryCli, log = console } = {}) {
-  const { release, assets } = parseArgs(argv);
+  const { release, assets, requireMaps } = parseArgs(argv);
   const staticDir = path.join(assets, '_next', 'static');
   if (!fs.existsSync(staticDir)) {
     throw new Error(`${staticDir} がない。OpenNext のビルドの後に走らせる`);
   }
   const mapCount = walkFiles(assets).filter((file) => file.endsWith('.map')).length;
+  if (mapCount === 0 && requireMaps) {
+    throw new Error('ソースマップが 1 つもない（AKYODEX_BROWSER_SOURCEMAPS=1 でビルドしたか確かめる）');
+  }
   if (mapCount === 0) {
     log.warn('::warning::ソースマップが 1 つもない（AKYODEX_BROWSER_SOURCEMAPS=1 でビルドしたか確かめる）。Sentry には上げない');
   }
@@ -153,4 +189,12 @@ if (require.main === module) {
   }
 }
 
-module.exports = { main, uploadCommands, uploadToSentry, removeSourceMaps, findLeftoverSourceMaps, parseArgs };
+module.exports = {
+  main,
+  uploadCommands,
+  uploadToSentry,
+  removeSourceMaps,
+  findLeftoverSourceMaps,
+  parseArgs,
+  assertStillParses,
+};

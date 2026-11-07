@@ -11,6 +11,7 @@ const {
   removeSourceMaps,
   findLeftoverSourceMaps,
   parseArgs,
+  assertStillParses,
 } = require("./sentry-browser-sourcemaps");
 
 const RELEASE = "636be8fef64a182f553247ef311482f6fd17c335";
@@ -49,7 +50,66 @@ test("Sentry に上げるファイルの名前は、ブラウザーの SDK が�
   assert.equal(upload[upload.indexOf("--release") + 1], RELEASE);
   // sentry-client-init.ts の normalizeNextStackFrame が <origin>/_next/... を app:///_next/... にする
   assert.equal(upload[upload.indexOf("--url-prefix") + 1], "app:///_next/static");
+  // .js（末尾のコメントで参照先を示す）と .map の両方を上げる
+  const exts = upload.flatMap((value, i) => (upload[i - 1] === "--ext" ? [value] : []));
+  assert.deepEqual(exts.sort(), ["js", "map"]);
   assert.equal(upload.at(-1), "assets/_next/static");
+});
+
+test("文字列の中の sourceMappingURL は消さず、行の先頭のコメントだけを消す", () => {
+  const root = makeAssets({
+    "_next/static/chunks/string.js": 'const x="//# sourceMappingURL=foo";',
+    "_next/static/chunks/string2.js": 'const y="\\n//# sourceMappingURL=foo";\n',
+    "_next/static/chunks/crlf.js": "x;\r\n//# sourceMappingURL=crlf.js.map\r\n",
+    "_next/static/chunks/old.js": "y;\n//@ sourceMappingURL=old.js.map",
+    "_next/static/chunks/trailing.js": "z;\n\n//# sourceMappingURL=trailing.js.map\n\n",
+    "_next/static/chunks/c.css": "a{b:c}\n/*# sourceMappingURL=c.css.map */\n",
+    "_next/static/chunks/c2.css": 'a{content:"/*# sourceMappingURL=x */"}',
+    "_next/static/chunks/a.js.map": "{}",
+  });
+  assert.deepEqual(removeSourceMaps(root), { removedMaps: 1, strippedComments: 4 });
+  assert.equal(read(root, "_next/static/chunks/string.js"), 'const x="//# sourceMappingURL=foo";');
+  assert.equal(read(root, "_next/static/chunks/string2.js"), 'const y="\\n//# sourceMappingURL=foo";\n');
+  assert.equal(read(root, "_next/static/chunks/crlf.js"), "x;");
+  assert.equal(read(root, "_next/static/chunks/old.js"), "y;");
+  assert.equal(read(root, "_next/static/chunks/trailing.js"), "z;\n");
+  assert.equal(read(root, "_next/static/chunks/c.css"), "a{b:c}");
+  assert.equal(read(root, "_next/static/chunks/c2.css"), 'a{content:"/*# sourceMappingURL=x */"}');
+  assert.deepEqual(findLeftoverSourceMaps(root), []);
+});
+
+test("消せない形の参照が残っていたら main は失敗する（公開しない）", () => {
+  for (const [name, content] of [
+    // 空白の数が違うなど、消す判定に当たらない参照
+    ["_next/static/chunks/a.js", "x;\n//#  sourceMappingURL=a.js.map\n"],
+    ["_next/static/chunks/b.css", "a{b:c}\n/*#sourceMappingURL=b.css.map*/"],
+  ]) {
+    const root = makeAssets({ [name]: content, "_next/static/chunks/z.js.map": "{}" });
+    assert.throws(
+      () => main(["--release", RELEASE, "--assets", root], { env: {}, log: quietLog }),
+      /ソースマップが残っている/,
+      name
+    );
+  }
+  // 最後の行でなければ（コードの中の文字列など）残りとは見なさない
+  const root = makeAssets({ "_next/static/chunks/lib.js": '//# sourceMappingURL=in-the-middle\nmodule.exports=1;\n' });
+  assert.deepEqual(findLeftoverSourceMaps(root), []);
+});
+
+test("コメントを消して JS として読めなくなったら失敗する", () => {
+  assert.doesNotThrow(() => assertStillParses("x;\n//# sourceMappingURL=a.js.map", "x;", "a.js"));
+  assert.throws(() => assertStillParses('const x="a";', 'const x="', "a.js"), /読めなくなった/);
+  // 元から読めない（モジュールの構文など）ものは比べない
+  assert.doesNotThrow(() => assertStillParses("export const x=1;", "export const x=", "m.js"));
+});
+
+test("--require-maps のときは、ソースマップが 1 つもなければ失敗する", () => {
+  const root = makeAssets({ "_next/static/chunks/a.js": "x;" });
+  assert.throws(
+    () => main(["--release", RELEASE, "--assets", root, "--require-maps"], { env: {}, log: quietLog }),
+    /1 つもない/
+  );
+  assert.equal(parseArgs(["--release", RELEASE]).requireMaps, undefined);
 });
 
 test("トークンなどがなければ上げずに警告だけ出し、sentry-cli を呼ばない", () => {

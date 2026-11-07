@@ -74,9 +74,10 @@ jobs:
           # ブラウザー用のソースマップを作る（次の段で Sentry に上げてから配信物から消す）
           AKYODEX_BROWSER_SOURCEMAPS: '1'
 
-      # 本番と同じ手順。リリース名はこの PR の Worker の版の印（PR の先頭のコミット）
+      # 本番と同じ手順。リリース名はこの PR の Worker の版の印（PR の先頭のコミット）。
+      # PR の確認なので、ソースマップが作られていなければ失敗させる（本番は警告だけでデプロイを続ける）
       - name: Upload browser source maps to Sentry and remove them from the assets
-        run: node scripts/sentry-browser-sourcemaps.js --release "${PR_HEAD_SHA}"
+        run: node scripts/sentry-browser-sourcemaps.js --release "${PR_HEAD_SHA}" --require-maps
 
       - name: Deploy tagged Workers version
         run: |

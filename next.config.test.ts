@@ -7,6 +7,8 @@ import test from "node:test";
 // ほかのテストには漏れない）。静的な import は先に評価されるので、動的に読み込む
 const TEST_SENTRY_DSN = "https://public@example.invalid/1";
 process.env.NEXT_PUBLIC_SENTRY_DSN = TEST_SENTRY_DSN;
+// 本番・ステージングの workflow のビルドと同じく、ブラウザー用のソースマップを作る設定にする
+process.env.AKYODEX_BROWSER_SOURCEMAPS = "1";
 const loadNextConfig = async () => (await import("./next.config")).default;
 
 test("next image localPatterns allow both avatar and world image proxy routes", async () => {
@@ -24,4 +26,10 @@ test("next image localPatterns allow both avatar and world image proxy routes", 
 test("Sentry public DSN is available to client and server bundles", async () => {
   const nextConfig = await loadNextConfig();
   assert.equal(nextConfig.env?.NEXT_PUBLIC_SENTRY_DSN, TEST_SENTRY_DSN);
+});
+
+test("AKYODEX_BROWSER_SOURCEMAPS=1 のときはブラウザー用のソースマップを作る", async () => {
+  // Sentry に上げるのは scripts/sentry-browser-sourcemaps.js。作らないと警告だけで上がらない（本番）ので、設定の退行をここで捕まえる
+  const nextConfig = await loadNextConfig();
+  assert.equal(nextConfig.productionBrowserSourceMaps, true);
 });
