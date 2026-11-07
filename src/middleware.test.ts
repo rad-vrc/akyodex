@@ -49,11 +49,16 @@ async function run(c: Case) {
   return { csp, forwarded: response.headers.get(FORWARDED_NONCE_HEADER) };
 }
 
+// 同じ directive が 2 回あると、ブラウザーは最初のものだけを使う。後ろの値で上書きして読むと
+// ブラウザーと違うものを確かめてしまうので、重複そのものを失敗にする
 function directives(csp: string): Map<string, string[]> {
   const map = new Map<string, string[]>();
   for (const directive of csp.split(';')) {
     const [name, ...sources] = directive.trim().split(/\s+/);
-    if (name) map.set(name.toLowerCase(), sources);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    assert.equal(map.has(key), false, `CSP に ${key} が 2 回ある（ブラウザーは最初のものだけを使う）`);
+    map.set(key, sources);
   }
   return map;
 }
@@ -113,8 +118,9 @@ test('middleware はページで動き、静的ファイルと API では動か�
   for (const url of ['/api/catalog/ja', '/_next/static/chunks/app.js', '/images/logo.png', '/favicon.ico']) {
     assert.equal(matches(url), false, `${url} で middleware が動く`);
   }
-  // 先読みのリクエストは HTML を返さないので除く
+  // 先読みのリクエストは HTML を返さないので除く（Next.js のルーターと、ブラウザーの purpose: prefetch）
   assert.equal(matches('/zukan', { 'next-router-prefetch': '1' }), false);
+  assert.equal(matches('/zukan', { purpose: 'prefetch' }), false);
 });
 
 test('静的ファイルと API には CSP を付けない（matcher をすり抜けた場合の守り）', async () => {

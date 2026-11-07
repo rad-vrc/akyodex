@@ -61,11 +61,65 @@ test("CSP と違う nonce の script を見つける（data block でも）", ()
   }
 });
 
-test("module と JavaScript の MIME は実行される script として扱う", () => {
-  for (const type of ["module", "text/javascript", "application/javascript", "TEXT/JAVASCRIPT"]) {
-    const result = checkCspNonce(headers(CSP), page(NEXT_INLINE, `<script type="${type}">self.y=1</script>`));
-    assert.equal(result.errors.length, 1, type);
+test("CSP の判定を受ける種類（JavaScript の MIME・module・importmap など）は nonce がないと失敗する", () => {
+  for (const attrs of [
+    'type="module"',
+    'type="text/javascript"',
+    'type="application/javascript"',
+    'type="TEXT/JAVASCRIPT"',
+    'type=" text/javascript1.5 "',
+    'type="text/jscript"',
+    'type="importmap"',
+    'type="speculationrules"',
+    'language="javascript"',
+    'type="module" nomodule',
+  ]) {
+    const result = checkCspNonce(headers(CSP), page(NEXT_INLINE, `<script ${attrs}>self.y=1</script>`));
+    assert.equal(result.errors.length, 1, attrs);
   }
+});
+
+test("実行されない script は nonce がなくても失敗しない", () => {
+  for (const extra of [
+    // data block（JavaScript の MIME と完全に一致しないものも含む）
+    '<script type="text/plain">self.y=1</script>',
+    '<script type="text/javascript; charset=utf-8">self.y=1</script>',
+    // type がなく language があると、"text/" + language で判定する
+    '<script language="vbscript">self.y=1</script>',
+    // module に対応したブラウザーは nomodule の classic script を実行しない
+    "<script nomodule>self.y=1</script>",
+    // script が有効なとき <noscript> の中身は文字になる
+    "<noscript><script>self.y=1</script></noscript>",
+    // <template> の中身は別の文書
+    "<template><script>self.y=1</script></template>",
+    // 空のインライン script は何もしない。src のあるものはホストの許可で判定される
+    "<script></script>",
+    '<script src="/_next/static/chunks/app.js">self.y=1</script>',
+  ]) {
+    assert.deepEqual(checkCspNonce(headers(CSP), page(NEXT_INLINE, extra)).errors, [], extra);
+  }
+});
+
+test("この確認で判定できない CSP の形は失敗する", () => {
+  const cases = [
+    // 複数のポリシーはすべてが効く
+    [`${CSP}, script-src 'none'`, /2 本/],
+    // script 要素では script-src-elem が優先される
+    [`${CSP}; script-src-elem 'none'`, /script-src-elem/],
+    // ブラウザーは最初の script-src だけを使う
+    [`script-src 'self' 'nonce-${NONCE}' 'sha256-OBTN3RiyCV4Bq7dFqZ5a2pAXjnCcCYeTJMO2I/LYKeo='; ${CSP}`, /2 回/],
+  ];
+  for (const [csp, message] of cases) {
+    const result = checkCspNonce(headers(csp), page(NEXT_INLINE));
+    assert.equal(result.errors.length, 1, csp);
+    assert.match(result.errors[0], message);
+  }
+
+  const twoHeaders = `HTTP/2 200\r\ncontent-security-policy: ${CSP}\r\ncontent-security-policy: script-src 'none'\r\n\r\n`;
+  assert.match(checkCspNonce(twoHeaders, page(NEXT_INLINE)).errors[0], /2 本/);
+  // Report-Only は止めないので数えない
+  const reportOnly = `HTTP/2 200\r\ncontent-security-policy: ${CSP}\r\ncontent-security-policy-report-only: script-src 'none'\r\n\r\n`;
+  assert.deepEqual(checkCspNonce(reportOnly, page(NEXT_INLINE)).errors, []);
 });
 
 test("大文字のタグ・属性付きの閉じタグ・コメントをブラウザーと同じに読む", () => {

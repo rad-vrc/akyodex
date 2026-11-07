@@ -28,26 +28,95 @@ function getScriptNonceFromCsp(csp) {
   return undefined;
 }
 
-// curl --dump-header はリダイレクトなどで複数の応答のヘッダーを並べるので、最後の応答のものを使う
-function getLastCspHeader(rawHeaders) {
+// curl --dump-header はリダイレクトなどで複数の応答のヘッダーを並べるので、最後の応答のものを使う。
+// Content-Security-Policy は複数行あっても、1 行にカンマで並べても、それぞれが別のポリシーとして
+// すべて効く（CSP Level 3）。Report-Only は止めないので見ない
+function getLastCspPolicies(rawHeaders) {
   const blocks = rawHeaders.split(/\r?\n\r?\n/).filter((b) => /^HTTP\//.test(b.trim()));
   const last = blocks[blocks.length - 1] ?? rawHeaders;
-  const line = last.split(/\r?\n/).find((l) => /^content-security-policy:/i.test(l));
-  return line ? line.replace(/^[^:]+:\s*/, "").trim() : undefined;
+  return last
+    .split(/\r?\n/)
+    .filter((l) => /^content-security-policy:/i.test(l))
+    .flatMap((l) => l.replace(/^[^:]+:\s*/, "").split(","))
+    .map((p) => p.trim())
+    .filter((p) => p !== "");
 }
 
-// type がない・JavaScript の MIME・module のものだけが実行される。application/ld+json などは data block
-function isExecutable(type) {
-  if (type === null) return true;
-  const t = type.trim().toLowerCase();
-  return t === "" || t === "module" || /^(?:text|application)\/(?:x-)?(?:javascript|ecmascript)$/.test(t);
+// この確認は「ポリシーが 1 本で、script の可否を script-src（なければ default-src）が決める」形を前提にする。
+// それ以外の形では、nonce が合っていても別の directive やポリシーで止まりうるので、確かめられないとして落とす
+function checkPolicyShape(policy) {
+  const errors = [];
+  const names = policy
+    .split(";")
+    .map((d) => d.trim().split(/\s+/)[0]?.toLowerCase())
+    .filter(Boolean);
+  for (const name of new Set(names.filter((n, i) => names.indexOf(n) !== i))) {
+    errors.push(`CSP に ${name} が 2 回ある（ブラウザーは最初のものだけを使う）`);
+  }
+  if (names.includes("script-src-elem")) {
+    errors.push("CSP に script-src-elem がある（script 要素では script-src より優先される。この確認は script-src を前提にしている）");
+  }
+  return errors;
+}
+
+// HTML Standard の JavaScript MIME type essence（大文字小文字は区別しない）
+const JAVASCRIPT_MIME_TYPE_ESSENCES = new Set([
+  "application/ecmascript",
+  "application/javascript",
+  "application/x-ecmascript",
+  "application/x-javascript",
+  "text/ecmascript",
+  "text/javascript",
+  "text/javascript1.0",
+  "text/javascript1.1",
+  "text/javascript1.2",
+  "text/javascript1.3",
+  "text/javascript1.4",
+  "text/javascript1.5",
+  "text/jscript",
+  "text/livescript",
+  "text/x-ecmascript",
+  "text/x-javascript",
+]);
+
+function stripAsciiWhitespace(value) {
+  let start = 0;
+  let end = value.length;
+  while (start < end && " \t\n\f\r".includes(value[start])) start++;
+  while (end > start && " \t\n\f\r".includes(value[end - 1])) end--;
+  return value.slice(start, end);
+}
+
+// HTML Standard の「prepare the script element」の type の決め方。インラインのとき CSP の判定を
+// 受ける種類（classic・module・importmap・speculationrules）を返し、data block なら null
+function scriptKind(element) {
+  const type = element.getAttribute("type");
+  const language = element.getAttribute("language");
+  if (type === "" || (type === null && (language === null || language === ""))) return "classic";
+  const typeString = (type !== null ? stripAsciiWhitespace(type) : `text/${language}`).toLowerCase();
+  if (JAVASCRIPT_MIME_TYPE_ESSENCES.has(typeString)) return "classic";
+  if (["module", "importmap", "speculationrules"].includes(typeString)) return typeString;
+  return null;
 }
 
 function checkCspNonce(rawHeaders, html) {
   const errors = [];
-  const csp = getLastCspHeader(rawHeaders);
-  if (!csp) {
+  const policies = getLastCspPolicies(rawHeaders);
+  if (policies.length === 0) {
     return { errors: ["Content-Security-Policy ヘッダーがない"], nonce: undefined, executableInline: 0, scripts: 0 };
+  }
+  if (policies.length > 1) {
+    return {
+      errors: [`CSP のポリシーが ${policies.length} 本ある（すべてが効くので、この確認では判定できない）`],
+      nonce: undefined,
+      executableInline: 0,
+      scripts: 0,
+    };
+  }
+  const [csp] = policies;
+  const shapeErrors = checkPolicyShape(csp);
+  if (shapeErrors.length > 0) {
+    return { errors: shapeErrors, nonce: undefined, executableInline: 0, scripts: 0 };
   }
   const nonce = getScriptNonceFromCsp(csp);
   if (!nonce) {
@@ -58,24 +127,35 @@ function checkCspNonce(rawHeaders, html) {
   // jsdom は既定では script を実行しない
   const { JSDOM } = require("jsdom");
   const dom = new JSDOM(html);
-  const elements = [...dom.window.document.querySelectorAll("script")];
+  // <template> の中身は別の文書なので querySelectorAll に出てこない（ブラウザーでも実行されない）
+  const elements = [...dom.window.document.querySelectorAll("script")].filter(
+    // ブラウザーは script が有効なとき <noscript> の中身を文字として扱うので、中の script は要素にならない。
+    // jsdom は script を実行しない設定だと要素として読むので、ここで外す
+    (element) => !element.closest("noscript")
+  );
+  const checked = elements.map((element) => ({
+    element,
+    kind: scriptKind(element),
+    nonce: element.getAttribute("nonce"),
+    inline: !element.hasAttribute("src"),
+    empty: (element.textContent ?? "") === "",
+    label: element.outerHTML.slice(0, 140),
+  }));
   dom.window.close();
 
   let executableInline = 0;
-  for (const element of elements) {
-    const scriptNonce = element.getAttribute("nonce");
-    const body = element.textContent ?? "";
-    const label = `${element.outerHTML.slice(0, 140)}`;
-
-    if (scriptNonce !== null && scriptNonce !== nonce) {
-      errors.push(`CSP と違う nonce の script がある: ${label}`);
+  for (const script of checked) {
+    if (script.nonce !== null && script.nonce !== nonce) {
+      errors.push(`CSP と違う nonce の script がある: ${script.label}`);
       continue;
     }
-    if (isExecutable(element.getAttribute("type")) && !element.hasAttribute("src") && body.trim() !== "") {
-      executableInline++;
-      if (scriptNonce === null) {
-        errors.push(`nonce のないインラインの script がある（CSP で止まる）: ${label}`);
-      }
+    // module に対応したブラウザーは nomodule の classic script を実行しない（CSP の判定より前に抜ける）
+    if (script.kind === "classic" && script.element.hasAttribute("nomodule")) continue;
+    // src のある script はホストの許可で判定され、空のインライン script は実行するものがない
+    if (script.kind === null || !script.inline || script.empty) continue;
+    executableInline++;
+    if (script.nonce === null) {
+      errors.push(`nonce のないインラインの script がある（CSP で止まる）: ${script.label}`);
     }
   }
   const scripts = elements.length;
