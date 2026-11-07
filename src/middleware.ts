@@ -185,13 +185,11 @@ export function middleware(request: NextRequest) {
   const nonce = btoa(String.fromCharCode(...randomBytes));
 
   // Content Security Policy
-  // Note: Allow known inline snippets via hash.
-  // - difyHash: Dify bootstrap (external script interaction)
-  const difyHash = "'sha256-r53Kt4G9CFjqxyzu6MVglOzjs5vcCE7jOdc6JGC6cC4='";
-
+  // Dify はこの文書にインラインの script を置かない（embed.min.js を src で読み、チャット本体は
+  // udify.app の iframe で動く。iframe の中には udify.app 自身の CSP が効く）ので、ハッシュは要らない
   const cspHeader = `
     default-src 'self';
-    script-src ${[...SCRIPT_SRC, ...DEVELOPMENT_SCRIPT_SRC].join(' ')} 'nonce-${nonce}' ${difyHash};
+    script-src ${[...SCRIPT_SRC, ...DEVELOPMENT_SCRIPT_SRC].join(' ')} 'nonce-${nonce}';
     style-src ${STYLE_SRC.join(' ')};
     img-src ${IMG_SRC.join(' ')};
     font-src ${FONT_SRC.join(' ')};

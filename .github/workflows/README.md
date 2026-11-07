@@ -18,7 +18,7 @@
 
 | ワークフロー | ファイル | トリガー | 主な役割 | 補足 |
 | ------------- | --------- | --------- | --------- | ---- |
-| CI | `ci.yml` | PR / push (`main`, `develop`) | 型チェック、Cloudflare Pages ビルド検証、Security Scan | ESLint と Dify CSP hash は advisory |
+| CI | `ci.yml` | PR / push (`main`, `develop`) | 型チェック、Cloudflare Pages ビルド検証、Security Scan | ESLint は advisory |
 | Deploy Workers staging | `deploy-cloudflare-workers-staging.yml` | non-draft PR (`main`) | 最新PRを本番相当の共有Workers環境へデプロイ | `X-Akyodex-Worker-Tag`でSHAを照合 |
 | Lighthouse CI | `lighthouse-ci.yml` | PR (`main`) / manual | Lighthouse 13.4.1のモバイルsimulated計測を3回実行 | 中央値を記録し、重大な性能退行だけを予算で停止 |
 | Deploy Workers production | `deploy-cloudflare-workers-production.yml` | `main` push / dispatch | 本番候補のupload、手動activate、フォント更新のガード付き自動activate、Worker rollback | `main` pushだけでは本番trafficを変更しない |
@@ -156,7 +156,7 @@ Pages PR Previewが失敗またはtimeoutしたら、次を上から順に確認
 
 | Job | 役割 | Gating |
 | --- | ---- | ------ |
-| `lint-and-typecheck` | Dify CSP hash 検証、ESLint、TypeScript | TypeScript は hard fail、Dify hash と ESLint は `continue-on-error` |
+| `lint-and-typecheck` | ESLint、TypeScript | TypeScript は hard fail、ESLint は `continue-on-error` |
 | `build-validation` | Cloudflare Pages build と成果物検証 | Required check 候補 |
 | `workers-build-validation` | 本番Workers設定のLinux OpenNext buildとversion upload dry-run | Required check 候補 |
 | `security-scan` | `npm audit` と CodeQL | `npm audit` は advisory |

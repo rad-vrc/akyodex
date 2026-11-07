@@ -21,7 +21,6 @@
     "check:types:workers": "npm run types:workers -- --check",
     "start": "next start",
     "lint": "eslint",
-    "verify:dify-csp-hash": "node scripts/verify-dify-csp-hash.js",
     "knip": "knip",
     "social:generate": "node scripts/generate-social-images.js",
     "social:compress": "node scripts/compress-social-images.js",
