@@ -36,15 +36,9 @@ function getLastCspHeader(rawHeaders) {
   return line ? line.replace(/^[^:]+:\s*/, "").trim() : undefined;
 }
 
-function getAttribute(attributes, name) {
-  const match = attributes.match(new RegExp(`(?:^|\\s)${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, "i"));
-  if (!match) return undefined;
-  return match[1] ?? match[2] ?? match[3];
-}
-
 // type がない・JavaScript の MIME・module のものだけが実行される。application/ld+json などは data block
 function isExecutable(type) {
-  if (type === undefined) return true;
+  if (type === null) return true;
   const t = type.trim().toLowerCase();
   return t === "" || t === "module" || /^(?:text|application)\/(?:x-)?(?:javascript|ecmascript)$/.test(t);
 }
@@ -60,27 +54,31 @@ function checkCspNonce(rawHeaders, html) {
     return { errors: [`CSP から nonce を読めない: ${csp}`], nonce: undefined, executableInline: 0, scripts: 0 };
   }
 
-  let scripts = 0;
-  let executableInline = 0;
-  for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
-    scripts++;
-    const [, attributes, body] = match;
-    const src = getAttribute(attributes, "src");
-    const scriptNonce = getAttribute(attributes, "nonce");
-    const executable = isExecutable(getAttribute(attributes, "type"));
-    const label = `<script${attributes.slice(0, 80)}>${body.trim().slice(0, 60)}`;
+  // HTML は正規表現ではなくパーサーで読む（閉じタグの書き方の揺れなどをブラウザーと同じに扱うため）。
+  // jsdom は既定では script を実行しない
+  const { JSDOM } = require("jsdom");
+  const dom = new JSDOM(html);
+  const elements = [...dom.window.document.querySelectorAll("script")];
+  dom.window.close();
 
-    if (scriptNonce !== undefined && scriptNonce !== nonce) {
+  let executableInline = 0;
+  for (const element of elements) {
+    const scriptNonce = element.getAttribute("nonce");
+    const body = element.textContent ?? "";
+    const label = `${element.outerHTML.slice(0, 140)}`;
+
+    if (scriptNonce !== null && scriptNonce !== nonce) {
       errors.push(`CSP と違う nonce の script がある: ${label}`);
       continue;
     }
-    if (executable && src === undefined && body.trim() !== "") {
+    if (isExecutable(element.getAttribute("type")) && !element.hasAttribute("src") && body.trim() !== "") {
       executableInline++;
-      if (scriptNonce === undefined) {
+      if (scriptNonce === null) {
         errors.push(`nonce のないインラインの script がある（CSP で止まる）: ${label}`);
       }
     }
   }
+  const scripts = elements.length;
 
   // Next.js は必ず self.__next_f などのインライン script を出す。0 個なら HTML を読み違えている
   if (executableInline === 0) {

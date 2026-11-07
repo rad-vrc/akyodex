@@ -68,6 +68,21 @@ test("module と JavaScript の MIME は実行される script として扱う",
   }
 });
 
+test("大文字のタグ・属性付きの閉じタグ・コメントをブラウザーと同じに読む", () => {
+  const upper = checkCspNonce(headers(CSP), page(NEXT_INLINE, "<SCRIPT>self.a=1</SCRIPT>"));
+  assert.equal(upper.errors.length, 1);
+  const oddEnd = checkCspNonce(headers(CSP), page(NEXT_INLINE, '<script>self.b=1</script foo="bar">'));
+  assert.equal(oddEnd.errors.length, 1);
+  assert.equal(oddEnd.scripts, 2);
+  // コメントの中の script は実行されない（--!> でもコメントは閉じる）
+  const commented = checkCspNonce(
+    headers(CSP),
+    page(NEXT_INLINE, "<!-- <script>self.c=1</script> -->", "<!-- x --!><p>after</p>")
+  );
+  assert.deepEqual(commented.errors, []);
+  assert.equal(commented.scripts, 1);
+});
+
 test("CSP がない・nonce を読めない・インラインの script がないときは失敗する", () => {
   assert.match(checkCspNonce(headers(undefined), page(NEXT_INLINE)).errors[0], /ヘッダーがない/);
   assert.match(checkCspNonce(headers(`script-src 'self'`), page(NEXT_INLINE)).errors[0], /nonce を読めない/);
