@@ -11,16 +11,20 @@ const test = require("node:test");
 // このファイル自身は ci.yml の専用の段でも名指しで走らせる。glob の段だけだと、
 // "scripts/*.test.js" を外したときに、このテストも一緒に外れて気づけないため。
 //
-// 読める書き方は限っている。読めない書き方では対象のファイルが「走らない」扱いになり、
-// このテストが落ちる（黙って通ることはない）。
-// - 数えるのは ci.yml だけ。本番のデプロイなど、PR で走らない workflow は数えない
-// - `if:` のある job・段、`continue-on-error: true` の段、`working-directory:` のある段は数えない
-// - コメントの行は読まない。行末の `\` で続けた行はつなげて読む
-// - `tsx --test` / `node --test` の引数を読む。`npm run <name>` は package.json の中身に展開する（入れ子も）
+// GitHub Actions とシェルの書き方をすべて読み解くことはしない。決まった形だけを「走る」と数え、
+// それ以外の段は数えない。数えない段にしかないテストファイルは「走らない」扱いになって落ちる。
+// - 読むのは ci.yml だけ。on: に paths / paths-ignore の絞り込みがあれば落とす（PR によって CI 自体が走らない）
+// - job: if・needs・continue-on-error・strategy のどれかがあれば数えない（設定の順番によらない）
+// - 段: if・continue-on-error・working-directory・shell のどれかがあれば数えない（値が式でも）
+// - run: は 1 行か `run: |` だけ。行末の `\` はつなげる。`run: >` は数えない
+// - コマンドは改行か && でつないだものだけ。`||`・`;`・`|`・`&`・`#`・`$`・`` ` ``・`<`・`>`・`set` があれば数えない
+// - テストのコマンドは `[npx] tsx --test <パス…>` か `node --test <パス…>` だけ。ほかのオプション
+//   （--test-name-pattern など）があれば数えない。`npm run <name>` は package.json の中身を同じ規則で読む（入れ子も）
 // - glob は `**/` と `*` だけ
 
 const ROOT = path.resolve(__dirname, "..");
 const CI_WORKFLOW = path.join(ROOT, ".github", "workflows", "ci.yml");
+const WATCHDOG_COMMAND = "node --test scripts/ci-test-files.test.js";
 
 // CI で走らせないことにしているもの。足すときは理由を書く
 const NOT_RUN_IN_CI = [
@@ -35,96 +39,118 @@ function trackedTestFiles() {
   return out.split("\0").filter((f) => TEST_FILE.test(f));
 }
 
-function indentOf(line) {
-  return line.length - line.trimStart().length;
-}
+const indentOf = (line) => line.length - line.trimStart().length;
+const keyOf = (line) => line.trimStart().replace(/^- /, "").match(/^([\w-]+):/)?.[1];
 
-// ci.yml の各 job の段から、実際に PR で走って失敗が CI を止める run: の中身を取り出す
-function blockingRunCommands(yaml) {
-  const lines = yaml
-    .split(/\r?\n/)
-    .filter((line) => !line.trimStart().startsWith("#"));
+function readWorkflow(yaml) {
+  // コメントだけの行は読まない（コメントの中のコマンドは走らないので、数えないのが正しい）
+  const lines = yaml.split(/\r?\n/).filter((line) => !line.trimStart().startsWith("#"));
 
-  const commands = [];
+  const onStart = lines.findIndex((line) => /^on:/.test(line));
+  const onEnd = lines.findIndex((line, i) => i > onStart && /^\S/.test(line));
+  const pathFilters = lines
+    .slice(onStart + 1, onEnd === -1 ? undefined : onEnd)
+    .filter((line) => /^\s+(paths|paths-ignore):/.test(line));
+
   const jobsStart = lines.findIndex((line) => /^jobs:\s*$/.test(line));
   assert.notEqual(jobsStart, -1, "ci.yml に jobs: がない");
 
   // job は 2 文字下げ、job の設定は 4 文字下げ、段は 6 文字下げの "- "、段の設定は 8 文字下げ
-  let jobConditional = false;
-  let step = null;
-  const flush = () => {
-    if (step && !jobConditional && !step.skip && step.run !== undefined) commands.push(step.run);
-    step = null;
-  };
+  const jobs = [];
   for (let i = jobsStart + 1; i < lines.length; i++) {
     const line = lines[i];
     if (line.trim() === "") continue;
     const indent = indentOf(line);
+    if (indent === 0) break;
     if (indent === 2) {
-      flush();
-      jobConditional = false;
+      jobs.push({ name: keyOf(line), keys: new Set(), steps: [] });
       continue;
     }
+    const job = jobs[jobs.length - 1];
+    if (!job) continue;
     if (indent === 4) {
-      flush();
-      if (/^\s+if:/.test(line)) jobConditional = true;
+      job.keys.add(keyOf(line));
       continue;
     }
-    if (indent === 6 && line.trimStart().startsWith("- ")) {
-      flush();
-      step = { skip: false, run: undefined };
-    }
-    if (!step) continue;
-
-    // 段の最初の行（"- run: ..."）と、8 文字下げの設定の行を同じに扱う
-    const property = line.trimStart().replace(/^- /, "");
-    if (indent === 6 || indent === 8) {
-      if (/^if:/.test(property) || /^working-directory:/.test(property)) step.skip = true;
-      if (/^continue-on-error:\s*true\s*$/.test(property)) step.skip = true;
-      const run = property.match(/^run:\s*(.*)$/);
-      if (run) {
-        if (/^[|>][-+]?\s*$/.test(run[1])) {
-          const body = [];
-          while (i + 1 < lines.length && (lines[i + 1].trim() === "" || indentOf(lines[i + 1]) > 8)) {
-            body.push(lines[++i].trim());
-          }
-          step.run = body.join("\n");
-        } else {
-          step.run = run[1];
-        }
+    if (indent === 6 && line.trimStart().startsWith("- ")) job.steps.push({ keys: new Set(), run: undefined });
+    const step = job.steps[job.steps.length - 1];
+    if (!step || (indent !== 6 && indent !== 8)) continue;
+    const key = keyOf(line);
+    if (key) step.keys.add(key);
+    if (key === "name") step.name = line.trimStart().replace(/^- /, "").replace(/^name:\s*/, "");
+    if (key !== "run") continue;
+    const value = line.trimStart().replace(/^- /, "").replace(/^run:\s*/, "");
+    if (/^\|[-+]?\s*$/.test(value)) {
+      const body = [];
+      while (i + 1 < lines.length && (lines[i + 1].trim() === "" || indentOf(lines[i + 1]) > 8)) {
+        body.push(lines[++i].trim());
       }
+      step.run = body.join("\n");
+    } else if (/^[>|]/.test(value)) {
+      step.run = null; // 折りたたみなど、数えない形
+    } else {
+      step.run = value;
     }
   }
-  flush();
-  return commands;
+  return { pathFilters, jobs };
 }
 
-function expandNpmRun(command, scripts, depth = 0) {
-  assert.ok(depth < 5, `npm run の入れ子が深すぎる: ${command}`);
-  const expanded = [command];
-  for (const match of command.matchAll(/npm run ([\w:.-]+)/g)) {
-    if (scripts[match[1]]) expanded.push(...expandNpmRun(scripts[match[1]], scripts, depth + 1));
-  }
-  return expanded;
-}
+const EXCLUDED_JOB_KEYS = ["if", "needs", "continue-on-error", "strategy"];
+const EXCLUDED_STEP_KEYS = ["if", "continue-on-error", "working-directory", "shell"];
+const FORBIDDEN = /\|\||;|#|`|\$|[<>]|(?:^|[^&])&(?:[^&]|$)|\|/;
+const TEST_COMMAND = /^(?:npx\s+)?(?:tsx|node)\s+--test((?:\s+(?:"[^"]*"|'[^']*'|[^\s'"-][^\s'"]*))+)$/;
 
-function testPatternsIn(command) {
+// 決まった形なら、そのコマンドが走らせるテストのパスと glob を返す。数えない形なら理由の文字列を返す
+function testPatterns(text, scripts, depth = 0) {
+  if (depth > 5) return "npm run の入れ子が深すぎる";
+  const joined = text.replace(/\\\r?\n/g, " ");
+  if (FORBIDDEN.test(joined)) return `数えない記号がある: ${joined}`;
   const patterns = [];
-  for (const segment of command.replace(/\\\r?\n/g, " ").split(/&&|\|\||;|\n/)) {
-    const match = segment.match(/\b(?:tsx|node)\s+--test\s+(.*)$/);
-    if (!match) continue;
-    for (const token of match[1].match(/"[^"]*"|'[^']*'|\S+/g) ?? []) {
-      const value = token.replace(/^["']|["']$/g, "");
-      if (!value.startsWith("-")) patterns.push(value);
+  for (const command of joined.split(/\n|&&/).map((c) => c.trim()).filter(Boolean)) {
+    if (/^set\b/.test(command)) return `set がある: ${command}`;
+    const npmRun = command.match(/^npm run ([\w:.-]+)$/);
+    if (npmRun) {
+      const script = scripts[npmRun[1]];
+      if (script === undefined) return `package.json に ${npmRun[1]} がない`;
+      const inner = testPatterns(script, scripts, depth + 1);
+      if (typeof inner === "string") return `npm run ${npmRun[1]}: ${inner}`;
+      patterns.push(...inner);
+      continue;
     }
+    if (!command.includes("--test")) continue;
+    const match = command.match(TEST_COMMAND);
+    if (!match) return `決まった形でないテストのコマンド: ${command}`;
+    for (const token of match[1].match(/"[^"]*"|'[^']*'|\S+/g)) patterns.push(token.replace(/^["']|["']$/g, ""));
   }
   return patterns;
 }
 
-function ciTestPatterns() {
+// 数える段と、数えない段（理由つき）に分ける
+function classifySteps(workflow, scripts) {
+  const counted = [];
+  const skipped = [];
+  for (const job of workflow.jobs) {
+    const jobReason = EXCLUDED_JOB_KEYS.find((k) => job.keys.has(k));
+    for (const step of job.steps) {
+      if (step.run === undefined) continue;
+      const label = `${job.name} / ${step.name ?? "(名前なし)"}`;
+      const stepReason = EXCLUDED_STEP_KEYS.find((k) => step.keys.has(k));
+      const result = step.run === null ? "run: | 以外の複数行" : testPatterns(step.run, scripts);
+      const reason = jobReason ? `job に ${jobReason}` : stepReason ? `段に ${stepReason}` : typeof result === "string" ? result : null;
+      if (reason) {
+        if (step.run && step.run.includes("--test")) skipped.push(`${label}（${reason}）`);
+        continue;
+      }
+      counted.push({ label, run: step.run, patterns: result });
+    }
+  }
+  return { counted, skipped };
+}
+
+function loadCi() {
   const scripts = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).scripts ?? {};
-  const commands = blockingRunCommands(fs.readFileSync(CI_WORKFLOW, "utf8"));
-  return [...new Set(commands.flatMap((c) => expandNpmRun(c, scripts)).flatMap(testPatternsIn))];
+  const workflow = readWorkflow(fs.readFileSync(CI_WORKFLOW, "utf8"));
+  return { workflow, ...classifySteps(workflow, scripts) };
 }
 
 // node --test が受け付ける glob のうち、ここで使っている `**/` と `*` だけを扱う
@@ -145,8 +171,13 @@ function globToRegExp(glob) {
 
 const covers = (patterns, file) => patterns.map(globToRegExp).some((re) => re.test(file));
 
+test("ci.yml の on: に paths の絞り込みがない（PR によって CI ごと走らないことがない）", () => {
+  assert.deepEqual(loadCi().workflow.pathFilters, []);
+});
+
 test("ci.yml の --test に渡しているパスを読み取れる", () => {
-  const patterns = ciTestPatterns();
+  const { counted, skipped } = loadCi();
+  const patterns = counted.flatMap((s) => s.patterns);
   // 読み取りが壊れて 0 件になると、下のテストが全部の漏れを見逃すので、置き場所ごとに確かめる
   for (const file of [
     "src/lib/sentry-sdk-versions.test.ts",
@@ -154,37 +185,40 @@ test("ci.yml の --test に渡しているパスを読み取れる", () => {
     "next.config.test.ts",
     "workers/akyo-search-worker/src/search.test.ts",
     "workers/reference-image-generator/src/index.test.ts",
-    "scripts/ci-test-files.test.js",
   ]) {
     assert.ok(fs.existsSync(path.join(ROOT, file)), `${file} がない（このテストの例を直す）`);
-    assert.ok(covers(patterns, file), `${file} を走らせる段が読めない: ${patterns.join(", ")}`);
+    assert.ok(covers(patterns, file), `${file} を走らせる段が読めない。数えなかった段: ${skipped.join(" / ") || "なし"}`);
   }
 });
 
 test("このテスト自身は glob に頼らず、ci.yml の専用の段で走る", () => {
-  const commands = blockingRunCommands(fs.readFileSync(CI_WORKFLOW, "utf8"));
+  const { counted } = loadCi();
   assert.ok(
-    commands.some((c) => testPatternsIn(c).includes("scripts/ci-test-files.test.js")),
-    "ci.yml に node --test scripts/ci-test-files.test.js の段がない"
+    counted.some((s) => s.run.trim() === WATCHDOG_COMMAND),
+    `ci.yml に \`${WATCHDOG_COMMAND}\` だけを走らせる段がない`
   );
 });
 
 test("リポジトリのテストファイルはすべて PR の CI で走る", () => {
-  const patterns = ciTestPatterns();
+  const { counted, skipped } = loadCi();
+  const patterns = counted.flatMap((s) => s.patterns);
   const missing = trackedTestFiles().filter(
     (file) => !NOT_RUN_IN_CI.some((re) => re.test(file)) && !covers(patterns, file)
   );
   assert.deepEqual(
     missing,
     [],
-    "ci.yml のどの --test にも入っていないテストファイルがある。ci.yml か package.json の test:* に足すか、" +
-      "走らせない理由があれば scripts/ci-test-files.test.js の NOT_RUN_IN_CI に理由つきで足す"
+    "ci.yml の数える段のどの --test にも入っていないテストファイルがある。ci.yml か package.json の test:* に" +
+      "決まった形で足すか、走らせない理由があれば NOT_RUN_IN_CI に理由つきで足す。" +
+      `数えなかった段: ${skipped.join(" / ") || "なし"}`
   );
 });
 
-test("ci.yml の読み取りは、走らない段・コメントを数えない", () => {
+test("ci.yml の読み取りは、走らない・失敗が CI を止めない段を数えない", () => {
   const yaml = [
-    "on: pull_request",
+    "on:",
+    "  pull_request:",
+    "    branches: [main]",
     "jobs:",
     "  a:",
     "    runs-on: ubuntu-latest",
@@ -194,31 +228,73 @@ test("ci.yml の読み取りは、走らない段・コメントを数えない"
     "      - run: node --test two.test.js",
     "      - name: block",
     "        run: |",
-    "          echo start",
     "          npx tsx --test \\",
     "            three.test.ts",
+    "          # npx tsx --test shell-comment.test.ts",
     "      # - run: npx tsx --test commented.test.ts",
-    "      - name: conditional",
+    "      - name: chained",
+    "        run: npm run unit && npm run typecheck",
+    "      - name: step if after run",
+    "        run: npx tsx --test step-if.test.ts",
     "        if: ${{ false }}",
-    "        run: npx tsx --test conditional.test.ts",
-    "      - name: advisory",
-    "        run: npx tsx --test advisory.test.ts",
-    "        continue-on-error: true",
-    "      - name: elsewhere",
+    "      - name: continue expression",
+    "        continue-on-error: ${{ true }}",
+    "        run: npx tsx --test continue-expr.test.ts",
+    "      - name: working dir",
     "        working-directory: sub",
     "        run: npx tsx --test sub.test.ts",
+    "      - name: shell",
+    "        shell: bash {0}",
+    "        run: npx tsx --test shell.test.ts",
+    "      - run: npx tsx --test swallowed.test.ts || true",
+    "      - run: echo skipped # npx tsx --test echo.test.ts",
+    "      - run: npx tsx --test --test-name-pattern=NEVER filtered.test.ts",
+    "      - name: folded",
+    "        run: >",
+    "          npx tsx --test folded.test.ts",
+    "      - name: set",
+    "        run: |",
+    "          set +e",
+    "          npx tsx --test set.test.ts",
     "  b:",
-    "    if: github.event_name == 'push'",
+    "    runs-on: ubuntu-latest",
     "    steps:",
-    "      - run: npx tsx --test push-only.test.ts",
+    "      - run: npx tsx --test job-if-later.test.ts",
+    "    if: ${{ false }}",
+    "  c:",
+    "    needs: b",
+    "    steps:",
+    "      - run: npx tsx --test needs.test.ts",
+    "  d:",
+    "    continue-on-error: ${{ matrix.experimental }}",
+    "    strategy:",
+    "      matrix:",
+    "        experimental: [true]",
+    "    steps:",
+    "      - run: npx tsx --test matrix.test.ts",
   ].join("\n");
-  const patterns = blockingRunCommands(yaml).flatMap(testPatternsIn);
-  assert.deepEqual(patterns.sort(), ["one.test.ts", "three.test.ts", "two.test.js"]);
+  const scripts = { unit: "tsx --test unit.test.ts", typecheck: "tsc --noEmit" };
+  const { counted } = classifySteps(readWorkflow(yaml), scripts);
+  assert.deepEqual(
+    counted.flatMap((s) => s.patterns).sort(),
+    ["one.test.ts", "three.test.ts", "two.test.js", "unit.test.ts"]
+  );
 });
 
-test("npm run は入れ子も展開する", () => {
-  const scripts = { outer: "npm run inner && echo ok", inner: "tsx --test inner.test.ts" };
-  assert.deepEqual(expandNpmRun("npm run outer", scripts).flatMap(testPatternsIn), ["inner.test.ts"]);
+test("on: に paths / paths-ignore があれば見つける", () => {
+  const yaml = ["on:", "  pull_request:", "    paths-ignore:", "      - '**.md'", "jobs:", "  a:", "    steps: []"].join("\n");
+  assert.equal(readWorkflow(yaml).pathFilters.length, 1);
+});
+
+test("npm run は入れ子も同じ規則で読む", () => {
+  const scripts = {
+    outer: "npm run inner && echo ok",
+    inner: "tsx --test inner.test.ts",
+    swallow: "tsx --test swallow.test.ts || true",
+  };
+  assert.deepEqual(testPatterns("npm run outer", scripts), ["inner.test.ts"]);
+  assert.equal(typeof testPatterns("npm run swallow", scripts), "string");
+  assert.equal(typeof testPatterns("npm run missing", scripts), "string");
 });
 
 test("glob の読み替えは node --test と同じ範囲を指す", () => {
