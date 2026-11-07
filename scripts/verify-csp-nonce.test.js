@@ -73,9 +73,68 @@ test("CSP の判定を受ける種類（JavaScript の MIME・module・importmap
     'type="speculationrules"',
     'language="javascript"',
     'type="module" nomodule',
+    'type="MODULE"',
   ]) {
     const result = checkCspNonce(headers(CSP), page(NEXT_INLINE, `<script ${attrs}>self.y=1</script>`));
     assert.equal(result.errors.length, 1, attrs);
+    assert.match(result.errors[0], /nonce のないインライン/, attrs);
+  }
+});
+
+test("HTML Standard の JavaScript MIME type essence はすべて実行される script として扱う", () => {
+  // 確認スクリプトの一覧とは別に、仕様（https://mimesniff.spec.whatwg.org/#javascript-mime-type）から写す
+  for (const type of [
+    "application/ecmascript",
+    "application/javascript",
+    "application/x-ecmascript",
+    "application/x-javascript",
+    "text/ecmascript",
+    "text/javascript",
+    "text/javascript1.0",
+    "text/javascript1.1",
+    "text/javascript1.2",
+    "text/javascript1.3",
+    "text/javascript1.4",
+    "text/javascript1.5",
+    "text/jscript",
+    "text/livescript",
+    "text/x-ecmascript",
+    "text/x-javascript",
+  ]) {
+    const result = checkCspNonce(headers(CSP), page(NEXT_INLINE, `<script type="${type}">self.y=1</script>`));
+    assert.equal(result.errors.length, 1, type);
+    assert.match(result.errors[0], /nonce のないインライン/, type);
+  }
+});
+
+test("空白だけのインライン script は CSP の判定を受ける（空のものは受けない）", () => {
+  assert.equal(checkCspNonce(headers(CSP), page(NEXT_INLINE, "<script> \n </script>")).errors.length, 1);
+  assert.deepEqual(checkCspNonce(headers(CSP), page(NEXT_INLINE, "<script></script>")).errors, []);
+});
+
+test("入れ子の <noscript> は、script が有効なブラウザーと同じに読む", () => {
+  // 最初の </noscript> で外側も閉じるので、その後ろの script は実行される
+  const result = checkCspNonce(
+    headers(CSP),
+    page(NEXT_INLINE, "<noscript><noscript></noscript><script>self.x=1</script></noscript>")
+  );
+  assert.equal(result.errors.length, 1);
+  assert.match(result.errors[0], /nonce のないインライン/);
+});
+
+test("この確認で判定できない HTML の形は失敗する", () => {
+  const cases = [
+    ['<meta http-equiv="Content-Security-Policy" content="script-src \'none\'">', /<meta> の CSP/],
+    ['<iframe srcdoc="<script>self.y=1</script>"></iframe>', /srcdoc/],
+    ['<svg><script>self.y=1</script></svg>', /SVG/],
+    ['<svg><script src="/a.js">self.y=1</script></svg>', /SVG/],
+    ['<script type=" MODULE ">self.y=1</script>', /扱いが分かれる/],
+    ['<script type="importmap ">{}</script>', /扱いが分かれる/],
+  ];
+  for (const [extra, message] of cases) {
+    const result = checkCspNonce(headers(CSP), page(NEXT_INLINE, extra));
+    assert.equal(result.errors.length, 1, extra);
+    assert.match(result.errors[0], message, extra);
   }
 });
 
@@ -106,6 +165,8 @@ test("この確認で判定できない CSP の形は失敗する", () => {
     [`${CSP}, script-src 'none'`, /2 本/],
     // script 要素では script-src-elem が優先される
     [`${CSP}; script-src-elem 'none'`, /script-src-elem/],
+    // Next.js の読み取りは script-src-attr の nonce を拾うが、ブラウザーは script-src で止める
+    [`script-src-attr 'nonce-${NONCE}'; script-src 'none'`, /script-src-attr/],
     // ブラウザーは最初の script-src だけを使う
     [`script-src 'self' 'nonce-${NONCE}' 'sha256-OBTN3RiyCV4Bq7dFqZ5a2pAXjnCcCYeTJMO2I/LYKeo='; ${CSP}`, /2 回/],
   ];

@@ -95,6 +95,7 @@
     "jsdom": "^29.1.1",
     "knip": "^5.66.4",
     "lighthouse": "13.4.1",
+    "parse5": "^8.0.1",
     "postcss": "^8.5.23",
     "sharp": "^0.35.5",
     "subset-font": "^2.7.0",
