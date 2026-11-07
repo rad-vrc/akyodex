@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import { shouldApplyNextSentryBuildConfig } from "./src/lib/sentry-runtime";
 
 const nextConfig: NextConfig = {
