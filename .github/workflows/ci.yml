@@ -58,7 +58,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Run Node unit tests
-        run: npx tsx --test "src/**/*.test.ts" "scripts/*.test.ts" "scripts/*.test.js"
+        run: npx tsx --test "src/**/*.test.ts" "scripts/*.test.ts" "scripts/*.test.js" next.config.test.ts
 
       - name: Run reference image generator tests
         run: npm run test:reference-images
