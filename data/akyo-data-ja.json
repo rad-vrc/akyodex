@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-11-08T08:20:56.536Z",
-  "count": 1069,
+  "updatedAt": "2026-11-11T16:23:18.328Z",
+  "count": 1070,
   "data": [
     {
       "id": "0001",
@@ -12482,6 +12482,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_b32b8d24-f59f-45e0-b6dc-96d513f79b5e",
       "avatarUrl": "https://vrchat.com/home/world/wrld_b32b8d24-f59f-45e0-b6dc-96d513f79b5e",
       "urlUpdatedAt": "2026-11-08T08:20:56.465Z"
+    },
+    {
+      "id": "2086",
+      "entryType": "avatar",
+      "displaySerial": "0942",
+      "nickname": "おじぞうAkyo2",
+      "avatarName": "akyo_ozizouLOW",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),国,国/日本,芸術,芸術/彫刻・像,ギミック・特殊,ギミック・特殊/ワールド固定,色,色/無彩色系,素材・原材料,素材・原材料/石",
+      "comment": "このさき あきょうのさと にんげん きをつけるべし",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_12f96eeb-6ca9-481b-b9e4-26bbe739c8fb",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_12f96eeb-6ca9-481b-b9e4-26bbe739c8fb",
+      "urlUpdatedAt": "2026-11-11T16:23:18.281Z"
     }
   ]
 }
