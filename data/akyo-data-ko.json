@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-11T16:23:18.401Z",
-  "count": 1070,
+  "updatedAt": "2026-11-11T16:38:46.560Z",
+  "count": 1071,
   "data": [
     {
       "id": "0001",
@@ -13188,6 +13188,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_12f96eeb-6ca9-481b-b9e4-26bbe739c8fb",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_12f96eeb-6ca9-481b-b9e4-26bbe739c8fb",
       "urlUpdatedAt": "2026-11-11T16:23:18.281Z"
+    },
+    {
+      "id": "2087",
+      "entryType": "avatar",
+      "displaySerial": "0943",
+      "nickname": "キャンピングカーAkyo",
+      "avatarName": "キャンピングカーAkyo",
+      "category": "지원 기기,지원 기기/PC,초코민트류,색상,색상/초록색 계열,색상/파란색 계열,탈것,탈것/육상",
+      "comment": "キャンプへの情熱が伝わってくるよ！！",
+      "author": "roma38（ろま38）",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_292961b7-6d4f-4d43-8564-8f32a3925817",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_292961b7-6d4f-4d43-8564-8f32a3925817",
+      "urlUpdatedAt": "2026-11-11T16:38:46.403Z"
     }
   ]
 }
