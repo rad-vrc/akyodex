@@ -172,6 +172,9 @@ export function resolveDisplaySerialForSourceUrlChange(args: {
   } = args;
 
   if (detectedEntryType === "avatar") {
+    if (originalEntryType === "avatar") {
+      return originalDisplaySerial?.trim() || currentDisplaySerial || id;
+    }
     return id;
   }
 

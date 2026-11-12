@@ -81,6 +81,29 @@ test("resolveDisplaySerialForSourceUrlChange resets stale world serials for avat
   );
 });
 
+test("resolveDisplaySerialForSourceUrlChange preserves the original avatar serial", () => {
+  assert.equal(
+    resolveDisplaySerialForSourceUrlChange?.({
+      currentDisplaySerial: "0943",
+      detectedEntryType: "avatar",
+      id: "2087",
+      originalDisplaySerial: "0943",
+      originalEntryType: "avatar",
+    }),
+    "0943",
+  );
+  assert.equal(
+    resolveDisplaySerialForSourceUrlChange?.({
+      currentDisplaySerial: "0129",
+      detectedEntryType: "avatar",
+      id: "2087",
+      originalDisplaySerial: "0943",
+      originalEntryType: "avatar",
+    }),
+    "0943",
+  );
+});
+
 test("resolveDisplaySerialForSourceUrlChange preserves serials for world or unknown URLs", () => {
   assert.equal(typeof resolveDisplaySerialForSourceUrlChange, "function");
 
