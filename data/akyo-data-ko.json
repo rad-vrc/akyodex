@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-12T01:56:18.607Z",
-  "count": 1071,
+  "updatedAt": "2026-11-12T11:08:20.053Z",
+  "count": 1072,
   "data": [
     {
       "id": "0001",
@@ -13201,6 +13201,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_a7e50bf3-d9d2-48bf-9f7b-c4434fc9ea10",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_a7e50bf3-d9d2-48bf-9f7b-c4434fc9ea10",
       "urlUpdatedAt": "2026-11-12T01:56:18.427Z"
+    },
+    {
+      "id": "2088",
+      "entryType": "world",
+      "displaySerial": "0129",
+      "nickname": "HOME RUN HANABI",
+      "avatarName": "HOME RUN HANABI",
+      "category": "월드,지원 기기,지원 기기/PC,지원 기기/Quest(Android),지원 기기/iOS",
+      "comment": "",
+      "author": "wanimi",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_a7bf6fcc-5d3c-498d-9b69-ff9a7a2d99bd",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_a7bf6fcc-5d3c-498d-9b69-ff9a7a2d99bd",
+      "urlUpdatedAt": "2026-11-12T11:08:19.889Z"
     }
   ]
 }
