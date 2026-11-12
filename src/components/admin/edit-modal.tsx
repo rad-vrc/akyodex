@@ -17,6 +17,7 @@ import {
   ensureWorldCategory,
   extractVRChatAvatarIdFromUrl,
   getAkyoSourceUrl,
+  resolveEntryType,
   resolveDisplaySerialForSourceUrlChange,
   shouldResetWorldMetadata,
 } from '@/lib/akyo-entry';
@@ -252,7 +253,7 @@ export function EditModal({
           detectedEntryType: nextDetectedEntryType,
           id: akyo?.id ?? prev.displaySerial,
           originalDisplaySerial: akyo?.displaySerial,
-          originalEntryType: akyo?.entryType,
+          originalEntryType: akyo ? resolveEntryType(akyo) : undefined,
         }),
       };
     });

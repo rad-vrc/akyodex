@@ -329,6 +329,39 @@ test('再取得が失敗しても、保留は残り、タブも再取得も使�
   }
 });
 
+test('アバターURLの変更を保存しても公開番号が変わらない', { timeout: 10_000 }, async () => {
+  const header = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comment', 'Author', 'SourceURL', 'EntryType', 'DisplaySerial'];
+  let records = [createAkyoRecord({
+    id: '2087', nickname: 'Test 2087', avatarName: 'Test', author: 'tester', comment: '',
+    entryType: 'avatar', displaySerial: '0943', category: '動物',
+    sourceUrl: 'https://vrchat.com/home/avatar/avtr_12345678-1234-1234-1234-123456789abc',
+  }, header)];
+  const rows = () => parseCsvToAkyoData(stringify([header, ...records]));
+  const h = await setup({
+    initial: rows(),
+    batchDependencies: {
+      loadSnapshot: async () => ({ head: 'head', header, dataRecords: records, registeredCategories: new Set(['動物']) }),
+      commit: async (args) => {
+        records = args.dataRecords;
+        return { commit: { html_url: 'https://github.com/example/repo/commit/test' } };
+      },
+    },
+  });
+  try {
+    await h.click(h.buttons('編集・削除')[0]);
+    await h.click(h.buttons('編集').find((button) => button.closest('tr')?.textContent?.includes('#2087')));
+    await h.typeInto('edit-source-url', 'https://vrchat.com/home/avatar/avtr_abcdefab-1234-1234-1234-123456789abc');
+    await h.click(h.buttons('更新を保留')[0]);
+    await h.click(h.buttons('更新を反映する')[0]);
+    assert.equal(h.batches.length, 1);
+    assert.equal(h.batches[0][0].changes.displaySerial, '0943');
+    assert.equal(rows()[0].displaySerial, '0943');
+    assert.equal(rows()[0].sourceUrl, 'https://vrchat.com/home/avatar/avtr_abcdefab-1234-1234-1234-123456789abc');
+  } finally {
+    await h.cleanup();
+  }
+});
+
 test('編集保留中に再取得しても、独立したカテゴリ改名と追加を一緒に反映できる', { timeout: 10_000 }, async () => {
   const header = ['ID', 'Nickname', 'AvatarName', 'Category', 'Comment', 'Author', 'SourceURL', 'EntryType', 'DisplaySerial'];
   let records = [createAkyoRecord({
