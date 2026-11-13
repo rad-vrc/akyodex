@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-11-12T16:25:59.278Z",
-  "count": 1072,
+  "updatedAt": "2026-11-13T03:32:47.581Z",
+  "count": 1073,
   "data": [
     {
       "id": "0001",
@@ -12521,6 +12521,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_a7bf6fcc-5d3c-498d-9b69-ff9a7a2d99bd",
       "avatarUrl": "https://vrchat.com/home/world/wrld_a7bf6fcc-5d3c-498d-9b69-ff9a7a2d99bd",
       "urlUpdatedAt": "2026-11-12T11:08:19.889Z"
+    },
+    {
+      "id": "2089",
+      "entryType": "world",
+      "displaySerial": "0130",
+      "nickname": "アパルト - apart room-",
+      "avatarName": "アパルト - apart room-",
+      "category": "ワールド,対応機種,対応機種/PC",
+      "comment": "",
+      "author": "kiki-uruguay",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_c644bbd1-0d27-44c7-9f31-430810666078",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_c644bbd1-0d27-44c7-9f31-430810666078",
+      "urlUpdatedAt": "2026-11-13T03:32:47.508Z"
     }
   ]
 }
