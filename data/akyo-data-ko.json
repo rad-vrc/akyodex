@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-13T03:32:47.677Z",
-  "count": 1073,
+  "updatedAt": "2026-11-13T08:55:03.282Z",
+  "count": 1074,
   "data": [
     {
       "id": "0001",
@@ -13227,6 +13227,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_c644bbd1-0d27-44c7-9f31-430810666078",
       "avatarUrl": "https://vrchat.com/home/world/wrld_c644bbd1-0d27-44c7-9f31-430810666078",
       "urlUpdatedAt": "2026-11-13T03:32:47.508Z"
+    },
+    {
+      "id": "2090",
+      "entryType": "world",
+      "displaySerial": "0131",
+      "nickname": "横浜家系ラーメン105家～YOKOHAMA IEKEI RAMEN INUGOYA～",
+      "avatarName": "横浜家系ラーメン105家～YOKOHAMA IEKEI RAMEN INUGOYA～",
+      "category": "월드,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "comment": "",
+      "author": "蒼店長（soutenchou）",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_c92edd21-28c8-4297-9bb5-e3208395e1e3",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_c92edd21-28c8-4297-9bb5-e3208395e1e3",
+      "urlUpdatedAt": "2026-11-13T08:55:03.127Z"
     }
   ]
 }
