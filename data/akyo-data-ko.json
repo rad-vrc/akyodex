@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-15T04:56:00.998Z",
-  "count": 1075,
+  "updatedAt": "2026-11-16T10:42:17.652Z",
+  "count": 1076,
   "data": [
     {
       "id": "0001",
@@ -13253,6 +13253,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_88055cbc-e6e5-4a3e-996f-bd82ae7a9008",
       "avatarUrl": "https://vrchat.com/home/world/wrld_88055cbc-e6e5-4a3e-996f-bd82ae7a9008",
       "urlUpdatedAt": "2026-11-15T04:56:00.879Z"
+    },
+    {
+      "id": "2092",
+      "entryType": "avatar",
+      "displaySerial": "0944",
+      "nickname": "かがみもちAkyo2",
+      "avatarName": "akyo_かがみもち2․0",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),색상,색상/흰색 계열,행사・문화,행사・문화/설날,나라,나라/일본,음식,음식/디저트,음식/과일,스타일,스타일/일본풍,계절,계절/겨울",
+      "comment": "【ささのきの手記】\nお正月に飾りつけられたakyo。なんだかおめでたい気がする！",
+      "author": "ささのき",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_060b7af1-01b1-4751-965b-39847eac8471",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_060b7af1-01b1-4751-965b-39847eac8471",
+      "urlUpdatedAt": "2026-11-16T10:42:17.542Z"
     }
   ]
 }
