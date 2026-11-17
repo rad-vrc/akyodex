@@ -105,12 +105,7 @@ jobs:
 
           R2_ENDPOINT="https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com"
 
-          echo "Verifying R2 bucket access..."
-          if ! aws s3 ls "s3://${{ env.R2_BUCKET }}/" --endpoint-url "$R2_ENDPOINT" > /dev/null 2>&1; then
-            echo "::error::Cannot access R2 bucket '${{ env.R2_BUCKET }}'"
-            exit 1
-          fi
-          echo "✅ R2 bucket is accessible"
+          node scripts/check-catalog-r2.js
 
           echo "Uploading JSON files to R2..."
           UPLOAD_FAILED=false
@@ -154,27 +149,7 @@ jobs:
       - name: Trigger ISR Revalidation and KV Cache Update
         env:
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
-        run: |
-          set -e
-          if [ -z "$REVALIDATE_SECRET" ]; then
-            echo "::warning::REVALIDATE_SECRET not configured, skipping ISR revalidation"
-            exit 0
-          fi
-          echo "Triggering ISR revalidation..."
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${{ env.SITE_URL }}/api/revalidate" \
-            -H "Content-Type: application/json" \
-            -H "x-revalidate-secret: $REVALIDATE_SECRET" \
-            -d '{"paths": ["/", "/en", "/ko", "/zukan"], "tags": ["akyo-data", "akyo-data-ja", "akyo-data-en", "akyo-data-ko"], "updateKV": true}' \
-            --max-time 60)
-          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            echo "✅ ISR revalidation and KV cache update successful"
-            echo "Response: $BODY"
-          else
-            echo "::warning::ISR revalidation failed (HTTP $HTTP_CODE)"
-            echo "Response: $BODY"
-          fi
+        run: node scripts/revalidate-catalog.js
 
       - name: Summary
         run: |
