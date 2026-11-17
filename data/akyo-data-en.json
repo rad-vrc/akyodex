@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-11-17T13:47:05.408Z",
+  "updatedAt": "2026-11-17T14:02:28.693Z",
   "count": 1076,
   "data": [
     {
@@ -2563,13 +2563,16 @@
     {
       "id": "0227",
       "entryType": "avatar",
+      "displaySerial": "0227",
       "nickname": "Furisode Fox Akyo",
       "avatarName": "きつねkyo_振袖",
-      "category": "Animal,Animal/Fox,Event・Culture,Event・Culture/New Year,Supported Platform,Supported Platform/PC,Country,Country/Japan",
+      "category": "Animal,Animal/Fox,Event・Culture,Event・Culture/New Year,Supported Platform,Supported Platform/PC,Country,Country/Japan,Booth",
       "comment": "A is not present",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0d6f6089-2fda-4125-86ce-30d53ac2e548",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0d6f6089-2fda-4125-86ce-30d53ac2e548"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0d6f6089-2fda-4125-86ce-30d53ac2e548",
+      "boothUrl": "https://sasanoki.booth.pm/items/9166981",
+      "urlUpdatedAt": "2026-11-17T14:02:28.584Z"
     },
     {
       "id": "0228",

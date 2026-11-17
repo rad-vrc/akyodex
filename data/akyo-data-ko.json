@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-17T13:47:05.451Z",
+  "updatedAt": "2026-11-17T14:02:28.739Z",
   "count": 1076,
   "data": [
     {
@@ -2765,11 +2765,13 @@
       "displaySerial": "0227",
       "nickname": "후리소데 여우 Akyo",
       "avatarName": "きつねkyo_振袖",
-      "category": "동물,동물/여우,행사・문화,행사・문화/설날,지원 기기,지원 기기/PC,나라,나라/일본",
+      "category": "동물,동물/여우,행사・문화,행사・문화/설날,지원 기기,지원 기기/PC,나라,나라/일본,Booth",
       "comment": "A가 없다",
       "author": "ささのき",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_0d6f6089-2fda-4125-86ce-30d53ac2e548",
-      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0d6f6089-2fda-4125-86ce-30d53ac2e548"
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_0d6f6089-2fda-4125-86ce-30d53ac2e548",
+      "boothUrl": "https://sasanoki.booth.pm/items/9166981",
+      "urlUpdatedAt": "2026-11-17T14:02:28.584Z"
     },
     {
       "id": "0228",
