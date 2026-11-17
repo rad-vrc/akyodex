@@ -26,8 +26,8 @@ function capture() {
 }
 
 test('diagnostics mask credentials, URLs and line breaks before writing logs', () => {
-  const result = diagnostic('Authorization: Bearer unexpected-token\naccess-secret https://example.com/?token=sensitive\nx-revalidate-secret: another-secret', ['access-secret']);
-  assert.doesNotMatch(result, /unexpected-token|access-secret|sensitive|another-secret|\n/);
+  const result = diagnostic('Authorization: Bearer unexpected-token\naccess-secret https://example.com/?token=sensitive\nx-revalidate-secret: another-secret\nCredential=other-key Signature=signed-value {"token":"json-token"}', ['access-secret']);
+  assert.doesNotMatch(result, /unexpected-token|access-secret|sensitive|another-secret|other-key|signed-value|json-token|\n/);
   assert.match(result, /authorization=\[redacted\]/);
 });
 
