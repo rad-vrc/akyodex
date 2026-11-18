@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-17T14:20:12.040Z",
-  "count": 1076,
+  "updatedAt": "2026-11-18T13:33:23.427Z",
+  "count": 1078,
   "data": [
     {
       "id": "0001",
@@ -13268,6 +13268,32 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_060b7af1-01b1-4751-965b-39847eac8471",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_060b7af1-01b1-4751-965b-39847eac8471",
       "urlUpdatedAt": "2026-11-16T10:42:17.542Z"
+    },
+    {
+      "id": "2093",
+      "entryType": "world",
+      "displaySerial": "0133",
+      "nickname": "gagonal ocean",
+      "avatarName": "gagonal ocean",
+      "category": "월드,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "comment": "",
+      "author": "gago_chang25",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_1bf64f49-c5ea-482e-95fb-d367b87455c7",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_1bf64f49-c5ea-482e-95fb-d367b87455c7",
+      "urlUpdatedAt": "2026-11-18T13:33:23.281Z"
+    },
+    {
+      "id": "2094",
+      "entryType": "world",
+      "displaySerial": "0134",
+      "nickname": "gagonal moon",
+      "avatarName": "gagonal moon",
+      "category": "월드,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "comment": "",
+      "author": "gago_chang25",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_cab104e3-218f-4c5a-92a6-6b8e9423d184",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_cab104e3-218f-4c5a-92a6-6b8e9423d184",
+      "urlUpdatedAt": "2026-11-18T13:33:23.281Z"
     }
   ]
 }
