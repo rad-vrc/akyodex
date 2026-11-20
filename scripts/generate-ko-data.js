@@ -69,6 +69,7 @@ function translateNickname(jaNickname) {
  * Common patterns translation
  */
 const COMMENT_MAP = {
+  "コックと警察官にもなれるよ！": "요리사와 경찰관도 될 수 있어!",
   "Akyoのつきみざけ！": "달을 보며 술을 즐기는 Akyo!",
   "このAkyo、動くぞ！": "이 Akyo, 움직인다!",
   "ゴールなんてないさ\n回り続けるのさ": "결승점 따윈 없어\n계속 도는 거야",
