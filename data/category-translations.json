@@ -371,10 +371,6 @@
     "en": "Fashion・Equipment/Headphones",
     "ko": "패션・장비/헤드폰"
   },
-  "ファッション・装備/マスク": {
-    "en": "Fashion・Equipment/Mask",
-    "ko": "패션・장비/마스크"
-  },
   "ファッション・装備/マント": {
     "en": "Fashion・Equipment/Cloak",
     "ko": "패션・장비/망토"
@@ -382,6 +378,10 @@
   "ファッション・装備/メガネ・サングラス": {
     "en": "Fashion・Equipment/Glasses",
     "ko": "패션・장비/안경"
+  },
+  "ファッション・装備/仮面・マスク": {
+    "en": "Fashion・Equipment/Mask",
+    "ko": "패션・장비/가면・마스크"
   },
   "ファッション・装備/厚着": {
     "en": "Fashion・Equipment/Warm Clothing",
@@ -1421,7 +1421,7 @@
   },
   "謎多き存在": {
     "en": "Mysterious Being",
-    "ko": null
+    "ko": "수수께끼의 존재"
   },
   "身分・役割": {
     "en": "Role・Status",
