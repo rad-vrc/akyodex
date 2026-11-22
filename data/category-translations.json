@@ -103,6 +103,10 @@
     "en": "Gimmick・Special/Color Change",
     "ko": "기믹・특수/색상 변경"
   },
+  "ギミック・特殊/透明・半透明": {
+    "en": "Gimmick・Special/Transparent・Translucent",
+    "ko": "기믹・특수/투명・반투명"
+  },
   "ギミック・特殊/連れ歩き": {
     "en": "Gimmick・Special/Take Along",
     "ko": "기믹・특수/데리고 다니기"
@@ -355,6 +359,10 @@
     "en": "Fashion・Equipment/Sporty",
     "ko": "패션・장비/스포티"
   },
+  "ファッション・装備/ドレス・ワンピース": {
+    "en": "Fashion・Equipment/Dress・One-Piece",
+    "ko": "패션・장비/드레스・원피스"
+  },
   "ファッション・装備/フード": {
     "en": "Fashion・Equipment/Hood",
     "ko": "패션・장비/후드"
@@ -379,6 +387,10 @@
     "en": "Fashion・Equipment/Mask",
     "ko": "패션・장비/가면・마스크"
   },
+  "ファッション・装備/制服・スーツ": {
+    "en": "Fashion・Equipment/Uniform・Suit",
+    "ko": "패션・장비/제복・정장"
+  },
   "ファッション・装備/厚着": {
     "en": "Fashion・Equipment/Warm Clothing",
     "ko": "패션・장비/두꺼운 옷"
@@ -402,6 +414,10 @@
   "ファッション・装備/迷彩": {
     "en": "Fashion・Equipment/Camouflage",
     "ko": "패션・장비/위장"
+  },
+  "ファッション・装備/鎧・防具": {
+    "en": "Fashion・Equipment/Armor",
+    "ko": "패션・장비/갑옷・방어구"
   },
   "ファッション・装備/髪型": {
     "en": "Fashion・Equipment/Hair Style",
@@ -1187,6 +1203,10 @@
     "en": "Material・Raw Material/Animal",
     "ko": "소재・원재료/동물"
   },
+  "素材・原材料/布・糸": {
+    "en": "Material・Raw Material/Cloth・Thread",
+    "ko": "소재・원재료/천・실"
+  },
   "素材・原材料/木": {
     "en": "Material・Raw Material/Wood",
     "ko": "소재・원재료/나무"
@@ -1207,10 +1227,6 @@
     "en": "Material・Raw Material/Stone",
     "ko": "소재・원재료/돌"
   },
-  "素材・原材料/糸": {
-    "en": "Material・Raw Material/Thread",
-    "ko": "소재・원재료/실"
-  },
   "素材・原材料/金属": {
     "en": "Material・Raw Material/Metal",
     "ko": "소재・원재료/금속"
@@ -1230,6 +1246,10 @@
   "自然/植物/木の実": {
     "en": "Nature/Plant/Nuts",
     "ko": "자연/식물/열매"
+  },
+  "自然/植物/花": {
+    "en": "Nature/Plant/Flower",
+    "ko": "자연/식물/꽃"
   },
   "自然/植物/苔": {
     "en": "Nature/Plant/Moss",
@@ -1515,6 +1535,10 @@
     "en": "Food・Drink/Food/Dish/Fried",
     "ko": "식음료/음식/요리/튀김"
   },
+  "飲食/食べ物/米・もち": {
+    "en": "Food・Drink/Food/Rice・Mochi",
+    "ko": "식음료/음식/쌀・떡"
+  },
   "飲食/食べ物/野菜": {
     "en": "Food・Drink/Food/Vegetable",
     "ko": "식음료/음식/채소"
@@ -1538,6 +1562,10 @@
   "飲食/食べ物/野菜/ナス": {
     "en": "Food・Drink/Food/Vegetable/Eggplant",
     "ko": "식음료/음식/채소/가지"
+  },
+  "飲食/食べ物/麺類": {
+    "en": "Food・Drink/Food/Noodles",
+    "ko": "식음료/음식/면류"
   },
   "飲食/飲み物": {
     "en": "Food・Drink/Drink",
