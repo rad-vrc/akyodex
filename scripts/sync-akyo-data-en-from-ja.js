@@ -27,6 +27,7 @@ const jaPath = path.join(rootDir, 'data', 'akyo-data-ja.csv');
 const enPath = path.join(rootDir, 'data', 'akyo-data-en.csv');
 
 const overridesById = {
+  '0349': { Comment: 'Can also become a chef or a police officer!' },
   '0640': { Nickname: 'Bean Kappa Akyo', Comment: 'Cucumber, please.' },
   '0641': { Nickname: 'Bean Akyo', Comment: '' },
   '0642': { Nickname: 'Epli Akyo', Comment: '' },
