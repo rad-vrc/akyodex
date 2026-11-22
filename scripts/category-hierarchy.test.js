@@ -302,3 +302,21 @@ test('automatic body category classification uses the merged parent', () => {
     assert.ok(!categories.includes('体型') && !categories.includes('Body Type'));
   }
 });
+
+test('automatic food and bath classification uses the consolidated hierarchies without reviving retired parents', () => {
+  const { createCategoryProcessor } = require('./update-categories-common');
+  const ja = createCategoryProcessor(require('./category-definitions-ja'));
+  const en = createCategoryProcessor(require('./category-definitions-en'));
+
+  const jaGyoza = splitCategories(ja('飲食,飲食/食べ物,飲食/食べ物/料理', 'ギョーザAkyo'));
+  assert.ok(jaGyoza.includes('飲食') && jaGyoza.includes('飲食/食べ物') && jaGyoza.includes('飲食/食べ物/料理'));
+  assert.ok(!jaGyoza.includes('食べ物') && !jaGyoza.includes('食べ物/料理'));
+
+  const enGyoza = splitCategories(en('Food・Drink,Food・Drink/Food,Food・Drink/Food/Dish', 'Gyoza Akyo'));
+  assert.ok(enGyoza.includes('Food・Drink') && enGyoza.includes('Food・Drink/Food') && enGyoza.includes('Food・Drink/Food/Dish'));
+  assert.ok(!enGyoza.includes('Food') && !enGyoza.includes('Food/Dish'));
+
+  const jaBath = splitCategories(ja('', 'シャンプーAkyo'));
+  assert.ok(jaBath.includes('設備・家電・家具') && jaBath.includes('設備・家電・家具/お風呂'));
+  assert.ok(!jaBath.includes('設備/お風呂') && !jaBath.includes('家電・家具'));
+});

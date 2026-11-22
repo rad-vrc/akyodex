@@ -90,6 +90,10 @@ function createCategoryProcessor(definitions) {
       categories = categories.filter(c => !c.startsWith(CONFIG.foodSubCategories['default'].category));
     }
 
+    if (CONFIG.foodParentCategory && categories.some(c => c.startsWith(`${CONFIG.foodParentCategory}/`))) {
+      addCat(CONFIG.foodParentCategory);
+    }
+
     // Onion Exception (Fix for previous misclassification)
     if (nickname.match(/Onion/i) && !nickname.match(/\bOni\b/i)) {
        const { remove, checkPrefix, parent } = CONFIG.onionExclusions;
@@ -200,6 +204,7 @@ function createCategoryProcessor(definitions) {
 
     // Bath
     if (matches(BATH_KEYWORDS, nickname)) {
+      addCat(CONFIG.applianceCategory);
       addCat(CONFIG.bathCategory);
     }
 

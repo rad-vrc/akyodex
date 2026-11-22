@@ -73,10 +73,11 @@ module.exports = {
       { from: ['Music', 'Instrument', 'Music・Instrument'], to: 'Art/Music・Instrument' }
     ],
     renameFish: { from: 'Fish', to: ['Animal', 'Animal/Marine Life'] },
+    foodParentCategory: 'Food・Drink',
     foodSubCategories: {
-      'Seasoning': { category: 'Seasoning', exclude: 'Mayo' },
-      'Drink': { category: 'Drink' },
-      'default': { category: 'Food', prefix: 'Food/' }
+      'Seasoning': { category: 'Food・Drink/Seasoning', exclude: 'Mayo' },
+      'Drink': { category: 'Food・Drink/Drink' },
+      'default': { category: 'Food・Drink/Food', prefix: 'Food・Drink/Food/' }
     },
     tofuGyozaKeywords: ['Tofu', 'Gyoza'],
     foodPrefixes: ['Vegetable', 'Sweets', 'Fruit', 'Dish'],
@@ -98,7 +99,7 @@ module.exports = {
     specialEffectKeywords: ['Bubble', 'Sparkle', 'Sparkly', 'Particle', 'About to Fall', 'Wave', 'Hypnosis', 'Sucked-In', 'Disappearing', 'Melted', 'Chromatophore', 'Menses', 'Hinyo'],
     rainbowKeyword: 'Rainbow',
     rainbowCategory: 'Color',
-    applianceCategory: 'Appliances・Furniture',
+    applianceCategory: 'Equipment・Appliances・Furniture',
     plantParentCategory: 'Nature',
     plantCategory: 'Nature/Plant',
     costumeCategory: 'Clothing/Costume',
@@ -106,7 +107,7 @@ module.exports = {
     seasonCategory: 'Season・Event',
     musicCategory: 'Art/Music・Instrument',
     toolCategory: 'Tool',
-    bathCategory: 'Equipment/Bath',
+    bathCategory: 'Equipment・Appliances・Furniture/Bath',
     schoolCategory: 'School',
     natureCategory: 'Environment・Weather',
     historyCategory: 'History',
