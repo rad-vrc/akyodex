@@ -56,9 +56,19 @@ function createCategoryProcessor(definitions) {
     }
 
     // Food Logic
+    const defaultFoodConfig = CONFIG.foodSubCategories['default'];
+    const explicitFoodCategories = new Set(
+      categories
+        .map(c => (CONFIG.foodPrefixes.includes(c) ? `${defaultFoodConfig.prefix}${c}` : c))
+        .filter(c => c === defaultFoodConfig.category || c.startsWith(defaultFoodConfig.prefix))
+    );
+    if (explicitFoodCategories.size > 0) {
+      explicitFoodCategories.add(defaultFoodConfig.category);
+    }
+
     for (const [subCat, keywords] of Object.entries(FOOD_KEYWORDS)) {
       if (matches(keywords, nickname) || keywords.some(k => typeof k === 'string' && categories.includes(k))) {
-        const subCatConfig = CONFIG.foodSubCategories[subCat] || CONFIG.foodSubCategories['default'];
+        const subCatConfig = CONFIG.foodSubCategories[subCat] || defaultFoodConfig;
         
         if (subCatConfig.exclude) {
           addCat(subCatConfig.category);
@@ -73,21 +83,26 @@ function createCategoryProcessor(definitions) {
     }
     
     if (CONFIG.tofuGyozaKeywords.some(k => nickname.includes(k))) {
-      const defaultConfig = CONFIG.foodSubCategories['default'];
-      addCat(defaultConfig.category);
+      addCat(defaultFoodConfig.category);
       const dishKey = Object.keys(FOOD_KEYWORDS).find(k => k === 'Dish' || k === '料理');
-      if (dishKey) addCat(`${defaultConfig.prefix}${dishKey}`);
+      if (dishKey) addCat(`${defaultFoodConfig.prefix}${dishKey}`);
     }
 
     categories = categories.map(c => {
-      if (CONFIG.foodPrefixes.includes(c)) return `${CONFIG.foodSubCategories['default'].prefix}${c}`;
+      if (CONFIG.foodPrefixes.includes(c)) return `${defaultFoodConfig.prefix}${c}`;
       return c;
     });
-    if (categories.some(c => c.startsWith(CONFIG.foodSubCategories['default'].prefix))) addCat(CONFIG.foodSubCategories['default'].category);
+    if (categories.some(c => c.startsWith(defaultFoodConfig.prefix))) addCat(defaultFoodConfig.category);
 
-    // Mint Chocolate Exception
+    // Mint Chocolate Exception: suppress newly inferred food tags, but preserve explicit food categories already present in input.
     if (categories.includes(CONFIG.mintChocoKeyword)) {
-      categories = categories.filter(c => !c.startsWith(CONFIG.foodSubCategories['default'].category));
+      categories = categories.filter(
+        c => !(c === defaultFoodConfig.category || c.startsWith(defaultFoodConfig.prefix)) || explicitFoodCategories.has(c)
+      );
+    }
+
+    if (CONFIG.foodParentCategory && categories.some(c => c.startsWith(`${CONFIG.foodParentCategory}/`))) {
+      addCat(CONFIG.foodParentCategory);
     }
 
     // Onion Exception (Fix for previous misclassification)
@@ -200,6 +215,7 @@ function createCategoryProcessor(definitions) {
 
     // Bath
     if (matches(BATH_KEYWORDS, nickname)) {
+      addCat(CONFIG.applianceCategory);
       addCat(CONFIG.bathCategory);
     }
 

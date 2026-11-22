@@ -103,6 +103,10 @@
     "en": "Gimmick・Special/Color Change",
     "ko": "기믹・특수/색상 변경"
   },
+  "ギミック・特殊/透明・半透明": {
+    "en": "Gimmick・Special/Transparent・Translucent",
+    "ko": "기믹・특수/투명・반투명"
+  },
   "ギミック・特殊/連れ歩き": {
     "en": "Gimmick・Special/Take Along",
     "ko": "기믹・특수/데리고 다니기"
@@ -111,17 +115,13 @@
     "en": "Gimmick・Special/Transport",
     "ko": "기믹・특수/운송"
   },
-  "ギミック・特殊/飛行": {
-    "en": "Gimmick・Special/Flying",
-    "ko": "기믹・특수/비행"
+  "ギミック・特殊/飛行ギミック": {
+    "en": "Gimmick・Special/Flight Gimmick",
+    "ko": "기믹・특수/비행 기믹"
   },
   "グッズ": {
     "en": "Goods",
     "ko": "굿즈"
-  },
-  "グッズ/揺れ物": {
-    "en": "Goods/Dangling",
-    "ko": "굿즈/흔들리는"
   },
   "チョコミント類": {
     "en": "Mint Chocolate",
@@ -189,7 +189,7 @@
   },
   "パロディ/どんどん亭": {
     "en": "Parody/Dondon-tei",
-    "ko": "패러디/동동점"
+    "ko": "패러디/돈돈테이"
   },
   "パロディ/びっくりチキン": {
     "en": "Parody/Rubber Chicken",
@@ -212,7 +212,7 @@
     "ko": "패러디/고블린 노움 혼"
   },
   "パロディ/シナモロール": {
-    "en": "Parody/Sinnamoroll",
+    "en": "Parody/Cinnamoroll",
     "ko": "패러디/시나모롤"
   },
   "パロディ/シャルベ": {
@@ -359,6 +359,10 @@
     "en": "Fashion・Equipment/Sporty",
     "ko": "패션・장비/스포티"
   },
+  "ファッション・装備/ドレス・ワンピース": {
+    "en": "Fashion・Equipment/Dress・One-Piece",
+    "ko": "패션・장비/드레스・원피스"
+  },
   "ファッション・装備/フード": {
     "en": "Fashion・Equipment/Hood",
     "ko": "패션・장비/후드"
@@ -382,6 +386,10 @@
   "ファッション・装備/仮面・マスク": {
     "en": "Fashion・Equipment/Mask",
     "ko": "패션・장비/가면・마스크"
+  },
+  "ファッション・装備/制服・スーツ": {
+    "en": "Fashion・Equipment/Uniform・Suit",
+    "ko": "패션・장비/제복・정장"
   },
   "ファッション・装備/厚着": {
     "en": "Fashion・Equipment/Warm Clothing",
@@ -407,6 +415,10 @@
     "en": "Fashion・Equipment/Camouflage",
     "ko": "패션・장비/위장"
   },
+  "ファッション・装備/鎧・防具": {
+    "en": "Fashion・Equipment/Armor",
+    "ko": "패션・장비/갑옷・방어구"
+  },
   "ファッション・装備/髪型": {
     "en": "Fashion・Equipment/Hair Style",
     "ko": "패션・장비/헤어스타일"
@@ -418,14 +430,6 @@
   "ファッション・装備/髪型/モヒカン": {
     "en": "Fashion・Equipment/Hair Style/Mohawk",
     "ko": "패션・장비/헤어스타일/모히칸"
-  },
-  "フィジカル": {
-    "en": "Physical",
-    "ko": "피지컬"
-  },
-  "フィジカル/体育会系": {
-    "en": "Physical/Athletic",
-    "ko": "피지컬/체육계"
   },
   "レア": {
     "en": "Rare",
@@ -467,10 +471,6 @@
     "en": "Physique・Shape・Texture/Slippery",
     "ko": "체격・형태・촉감/미끈미끈"
   },
-  "体格・形状・触り心地/ふわふわ": {
-    "en": "Physique・Shape・Texture/Fluffy",
-    "ko": "체격・형태・촉감/폭신폭신"
-  },
   "体格・形状・触り心地/ぷるぷる": {
     "en": "Physique・Shape・Texture/Jiggly",
     "ko": "체격・형태・촉감/탱글탱글"
@@ -487,9 +487,9 @@
     "en": "Physique・Shape・Texture/Muscular",
     "ko": "체격・형태・촉감/근육질"
   },
-  "体格・形状・触り心地/モサモサ": {
-    "en": "Physique・Shape・Texture/Shaggy",
-    "ko": "체격・형태・촉감/복슬복슬"
+  "体格・形状・触り心地/モサモサ・ふわふわ": {
+    "en": "Physique・Shape・Texture/Shaggy・Fluffy",
+    "ko": "체격・형태・촉감/복슬복슬・폭신폭신"
   },
   "体格・形状・触り心地/丸い": {
     "en": "Physique・Shape・Texture/Round",
@@ -807,6 +807,10 @@
     "en": "Animal/Bug/Butterfly",
     "ko": "동물/벌레/나비"
   },
+  "動物/貝": {
+    "en": "Animal/Shell",
+    "ko": "동물/조개"
+  },
   "動物/軟体": {
     "en": "Animal/Mollusk",
     "ko": "동물/연체동물"
@@ -959,18 +963,6 @@
     "en": "School",
     "ko": "학교"
   },
-  "家電・家具": {
-    "en": "Appliances・Furniture",
-    "ko": "가전・가구"
-  },
-  "家電・家具/お布団": {
-    "en": "Appliances・Furniture/Futon",
-    "ko": "가전・가구/이불"
-  },
-  "家電・家具/枕": {
-    "en": "Appliances・Furniture/Pillow",
-    "ko": "가전・가구/베개"
-  },
   "対応機種": {
     "en": "Supported Platform",
     "ko": "지원 기기"
@@ -1023,10 +1015,6 @@
     "en": "Personality・Preference/Curious",
     "ko": "성격・취향/호기심 왕성"
   },
-  "惑星・衛星": {
-    "en": "Planet・Moon",
-    "ko": "행성・위성"
-  },
   "技能・特性": {
     "en": "Skill・Trait",
     "ko": "기능・특성"
@@ -1038,6 +1026,10 @@
   "技能・特性/まほう": {
     "en": "Skill・Trait/Magic",
     "ko": "기능・특성/마법"
+  },
+  "技能・特性/体育会系": {
+    "en": "Skill・Trait/Athletic",
+    "ko": "기능・특성/체육계"
   },
   "技能・特性/合体・変身": {
     "en": "Skill・Trait/Transformation",
@@ -1100,7 +1092,7 @@
     "ko": "가상의 존재/인어"
   },
   "架空の存在/天使・神": {
-    "en": "Fictional Being/God",
+    "en": "Fictional Being/Angel・God",
     "ko": "가상의 존재/천사・신"
   },
   "架空の存在/妖怪・おばけ": {
@@ -1113,19 +1105,11 @@
   },
   "架空の存在/悪魔・淫魔": {
     "en": "Fictional Being/Devil・Succubus",
-    "ko": "가상의 존재/악마"
+    "ko": "가상의 존재/악마・서큐버스"
   },
   "機械": {
     "en": "Machine",
     "ko": "기계"
-  },
-  "次元": {
-    "en": "Dimension",
-    "ko": "차원"
-  },
-  "次元/3D": {
-    "en": "Dimension/3D",
-    "ko": "차원/3D"
   },
   "正体不明のUMAkyo": {
     "en": "Unknown UMAkyo",
@@ -1134,18 +1118,6 @@
   "歴史": {
     "en": "History",
     "ko": "역사"
-  },
-  "液体": {
-    "en": "Liquid",
-    "ko": "액체"
-  },
-  "液体/水": {
-    "en": "Liquid/Water",
-    "ko": "액체/물"
-  },
-  "液体/点滴": {
-    "en": "Liquid/IV Drip",
-    "ko": "액체/점적"
   },
   "状態": {
     "en": "Condition",
@@ -1183,6 +1155,10 @@
     "en": "Environment・Weather/Mountain",
     "ko": "환경・날씨/산"
   },
+  "環境・天候/惑星・衛星": {
+    "en": "Environment・Weather/Planet・Moon",
+    "ko": "환경・날씨/행성・위성"
+  },
   "環境・天候/森": {
     "en": "Environment・Weather/Forest",
     "ko": "환경・날씨/숲"
@@ -1212,7 +1188,7 @@
     "ko": "살아있는 전설"
   },
   "病気・ウイルス": {
-    "en": "Illness",
+    "en": "Illness・Virus",
     "ko": "질병・바이러스"
   },
   "素材・原材料": {
@@ -1227,13 +1203,13 @@
     "en": "Material・Raw Material/Animal",
     "ko": "소재・원재료/동물"
   },
-  "素材・原材料/植物": {
-    "en": "Material・Raw Material/Plant",
-    "ko": "소재・원재료/식물"
+  "素材・原材料/布・糸": {
+    "en": "Material・Raw Material/Cloth・Thread",
+    "ko": "소재・원재료/천・실"
   },
-  "素材・原材料/植物/木": {
-    "en": "Material・Raw Material/Plant/Wood",
-    "ko": "소재・원재료/식물/나무"
+  "素材・原材料/木": {
+    "en": "Material・Raw Material/Wood",
+    "ko": "소재・원재료/나무"
   },
   "素材・原材料/水": {
     "en": "Material・Raw Material/Water",
@@ -1250,10 +1226,6 @@
   "素材・原材料/石": {
     "en": "Material・Raw Material/Stone",
     "ko": "소재・원재료/돌"
-  },
-  "素材・原材料/糸": {
-    "en": "Material・Raw Material/Thread",
-    "ko": "소재・원재료/실"
   },
   "素材・原材料/金属": {
     "en": "Material・Raw Material/Metal",
@@ -1275,6 +1247,10 @@
     "en": "Nature/Plant/Nuts",
     "ko": "자연/식물/열매"
   },
+  "自然/植物/花": {
+    "en": "Nature/Plant/Flower",
+    "ko": "자연/식물/꽃"
+  },
   "自然/植物/苔": {
     "en": "Nature/Plant/Moss",
     "ko": "자연/식물/이끼"
@@ -1282,10 +1258,6 @@
   "自然/菌類": {
     "en": "Nature/Fungus",
     "ko": "자연/균류"
-  },
-  "自然/貝": {
-    "en": "Nature/Shell",
-    "ko": "자연/조개"
   },
   "色": {
     "en": "Color",
@@ -1312,8 +1284,8 @@
     "ko": "색상/흰색 계열"
   },
   "色/紫色系": {
-    "en": "Color/Purple",
-    "ko": "색상/보라"
+    "en": "Color/Purple Tones",
+    "ko": "색상/보라색 계열"
   },
   "色/緑色系": {
     "en": "Color/Green Tones",
@@ -1332,8 +1304,8 @@
     "ko": "색상/파란색 계열"
   },
   "色/黄色系": {
-    "en": "Color/Yellow",
-    "ko": "색상/노랑"
+    "en": "Color/Yellow Tones",
+    "ko": "색상/노란색 계열"
   },
   "色/黒色系": {
     "en": "Color/Black Tones",
@@ -1379,10 +1351,6 @@
     "en": "Event・Culture/Obon",
     "ko": "행사・문화/오봉"
   },
-  "行事・文化/お盆/精霊馬": {
-    "en": "Event・Culture/Obon/Spirit Horse",
-    "ko": "행사・문화/오봉/정령마"
-  },
   "行事・文化/クリスマス": {
     "en": "Event・Culture/Christmas",
     "ko": "행사・문화/크리스마스"
@@ -1407,17 +1375,21 @@
     "en": "Event・Culture/Setsubun",
     "ko": "행사・문화/세쓰분"
   },
-  "設備": {
-    "en": "Equipment",
-    "ko": "설비"
+  "設備・家電・家具": {
+    "en": "Equipment・Appliances・Furniture",
+    "ko": "설비・가전・가구"
   },
-  "設備/お風呂": {
-    "en": "Equipment/Bath",
-    "ko": "설비/욕실"
+  "設備・家電・家具/お布団": {
+    "en": "Equipment・Appliances・Furniture/Futon",
+    "ko": "설비・가전・가구/이불"
   },
-  "調味料": {
-    "en": "Seasoning",
-    "ko": "조미료"
+  "設備・家電・家具/お風呂": {
+    "en": "Equipment・Appliances・Furniture/Bath",
+    "ko": "설비・가전・가구/욕실"
+  },
+  "設備・家電・家具/枕": {
+    "en": "Equipment・Appliances・Furniture/Pillow",
+    "ko": "설비・가전・가구/베개"
   },
   "謎多き存在": {
     "en": "Mysterious Being",
@@ -1456,12 +1428,12 @@
     "ko": "신분・역할/수형자"
   },
   "身分・役割/学生": {
-    "en": "Role・Status/Stundent",
-    "ko": "신분・역할/스포티"
+    "en": "Role・Status/Student",
+    "ko": "신분・역할/학생"
   },
-  "身分・役割/王族": {
-    "en": "Role・Status/Royalty",
-    "ko": "신분・역할/왕족"
+  "身分・役割/王族・頂に立つ者": {
+    "en": "Role・Status/Royalty・Ruler",
+    "ko": "신분・역할/왕족・정상에 서는 자"
   },
   "身分・役割/科学者": {
     "en": "Role・Status/Scientist",
@@ -1515,76 +1487,88 @@
     "en": "Group・Organization/Fishhead Tribe",
     "ko": "집단・조직/어두족"
   },
-  "頂に立つ者": {
-    "en": "Ruler",
-    "ko": "정상에 서는 자"
-  },
   "願い事": {
     "en": "Wish",
     "ko": "소원"
   },
-  "食べ物": {
-    "en": "Food",
-    "ko": "음식"
+  "飲食": {
+    "en": "Food・Drink",
+    "ko": "식음료"
   },
-  "食べ物/お寿司": {
-    "en": "Food/Sushi",
-    "ko": "음식/초밥"
+  "飲食/調味料": {
+    "en": "Food・Drink/Seasoning",
+    "ko": "식음료/조미료"
   },
-  "食べ物/お弁当": {
-    "en": "Food/Bento",
-    "ko": "음식/도시락"
+  "飲食/食べ物": {
+    "en": "Food・Drink/Food",
+    "ko": "식음료/음식"
   },
-  "食べ物/お肉": {
-    "en": "Food/Meat",
-    "ko": "음식/고기"
+  "飲食/食べ物/お寿司": {
+    "en": "Food・Drink/Food/Sushi",
+    "ko": "식음료/음식/초밥"
   },
-  "食べ物/スイーツ": {
-    "en": "Food/Sweets",
-    "ko": "음식/디저트"
+  "飲食/食べ物/お弁当": {
+    "en": "Food・Drink/Food/Bento",
+    "ko": "식음료/음식/도시락"
   },
-  "食べ物/パン": {
-    "en": "Food/Bread",
-    "ko": "음식/빵"
+  "飲食/食べ物/お肉": {
+    "en": "Food・Drink/Food/Meat",
+    "ko": "식음료/음식/고기"
   },
-  "食べ物/フルーツ": {
-    "en": "Food/Fruit",
-    "ko": "음식/과일"
+  "飲食/食べ物/スイーツ": {
+    "en": "Food・Drink/Food/Sweets",
+    "ko": "식음료/음식/디저트"
   },
-  "食べ物/料理": {
-    "en": "Food/Dish",
-    "ko": "음식/요리"
+  "飲食/食べ物/パン": {
+    "en": "Food・Drink/Food/Bread",
+    "ko": "식음료/음식/빵"
   },
-  "食べ物/料理/揚げ物": {
-    "en": "Food/Dish/Fried",
-    "ko": "음식/요리/튀김"
+  "飲食/食べ物/フルーツ": {
+    "en": "Food・Drink/Food/Fruit",
+    "ko": "식음료/음식/과일"
   },
-  "食べ物/野菜": {
-    "en": "Food/Vegetable",
-    "ko": "음식/채소"
+  "飲食/食べ物/料理": {
+    "en": "Food・Drink/Food/Dish",
+    "ko": "식음료/음식/요리"
   },
-  "食べ物/野菜/きゅうり": {
-    "en": "Food/Vegetable/Cucumber",
-    "ko": "음식/채소/오이"
+  "飲食/食べ物/料理/揚げ物": {
+    "en": "Food・Drink/Food/Dish/Fried",
+    "ko": "식음료/음식/요리/튀김"
   },
-  "食べ物/野菜/だいこん": {
-    "en": "Food/Vegetable/Japanese Radish",
-    "ko": "음식/채소/무"
+  "飲食/食べ物/米・もち": {
+    "en": "Food・Drink/Food/Rice・Mochi",
+    "ko": "식음료/음식/쌀・떡"
   },
-  "食べ物/野菜/にんじん": {
-    "en": "Food/Vegetable/Carrot",
-    "ko": "음식/채소/당근"
+  "飲食/食べ物/野菜": {
+    "en": "Food・Drink/Food/Vegetable",
+    "ko": "식음료/음식/채소"
   },
-  "食べ物/野菜/ねぎ": {
-    "en": "Food/Vegetable/Green Onion",
-    "ko": "음식/채소/파"
+  "飲食/食べ物/野菜/きゅうり": {
+    "en": "Food・Drink/Food/Vegetable/Cucumber",
+    "ko": "식음료/음식/채소/오이"
   },
-  "食べ物/野菜/ナス": {
-    "en": "Food/Vegetable/Eggplant",
-    "ko": "음식/채소/가지"
+  "飲食/食べ物/野菜/だいこん": {
+    "en": "Food・Drink/Food/Vegetable/Japanese Radish",
+    "ko": "식음료/음식/채소/무"
   },
-  "飲み物": {
-    "en": "Drink",
-    "ko": "음료"
+  "飲食/食べ物/野菜/にんじん": {
+    "en": "Food・Drink/Food/Vegetable/Carrot",
+    "ko": "식음료/음식/채소/당근"
+  },
+  "飲食/食べ物/野菜/ねぎ": {
+    "en": "Food・Drink/Food/Vegetable/Green Onion",
+    "ko": "식음료/음식/채소/파"
+  },
+  "飲食/食べ物/野菜/ナス": {
+    "en": "Food・Drink/Food/Vegetable/Eggplant",
+    "ko": "식음료/음식/채소/가지"
+  },
+  "飲食/食べ物/麺類": {
+    "en": "Food・Drink/Food/Noodles",
+    "ko": "식음료/음식/면류"
+  },
+  "飲食/飲み物": {
+    "en": "Food・Drink/Drink",
+    "ko": "식음료/음료"
   }
 }

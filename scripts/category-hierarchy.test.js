@@ -79,9 +79,9 @@ const adoptedHierarchyMigrations = [
   {
     ids: ['0589', '0655', '0843'],
     vectorizeIds: ['0589'],
-    ja: ['貝', '自然/貝'],
-    en: ['Animal/Shell', 'Nature/Shell'],
-    ko: ['조개', '자연/조개'],
+    ja: ['自然/貝', '動物/貝'],
+    en: ['Nature/Shell', 'Animal/Shell'],
+    ko: ['자연/조개', '동물/조개'],
   },
   {
     ids: ['0584', '0695'],
@@ -164,9 +164,9 @@ const adoptedHierarchyMigrations = [
   {
     ids: ['0616'],
     vectorizeIds: ['0616'],
-    ja: ['精霊馬', '行事・文化/お盆/精霊馬'],
-    en: ['Spirit Horse', 'Event・Culture/Obon/Spirit Horse'],
-    ko: ['정령마', '행사・문화/오봉/정령마'],
+    ja: ['精霊馬', '行事・文化/お盆'],
+    en: ['Spirit Horse', 'Event・Culture/Obon'],
+    ko: ['정령마', '행사・문화/오봉'],
   },
   {
     ids: ['0282'],
@@ -301,4 +301,51 @@ test('automatic body category classification uses the merged parent', () => {
     assert.ok(categories.includes(parent));
     assert.ok(!categories.includes('体型') && !categories.includes('Body Type'));
   }
+});
+
+test('automatic food and bath classification uses the consolidated hierarchies without reviving retired parents', () => {
+  const { createCategoryProcessor } = require('./update-categories-common');
+  const ja = createCategoryProcessor(require('./category-definitions-ja'));
+  const en = createCategoryProcessor(require('./category-definitions-en'));
+
+  const jaGyoza = splitCategories(ja('飲食,飲食/食べ物,飲食/食べ物/料理', 'ギョーザAkyo'));
+  assert.ok(jaGyoza.includes('飲食') && jaGyoza.includes('飲食/食べ物') && jaGyoza.includes('飲食/食べ物/料理'));
+  assert.ok(!jaGyoza.includes('食べ物') && !jaGyoza.includes('食べ物/料理'));
+
+  const enGyoza = splitCategories(en('Food・Drink,Food・Drink/Food,Food・Drink/Food/Dish', 'Gyoza Akyo'));
+  assert.ok(enGyoza.includes('Food・Drink') && enGyoza.includes('Food・Drink/Food') && enGyoza.includes('Food・Drink/Food/Dish'));
+  assert.ok(!enGyoza.includes('Food') && !enGyoza.includes('Food/Dish'));
+
+  const jaBath = splitCategories(ja('', 'シャンプーAkyo'));
+  assert.ok(jaBath.includes('設備・家電・家具') && jaBath.includes('設備・家電・家具/お風呂'));
+  assert.ok(!jaBath.includes('設備/お風呂') && !jaBath.includes('家電・家具'));
+
+  // Positive: Mint Chocolate avatars with explicit food categories (e.g., #0946 おつきみAkyo) keep them.
+  const jaTsukimi = splitCategories(
+    ja('チョコミント類,飲食,飲食/食べ物,飲食/食べ物/スイーツ,飲食/食べ物/米・もち', 'おつきみAkyo'),
+  );
+  assert.ok(
+    jaTsukimi.includes('飲食') &&
+      jaTsukimi.includes('飲食/食べ物') &&
+      jaTsukimi.includes('飲食/食べ物/スイーツ') &&
+      jaTsukimi.includes('飲食/食べ物/米・もち'),
+  );
+  const enTsukimi = splitCategories(
+    en(
+      'Mint Chocolate,Food・Drink,Food・Drink/Food,Food・Drink/Food/Sweets,Food・Drink/Food/Rice・Mochi',
+      'Tsukimi Akyo',
+    ),
+  );
+  assert.ok(
+    enTsukimi.includes('Food・Drink') &&
+      enTsukimi.includes('Food・Drink/Food') &&
+      enTsukimi.includes('Food・Drink/Food/Sweets') &&
+      enTsukimi.includes('Food・Drink/Food/Rice・Mochi'),
+  );
+
+  // Negative: Mint Chocolate avatars without explicit food categories do not gain inferred food tags.
+  const jaMintChoco = splitCategories(ja('チョコミント類', 'チョコミントAkyo'));
+  assert.ok(!jaMintChoco.some((c) => c === '飲食' || c.startsWith('飲食/')));
+  const enMintChoco = splitCategories(en('Mint Chocolate', 'Mint Chocolate Akyo'));
+  assert.ok(!enMintChoco.some((c) => c === 'Food・Drink' || c.startsWith('Food・Drink/')));
 });

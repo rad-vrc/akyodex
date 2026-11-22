@@ -73,10 +73,11 @@ module.exports = {
       { from: ['音楽', '楽器', '音楽・楽器'], to: '芸術/音楽・楽器' }
     ],
     renameFish: { from: '魚', to: ['動物', '動物/海の生き物'] },
+    foodParentCategory: '飲食',
     foodSubCategories: {
-      '調味料': { category: '調味料', exclude: 'マヨ' },
-      '飲み物': { category: '飲み物' },
-      'default': { category: '食べ物', prefix: '食べ物/' }
+      '調味料': { category: '飲食/調味料', exclude: 'マヨ' },
+      '飲み物': { category: '飲食/飲み物' },
+      'default': { category: '飲食/食べ物', prefix: '飲食/食べ物/' }
     },
     tofuGyozaKeywords: ['豆腐', 'ギョーザ'],
     foodPrefixes: ['野菜', 'スイーツ', 'フルーツ', '料理'],
@@ -98,7 +99,7 @@ module.exports = {
     specialEffectKeywords: ['泡', 'キラキラ', 'パーティクル', '落ちそう', '波動', 'ヒプノシス', '吸い込まれる', '消える', 'メルト', '色胞', 'めんしす', 'Hinyo'],
     rainbowKeyword: 'レインボー',
     rainbowCategory: '色',
-    applianceCategory: '家電・家具',
+    applianceCategory: '設備・家電・家具',
     plantParentCategory: '自然',
     plantCategory: '自然/植物',
     costumeCategory: '衣類・衣装',
@@ -106,7 +107,7 @@ module.exports = {
     seasonCategory: '季節・行事',
     musicCategory: '芸術/音楽・楽器',
     toolCategory: '道具',
-    bathCategory: '設備/お風呂',
+    bathCategory: '設備・家電・家具/お風呂',
     schoolCategory: '学校',
     natureCategory: '環境・天候',
     historyCategory: '歴史',
