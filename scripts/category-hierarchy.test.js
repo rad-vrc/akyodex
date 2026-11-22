@@ -79,9 +79,9 @@ const adoptedHierarchyMigrations = [
   {
     ids: ['0589', '0655', '0843'],
     vectorizeIds: ['0589'],
-    ja: ['貝', '自然/貝'],
-    en: ['Animal/Shell', 'Nature/Shell'],
-    ko: ['조개', '자연/조개'],
+    ja: ['自然/貝', '動物/貝'],
+    en: ['Nature/Shell', 'Animal/Shell'],
+    ko: ['자연/조개', '동물/조개'],
   },
   {
     ids: ['0584', '0695'],
@@ -164,9 +164,9 @@ const adoptedHierarchyMigrations = [
   {
     ids: ['0616'],
     vectorizeIds: ['0616'],
-    ja: ['精霊馬', '行事・文化/お盆/精霊馬'],
-    en: ['Spirit Horse', 'Event・Culture/Obon/Spirit Horse'],
-    ko: ['정령마', '행사・문화/오봉/정령마'],
+    ja: ['精霊馬', '行事・文化/お盆'],
+    en: ['Spirit Horse', 'Event・Culture/Obon'],
+    ko: ['정령마', '행사・문화/오봉'],
   },
   {
     ids: ['0282'],

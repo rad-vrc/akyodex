@@ -18,7 +18,7 @@ const retired = new Set(['体型', '形状・触り心地', 'Body Type', 'Shape�
 
 test('the merged category retains both sets of children and removes retired definitions', () => {
   assert.deepEqual(translations[names.ja], { en: names.en, ko: names.ko });
-  const leaves = ['うろこ', 'さらさら', 'ぬるぬる', 'ふわふわ', 'ぷるぷる', 'ぺらぺら', 'トゲトゲ', 'ムキムキ', 'モサモサ', '丸い', '冷たい', '四角い', '小さい', '柔らかい', '硬い', '粘着質', '豊満', '高身長'];
+  const leaves = ['うろこ', 'さらさら', 'ぬるぬる', 'ぷるぷる', 'ぺらぺら', 'トゲトゲ', 'ムキムキ', 'モサモサ・ふわふわ', '丸い', '冷たい', '四角い', '小さい', '柔らかい', '硬い', '粘着質', '豊満', '高身長'];
   for (const leaf of leaves) {
     const entry = translations[`${names.ja}/${leaf}`];
     assert.ok(entry, leaf);

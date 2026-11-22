@@ -78,7 +78,7 @@ test('translated categories resolve to the same color as their Japanese counterp
     ['動物', 'Animal', '동물'],
     ['パロディ', 'Parody', '패러디'],
     ['チョコミント類', 'Mint Chocolate', '초코민트류'],
-    ['食べ物', 'Food', '음식'],
+    ['飲食', 'Food・Drink', '식음료'],
     ['ワールド', 'World', '월드'],
   ];
   for (const [jaName, enName, koName] of trios) {
@@ -89,7 +89,7 @@ test('translated categories resolve to the same color as their Japanese counterp
   // 正規化された JA 名で JSON を引く。キーワード表やハッシュには落ちない。
   // 色そのものは管理画面から変えられるので固定しない
   assert.equal(getCategoryColor('Mint Chocolate'), registered('チョコミント類'));
-  assert.equal(getCategoryColor('Food'), registered('食べ物'));
+  assert.equal(getCategoryColor('Food・Drink'), registered('飲食'));
 });
 
 test('chip colors meet WCAG 4.5:1 in their actual rendering contexts', () => {
@@ -172,7 +172,7 @@ test('nested categories inherit the top-level category color', () => {
   const categoryHierarchies = [
     ['器官', '器官/耳'],
     ['芸術', '芸術/絵画・イラスト', '芸術/工芸品', '芸術/彫刻・像'],
-    ['Food', 'Food/Dish', 'Food/Dish/Fried'],
+    ['Food・Drink', 'Food・Drink/Food', 'Food・Drink/Food/Dish', 'Food・Drink/Food/Dish/Fried'],
     ['동물', '동물/여우'],
   ];
 
@@ -215,9 +215,10 @@ test('renamed, split and translated hierarchies resolve to their registered colo
     ['ファッション・装備', 'ファッション・装備/武器', 'Fashion・Equipment', 'Fashion・Equipment/Weapon', '패션・장비', '패션・장비/무기'],
     ['機械', 'Machine', '기계'],
     ['自然', '自然/植物', '自然/植物/苔', 'Nature', 'Nature/Plant', '자연', '자연/식물'],
-    ['グッズ', 'グッズ/揺れ物', 'Goods', 'Goods/Dangling Accessory', '굿즈', '굿즈/흔들리는 액세서리'],
+    ['グッズ', 'Goods', '굿즈'],
     ['動物', '動物/きつね', 'Animal', '동물'],
-    ['食べ物', 'Food', 'Food/Dish', '음식'],
+    ['飲食', '飲食/食べ物', '飲食/食べ物/料理', 'Food・Drink', 'Food・Drink/Food/Dish', '식음료', '식음료/음식'],
+    ['設備・家電・家具', '設備・家電・家具/お風呂', 'Equipment・Appliances・Furniture', '설비・가전・가구'],
   ];
 
   for (const [jaTopLevel, ...aliases] of hierarchies) {
