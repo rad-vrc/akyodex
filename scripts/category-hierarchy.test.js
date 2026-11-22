@@ -319,4 +319,33 @@ test('automatic food and bath classification uses the consolidated hierarchies w
   const jaBath = splitCategories(ja('', 'シャンプーAkyo'));
   assert.ok(jaBath.includes('設備・家電・家具') && jaBath.includes('設備・家電・家具/お風呂'));
   assert.ok(!jaBath.includes('設備/お風呂') && !jaBath.includes('家電・家具'));
+
+  // Positive: Mint Chocolate avatars with explicit food categories (e.g., #0946 おつきみAkyo) keep them.
+  const jaTsukimi = splitCategories(
+    ja('チョコミント類,飲食,飲食/食べ物,飲食/食べ物/スイーツ,飲食/食べ物/米・もち', 'おつきみAkyo'),
+  );
+  assert.ok(
+    jaTsukimi.includes('飲食') &&
+      jaTsukimi.includes('飲食/食べ物') &&
+      jaTsukimi.includes('飲食/食べ物/スイーツ') &&
+      jaTsukimi.includes('飲食/食べ物/米・もち'),
+  );
+  const enTsukimi = splitCategories(
+    en(
+      'Mint Chocolate,Food・Drink,Food・Drink/Food,Food・Drink/Food/Sweets,Food・Drink/Food/Rice・Mochi',
+      'Tsukimi Akyo',
+    ),
+  );
+  assert.ok(
+    enTsukimi.includes('Food・Drink') &&
+      enTsukimi.includes('Food・Drink/Food') &&
+      enTsukimi.includes('Food・Drink/Food/Sweets') &&
+      enTsukimi.includes('Food・Drink/Food/Rice・Mochi'),
+  );
+
+  // Negative: Mint Chocolate avatars without explicit food categories do not gain inferred food tags.
+  const jaMintChoco = splitCategories(ja('チョコミント類', 'チョコミントAkyo'));
+  assert.ok(!jaMintChoco.some((c) => c === '飲食' || c.startsWith('飲食/')));
+  const enMintChoco = splitCategories(en('Mint Chocolate', 'Mint Chocolate Akyo'));
+  assert.ok(!enMintChoco.some((c) => c === 'Food・Drink' || c.startsWith('Food・Drink/')));
 });
