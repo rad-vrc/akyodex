@@ -38,13 +38,17 @@ export const mPlus2 = localFont({
  * カテゴリチップ専用の M PLUS 2（同じ woff2 を別ファミリー名で宣言、ファイルは共有）。
  *
  * M PLUS 2 の hhea は ascent 1160 / descent 288 で非対称なため、行ボックスの中心と
- * 漢字のインク中心（ベースライン +367 units、bounds は「動」で -66..800）が 69 units
- * ずれ、11〜12px のチップでは文字が 0.75px ほど下に寄る。上下パディングの振り分けで
- * 補正すると DPR ごとの丸めで 1px 単位のずれが残った（1.0 / 1.25 / 1.5 / 2.0 で実測）。
- * ascent / descent を 1091 / 357（差 734 = 367×2、和 1448 は維持）に上書きすると、
- * 4 段階の DPR すべてで ±0.5 デバイスピクセル以内に収まる。
- * 本文用フォントを直接上書きすると全ページの文字が 1px 上がって既存の目合わせが
- * 崩れるので、チップだけに当てる別ファミリーにしている。
+ * 漢字のインク中心（ベースライン +365 units、sCapHeight 730 のちょうど半分）がずれ、
+ * 11〜12px のチップでは文字が 0.75px ほど下に寄る。
+ *
+ * globals.css では text-box-trim 対応ブラウザ（Chrome / Edge / Safari）向けに
+ * cap〜alphabetic の実字面トリム＋上下対称パディングで中央揃えを行い、
+ * 未対応ブラウザ（Firefox 等）向けのフォールバックとしてここで ascent / descent を
+ * 1110 / 338（和 1448 は維持）に上書きしている。従来の 1091 / 357 は 13px 前後や
+ * ブラウザ拡大時に Blink の整数丸め＋負のハーフ・リーディングで上側へ 1〜1.5px
+ * 寄るケースがあったため微調整した。
+ * 本文用フォントを直接上書きすると全ページの文字が動いて既存の目合わせが崩れるので、
+ * チップだけに当てる別ファミリーにしている。
  */
 export const mPlus2Chip = localFont({
   src: [
@@ -60,8 +64,8 @@ export const mPlus2Chip = localFont({
   adjustFontFallback: false,
   preload: false,
   declarations: [
-    { prop: "ascent-override", value: "109.1%" },
-    { prop: "descent-override", value: "35.7%" },
+    { prop: "ascent-override", value: "111.0%" },
+    { prop: "descent-override", value: "33.8%" },
     { prop: "line-gap-override", value: "0%" },
   ],
 });
