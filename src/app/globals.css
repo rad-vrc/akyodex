@@ -445,8 +445,8 @@ select:focus {
    整数丸め＋負のハーフ・リーディング由来の 1〜1.5px の上寄りを避け、cap〜alphabetic の
    実字面（M PLUS 2 の sCapHeight=730 は和文グリフ実測中心 +365 と一致）を直接トリムして
    上下対称パディングで中央に揃える。0.4545em は 11px で 5px（高さ 18px）、12px で
-   5.45px（高さ 20px）となり従来と高さを揃えたまま文字サイズ拡大にも追従する。
-   未対応ブラウザ（Firefox 等）は上の padding + mPlus2Chip にフォールバックする */
+   5.45px（高さ約 20px、実測 19.7px）となり従来と高さを揃えたまま文字サイズ拡大にも追従する。
+   未対応ブラウザ（Firefox 等）は上の padding + mPlus2Chip（109.1% / 35.7%）にフォールバックする */
 @supports (text-box-trim: trim-both) and (text-box-edge: cap alphabetic) {
   .category-group__parent,
   .category-group__children,
