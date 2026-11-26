@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-22T10:52:53.077Z",
-  "count": 1079,
+  "updatedAt": "2026-11-26T06:52:30.800Z",
+  "count": 1080,
   "data": [
     {
       "id": "0001",
@@ -13307,6 +13307,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_d6d9db51-2949-4505-b40e-6cbc0160f01b",
       "avatarUrl": "https://vrchat.com/home/world/wrld_d6d9db51-2949-4505-b40e-6cbc0160f01b",
       "urlUpdatedAt": "2026-11-22T06:34:20.389Z"
+    },
+    {
+      "id": "2096",
+      "entryType": "world",
+      "displaySerial": "0136",
+      "nickname": "夏だったマイルーム～BIGうきわAkyoǃǃ",
+      "avatarName": "夏だったマイルーム～BIGうきわAkyoǃǃ",
+      "category": "월드,지원 기기,지원 기기/PC,지원 기기/Quest(Android)",
+      "comment": "",
+      "author": "ky_chan",
+      "sourceUrl": "https://vrchat.com/home/world/wrld_55fb092e-b20d-411b-83ad-86ce5b1c6cd6",
+      "avatarUrl": "https://vrchat.com/home/world/wrld_55fb092e-b20d-411b-83ad-86ce5b1c6cd6",
+      "urlUpdatedAt": "2026-11-26T06:52:30.586Z"
     }
   ]
 }
