@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-11-26T06:52:30.659Z",
+  "updatedAt": "2026-11-26T09:15:25.594Z",
   "count": 1080,
   "data": [
     {
@@ -5790,9 +5790,10 @@
     {
       "id": "0507",
       "entryType": "avatar",
+      "displaySerial": "0507",
       "nickname": "うさぎAkyo",
       "avatarName": "usagi-akyo",
-      "category": "動物,動物/うさぎ,対応機種,対応機種/PC,器官,器官/耳,器官/しっぽ,体格・形状・触り心地,体格・形状・触り心地/モサモサ・ふわふわ,色,色/無彩色系",
+      "category": "動物,動物/うさぎ,対応機種,対応機種/PC,器官,器官/耳,器官/しっぽ,体格・形状・触り心地,体格・形状・触り心地/モサモサ・ふわふわ,色,色/無彩色系,ギミック・特殊,ギミック・特殊/お着替え,ファッション・装備,ファッション・装備/なりきり・仮装",
       "comment": "あとち式うさぎAkyo",
       "author": "彩袋あと",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_74eeb51e-2e98-47d8-b4f8-53fab0197f86",

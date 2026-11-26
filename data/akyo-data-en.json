@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "language": "en",
-  "updatedAt": "2026-11-26T06:52:30.719Z",
+  "updatedAt": "2026-11-26T09:15:25.633Z",
   "count": 1080,
   "data": [
     {
@@ -5790,9 +5790,10 @@
     {
       "id": "0507",
       "entryType": "avatar",
+      "displaySerial": "0507",
       "nickname": "Rabbit Akyo",
       "avatarName": "usagi-akyo",
-      "category": "Animal,Animal/Rabbit,Supported Platform,Supported Platform/PC,Body Part,Body Part/Ear,Body Part/Tail,Physique・Shape・Texture,Physique・Shape・Texture/Shaggy・Fluffy,Color,Color/Achromatic Colors",
+      "category": "Animal,Animal/Rabbit,Supported Platform,Supported Platform/PC,Body Part,Body Part/Ear,Body Part/Tail,Physique・Shape・Texture,Physique・Shape・Texture/Shaggy・Fluffy,Color,Color/Achromatic Colors,Gimmick・Special,Gimmick・Special/Outfit Change,Fashion・Equipment,Fashion・Equipment/Roleplay",
       "comment": "Akyo the Atochi-style Rabbit",
       "author": "彩袋あと",
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_74eeb51e-2e98-47d8-b4f8-53fab0197f86",
