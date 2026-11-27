@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-11-27T15:05:24.026Z",
-  "count": 1082,
+  "updatedAt": "2026-11-27T15:11:50.065Z",
+  "count": 1083,
   "data": [
     {
       "id": "0001",
@@ -12655,6 +12655,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_e93853cf-b2b3-4f37-a408-e5fc0c376611",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_e93853cf-b2b3-4f37-a408-e5fc0c376611",
       "urlUpdatedAt": "2026-11-27T15:05:23.955Z"
+    },
+    {
+      "id": "2099",
+      "entryType": "avatar",
+      "displaySerial": "0947",
+      "nickname": "盛り塩Akyo",
+      "avatarName": "morisioAkyo",
+      "category": "対応機種,対応機種/PC,対応機種/Quest(Android),行事・文化,色,色/白色系,色/無彩色系,飲食,飲食/調味料",
+      "comment": "【葱の句】\nあなたのうしろ よすみにそっと もしりおAkyo",
+      "author": "葱 potipoti93",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e92da74a-fa44-4195-a936-1bd8335442d0",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e92da74a-fa44-4195-a936-1bd8335442d0",
+      "urlUpdatedAt": "2026-11-27T15:11:49.983Z"
     }
   ]
 }
