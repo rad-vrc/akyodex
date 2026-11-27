@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ja",
-  "updatedAt": "2026-11-27T15:00:25.399Z",
-  "count": 1081,
+  "updatedAt": "2026-11-27T15:05:24.026Z",
+  "count": 1082,
   "data": [
     {
       "id": "0001",
@@ -12642,6 +12642,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3889f502-8faf-4e22-bade-216760cec5cf",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3889f502-8faf-4e22-bade-216760cec5cf",
       "urlUpdatedAt": "2026-11-27T15:00:25.350Z"
+    },
+    {
+      "id": "2098",
+      "entryType": "avatar",
+      "displaySerial": "0946",
+      "nickname": "モンブランまめAkyo",
+      "avatarName": "まめもんぶらんあきょ",
+      "category": "対応機種,対応機種/PC,色,色/黄色系,飲食,飲食/食べ物,飲食/食べ物/スイーツ,自然,自然/植物,自然/植物/木の実,季節,季節/秋,まめAkyo,まめ,体格・形状・触り心地,体格・形状・触り心地/豊満",
+      "comment": "芳醇な香りがする！！",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e93853cf-b2b3-4f37-a408-e5fc0c376611",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e93853cf-b2b3-4f37-a408-e5fc0c376611",
+      "urlUpdatedAt": "2026-11-27T15:05:23.955Z"
     }
   ]
 }

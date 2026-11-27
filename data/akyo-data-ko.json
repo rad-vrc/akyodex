@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-27T15:00:25.470Z",
-  "count": 1081,
+  "updatedAt": "2026-11-27T15:05:24.129Z",
+  "count": 1082,
   "data": [
     {
       "id": "0001",
@@ -13333,6 +13333,19 @@
       "sourceUrl": "https://vrchat.com/home/avatar/avtr_3889f502-8faf-4e22-bade-216760cec5cf",
       "avatarUrl": "https://vrchat.com/home/avatar/avtr_3889f502-8faf-4e22-bade-216760cec5cf",
       "urlUpdatedAt": "2026-11-27T15:00:25.350Z"
+    },
+    {
+      "id": "2098",
+      "entryType": "avatar",
+      "displaySerial": "0946",
+      "nickname": "モンブランまめAkyo",
+      "avatarName": "まめもんぶらんあきょ",
+      "category": "지원 기기,지원 기기/PC,색상,색상/노란색 계열,식음료,식음료/음식,식음료/음식/디저트,자연,자연/식물,자연/식물/열매,계절,계절/가을,마메Akyo,마메,체격・형태・촉감,체격・형태・촉감/풍만",
+      "comment": "芳醇な香りがする！！",
+      "author": "kuro5963",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_e93853cf-b2b3-4f37-a408-e5fc0c376611",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_e93853cf-b2b3-4f37-a408-e5fc0c376611",
+      "urlUpdatedAt": "2026-11-27T15:05:23.955Z"
     }
   ]
 }
