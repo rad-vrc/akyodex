@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "language": "ko",
-  "updatedAt": "2026-11-26T09:15:25.678Z",
-  "count": 1080,
+  "updatedAt": "2026-11-27T15:00:25.470Z",
+  "count": 1081,
   "data": [
     {
       "id": "0001",
@@ -13320,6 +13320,19 @@
       "sourceUrl": "https://vrchat.com/home/world/wrld_55fb092e-b20d-411b-83ad-86ce5b1c6cd6",
       "avatarUrl": "https://vrchat.com/home/world/wrld_55fb092e-b20d-411b-83ad-86ce5b1c6cd6",
       "urlUpdatedAt": "2026-11-26T06:52:30.586Z"
+    },
+    {
+      "id": "2097",
+      "entryType": "avatar",
+      "displaySerial": "0945",
+      "nickname": "ツインテールAkyo",
+      "avatarName": "TwinTailAkyo",
+      "category": "지원 기기,지원 기기/PC,지원 기기/Quest(Android),초코민트류,패션・장비,패션・장비/헤어스타일,색상,색상/초록색 계열,색상/파란색 계열",
+      "comment": "そろそろ髪を切ろうかな？",
+      "author": "Ellie Yale",
+      "sourceUrl": "https://vrchat.com/home/avatar/avtr_3889f502-8faf-4e22-bade-216760cec5cf",
+      "avatarUrl": "https://vrchat.com/home/avatar/avtr_3889f502-8faf-4e22-bade-216760cec5cf",
+      "urlUpdatedAt": "2026-11-27T15:00:25.350Z"
     }
   ]
 }
