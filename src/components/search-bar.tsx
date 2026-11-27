@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { SearchClearButton } from '@/components/search-clear-button';
 
@@ -37,7 +37,6 @@ export function SearchBar({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const disabledRef = useRef(disabled);
-  disabledRef.current = disabled;
 
   // onSearch の最新参照を保持（依存配列に含めずに済む）
   const onSearchRef = useRef(onSearch);
@@ -47,7 +46,13 @@ export function SearchBar({
 
   // 現在の入力値を ref で追跡（デバウンス発火時に陳腐化チェック用）
   const queryRef = useRef(query);
-  queryRef.current = query;
+
+  // 描画中に ref を書くと react-hooks/refs に反する。確定と同時に写せば、
+  // デバウンスのタイマーが読む時点では描画中に書いていたときと同じ値になる
+  useLayoutEffect(() => {
+    disabledRef.current = disabled;
+    queryRef.current = query;
+  }, [disabled, query]);
 
   const debouncedSearch = useCallback((value: string) => {
     if (timerRef.current) clearTimeout(timerRef.current);
